@@ -8,6 +8,7 @@ import { Enveloppe } from "../models/Enveloppe";
 import { Mouvement } from "../models/Mouvement";
 import { SelectionCours } from "../models/SelectionCours";
 import { TarifCredit } from "../models/TarifCredit";
+import { DemandeInscription } from "../../inscription/models/DemandeInscription";
 
 export class ElearningFinanceError extends Error {
   constructor(message: string, readonly statusCode: number) {
@@ -22,6 +23,28 @@ export default class ElearningFinanceService {
     return year;
   }
 
+  /**
+   * `elearning_annees.id` est un identifiant LOCAL au module e-learning.
+   * Toutes les clés étrangères métier (`elearning_cours.anneeAcademiqueId`,
+   * enveloppes, encaissements, sélections, devoirs, examens) pointent vers
+   * `ins_annees_academiques.id`. Ce garde-fou refuse d'écrire avec l'id local
+   * (bug historique : les contenus étaient rattachés à l'année académique 1).
+   */
+  static requireAcademicYearId(year: AnneeElearning): number {
+    const academicYearId = Number(year.anneeAcademiqueId);
+    if (!Number.isSafeInteger(academicYearId) || academicYearId <= 0) {
+      throw new ElearningFinanceError(
+        `L'année e-learning « ${year.libelle} » n'est rattachée à aucune année académique. Corrigez son rattachement avant de continuer.`,
+        409
+      );
+    }
+    return academicYearId;
+  }
+
+  static async getActiveAcademicYearId(transaction?: Transaction): Promise<number> {
+    return this.requireAcademicYearId(await this.getActiveYear(transaction));
+  }
+
   static async getCurrentRate(yearId: number, transaction?: Transaction): Promise<number> {
     const now = new Date().toISOString().slice(0, 10);
     const rate = await TarifCredit.findOne({
@@ -34,6 +57,23 @@ export default class ElearningFinanceService {
       throw new ElearningFinanceError("Le prix du crédit e-learning n'est pas encore configuré.", 409);
     }
     return value;
+  }
+
+  static async getApprovedOnlineAdmission(utilisateurId: number, transaction?: Transaction): Promise<DemandeInscription> {
+    const sessionAssociation = DemandeInscription.associations?.session;
+    const admission = await DemandeInscription.findOne({
+      where: { utilisateurId, modeFormation: "en_ligne", statutPipeline: "valide" },
+      include: sessionAssociation ? [{
+        association: sessionAssociation,
+        attributes: ["id", "niveauEtudeId", "anneeAcademiqueId"],
+      }] : [],
+      order: [["createdAt", "DESC"]],
+      transaction,
+    });
+    if (!admission) {
+      throw new ElearningFinanceError("L'accès au catalogue e-learning est disponible après validation du dossier par le comité.", 409);
+    }
+    return admission;
   }
 
   static async getOrCreateEnvelope(utilisateurId: number, anneeAcademiqueId: number, transaction: Transaction): Promise<Enveloppe> {
@@ -105,7 +145,13 @@ export default class ElearningFinanceService {
     const sequelize = DatabaseConnection.getInstance().sequelize;
     return sequelize.transaction(async transaction => {
       const year = await this.getActiveYear(transaction);
-      const envelope = await this.getOrCreateEnvelope(utilisateurId, year.id, transaction);
+      const academicYearId = this.requireAcademicYearId(year);
+      const admission = await this.getApprovedOnlineAdmission(utilisateurId, transaction);
+      if (!admission) {
+        throw new ElearningFinanceError("L'accès au catalogue e-learning est disponible après validation du dossier par le comité.", 409);
+      }
+
+      const envelope = await this.getOrCreateEnvelope(utilisateurId, academicYearId, transaction);
       if (envelope.statut !== "ouverte") throw new ElearningFinanceError("Votre budget e-learning n'est pas ouvert.", 409);
 
       const course = await CoursEnLigne.findOne({
@@ -114,11 +160,18 @@ export default class ElearningFinanceService {
         lock: transaction.LOCK.UPDATE,
       });
       if (!course) throw new ElearningFinanceError("Ce cours n'est pas proposé pour l'année académique en cours.", 404);
+      const session = admission?.session as any;
+      if (course.niveauEtudeId && session?.niveauEtudeId && Number(course.niveauEtudeId) !== Number(session.niveauEtudeId)) {
+        throw new ElearningFinanceError("Cette UE ne correspond pas au niveau d'étude de votre demande.", 403);
+      }
+      if (academicYearId && session?.anneeAcademiqueId && Number(academicYearId) !== Number(session.anneeAcademiqueId)) {
+        throw new ElearningFinanceError("Cette demande ne correspond pas à l'année e-learning active.", 409);
+      }
       const cost = Number(course.coutTotal);
       if (!Number.isFinite(cost) || cost <= 0) throw new ElearningFinanceError("Le tarif de ce cours n'est pas valide.", 409);
 
       const existing = await SelectionCours.findOne({
-        where: { utilisateurId, coursId, anneeAcademiqueId: year.id },
+        where: { utilisateurId, coursId, anneeAcademiqueId: academicYearId },
         transaction,
         lock: transaction.LOCK.UPDATE,
       });
@@ -137,7 +190,7 @@ export default class ElearningFinanceService {
         utilisateurId,
         coursId: course.id,
         ueId: course.ueId ?? null,
-        anneeAcademiqueId: year.id,
+        anneeAcademiqueId: academicYearId,
         credits: Number(course.nbCredits),
         coutFige: cost,
         statut: "acces_ouvert",

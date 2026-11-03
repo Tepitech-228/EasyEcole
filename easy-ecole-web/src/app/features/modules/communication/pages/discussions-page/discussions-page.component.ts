@@ -33,8 +33,16 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
   hasMoreMessages: boolean = true;
   loadingMessages: boolean = false;
   activeTab: string = 'messagerie';
-  /** Compteur local pour ID temporaires des messages optimistes */
+  isInCall: boolean = false;
+  isCallStarting: boolean = false;
   private localMsgIdCounter: number = 0;
+  localCallStream: MediaStream | null = null;
+  remoteCallStreams: Map<number, MediaStream> = new Map();
+  private peerConnections: Map<number, RTCPeerConnection> = new Map();
+
+  get remoteCallStreamsList(): MediaStream[] {
+    return Array.from(this.remoteCallStreams.values());
+  }
 
   private socketSubscriptions: Subscription[] = [];
   private chatApi = environment.API_MODULES.ELEARNING + '/chat';
@@ -76,11 +84,152 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
 
   ngOnDestroy(): void {
     this.socketSubscriptions.forEach(s => s.unsubscribe());
+    this.leaveVideoCall(true);
     if (this.selectedSalon) {
       this.socketService.leaveSalon(this.selectedSalon.id);
     }
     this.socketService.notifyOffline(this.currentUserId);
     this.socketService.disconnect();
+  }
+
+  async startVideoCall(): Promise<void> {
+    if (!this.selectedSalon || this.isInCall || this.isCallStarting) return;
+    if (!(window as any).RTCPeerConnection || !navigator.mediaDevices?.getUserMedia) {
+      alert('Cette navigation ne supporte pas la visioconférence de groupe.');
+      return;
+    }
+
+    this.isCallStarting = true;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user' },
+        audio: true
+      });
+      this.localCallStream = stream;
+      this.isInCall = true;
+      this.socketService.joinVideoCall(this.selectedSalon.id, this.currentUserId);
+
+      this.members
+        .filter(member => this.normalizeUserId(member.id) !== this.currentUserId)
+        .forEach(member => this.createPeerConnection(this.normalizeUserId(member.id) as number, stream));
+    } catch (error) {
+      console.error('Erreur lancement appel vidéo:', error);
+      alert('Impossible de démarrer l’appel vidéo. Vérifiez les permissions de caméra/micro.');
+      this.isInCall = false;
+    } finally {
+      this.isCallStarting = false;
+    }
+  }
+
+  leaveVideoCall(force = false): void {
+    if (!this.isInCall && !force) return;
+
+    if (this.selectedSalon && this.currentUserId) {
+      this.socketService.leaveVideoCall(this.selectedSalon.id, this.currentUserId);
+    }
+
+    this.peerConnections.forEach((peerConnection) => peerConnection.close());
+    this.peerConnections.clear();
+    this.remoteCallStreams.clear();
+    if (this.localCallStream) {
+      this.localCallStream.getTracks().forEach(track => track.stop());
+      this.localCallStream = null;
+    }
+    this.isInCall = false;
+  }
+
+  private async handleCallSignal(data: any): Promise<void> {
+    if (!this.selectedSalon || String(data?.roomId) !== String(this.selectedSalon.id)) return;
+    if (!data || data.fromUserId === this.currentUserId) return;
+
+    if (!this.isInCall && data.type !== 'offer') {
+      return;
+    }
+
+    if (data.type === 'offer') {
+      const remoteUserId = this.normalizeUserId(data.fromUserId);
+      if (remoteUserId === null) return;
+      const peerConnection = this.createPeerConnection(remoteUserId, this.localCallStream);
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+      this.socketService.sendCallSignal({
+        roomId: this.selectedSalon.id,
+        fromUserId: this.currentUserId,
+        toUserId: remoteUserId,
+        type: 'answer',
+        answer
+      });
+      return;
+    }
+
+    if (data.type === 'answer') {
+      const remoteUserId = this.normalizeUserId(data.fromUserId);
+      const peerConnection = remoteUserId !== null ? this.peerConnections.get(remoteUserId) : null;
+      if (!peerConnection || !data.answer) return;
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+      return;
+    }
+
+    if (data.type === 'candidate') {
+      const remoteUserId = this.normalizeUserId(data.fromUserId);
+      const peerConnection = remoteUserId !== null ? this.peerConnections.get(remoteUserId) : null;
+      if (!peerConnection || !data.candidate) return;
+      await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+    }
+  }
+
+  private createPeerConnection(remoteUserId: number, stream: MediaStream | null): RTCPeerConnection {
+    if (this.peerConnections.has(remoteUserId)) {
+      return this.peerConnections.get(remoteUserId) as RTCPeerConnection;
+    }
+
+    const peerConnection = new (window as any).RTCPeerConnection({
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    });
+
+    if (stream) {
+      stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+    }
+
+    peerConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
+      if (event.candidate) {
+        this.socketService.sendCallSignal({
+          roomId: this.selectedSalon?.id,
+          fromUserId: this.currentUserId,
+          toUserId: remoteUserId,
+          type: 'candidate',
+          candidate: event.candidate.toJSON()
+        });
+      }
+    };
+
+    peerConnection.ontrack = (event: RTCTrackEvent) => {
+      const remoteStream = event.streams?.[0] ?? new MediaStream();
+      if (event.streams && event.streams[0]) {
+        this.remoteCallStreams.set(remoteUserId, event.streams[0]);
+      }
+    };
+
+    peerConnection.onnegotiationneeded = async () => {
+      if (!this.isInCall || !this.selectedSalon) return;
+      try {
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        this.socketService.sendCallSignal({
+          roomId: this.selectedSalon.id,
+          fromUserId: this.currentUserId,
+          toUserId: remoteUserId,
+          type: 'offer',
+          offer
+        });
+      } catch (error) {
+        console.error('Erreur négociation signaling:', error);
+      }
+    };
+
+    this.peerConnections.set(remoteUserId, peerConnection);
+    return peerConnection;
   }
 
   private subscribeToSockets(): void {
@@ -136,6 +285,16 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
     this.socketSubscriptions.push(
       this.socketService.onTyping().subscribe((data: any) => {
         this.handleTypingEvent(data);
+      })
+    );
+    this.socketSubscriptions.push(
+      this.socketService.onCallSignal().subscribe((data: any) => this.handleCallSignal(data))
+    );
+    this.socketSubscriptions.push(
+      this.socketService.onCallState().subscribe((data: any) => {
+        if (data?.type === 'leave' && data.utilisateurId === this.currentUserId) {
+          this.isInCall = false;
+        }
       })
     );
     this.socketSubscriptions.push(

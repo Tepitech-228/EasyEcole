@@ -33,6 +33,8 @@ export class SocketService implements OnDestroy {
   private memberAddedSubject = new Subject<any>();
   private memberRemovedSubject = new Subject<any>();
   private memberRoleChangedSubject = new Subject<any>();
+  private callSignalSubject = new Subject<any>();
+  private callStateSubject = new Subject<any>();
   private terminalAttendanceSubject = new Subject<TerminalAttendanceEvent>();
   private reconnectSubject = new Subject<void>();
   estConnecte: boolean = false;
@@ -79,6 +81,12 @@ export class SocketService implements OnDestroy {
     });
     this.socket.on('member:roleChanged', (data: any) => {
       this.memberRoleChangedSubject.next(data);
+    });
+    this.socket.on('call:signal', (data: any) => {
+      this.callSignalSubject.next(data);
+    });
+    this.socket.on('call:state', (data: any) => {
+      this.callStateSubject.next(data);
     });
     this.socket.on('pointage:terminal', (data: TerminalAttendanceEvent) => {
       this.terminalAttendanceSubject.next(data);
@@ -152,6 +160,18 @@ export class SocketService implements OnDestroy {
     this.socket?.emit('member:role', { salonId, utilisateurId, role });
   }
 
+  joinVideoCall(salonId: number, utilisateurId: number): void {
+    this.socket?.emit('call:join', { salonId, utilisateurId });
+  }
+
+  leaveVideoCall(salonId: number, utilisateurId: number): void {
+    this.socket?.emit('call:leave', { salonId, utilisateurId });
+  }
+
+  sendCallSignal(payload: any): void {
+    this.socket?.emit('call:signal', payload);
+  }
+
   onNewMessage(): Observable<any> {
     return this.newMessageSubject.asObservable();
   }
@@ -186,6 +206,14 @@ export class SocketService implements OnDestroy {
 
   onMemberRoleChanged(): Observable<any> {
     return this.memberRoleChangedSubject.asObservable();
+  }
+
+  onCallSignal(): Observable<any> {
+    return this.callSignalSubject.asObservable();
+  }
+
+  onCallState(): Observable<any> {
+    return this.callStateSubject.asObservable();
   }
 
   onTerminalAttendance(): Observable<TerminalAttendanceEvent> {

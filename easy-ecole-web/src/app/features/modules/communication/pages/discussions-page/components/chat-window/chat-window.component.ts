@@ -18,10 +18,16 @@ export class ChatWindowComponent {
   @Input() loadingMessages: boolean = false;
   @Input() availableUsers: any[] = [];
   @Input() estAdmin: boolean = false;
+  @Input() isInCall: boolean = false;
+  @Input() isCallStarting: boolean = false;
+  @Input() localCallStream: MediaStream | null = null;
+  @Input() remoteCallStreams: MediaStream[] = [];
   @Output() sendMessage = new EventEmitter<string>();
   @Output() sendMediaMessage = new EventEmitter<any>();
   @Output() sendSticker = new EventEmitter<string>();
   @Output() notifyTyping = new EventEmitter<void>();
+  @Output() startCall = new EventEmitter<void>();
+  @Output() leaveCall = new EventEmitter<void>();
   @Output() loadMoreMessages = new EventEmitter<void>();
   @Output() deleteMessage = new EventEmitter<number>();
   @Output() editMessage = new EventEmitter<any>();

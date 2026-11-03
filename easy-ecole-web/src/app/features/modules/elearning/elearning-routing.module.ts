@@ -18,6 +18,8 @@ import { DevoirsPageComponent } from './pages/devoirs-page/devoirs-page.componen
 import { DevoirDetailPageComponent } from './pages/devoir-detail-page/devoir-detail-page.component';
 import { CatalogueElearningPageComponent } from './pages/catalogue-elearning-page/catalogue-elearning-page.component';
 import { ExamensAdminPageComponent } from './pages/examens-admin-page/examens-admin-page.component';
+import { MesExamensPageComponent } from './pages/mes-examens-page/mes-examens-page.component';
+import { CentresExamensPageComponent } from './pages/centres-examens-page/centres-examens-page.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -33,6 +35,8 @@ const routes: Routes = [
   { path: 'devoirs', component: DevoirsPageComponent },
   { path: 'admin/gestion', component: GestionElearningPageComponent },
   { path: 'admin/examens', component: ExamensAdminPageComponent },
+  { path: 'admin/centres', component: CentresExamensPageComponent },
+  { path: 'examens', component: MesExamensPageComponent },
   { path: 'catalogue', component: CatalogueElearningPageComponent },
   { path: ':id/player', component: CoursPlayerPageComponent },
   { path: ':id/chat', component: ChatPageComponent },

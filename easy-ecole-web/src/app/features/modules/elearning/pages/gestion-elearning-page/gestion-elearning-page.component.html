@@ -7,7 +7,9 @@
         <span class="font-medium text-gray-900">{{ coursList.length }}</span> cours
       </div>
       <div class="flex items-center gap-3">
-        <a *ngIf="canManageExams()" routerLink="/elearning/admin/examens" class="rounded-lg border border-indigo-200 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50">Examens présentiels</a>
+        <a *ngIf="canManageExams()" routerLink="/elearning/admin/examens" class="rounded-lg border border-indigo-200 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50">Examens</a>
+        <a *ngIf="canManageExams()" routerLink="/elearning/admin/centres" class="rounded-lg border border-indigo-200 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50">Centres</a>
+        <a routerLink="/elearning/examens" class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Mes examens</a>
         <app-custom-button (click)="toggleCreateForm()" [text]="showCreateForm ? 'Annuler' : 'Nouveau cours'" color="indigo"></app-custom-button>
       </div>
     </div>

@@ -73,6 +73,37 @@ export const setupChatSocket = (io: SocketIOServer): void => {
             console.log(`Socket ${socket.id} a rejoint le salon ${salonId}`);
         });
 
+        socket.on('call:join', (data: { salonId: string | number, utilisateurId?: number }) => {
+            const roomId = String(data.salonId);
+            socket.join(`call:${roomId}`);
+            io.to(`call:${roomId}`).emit('call:state', {
+                roomId,
+                utilisateurId: data.utilisateurId ?? (socket as any).utilisateurId,
+                type: 'join'
+            });
+        });
+
+        socket.on('call:leave', (data: { salonId: string | number, utilisateurId?: number }) => {
+            const roomId = String(data.salonId);
+            socket.leave(`call:${roomId}`);
+            io.to(`call:${roomId}`).emit('call:state', {
+                roomId,
+                utilisateurId: data.utilisateurId ?? (socket as any).utilisateurId,
+                type: 'leave'
+            });
+        });
+
+        socket.on('call:signal', (data: any) => {
+            if (!data?.roomId) return;
+            const roomId = String(data.roomId);
+            const payload = {
+                ...data,
+                fromUserId: data.fromUserId ?? (socket as any).utilisateurId,
+                roomId
+            };
+            socket.to(`call:${roomId}`).emit('call:signal', payload);
+        });
+
         socket.on('leave:salon', (salonId: string) => {
             socket.leave(`salon:${salonId}`);
         });

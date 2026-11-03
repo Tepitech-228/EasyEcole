@@ -19,6 +19,9 @@
         <p class="card__text">{{ devoir.description }}</p>
         <div class="card__meta">
           <span *ngIf="devoir.cours?.titre">Matière: <strong>{{ devoir.cours.titre }}</strong></span>
+          <span *ngIf="devoir.semestre !== null && devoir.semestre !== undefined">
+            Période: <strong>{{ devoir.semestre === 0 ? 'Annuel' : 'Semestre ' + devoir.semestre }}</strong>
+          </span>
           <span>Date limite: <strong [ngClass]="isLate() && canSubmit() ? 'text-danger' : ''">{{ devoir.dateLimite | date:'dd/MM/yyyy' }}</strong></span>
         </div>
         <button *ngIf="devoir.statut === 'publie'" (click)="telechargerSujet()" class="btn btn--outline">Télécharger le sujet PDF</button>

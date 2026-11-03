@@ -1,4 +1,5 @@
 import { mockRequest, mockResponse } from '../../helpers/express-mocks'
+import { Op } from 'sequelize'
 
 jest.mock('../../../modules/inscription/models/Parcours', () => {
   const Parcours: any = jest.fn()
@@ -126,6 +127,14 @@ describe('getArborescence', () => {
     await Ctrl.getArborescence(req, res)
 
     expect(Parcours.findAll).toHaveBeenCalledTimes(1)
+    expect(Parcours.findAll).toHaveBeenCalledWith(expect.objectContaining({
+      where: {
+        [Op.or]: [
+          { niveauEtudeId: 3 },
+          { niveauEtudeId: null, type: 'LICENCE' }
+        ]
+      }
+    }))
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
       success: true,
       data: [expect.objectContaining({
@@ -157,7 +166,12 @@ describe('getArborescence', () => {
     await Ctrl.getArborescence(req, res)
 
     expect(Parcours.findAll).toHaveBeenNthCalledWith(1, expect.objectContaining({
-      where: { niveauEtudeId: 3 }
+      where: {
+        [Op.or]: [
+          { niveauEtudeId: 3 },
+          { niveauEtudeId: null, type: 'LICENCE' }
+        ]
+      }
     }))
     expect(Parcours.findAll).toHaveBeenNthCalledWith(2, expect.objectContaining({
       where: { type: 'LICENCE' }

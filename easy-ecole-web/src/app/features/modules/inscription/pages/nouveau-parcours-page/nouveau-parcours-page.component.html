@@ -27,7 +27,7 @@
                 </div>
             </div>
             <div class="md:col-span-2 col-span-full">
-                <label for="type" class="mb-2 block text-sm leading-6 text-gray-600">Type de filière</label>
+                <label for="type" class="mb-2 block text-sm leading-6 text-gray-600">Parcours de formation</label>
                 <select id="type" formControlName="type"
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                     <option [value]="'LICENCE'">Licence</option>
@@ -39,17 +39,6 @@
                 <div *ngIf="nouveauParcoursForm.get('type')!.invalid && (nouveauParcoursForm.get('type')!.dirty || nouveauParcoursForm.get('type')!.touched)">
                     <app-form-message *ngIf="nouveauParcoursForm.get('type')!.errors?.['required']"
                         text="Veuillez sélectionner le type de filière"></app-form-message>
-                </div>
-            </div>
-            <div class="md:col-span-2 col-span-full">
-                <label for="niveauEtude" class="mb-2 block text-sm leading-6 text-gray-600">Niveau d'étude</label>
-                <select id="niveauEtude" formControlName="niveauEtude"
-                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-                    <option *ngFor="let niveau of niveauxEtude" [value]="niveau.id">{{ niveau.libelle }}</option>
-                </select>
-                <div *ngIf="nouveauParcoursForm.get('niveauEtude')!.invalid && (nouveauParcoursForm.get('niveauEtude')!.dirty || nouveauParcoursForm.get('niveauEtude')!.touched)">
-                    <app-form-message *ngIf="nouveauParcoursForm.get('niveauEtude')!.errors?.['required']"
-                        text="Veuillez saisir le niveau d'étude"></app-form-message>
                 </div>
             </div>
             <div class="col-span-full">

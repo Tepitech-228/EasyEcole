@@ -71,6 +71,14 @@ export class ExamensAdminPageComponent implements OnInit, OnDestroy {
     return this.examens.some(examen => Number(examen.coursId) === Number(coursId));
   }
 
+  periodeExamen(coursId: number | string): string {
+    const semestre = this.cours.find(cours => Number(cours.id) === Number(coursId))?.ue?.semestre;
+    const match = /^semestre([1-6])$/.exec(semestre || '');
+    if (!match) return 'Période UE absente';
+    const numero = Number(match[1]);
+    return numero <= 4 ? `Semestre ${numero}` : 'Annuel';
+  }
+
   createExam(): void {
     if (!this.selectedFile || !this.form.coursId) return;
     if (this.selectedFile.type !== 'application/pdf' && !this.selectedFile.name.toLowerCase().endsWith('.pdf')) {

@@ -1,0 +1,66 @@
+<section class="max-w-6xl mx-auto px-4 py-8">
+  <app-header-title title="Centres d’examen" subtitle="Gérez les lieux de passage des examens présentiels"></app-header-title>
+
+  <div *ngIf="!isAdmin" class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">Cette page est réservée à l’administration.</div>
+
+  <ng-container *ngIf="isAdmin">
+    <div *ngIf="errorMessage" class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{{ errorMessage }}</div>
+    <div *ngIf="successMessage" class="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">{{ successMessage }}</div>
+
+    <form (ngSubmit)="createCentre()" class="mb-8 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+      <h2 class="mb-4 text-lg font-semibold text-gray-900">Créer un centre</h2>
+      <div class="grid gap-4 md:grid-cols-2">
+        <label class="text-sm text-gray-700">
+          Nom
+          <input [(ngModel)]="form.nom" name="nom" type="text" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2">
+        </label>
+        <label class="text-sm text-gray-700">
+          Code
+          <input [(ngModel)]="form.code" name="code" type="text" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 uppercase">
+        </label>
+        <label class="text-sm text-gray-700">
+          Ville
+          <input [(ngModel)]="form.ville" name="ville" type="text" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2">
+        </label>
+        <label class="text-sm text-gray-700">
+          Capacité
+          <input [(ngModel)]="form.capacite" name="capacite" type="number" min="1" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2">
+        </label>
+        <label class="text-sm text-gray-700 md:col-span-2">
+          Adresse
+          <input [(ngModel)]="form.adresse" name="adresse" type="text" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2">
+        </label>
+        <label class="text-sm text-gray-700">
+          Téléphone
+          <input [(ngModel)]="form.telephone" name="telephone" type="text" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2">
+        </label>
+        <label class="text-sm text-gray-700">
+          Responsable
+          <input [(ngModel)]="form.responsableId" name="responsableId" type="number" min="1" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2">
+        </label>
+      </div>
+      <button type="submit" class="mt-4 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white">Enregistrer le centre</button>
+    </form>
+
+    <div *ngIf="loading" class="rounded-xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-500">Chargement des centres…</div>
+
+    <div *ngIf="!loading && centres.length === 0" class="rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center text-sm text-gray-500">
+      Aucun centre enregistré.
+    </div>
+
+    <div *ngIf="!loading && centres.length > 0" class="grid gap-4 md:grid-cols-2">
+      <article *ngFor="let centre of centres" class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wide text-indigo-600">{{ centre.code }}</p>
+            <h3 class="text-lg font-semibold text-gray-900">{{ centre.nom }}</h3>
+          </div>
+          <span class="rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700">{{ centre.capacite }} places</span>
+        </div>
+        <p class="mt-3 text-sm text-gray-600">{{ centre.ville }}<span *ngIf="centre.adresse"> · {{ centre.adresse }}</span></p>
+        <p *ngIf="centre.telephone" class="mt-1 text-sm text-gray-600">Tél. {{ centre.telephone }}</p>
+        <p class="mt-2 text-sm text-gray-500">Responsable : {{ centre.responsable?.nom || '—' }} {{ centre.responsable?.prenoms || '' }}</p>
+      </article>
+    </div>
+  </ng-container>
+</section>

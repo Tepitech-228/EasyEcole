@@ -15,7 +15,7 @@ export class DevoirsPageComponent implements OnInit {
   coursList: any[] = [];
   loading = true;
   showCreateModal = false;
-  createForm: any = { titre: '', description: '', dateLimite: '', coursId: '', semestre: 1, poids: 50 };
+  createForm: any = { titre: '', description: '', dateLimite: '', coursId: '', poids: 40 };
   selectedFile: File | null = null;
   createError = '';
 
@@ -74,7 +74,7 @@ export class DevoirsPageComponent implements OnInit {
     this.devoirService.create(formData).subscribe({
       next: () => {
         this.showCreateModal = false;
-        this.createForm = { titre: '', description: '', dateLimite: '', coursId: '', semestre: 1, poids: 50 };
+        this.createForm = { titre: '', description: '', dateLimite: '', coursId: '', poids: 40 };
         this.selectedFile = null;
         this.loadDevoirs();
       },

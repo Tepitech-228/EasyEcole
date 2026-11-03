@@ -11,6 +11,9 @@
       <div class="thread-sub" *ngIf="salon.type === 'discussion'">En ligne</div>
     </div>
     <div class="icon-btn" title="Rechercher">🔍</div>
+    <div class="icon-btn" title="Appel vidéo" (click)="isInCall ? leaveCall.emit() : startCall.emit()">
+      {{ isInCall ? '📵' : '📹' }}
+    </div>
     <div class="icon-btn" title="Informations" (click)="toggleInfoPanel.emit()">👥</div>
     <div class="icon-btn" title="Plus d'options">⋯</div>
   </div>
@@ -38,6 +41,13 @@
 
     <div class="typing-indicator" *ngIf="typingUsers.length > 0">
       {{ typingUsers.join(', ') }} {{ typingUsers.length > 1 ? 'écrivent' : 'écrit' }}...
+    </div>
+  </div>
+
+  <div class="call-stage" *ngIf="isInCall">
+    <div class="call-grid">
+      <video *ngIf="localCallStream" [srcObject]="localCallStream" autoplay muted playsinline class="call-local-video"></video>
+      <video *ngFor="let remoteStream of remoteCallStreams" [srcObject]="remoteStream" autoplay playsinline class="call-remote-video"></video>
     </div>
   </div>
 

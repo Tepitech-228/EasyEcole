@@ -32,6 +32,8 @@ export class DemandeInscription {
   declare documentBourse?: string
   /** Type de demande : 'inscription' (1ère) | 'reinscription'. Permet le badge comité. */
   declare typeDemande?: 'inscription' | 'reinscription'
+  /** Mode choisi dans le wizard : présentiel ou parcours e-learning. */
+  declare modeFormation?: 'presentiel' | 'en_ligne'
   /** Vrai une fois le dossier transmis au comité d'orientation (après saisie ESA finalisée). */
   declare soumissionComite?: boolean
 

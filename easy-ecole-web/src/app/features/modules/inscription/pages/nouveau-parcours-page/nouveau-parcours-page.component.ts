@@ -38,7 +38,6 @@ export class NouveauParcoursPageComponent extends BaseComponentClass implements 
   nouveauParcoursForm: FormGroup = new FormGroup({
     titre: new FormControl(null, [Validators.required]),
     type: new FormControl('LICENCE', [Validators.required]),
-    niveauEtude: new FormControl(null, [Validators.required]),
     description: new FormControl(null, []),
   })
   prerequisParcours: [NiveauEtude, PrerequisParcoursType[]][] = []
@@ -113,7 +112,6 @@ export class NouveauParcoursPageComponent extends BaseComponentClass implements 
       parcours.titre = this.nouveauParcoursForm.get('titre')!.value
       parcours.type = this.nouveauParcoursForm.get('type')!.value
       parcours.description = this.nouveauParcoursForm.get('description')!.value
-      parcours.niveauEtudeId = this.nouveauParcoursForm.get('niveauEtude')!.value
 
       this.parcoursService.create(parcours)
         .subscribe(

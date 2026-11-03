@@ -14,7 +14,7 @@ export class Devoir extends Model<InferAttributes<Devoir>, InferCreationAttribut
   declare cours?: NonAttribute<CoursEnLigne>
   declare enseignantId: ForeignKey<Utilisateur['id']>
   declare enseignant?: NonAttribute<Utilisateur>
-  declare semestre: CreationOptional<1 | 2 | null>
+  declare semestre: CreationOptional<0 | 1 | 2 | 3 | 4 | null>
   declare anneeAcademiqueId: CreationOptional<number | null>
   declare statut: CreationOptional<"brouillon" | "publie" | "ferme">
   declare consignes: CreationOptional<string | null>

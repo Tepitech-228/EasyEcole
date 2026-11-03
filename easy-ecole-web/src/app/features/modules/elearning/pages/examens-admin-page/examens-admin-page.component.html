@@ -17,17 +17,17 @@
       <h2 class="mb-4 text-lg font-semibold text-gray-900">Programmer un examen</h2>
       <div class="grid gap-4 md:grid-cols-2">
         <label class="text-sm text-gray-700">
-          Cours
+          UE
           <select name="coursId" [(ngModel)]="form.coursId" required class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2">
             <option value="">Choisir un cours publié</option>
-            <option *ngFor="let item of cours" [value]="item.id" [disabled]="hasExam(item.id)">
-              {{ item.code }} — {{ item.titre }}{{ hasExam(item.id) ? ' (examen déjà créé)' : '' }}
+            <option *ngFor="let item of cours" [value]="item.id" [disabled]="hasExam(item.id) || !item.ue?.semestre">
+              {{ item.code }} — {{ item.titre }} · {{ periodeExamen(item.id) }}{{ hasExam(item.id) ? ' (examen déjà créé)' : '' }}
             </option>
           </select>
         </label>
         <label class="text-sm text-gray-700">
-          Date et heure
-          <input name="dateExamen" [(ngModel)]="form.dateExamen" type="datetime-local" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2">
+          Date et heure (samedi obligatoire)
+          <input name="dateExamen" [(ngModel)]="form.dateExamen" type="datetime-local" required class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2">
         </label>
         <label class="text-sm text-gray-700">
           Lieu
@@ -55,6 +55,7 @@
           <div>
             <h3 class="font-semibold text-gray-900">{{ examen.cours?.code }} — {{ examen.cours?.titre }}</h3>
             <p class="mt-1 text-sm text-gray-500">
+              {{ examen.semestre === 'annuel' ? 'Annuel · examen unique' : ('Semestre ' + examen.semestre?.replace('semestre', '')) }} ·
               {{ examen.dateExamen ? (examen.dateExamen | date:'dd/MM/yyyy HH:mm') : 'Date à définir' }}
               <span *ngIf="examen.lieu"> · {{ examen.lieu }}</span>
               <span *ngIf="examen.dureeMinutes"> · {{ examen.dureeMinutes }} min</span>

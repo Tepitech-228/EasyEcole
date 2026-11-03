@@ -27,6 +27,10 @@ export class ParcoursService {
       formData.append('titre', parcours.titre)
     }
 
+    if (parcours.type) {
+      formData.append('type', parcours.type)
+    }
+
     if (parcours.dureeDeFormation) {
       formData.append('dureeDeFormation', parcours.dureeDeFormation)
     }

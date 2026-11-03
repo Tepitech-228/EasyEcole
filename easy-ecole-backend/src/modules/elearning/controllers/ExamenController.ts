@@ -7,6 +7,8 @@ import { CoursEnLigne } from "../models/CoursEnLigne";
 import { Examen } from "../models/Examen";
 import { NoteExamen } from "../models/NoteExamen";
 import { SelectionCours } from "../models/SelectionCours";
+import { Cours } from "../../inscription/models/Cours";
+import { evaluationPeriodFromSourceSemester, isSaturdayDate } from "../services/EvaluationRules";
 
 const EXAMEN_DIR = path.resolve(process.cwd(), "public", "elearning", "protected", "examens");
 
@@ -57,19 +59,32 @@ export default class ExamenController {
         await fs.promises.unlink(file.path);
         return res.status(404).json({ success: false, message: "Cours e-learning introuvable pour l'année active." });
       }
-      const existing = await Examen.findOne({ where: { coursId, anneeAcademiqueId: year.id } });
+      const sourceUe = course.ueId ? await Cours.findByPk(course.ueId, { attributes: ["id", "semestre"] }) : null;
+      const evaluationPeriod = evaluationPeriodFromSourceSemester(sourceUe?.semestre);
+      if (!evaluationPeriod) {
+        await fs.promises.unlink(file.path);
+        return res.status(409).json({ success: false, message: "L'UE doit avoir un semestre défini avant de programmer l'examen." });
+      }
+      const semestre = evaluationPeriod.examen;
+      const existing = await Examen.findOne({ where: { coursId, anneeAcademiqueId: year.id, semestre } });
       if (existing) {
         await fs.promises.unlink(file.path);
-        return res.status(409).json({ success: false, message: "Un examen annuel existe déjà pour ce cours." });
+        return res.status(409).json({ success: false, message: `Un examen ${semestre} existe déjà pour cette UE.` });
       }
-      const dateExamen = req.body.dateExamen ? new Date(req.body.dateExamen) : null;
-      if (dateExamen && Number.isNaN(dateExamen.getTime())) {
+      const dateExamenValue = String(req.body.dateExamen || "");
+      if (!isSaturdayDate(dateExamenValue)) {
+        await fs.promises.unlink(file.path);
+        return res.status(400).json({ success: false, message: "Une date valide un samedi est obligatoire pour l'examen." });
+      }
+      const dateExamen = new Date(dateExamenValue);
+      if (Number.isNaN(dateExamen.getTime())) {
         await fs.promises.unlink(file.path);
         return res.status(400).json({ success: false, message: "Date d'examen invalide." });
       }
       const examen = await Examen.create({
         coursId,
         anneeAcademiqueId: year.id,
+        semestre,
         dateExamen,
         lieu: req.body.lieu ? String(req.body.lieu).slice(0, 255) : null,
         dureeMinutes: req.body.dureeMinutes ? Number(req.body.dureeMinutes) : null,
@@ -83,7 +98,7 @@ export default class ExamenController {
         "examen.cree",
         "examen",
         examen.id,
-        { coursId, anneeAcademiqueId: year.id }
+        { coursId, anneeAcademiqueId: year.id, semestre }
       );
       return res.status(201).json(examen);
     } catch (error) {

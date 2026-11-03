@@ -32,13 +32,24 @@ export function cache(ttlSeconds: number = 60) {
     }
 
     // POST / PUT / PATCH / DELETE → invalidate module cache on success
+    let invalidationStarted = false
+    const invalidateCache = () => {
+      if (invalidationStarted || res.statusCode < 200 || res.statusCode >= 300) return
+      invalidationStarted = true
+      const modulePrefix = `cache:*:${req.baseUrl}*`
+      void redis.delByPattern(modulePrefix)
+    }
+
     const originalJson = res.json.bind(res)
     res.json = function (body: any) {
-      if (res.statusCode >= 200 && res.statusCode < 300) {
-        const modulePrefix = `cache:*:${req.baseUrl}*`
-        redis.delByPattern(modulePrefix)
-      }
+      invalidateCache()
       return originalJson(body)
+    }
+
+    const originalSend = res.send.bind(res)
+    res.send = function (body: any) {
+      invalidateCache()
+      return originalSend(body)
     }
     next()
   }

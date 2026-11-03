@@ -86,14 +86,25 @@ export default class CoursEnLigneController {
     static async catalogue(req: Request, res: Response): Promise<Response> {
         try {
             const year = await ElearningFinanceService.getActiveYear();
+            const where: Record<string, unknown> = { statut: "publie", anneeAcademiqueId: year.id };
+            let admission: any = null;
+            if ((req as any).utilisateurRole === RolesUtilisateur.APPRENANT) {
+                admission = await ElearningFinanceService.getApprovedOnlineAdmission(Number((req as any).utilisateurId));
+                const session = admission.session as any;
+                if (year.anneeAcademiqueId && session?.anneeAcademiqueId
+                    && Number(year.anneeAcademiqueId) !== Number(session.anneeAcademiqueId)) {
+                    throw new ElearningFinanceError("Aucune année e-learning active ne correspond à votre demande d'inscription.", 409);
+                }
+                if (session?.niveauEtudeId) where.niveauEtudeId = Number(session.niveauEtudeId);
+            }
             const cours = await CoursEnLigne.findAll({
-                where: { statut: "publie", anneeAcademiqueId: year.id },
+                where,
                 include: [
                     { model: Utilisateur, as: "professeurResponsable", attributes: ["id", "nom", "prenoms"] },
                     {
                         model: Cours,
                         as: "ue",
-                        attributes: ["id", "code", "intitule", "parcoursId", "classeId"],
+                        attributes: ["id", "code", "intitule", "parcoursId", "classeId", "semestre"],
                         include: [{ model: Parcours, as: "parcours", attributes: ["id", "titre", "niveauEtudeId"] }],
                     },
                 ],

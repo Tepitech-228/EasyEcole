@@ -23,6 +23,8 @@ import { CatalogueElearningPageComponent } from './pages/catalogue-elearning-pag
 import { ChatWindowComponent } from './components/chat-window/chat-window.component';
 import { SupportCardComponent } from './components/support-card/support-card.component';
 import { ExamensAdminPageComponent } from './pages/examens-admin-page/examens-admin-page.component';
+import { MesExamensPageComponent } from './pages/mes-examens-page/mes-examens-page.component';
+import { CentresExamensPageComponent } from './pages/centres-examens-page/centres-examens-page.component';
 
 @NgModule({
   declarations: [
@@ -44,7 +46,9 @@ import { ExamensAdminPageComponent } from './pages/examens-admin-page/examens-ad
     CatalogueElearningPageComponent,
     ChatWindowComponent,
     SupportCardComponent,
-    ExamensAdminPageComponent
+    ExamensAdminPageComponent,
+    MesExamensPageComponent,
+    CentresExamensPageComponent
   ],
   imports: [
     CommonModule,

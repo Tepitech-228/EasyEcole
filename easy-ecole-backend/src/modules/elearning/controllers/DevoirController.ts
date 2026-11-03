@@ -9,6 +9,8 @@ import { CoursEnLigne } from "../models/CoursEnLigne";
 import { SelectionCours } from "../models/SelectionCours";
 import ElearningAccessService from "../services/ElearningAccessService";
 import ElearningFinanceService, { ElearningFinanceError } from "../services/ElearningFinanceService";
+import { evaluationPeriodFromSourceSemester } from "../services/EvaluationRules";
+import { Cours } from "../../inscription/models/Cours";
 import fs from "fs";
 
 function currentActor(req: Request): { id: number; role: string } {
@@ -111,15 +113,10 @@ export default class DevoirController {
     try {
       const { id: userId, role } = currentActor(req);
       const coursId = Number(req.body.coursId);
-      const semestre = Number(req.body.semestre);
       const removeUploadedFile = async () => {
         if (req.file) await fs.promises.unlink(req.file.path).catch(error => console.error("[E-learning] Fichier temporaire impossible à supprimer:", error));
       };
       const year = await ElearningFinanceService.getActiveYear();
-      if (![1, 2].includes(semestre)) {
-        await removeUploadedFile();
-        return res.status(400).json({ success: false, message: "Le devoir doit être rattaché au semestre 1 ou 2." });
-      }
       if (!await ElearningAccessService.canManageCourse(userId, role, coursId)) {
         await removeUploadedFile();
         return res.status(403).json({ success: false, message: "Seul le professeur ou le chargé de support du cours peut créer un devoir." });
@@ -129,6 +126,13 @@ export default class DevoirController {
         await removeUploadedFile();
         return res.status(400).json({ success: false, message: "Le cours doit appartenir à l'année e-learning active." });
       }
+      const sourceUe = course.ueId ? await Cours.findByPk(course.ueId, { attributes: ["id", "semestre"] }) : null;
+      const evaluationPeriod = evaluationPeriodFromSourceSemester(sourceUe?.semestre);
+      if (!evaluationPeriod) {
+        await removeUploadedFile();
+        return res.status(409).json({ success: false, message: "L'UE doit avoir un semestre défini avant de créer un devoir." });
+      }
+      const semestre = evaluationPeriod.devoir;
       if (!req.body.titre || !req.body.dateLimite) {
         await removeUploadedFile();
         return res.status(400).json({ success: false, message: "Le titre et la date limite sont requis." });
@@ -136,7 +140,9 @@ export default class DevoirController {
       const existing = await Devoir.findOne({ where: { coursId, anneeAcademiqueId: year.id, semestre } });
       if (existing) {
         await removeUploadedFile();
-        return res.status(409).json({ success: false, message: `Un devoir existe déjà pour le semestre ${semestre}.` });
+        return res.status(409).json({ success: false, message: semestre === 0
+          ? "Le devoir annuel existe déjà pour cette UE."
+          : `Un devoir existe déjà pour le semestre ${semestre}.` });
       }
       if (req.file && path.extname(req.file.originalname).toLowerCase() !== ".pdf") {
         await fs.promises.unlink(req.file.path);
@@ -147,10 +153,10 @@ export default class DevoirController {
         return res.status(400).json({ success: false, message: "Un sujet PDF est obligatoire pour publier le devoir." });
       }
       const dateLimite = new Date(req.body.dateLimite);
-      const poids = Number(req.body.poids ?? 50);
-      if (Number.isNaN(dateLimite.getTime()) || !Number.isFinite(poids) || poids <= 0 || poids > 100) {
+      const poids = 40;
+      if (Number.isNaN(dateLimite.getTime())) {
         await removeUploadedFile();
-        return res.status(400).json({ success: false, message: "Date limite ou pondération invalide." });
+        return res.status(400).json({ success: false, message: "Date limite invalide." });
       }
       const devoir = await Devoir.create({
         titre: req.body.titre,
@@ -158,7 +164,7 @@ export default class DevoirController {
         dateLimite,
         coursId,
         enseignantId: Number(course.professeurId || course.enseignantId || userId),
-        semestre: semestre as 1 | 2,
+        semestre,
         anneeAcademiqueId: year.id,
         consignes: req.body.consignes || null,
         poids,
@@ -167,7 +173,7 @@ export default class DevoirController {
         sujetFichier: req.file ? path.relative(process.cwd(), req.file.path) : null,
         fichier: req.file?.filename || null,
       });
-      await ElearningFinanceService.recordAudit(userId, role, "devoir.cree", "devoir", Number(devoir.id), { coursId, semestre });
+      await ElearningFinanceService.recordAudit(userId, role, "devoir.cree", "devoir", Number(devoir.id), { coursId, semestre, poids });
       return res.status(201).send(devoir);
     } catch (error) {
       if (error instanceof ElearningFinanceError) {

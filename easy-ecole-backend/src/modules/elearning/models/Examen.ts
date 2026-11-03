@@ -7,6 +7,7 @@ export class Examen extends Model<InferAttributes<Examen>, InferCreationAttribut
   declare id: CreationOptional<number>;
   declare coursId: number;
   declare anneeAcademiqueId: number;
+  declare semestre: "semestre1" | "semestre2" | "semestre3" | "semestre4" | "annuel";
   declare dateExamen: CreationOptional<Date | null>;
   declare lieu: CreationOptional<string | null>;
   declare dureeMinutes: CreationOptional<number | null>;
@@ -25,6 +26,7 @@ Examen.init({
   id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
   coursId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false },
   anneeAcademiqueId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false },
+  semestre: { type: DataTypes.ENUM("semestre1", "semestre2", "semestre3", "semestre4", "annuel"), allowNull: false, defaultValue: "annuel" },
   dateExamen: { type: DataTypes.DATE, allowNull: true },
   lieu: { type: DataTypes.STRING(255), allowNull: true },
   dureeMinutes: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
@@ -38,5 +40,9 @@ Examen.init({
   modelName: MODULE_MODEL_PREFIX + "Examen",
   tableName: MODULE_TABLE_PREFIX + "examens",
   timestamps: true,
-  indexes: [{ unique: true, fields: ["coursId", "anneeAcademiqueId"] }],
+  indexes: [{
+    name: "uq_elearning_examen_cours_annee_semestre",
+    unique: true,
+    fields: ["coursId", "anneeAcademiqueId", "semestre"],
+  }],
 });

@@ -5,6 +5,7 @@ import multer from "multer";
 import path from "path";
 import Authenticate from "../../../core/middlewares/Authenticate";
 import ExamenController from "../controllers/ExamenController";
+import ExamenCentreController from "../controllers/ExamenCentreController";
 
 const EXAMEN_DIR = path.resolve(process.cwd(), "public", "elearning", "protected", "examens");
 fs.mkdirSync(EXAMEN_DIR, { recursive: true });
@@ -22,6 +23,17 @@ const upload = multer({
 
 const router = express.Router();
 router
+  .get("/apprenant", ExamenCentreController.listStudentExams)
+  .get("/centres/mes", ExamenCentreController.listMyCentres)
+  .get("/centres", ExamenCentreController.listCentres)
+  .post("/centres", ExamenCentreController.createCentre)
+  .put("/centres/:centreId", ExamenCentreController.updateCentre)
+  .get("/sessions/centre", ExamenCentreController.listAssignedSessions)
+  .get("/sessions", ExamenCentreController.listSessions)
+  .post("/sessions", ExamenCentreController.createSession)
+  .post("/sessions/:sessionId/reservations", ExamenCentreController.reserve)
+  .delete("/examens/:examenId/reservation", ExamenCentreController.cancelReservation)
+  .post("/reservations/:reservationId/presence", ExamenCentreController.markAttendance)
   .get("/", [Authenticate], ExamenController.getAll)
   .post("/", [Authenticate, upload.single("sujet")], ExamenController.create)
   .get("/:id/sujet", [Authenticate], ExamenController.sujet)

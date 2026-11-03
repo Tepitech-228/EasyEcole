@@ -38,7 +38,7 @@ router
  *       201:
  *         description: Parcours créé
  */
-    .post('/', [AuthInstitution, CheckPermission('action.inscription.parcours.creer')], ParcoursController.createParcours)
+    .post('/', [AuthInstitution, CheckPermission('action.inscription.parcours.creer'), cache(300)], ParcoursController.createParcours)
 /**
  * @openapi
  * /inscription/parcours/arborescence:
@@ -90,7 +90,7 @@ router
  *       404:
  *         description: Parcours non trouvé
  */
-    .put('/:id', [AuthInstitution, CheckPermission('action.inscription.parcours.modifier')], ParcoursController.updateParcours)
+    .put('/:id', [AuthInstitution, CheckPermission('action.inscription.parcours.modifier'), cache(300)], ParcoursController.updateParcours)
 /**
  * @openapi
  * /inscription/parcours/{id}:
@@ -105,7 +105,7 @@ router
  *       404:
  *         description: Parcours non trouvé
  */
-    .delete('/:id', [AuthInstitution, CheckPermission('action.inscription.parcours.supprimer')], ParcoursController.deleteParcours)
+    .delete('/:id', [AuthInstitution, CheckPermission('action.inscription.parcours.supprimer'), cache(300)], ParcoursController.deleteParcours)
 /**
  * @openapi
  * /inscription/parcours/statistics/count:

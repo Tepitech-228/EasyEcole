@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { shareReplay } from 'rxjs/operators';
+import { shareReplay, tap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { Parcours } from '../models/Parcours.model';
 
@@ -54,10 +54,14 @@ export class ParcoursService {
   }
 
   create(parcours: Parcours): Observable<Parcours> {
-    return this.httpClient.post<Parcours>(`${this.SERVICE_URL}`, parcours)
+    return this.httpClient.post<Parcours>(`${this.SERVICE_URL}`, parcours).pipe(
+      tap(() => this.invalidate())
+    )
   }
 
   delete(id: string): Observable<any> {
-    return this.httpClient.delete(`${this.SERVICE_URL}/${id}`)
+    return this.httpClient.delete(`${this.SERVICE_URL}/${id}`).pipe(
+      tap(() => this.invalidate())
+    )
   }
 }

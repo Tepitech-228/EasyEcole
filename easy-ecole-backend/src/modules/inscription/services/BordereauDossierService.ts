@@ -68,6 +68,92 @@ const getParcoursFinal = <T extends { choixFinal?: any; parcoursId?: number | st
 
 export class BordereauDossierService {
 
+    private static async finaliserDossierElearning(
+        demande: DemandeInscription,
+        req: any,
+        transaction: Transaction,
+    ): Promise<{ matricule: string }> {
+        const utilisateurId = Number(demande.utilisateurId);
+        const siteId = Number(demande.etablissementId || req.etablissementId || 0);
+        if (!Number.isSafeInteger(siteId) || siteId <= 0) {
+            throw new Error("Un site d'inscription est requis pour finaliser le dossier e-learning.");
+        }
+
+        const etablissement = await Etablissement.findByPk(siteId, { transaction });
+        if (!etablissement) throw new Error("Le site d'inscription e-learning est introuvable.");
+        const anneeLibelle = demande.session?.anneeAcademique?.libelle || new Date().getFullYear().toString();
+        const anneeCode = anneeLibelle.replace(/[^0-9]/g, "").slice(-2) || String(new Date().getFullYear()).slice(-2);
+        const existingFinal = typeof demande.matricule === "string"
+            && /^[0-9]+-EL1J-[0-9]{2}-[A-Z]+$/.test(demande.matricule);
+        const matricule = existingFinal
+            ? demande.matricule
+            : `${await DossierEtudiant.prochainOrdreMatricule(transaction)}-EL1J-${anneeCode}-${IDGenerator.deriveSiteCode(etablissement)}`;
+
+        await demande.update({ matricule, dateValidation: new Date() }, { transaction });
+        for (const paiement of (demande.paiementsInscription || [])) {
+            if (paiement.matriculeInscription && paiement.matriculeInscription !== matricule) {
+                await paiement.update({ matriculeInscription: matricule }, { transaction });
+            }
+        }
+
+        let dossier = await DossierEtudiant.findOne({
+            where: { utilisateurId },
+            order: [["id", "DESC"]],
+            transaction,
+        });
+        const dossierValues = {
+            matricule,
+            etablissementId: siteId,
+            codeQR: JSON.stringify({ matricule, utilisateurId }),
+            statut: "actif" as const,
+        };
+        if (dossier) {
+            if (dossier.etablissementId && Number(dossier.etablissementId) !== siteId) {
+                throw new Error("Le dossier étudiant appartient à un autre site.");
+            }
+            await dossier.update(dossierValues, { transaction });
+        } else {
+            dossier = await DossierEtudiant.create({
+                utilisateurId,
+                ...dossierValues,
+                statut: "actif",
+                fraisScolarite: 0,
+                modePaiement: "mensuel",
+                nbMensualites: 10,
+                demarrageParcours: demande.createdAt || new Date(),
+            }, { transaction });
+        }
+
+        try {
+            const user = demande.utilisateur as any;
+            const apprenant = user?.apprenant;
+            const cartePath = await GenerateurCarteService.generer({
+                nom: user?.nom || "",
+                prenom: user?.prenoms || "",
+                matricule,
+                dateNaissance: String(apprenant?.dateNaissance || ""),
+                photo: apprenant?.photo || dossier.photo || undefined,
+                classe: "E-learning",
+                filiere: "E-learning",
+                anneeAcademique: anneeLibelle,
+                email: user?.email || "",
+                utilisateurId,
+            });
+            await dossier.update({ cartePath, carteGeneree: true }, { transaction });
+        } catch (error) {
+            console.error("Erreur génération carte étudiant e-learning:", error);
+        }
+
+        if (demande.utilisateur) {
+            EmailSender.getInstance().sendQuitusEtMatricule(
+                demande.utilisateur.identifiant,
+                demande.utilisateur.email,
+                matricule,
+            ).catch((error: any) => console.error("Erreur envoi matricule e-learning:", error));
+        }
+        return { matricule };
+    }
+
     static async creerDossierEtudiantDepuisBordereau(
         bordereau: Bordereau,
         req: any,
@@ -98,14 +184,16 @@ export class BordereauDossierService {
         if (!demande.utilisateur?.apprenant) {
             throw new Error("Informations personnelles incomplètes")
         }
-        if (!demande.parcoursChoisis || demande.parcoursChoisis.length === 0) {
+        const parcoursElearning = demande.modeFormation === 'en_ligne'
+        const pedagogieDifferee = options?.pedagogieDifferee === true || parcoursElearning
+        if ((!demande.parcoursChoisis || demande.parcoursChoisis.length === 0) && !parcoursElearning) {
             throw new Error("Aucun parcours choisi")
         }
 
         // Période de cours + admission : vérifiés/posés à la FINALISATION (comité)
         // lorsque la pédagogie est différée.
         let typeCoursPeriode: 'jour' | 'soir' = 'jour'
-        if (!options?.pedagogieDifferee) {
+        if (!pedagogieDifferee) {
             const periodeEtudiant = demande.modeFormation === 'en_ligne'
                 ? 'en_ligne'
                 : demande.utilisateur?.apprenant?.periode
@@ -136,7 +224,7 @@ export class BordereauDossierService {
                 }
             }
         }
-        if (!hasChoixFinal(demande.parcoursChoisis)) {
+        if (!hasChoixFinal(demande.parcoursChoisis) && !parcoursElearning) {
             throw new Error("Aucun parcours final sélectionné")
         }
         const dossiersRequis = demande.session?.dossiersInscription || []
@@ -183,7 +271,7 @@ export class BordereauDossierService {
         // Classe bannie du matricule : on ne cherche plus la classe, uniquement la filière
         const classeDerivee: any = null
 
-        const etablissementId = parcoursData?.etablissementId
+        const etablissementId = parcoursData?.etablissementId ?? (parcoursElearning ? (demande.etablissementId ?? bordereau.etablissementId) : null)
         if (etablissementId && bordereau.etablissementId && etablissementId !== bordereau.etablissementId) {
             throw new Error("Le bordereau et le parcours ne relèvent pas du même site")
         }
@@ -198,7 +286,7 @@ export class BordereauDossierService {
             && MATRICULE_FINAL_REGEX.test(matriculeExistant)
 
         let matricule: string
-        if (options?.pedagogieDifferee) {
+        if (pedagogieDifferee) {
             // Pédagogie différée : le matricule FINAL sera généré par la validation
             // du comité (finaliserAffectationPedagogique). On utilise ici le
             // matricule temporaire de la demande (NOT NULL) pour satisfaire les FK.
@@ -224,16 +312,16 @@ export class BordereauDossierService {
             await paiement.update({ matriculeInscription: matricule }, { transaction })
         }
 
-        const niveauEtudeId = parcoursData?.niveauEtudeId ?? classeDerivee?.niveauEtudeId
+        const niveauEtudeId = parcoursData?.niveauEtudeId ?? classeDerivee?.niveauEtudeId ?? (parcoursElearning ? demande.session?.niveauEtudeId : null)
         const niveauEtude = niveauEtudeId
             ? await NiveauEtude.findByPk(niveauEtudeId, { transaction })
             : null
-        const parcoursNom = parcoursData?.type || parcoursData?.titre || 'PARCOURS'
+        const parcoursNom = parcoursElearning ? 'E-LEARNING' : (parcoursData?.type || parcoursData?.titre || 'PARCOURS')
         const niveauNom = niveauEtude?.libelle || 'Niveau'
         const classeNom = classeDerivee?.libelle ?? 'À affecter'
         const anneeId = demande.session?.anneeAcademiqueId
 
-        if (!options?.pedagogieDifferee) {
+        if (!pedagogieDifferee) {
             try {
                 DossierStorageService.creerDossierEtudiant(
                     anneeLibelle,
@@ -263,7 +351,7 @@ export class BordereauDossierService {
         }
 
         let savedCursusId: number | null = null
-        if (!options?.pedagogieDifferee) {
+        if (!pedagogieDifferee) {
             const [savedCursus] = await CursusApprenant.findOrCreate({
                 where: { demandeInscriptionId: demande.id },
                 defaults: {
@@ -297,7 +385,7 @@ export class BordereauDossierService {
             dossier.etablissementId = siteDossierId
             dossier.matricule = matricule
             dossier.codeQR = codeQR
-            dossier.statut = 'actif'
+            dossier.statut = pedagogieDifferee && parcoursElearning ? 'suspendu' : 'actif'
             dossier.fraisScolarite = fraisTotal
             dossier.modePaiement = 'mensuel'
             dossier.nbMensualites = 10
@@ -330,7 +418,7 @@ export class BordereauDossierService {
             )
         }
 
-        if (!options?.pedagogieDifferee) {
+        if (!pedagogieDifferee) {
             try {
                 const user = demande.utilisateur as any
                 const apprenant = user?.apprenant
@@ -371,7 +459,7 @@ export class BordereauDossierService {
             }
         }
 
-        if (!options?.pedagogieDifferee) {
+        if (!pedagogieDifferee) {
             const coursChoisisFinal = await DemandeInscriptionCours.findAll({
                 where: { demandeInscriptionId: demande.id }
             })
@@ -394,7 +482,7 @@ export class BordereauDossierService {
         }
 
         const fraisScolariteSession = (demande.session?.fraisScolarite || []).find(f => f.actif) ?? null
-        if (fraisScolariteSession) {
+        if (fraisScolariteSession && !parcoursElearning) {
             await Echeance.destroy({
                 where: { dossierEtudiantId: dossier.id, type: 'scolarite', statut: ['impaye', 'en_retard'] },
                 transaction
@@ -495,7 +583,7 @@ export class BordereauDossierService {
             }
         }
 
-        if (bordereau.fichier) {
+        if (bordereau.fichier && !parcoursElearning) {
             try {
                 await ArchiveGedService.archiverBordereau(
                     Number(bordereau.id),
@@ -566,7 +654,7 @@ export class BordereauDossierService {
             console.error("Erreur déplacement fichiers:", moveError);
         }
 
-        if (!options?.pedagogieDifferee && demande.utilisateur) {
+        if (!pedagogieDifferee && demande.utilisateur) {
             EmailSender.getInstance().sendQuitusEtMatricule(
                 demande.utilisateur.identifiant,
                 demande.utilisateur.email,
@@ -631,6 +719,10 @@ export class BordereauDossierService {
                 utilisateurId: (req as any).utilisateurId,
                 demandeInscriptionId: demande.id
             }, { transaction })
+        }
+
+        if (demande.modeFormation === "en_ligne") {
+            return this.finaliserDossierElearning(demande, req, transaction);
         }
 
         const parcoursFinal = getParcoursFinal(demande.parcoursChoisis)

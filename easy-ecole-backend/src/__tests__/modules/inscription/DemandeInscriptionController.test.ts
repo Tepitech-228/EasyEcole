@@ -26,6 +26,18 @@ jest.mock('../../../modules/inscription/models/Session', () => ({
   Session: { findOne: jest.fn() },
 }))
 
+jest.mock('../../../modules/inscription/models/ParcoursChoisi', () => ({
+  ParcoursChoisi: { findOne: jest.fn() },
+}))
+
+jest.mock('../../../modules/inscription/models/DossierInscription', () => ({
+  DossierInscription: { findAll: jest.fn() },
+}))
+
+jest.mock('../../../modules/inscription/models/DemandeInscriptionDossier', () => ({
+  DemandeInscriptionDossier: { findAll: jest.fn() },
+}))
+
 jest.mock('../../../modules/auth/models/SiteUtilisateur', () => ({
   SiteUtilisateur: { findAll: jest.fn(), findOrCreate: jest.fn() },
 }))
@@ -50,6 +62,9 @@ const { DemandeInscription } = require('../../../modules/inscription/models/Dema
 const { Session } = require('../../../modules/inscription/models/Session')
 const { SiteUtilisateur } = require('../../../modules/auth/models/SiteUtilisateur')
 const { Etablissement } = require('../../../modules/etablissement/models/Etablissement')
+const { ParcoursChoisi } = require('../../../modules/inscription/models/ParcoursChoisi')
+const { DossierInscription } = require('../../../modules/inscription/models/DossierInscription')
+const { DemandeInscriptionDossier } = require('../../../modules/inscription/models/DemandeInscriptionDossier')
 
 import Ctrl from '../../../modules/inscription/controllers/DemandeInscriptionController'
 
@@ -115,6 +130,59 @@ describe('DemandeInscriptionController.getDemandeInscription', () => {
       expect.objectContaining({ where: { id: '10', etablissementId: 4 } })
     )
     expect(res.status).toHaveBeenCalledWith(404)
+  })
+})
+
+describe('DemandeInscriptionController.soumettreDemande', () => {
+  beforeEach(() => {
+    ;(ParcoursChoisi.findOne as jest.Mock).mockResolvedValue(null)
+    ;(DossierInscription.findAll as jest.Mock).mockResolvedValue([])
+    ;(DemandeInscriptionDossier.findAll as jest.Mock).mockResolvedValue([])
+  })
+
+  it('lets an e-learning applicant submit without a presentiel pathway', async () => {
+    const demande = {
+      id: 10,
+      utilisateurId: 7,
+      sessionId: 3,
+      modeFormation: 'en_ligne',
+      statutPipeline: null,
+      update: jest.fn().mockResolvedValue(undefined),
+    }
+    ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue(demande)
+    const req = mockRequest({
+      utilisateurRole: 'apprenant',
+      utilisateurId: 7,
+      params: { id: '10' },
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.soumettreDemande(req, res)
+
+    expect(demande.update).toHaveBeenCalledWith(expect.objectContaining({ statutPipeline: 'soumis' }))
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('still requires a pathway for presentiel applications', async () => {
+    ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue({
+      id: 10,
+      utilisateurId: 7,
+      sessionId: 3,
+      modeFormation: 'presentiel',
+      statutPipeline: null,
+      update: jest.fn(),
+    })
+    const req = mockRequest({
+      utilisateurRole: 'apprenant',
+      utilisateurId: 7,
+      params: { id: '10' },
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.soumettreDemande(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(ParcoursChoisi.findOne).toHaveBeenCalled()
   })
 })
 

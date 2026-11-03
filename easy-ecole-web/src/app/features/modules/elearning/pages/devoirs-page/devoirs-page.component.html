@@ -27,6 +27,9 @@
           <p class="devoir-card__desc">{{ devoir.description }}</p>
           <div class="devoir-card__meta">
             <span *ngIf="devoir.cours?.titre" class="devoir-card__tag">{{ devoir.cours.titre }}</span>
+            <span *ngIf="devoir.semestre !== null && devoir.semestre !== undefined" class="devoir-card__tag">
+              {{ devoir.semestre === 0 ? 'Annuel' : 'Semestre ' + devoir.semestre }}
+            </span>
             <span class="devoir-card__tag">Échéance : {{ devoir.dateLimite | date:'dd/MM/yyyy' }}</span>
             <span *ngIf="devoir.soumission?.note !== null && devoir.soumission?.note !== undefined" class="devoir-card__tag devoir-card__tag--score">Note : {{ devoir.soumission.note }}/20</span>
           </div>
@@ -68,13 +71,7 @@
         <label class="form-label">Date limite</label>
         <input [(ngModel)]="createForm.dateLimite" type="date" class="form-input">
       </div>
-      <div class="form-group">
-        <label class="form-label">Semestre</label>
-        <select [(ngModel)]="createForm.semestre" class="form-select">
-          <option [ngValue]="1">Semestre 1</option>
-          <option [ngValue]="2">Semestre 2</option>
-        </select>
-      </div>
+      <p class="form-help">Le semestre et la fréquence sont déterminés par l’UE. Le devoir compte pour 40 % de la note du semestre.</p>
       <div class="form-group">
         <label class="form-label">Sujet PDF</label>
         <input type="file" accept="application/pdf,.pdf" (change)="onFileSelected($event)" class="form-file">

@@ -24,6 +24,9 @@ import { Audit } from "./Audit";
 import { AnneeElearning } from "./AnneeElearning";
 import { Examen } from "./Examen";
 import { NoteExamen } from "./NoteExamen";
+import { CentreExamen } from "./CentreExamen";
+import { SessionExamen } from "./SessionExamen";
+import { ReservationExamen } from "./ReservationExamen";
 
 CoursEnLigne.belongsTo(Cours, { as: 'coursPedagogique', foreignKey: 'coursId', constraints: false });
 Cours.hasMany(CoursEnLigne, { foreignKey: 'coursId', as: 'coursEnLigne', constraints: false });
@@ -73,6 +76,18 @@ CoursEnLigne.hasMany(Examen, { foreignKey: 'coursId', as: 'examens' })
 Examen.belongsTo(CoursEnLigne, { as: 'cours', foreignKey: 'coursId' })
 Examen.hasMany(NoteExamen, { foreignKey: 'examenId', as: 'notes' })
 NoteExamen.belongsTo(Examen, { foreignKey: 'examenId', as: 'examen' })
+Utilisateur.hasMany(CentreExamen, { foreignKey: 'responsableId', as: 'centresExamensGeres' })
+CentreExamen.belongsTo(Utilisateur, { foreignKey: 'responsableId', as: 'responsable' })
+CentreExamen.hasMany(SessionExamen, { foreignKey: 'centreId', as: 'sessions' })
+SessionExamen.belongsTo(CentreExamen, { foreignKey: 'centreId', as: 'centre' })
+Examen.hasMany(SessionExamen, { foreignKey: 'examenId', as: 'sessions' })
+SessionExamen.belongsTo(Examen, { foreignKey: 'examenId', as: 'examen' })
+SessionExamen.hasMany(ReservationExamen, { foreignKey: 'sessionId', as: 'reservations' })
+ReservationExamen.belongsTo(SessionExamen, { foreignKey: 'sessionId', as: 'session' })
+Examen.hasMany(ReservationExamen, { foreignKey: 'examenId', as: 'reservations' })
+ReservationExamen.belongsTo(Examen, { foreignKey: 'examenId', as: 'examen' })
+Utilisateur.hasMany(ReservationExamen, { foreignKey: 'utilisateurId', as: 'reservationsExamens' })
+ReservationExamen.belongsTo(Utilisateur, { foreignKey: 'utilisateurId', as: 'utilisateur' })
 Utilisateur.hasMany(Devoir, { foreignKey: 'enseignantId', as: 'devoirs' })
 Devoir.belongsTo(Utilisateur, { as: 'enseignant', foreignKey: 'enseignantId' })
 

@@ -100,7 +100,7 @@ export default class DemandeInscriptionController {
                     attributes: ['dossierId']
                 })
             ]);
-            if (!parcoursChoisi) {
+            if (!parcoursChoisi && demande.modeFormation !== 'en_ligne') {
                 return res.status(400).json({ success: false, message: "Veuillez d'abord choisir une filière." });
             }
 

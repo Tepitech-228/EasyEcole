@@ -23,7 +23,7 @@ export interface ElearningCourse {
   coutUnitaire: number | null;
   statut: string;
   selection?: { statut: string; coutFige: number } | null;
-  ue?: { id: number; code: string; intitule: string } | null;
+  ue?: { id: number; code: string; intitule: string; semestre?: string | null } | null;
   professeurResponsable?: { id: number; nom: string; prenoms: string } | null;
 }
 

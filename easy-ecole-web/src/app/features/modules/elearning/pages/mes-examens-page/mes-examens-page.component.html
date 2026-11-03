@@ -1,0 +1,53 @@
+<section class="max-w-6xl mx-auto px-4 py-8">
+  <app-header-title title="Mes examens" subtitle="Consultez les UE à passer et réservez votre séance"></app-header-title>
+
+  <div *ngIf="errorMessage" class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{{ errorMessage }}</div>
+  <div *ngIf="successMessage" class="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">{{ successMessage }}</div>
+
+  <div *ngIf="loading" class="rounded-xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-500">Chargement de vos examens…</div>
+
+  <div *ngIf="!loading && examens.length === 0" class="rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center text-sm text-gray-500">
+    Aucun examen disponible pour l’instant.
+  </div>
+
+  <div *ngIf="!loading && examens.length > 0" class="space-y-5">
+    <article *ngFor="let examen of examens" class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+      <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wide text-indigo-600">{{ examen.cours?.code || examen.code }}</p>
+          <h2 class="text-xl font-semibold text-gray-900">{{ examen.cours?.titre || examen.titre }}</h2>
+          <p class="mt-1 text-sm text-gray-500">{{ examen.semestre === 'annuel' ? 'Examen annuel' : 'Examen ' + examen.semestre }}</p>
+        </div>
+        <div *ngIf="currentReservation(examen) as reservation" class="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
+          Réservé le {{ formatDate(reservation.createdAt) }}
+        </div>
+      </div>
+
+      <div *ngIf="examen.sessionsDisponibles?.length" class="mt-5 grid gap-3 md:grid-cols-2">
+        <div *ngFor="let session of examen.sessionsDisponibles" class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <p class="text-sm font-semibold text-gray-900">{{ session.centre?.nom || 'Centre d’examen' }}</p>
+              <p class="text-xs text-gray-500">{{ session.centre?.ville || '' }} · {{ session.centre?.adresse || 'Adresse à confirmer' }}</p>
+            </div>
+            <span class="rounded-full bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700">{{ session.placesDisponibles }} place(s)</span>
+          </div>
+          <p class="mt-3 text-sm text-gray-700">{{ formatDate(session.dateExamen) }}</p>
+          <button type="button" (click)="reserveSession(session)" class="mt-4 w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+            Réserver cette séance
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="!examen.sessionsDisponibles?.length" class="mt-5 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-500">
+        Aucune séance disponible pour le moment.
+      </div>
+
+      <div *ngIf="currentReservation(examen)" class="mt-5 flex justify-end">
+        <button type="button" (click)="cancelReservation(examen)" class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-100">
+          Annuler ma réservation
+        </button>
+      </div>
+    </article>
+  </div>
+</section>

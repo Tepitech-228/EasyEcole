@@ -38,7 +38,7 @@ router
  *       201:
  *         description: Session créée
  */
-    .post('/', [AuthInstitution, CheckPermission('action.inscription.session.creer')], SessionController.createSession)
+    .post('/', [AuthInstitution, CheckPermission('action.inscription.session.creer'), cache(300)], SessionController.createSession)
 /**
  * @openapi
  * /inscription/sessions/statistics/count:
@@ -94,7 +94,7 @@ router
  *       404:
  *         description: Session non trouvée
  */
-    .put('/:id', [AuthInstitution, CheckPermission('action.inscription.session.modifier')], SessionController.updateSession)
+    .put('/:id', [AuthInstitution, CheckPermission('action.inscription.session.modifier'), cache(300)], SessionController.updateSession)
 /**
  * @openapi
  * /inscription/sessions/{id}:
@@ -109,6 +109,6 @@ router
  *       404:
  *         description: Session non trouvée
  */
-    .delete('/:id', [AuthInstitution, CheckPermission('action.inscription.session.supprimer')], SessionController.deleteSession)
+    .delete('/:id', [AuthInstitution, CheckPermission('action.inscription.session.supprimer'), cache(300)], SessionController.deleteSession)
 
 export default router

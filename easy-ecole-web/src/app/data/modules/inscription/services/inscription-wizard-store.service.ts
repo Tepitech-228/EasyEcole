@@ -27,6 +27,7 @@ interface WizardEtatPersiste {
   etape: number;
   sessionIdFromRoute?: string;
   niveauEtudeIdFromRoute?: string;
+  modeFormation?: 'presentiel' | 'en_ligne';
   typeChoisi: string;
   gradeChoisi: string;
   filiereChoisie: { id: string; titre: string; type?: string; grade?: string } | null;
@@ -50,6 +51,7 @@ export interface WizardEtat {
   etape: number;
   sessionIdFromRoute?: string;
   niveauEtudeIdFromRoute?: string;
+  modeFormation?: 'presentiel' | 'en_ligne';
   typeChoisi: string;
   gradeChoisi: string;
   filiereChoisie?: { id: string; titre: string; type?: string; grade?: string } | null;
@@ -224,6 +226,7 @@ function serialiser(etat: WizardEtat, ocrPreRemplissage: OcrPreRemplissage | nul
     etape: etat.etape,
     sessionIdFromRoute: etat.sessionIdFromRoute,
     niveauEtudeIdFromRoute: etat.niveauEtudeIdFromRoute,
+    modeFormation: etat.modeFormation || 'presentiel',
     typeChoisi: etat.typeChoisi,
     gradeChoisi: etat.gradeChoisi,
     filiereChoisie: etat.filiereChoisie ?? null,
@@ -257,6 +260,7 @@ function deserialiser(persistee: WizardEtatPersiste): WizardEtat {
     etape: persistee.etape,
     sessionIdFromRoute: persistee.sessionIdFromRoute,
     niveauEtudeIdFromRoute: persistee.niveauEtudeIdFromRoute,
+    modeFormation: persistee.modeFormation === 'en_ligne' ? 'en_ligne' : 'presentiel',
     typeChoisi: persistee.typeChoisi || '',
     gradeChoisi: persistee.gradeChoisi || '',
     filiereChoisie: persistee.filiereChoisie,

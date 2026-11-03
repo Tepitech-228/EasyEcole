@@ -53,6 +53,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   submitting = false
   errorMessage = ''
   successMessage = ''
+  modeFormation: 'presentiel' | 'en_ligne' = 'presentiel'
 
   // Arborescence PARCOURS → GRADE → FILIÈRE
   arborescence: Array<{ type: string; grades: Array<{ grade: string; filieres: FiliereSelection[] }> }> = []
@@ -190,6 +191,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   private restaurerEtat(etat: any): void {
     this.sessionIdFromRoute = etat.sessionIdFromRoute
     this.niveauEtudeIdFromRoute = etat.niveauEtudeIdFromRoute
+    this.modeFormation = etat.modeFormation === 'en_ligne' ? 'en_ligne' : 'presentiel'
     this.typeChoisi = etat.typeChoisi || ''
     this.gradeChoisi = etat.gradeChoisi || ''
     this.filiereChoisie = etat.filiereChoisie
@@ -266,6 +268,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
           this.errorMessage = 'Demande introuvable.'
           return
         }
+        this.modeFormation = demande.modeFormation === 'en_ligne' ? 'en_ligne' : 'presentiel'
         // Pièces marquées « à re-téléverser » par le comité (flag correctionDemandee).
         const piecesCorrection = new Set<string>(
           (Array.isArray(demande.dossiersDemande) ? demande.dossiersDemande : [])
@@ -446,6 +449,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
       etape: this.etape,
       sessionIdFromRoute: this.sessionIdFromRoute,
       niveauEtudeIdFromRoute: this.niveauEtudeIdFromRoute,
+      modeFormation: this.modeFormation,
       typeChoisi: this.typeChoisi,
       gradeChoisi: this.gradeChoisi,
       filiereChoisie: this.filiereChoisie ?? null,
@@ -535,7 +539,14 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   }
 
   get phase1Complete(): boolean {
-    return !!this.typeChoisi && !!this.gradeChoisi && !!this.filiereChoisie
+    return this.modeFormation === 'en_ligne'
+      || (!!this.typeChoisi && !!this.gradeChoisi && !!this.filiereChoisie)
+  }
+
+  changerModeFormation(mode: 'presentiel' | 'en_ligne'): void {
+    this.modeFormation = mode
+    this.errorMessage = ''
+    this.sauvegarder()
   }
 
   choisirType(type: string): void {
@@ -1118,9 +1129,11 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.submitting = true
     this.errorMessage = ''
 
-    if (!this.sessionSelectionneeId || !this.filiereChoisie) {
+    if (!this.sessionSelectionneeId || (this.modeFormation === 'presentiel' && !this.filiereChoisie)) {
       this.submitting = false
-      this.errorMessage = 'Session ou filière manquante.'
+      this.errorMessage = this.modeFormation === 'en_ligne'
+        ? 'Veuillez choisir une session d’inscription.'
+        : 'Session ou filière manquante.'
       return
     }
 
@@ -1137,6 +1150,13 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
         this.finaliserFichiers(demandeExistanteId)
         return
       }
+      if (this.modeFormation === 'en_ligne') {
+        this.demandeInscriptionService.updateModeFormation(demandeExistanteId, this.modeFormation).subscribe({
+          next: () => this.finaliserFichiers(demandeExistanteId),
+          error: err => this.echouerSoumission(err?.error?.message || 'Le mode e-learning de la demande n’a pas pu être enregistré.')
+        })
+        return
+      }
       this.rattacherParcoursEtFinaliser(demandeExistanteId)
       return
     }
@@ -1146,10 +1166,13 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     demande.etablissementId = Number(this.infos.etablissementId)
     demande.dateDemande = new Date()
     demande.typeDemande = 'inscription'
+    demande.modeFormation = this.modeFormation
 
     this.demandeInscriptionService.create(demande).subscribe({
       next: (demandeCreee) => {
-        this.rattacherParcoursEtFinaliser(String(demandeCreee.id || (demandeCreee as any).id))
+        const demandeId = String(demandeCreee.id || (demandeCreee as any).id)
+        if (this.modeFormation === 'en_ligne') this.finaliserFichiers(demandeId)
+        else this.rattacherParcoursEtFinaliser(demandeId)
       },
       error: (err) => {
         this.submitting = false
@@ -1213,6 +1236,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.motifCorrection = null
     this.errorMessage = ''
     this.successMessage = ''
+    this.modeFormation = 'presentiel'
   }
 
   private finaliserSoumission(demandeId: string, statutPipeline?: string): void {

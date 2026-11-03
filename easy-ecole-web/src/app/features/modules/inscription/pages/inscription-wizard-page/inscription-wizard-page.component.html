@@ -54,8 +54,26 @@
 
   <!-- ============================================================ PHASE 1 -->
   <div *ngIf="etape === 1" class="wizard-step">
-    <h2>Choix de la filière</h2>
-    <p class="muted">Étape 1 : sélectionnez la filière correspondant à votre session d'inscription.</p>
+    <h2>Mode de formation</h2>
+    <p class="muted">Choisissez le parcours adapté à votre inscription.</p>
+
+    <fieldset class="field-wrapper">
+      <legend>Formation</legend>
+      <label class="mr-4">
+        <input type="radio" name="modeFormation" value="presentiel" [checked]="modeFormation === 'presentiel'"
+          (change)="changerModeFormation('presentiel')">
+        Présentiel
+      </label>
+      <label>
+        <input type="radio" name="modeFormation" value="en_ligne" [checked]="modeFormation === 'en_ligne'"
+          (change)="changerModeFormation('en_ligne')">
+        En ligne
+      </label>
+    </fieldset>
+
+    <ng-container *ngIf="modeFormation === 'presentiel'">
+    <h3>Choix de la filière</h3>
+    <p class="muted">Sélectionnez la filière correspondant à votre session d'inscription.</p>
 
     <!-- Dropdown filière : select natif stylé (sélection fiable) -->
     <div class="field-wrapper mt-3">
@@ -85,6 +103,11 @@
         <strong>{{ filiereChoisie.titre }}</strong><br/>
         <small>{{ typeChoisi }}{{ gradeChoisi ? ' — ' + gradeChoisi : '' }}</small>
       </div>
+    </div>
+    </ng-container>
+
+    <div *ngIf="modeFormation === 'en_ligne'" class="alert alert-info mt-3" role="status">
+      Le parcours e-learning ne passe pas par le pôle pédagogique présentiel. Après le dépôt du dossier, la validation du comité et le recouvrement, vous choisirez vos UE en ligne.
     </div>
 
     <div class="mt-4">
@@ -327,9 +350,10 @@
 
     <table class="recap-table mt-3">
       <tbody>
-        <tr><th>Parcours</th><td>{{ typeChoisi }}</td></tr>
-        <tr><th>Grade</th><td>{{ gradeChoisi }}</td></tr>
-        <tr><th>Filière</th><td>{{ filiereChoisie?.titre }}</td></tr>
+        <tr><th>Mode de formation</th><td>{{ modeFormation === 'en_ligne' ? 'E-learning' : 'Présentiel' }}</td></tr>
+        <tr *ngIf="modeFormation === 'presentiel'"><th>Parcours</th><td>{{ typeChoisi }}</td></tr>
+        <tr *ngIf="modeFormation === 'presentiel'"><th>Grade</th><td>{{ gradeChoisi }}</td></tr>
+        <tr *ngIf="modeFormation === 'presentiel'"><th>Filière</th><td>{{ filiereChoisie?.titre }}</td></tr>
         <tr><th>Session</th><td>{{ sessionRecapLabel }}</td></tr>
         <tr>
           <th>Pièces déposées</th>

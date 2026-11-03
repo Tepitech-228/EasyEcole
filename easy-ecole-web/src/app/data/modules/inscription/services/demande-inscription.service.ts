@@ -46,6 +46,13 @@ export class DemandeInscriptionService {
     )
   }
 
+  updateModeFormation(id: string, modeFormation: 'presentiel' | 'en_ligne'): Observable<{ success: boolean; modeFormation: 'presentiel' | 'en_ligne' }> {
+    return this.httpClient.put<{ success: boolean; modeFormation: 'presentiel' | 'en_ligne' }>(
+      `${this.SERVICE_URL}/${id}/mode-formation`,
+      { modeFormation }
+    )
+  }
+
   updateHikvisionConsent(id: string, consentement: boolean): Observable<{ success: boolean }> {
     return this.httpClient.put<{ success: boolean }>(
       `${this.SERVICE_URL}/${id}/consentement-hikvision`,
