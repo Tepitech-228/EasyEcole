@@ -69,6 +69,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   sitesLoading = false
   sitesError = ''
   siteVerrouille = false
+  private siteIdConfirme: number | null = null
 
   // Filtre transmis par la page de choix de session
   sessionIdFromRoute?: string
@@ -95,11 +96,12 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     nom: string; prenoms: string; dateNaissance: string; lieuNaissance: string;
     nationalite: string; contact: string; email: string; adresse: string;
     numeroPiece: string; sexe: string; typePieceIdentite: string;
+    matriculeEtudiant: string;
     etablissementId?: string;
   } = {
     nom: '', prenoms: '', dateNaissance: '', lieuNaissance: '',
     nationalite: '', contact: '', email: '', adresse: '',
-    numeroPiece: '', sexe: '', typePieceIdentite: '', etablissementId: ''
+    numeroPiece: '', sexe: '', typePieceIdentite: '', matriculeEtudiant: '', etablissementId: ''
   }
 
   // Étape courante : 1..5
@@ -195,7 +197,14 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.documentsRequis = etat.documentsRequis || []
     this.documents = etat.documents || {}
     this.bordereau = etat.bordereau || null
-    this.infos = Object.assign({}, etat.infos)
+    this.infos = {
+      nom: '', prenoms: '', dateNaissance: '', lieuNaissance: '',
+      nationalite: '', contact: '', email: '', adresse: '',
+      numeroPiece: '', sexe: '', typePieceIdentite: '',
+      etablissementId: '',
+      ...(etat.infos || {}),
+      matriculeEtudiant: etat.infos?.matriculeEtudiant || ''
+    }
 
     // Pièces perdues lors d'un rechargement : leur contenu n'est pas
     // restaurable, on mémorise leur nom pour l'afficher et on laisse
@@ -204,30 +213,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.documentsAReposer = etat.documentsAReposer || {}
     this.bordereauAReposer = etat.bordereauAReposer || null
 
-    // Au retour de la page profil, on récupère les infos réellement ENREGISTRÉES
-    // en base (le store ne contient que la saisie locale du wizard).
-    // On ne surcharge pas les valeurs déjà présentes dans le wizard.
-    this.apprenantService.get().subscribe({
-      next: (a: any) => {
-        if (!a) return
-        const dateNaissance = this.infos.dateNaissance || (a.dateNaissance ? new Date(a.dateNaissance).toISOString().split('T')[0] : '')
-        this.infos = {
-          ...this.infos,
-          nom: this.infos.nom || a.utilisateur?.nom || '',
-          prenoms: this.infos.prenoms || a.utilisateur?.prenoms || '',
-          dateNaissance,
-          lieuNaissance: this.infos.lieuNaissance || a.lieuNaissance || '',
-          nationalite: this.infos.nationalite || a.identite?.nationalite || '',
-          contact: this.infos.contact || a.utilisateur?.contact || '',
-          email: this.infos.email || a.utilisateur?.email || '',
-          adresse: this.infos.adresse || a.adresse?.ville || '',
-          numeroPiece: this.infos.numeroPiece || a.numeroPiece || '',
-          sexe: this.infos.sexe || a.sexe || '',
-          typePieceIdentite: this.infos.typePieceIdentite || a.typePieceIdentite || ''
-        }
-      },
-      error: () => undefined
-    })
+    this.chargerInfosPersonnellesDepuisProfil()
 
     // Recharge l'arborescence pour disposer des labels (filière, grade) au récap.
     this.loadArborescence()
@@ -302,29 +288,6 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
           this.bordereauAReposer = null
           this.errorMessage = ''
           this.successMessage = ''
-          // Le rejet/correction a déjà été notifié par e-mail. On récupère
-          // l'essentiel des informations depuis le profil enregistré.
-          this.apprenantService.get().subscribe({
-            next: (a: any) => {
-              if (a) {
-                const dateNaissance = a.dateNaissance ? new Date(a.dateNaissance).toISOString().split('T')[0] : ''
-                this.infos = {
-                  nom: a.utilisateur?.nom || '',
-                  prenoms: a.utilisateur?.prenoms || '',
-                  dateNaissance,
-                  lieuNaissance: a.lieuNaissance || '',
-                  nationalite: a.identite?.nationalite || '',
-                  contact: a.utilisateur?.contact || '',
-                  email: a.utilisateur?.email || '',
-                  adresse: a.adresse?.ville || '',
-                  numeroPiece: a.numeroPiece || '',
-                  sexe: a.sexe || '',
-                  typePieceIdentite: a.typePieceIdentite || ''
-                }
-              }
-            },
-            error: () => undefined
-          })
         }
 
         // Brouillon / correction : pré-remplit depuis le serveur.
@@ -425,10 +388,51 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
         }
         this.loadSessions()
         this.sauvegarder()
+        this.chargerInfosPersonnellesDepuisProfil(demande)
       },
       error: (err) => {
         this.loading = false
         this.errorMessage = err?.error?.message || 'Impossible de charger cette demande.'
+      }
+    })
+  }
+
+  private chargerInfosPersonnellesDepuisProfil(demande?: any): void {
+    this.apprenantService.get().subscribe({
+      next: (a: any) => {
+        if (!a) {
+          this.errorMessage = 'Les informations personnelles n’ont pas pu être chargées.'
+          return
+        }
+
+        const valeursActuelles = { ...this.infos }
+        const sourceDateNaissance = a.dateNaissance ? String(a.dateNaissance).split('T')[0] : ''
+
+        this.infos = {
+          ...valeursActuelles,
+          nom: valeursActuelles.nom || a.utilisateur?.nom || '',
+          prenoms: valeursActuelles.prenoms || a.utilisateur?.prenoms || '',
+          dateNaissance: valeursActuelles.dateNaissance || sourceDateNaissance || '',
+          lieuNaissance: valeursActuelles.lieuNaissance || a.lieuNaissance || '',
+          nationalite: valeursActuelles.nationalite || a.nationalite || a.identite?.nationalite || '',
+          contact: valeursActuelles.contact || a.utilisateur?.contact || a.adresse?.telMobile || '',
+          email: valeursActuelles.email || a.utilisateur?.email || '',
+          adresse: valeursActuelles.adresse || a.adresse?.ville || '',
+          numeroPiece: valeursActuelles.numeroPiece || a.numeroPiece || '',
+          sexe: valeursActuelles.sexe || a.sexe || '',
+          typePieceIdentite: valeursActuelles.typePieceIdentite || a.typePieceIdentite || '',
+          matriculeEtudiant: valeursActuelles.matriculeEtudiant
+            || demande?.matriculeEtudiant
+            || a.matriculeEtudiant
+            || '',
+          etablissementId: valeursActuelles.etablissementId
+            || (demande?.etablissementId ? String(demande.etablissementId) : '')
+        }
+        this.siteIdConfirme = Number(this.infos.etablissementId) || null
+        this.sauvegarder()
+      },
+      error: () => {
+        this.errorMessage = 'Les données personnelles enregistrées n’ont pas pu être chargées pour le récapitulatif.'
       }
     })
   }
@@ -438,7 +442,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
    * rechargement du navigateur. Appelé après CHAQUE modification significative :
    * c'est la garantie « l'étudiant ne perd jamais sa saisie ».
    */
-  private sauvegarder(): void {
+  sauvegarder(): void {
     this.wizardStore.sauvegarderEtat({
       etape: this.etape,
       sessionIdFromRoute: this.sessionIdFromRoute,
@@ -787,6 +791,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
       && this.infos.prenoms
       && this.infos.dateNaissance
       && this.infos.numeroPiece
+      && this.infos.matriculeEtudiant?.trim()
       && this.siteSelectionValide
     )
   }
@@ -833,6 +838,17 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   surChoixSite(): void {
     if (this.siteVerrouille) return
     const siteId = Number(this.infos.etablissementId)
+    if (!Number.isSafeInteger(siteId) || siteId <= 0) {
+      this.infos.etablissementId = this.siteIdConfirme ? String(this.siteIdConfirme) : ''
+      return
+    }
+    if (siteId === this.siteIdConfirme) return
+    const nomSite = this.sitesDisponibles.find(site => Number(site.id) === siteId)?.nom || 'ce site'
+    if (!window.confirm(`Confirmez-vous le choix du site « ${nomSite} » pour votre inscription ?`)) {
+      this.infos.etablissementId = this.siteIdConfirme ? String(this.siteIdConfirme) : ''
+      return
+    }
+
     this.sessionSelectionneeId = undefined
     this.documentsRequis = []
     this.documents = {}
@@ -841,10 +857,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.bordereauAReposer = null
     this.errorMessage = ''
     this.sitesError = ''
-    this.sauvegarder()
-    if (Number.isSafeInteger(siteId) && siteId > 0) {
-      this.activerSiteSelectionne(siteId)
-    }
+    this.activerSiteSelectionne(siteId)
   }
 
   private activerSiteSelectionne(siteId: number): void {
@@ -856,9 +869,12 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
         }
         this.localStorage.set(LocalStorageService.AUTH_TOKEN, response.accessToken)
         this.siteVerrouille = true
+        this.siteIdConfirme = siteId
         this.sitesError = ''
+        this.sauvegarder()
       },
       error: err => {
+        this.infos.etablissementId = this.siteIdConfirme ? String(this.siteIdConfirme) : ''
         this.sitesError = err?.error?.message || 'Le site choisi n’a pas pu être affecté à votre compte.'
       }
     })
@@ -1018,8 +1034,14 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
    */
   soumettre(): void {
     if (this.submitting) return
-    this.submitting = true
     this.errorMessage = ''
+
+    if (!this.modeCorrection && !this.infos.matriculeEtudiant.trim()) {
+      this.errorMessage = 'Veuillez saisir votre matricule étudiant dans vos informations personnelles.'
+      return
+    }
+
+    this.submitting = true
 
     if (!this.sessionSelectionneeId || (this.modeFormation === 'presentiel' && !this.filiereChoisie)) {
       this.submitting = false
@@ -1133,7 +1155,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
 
   private finaliserSoumission(demandeId: string, statutPipeline?: string): void {
     if (!this.modeCorrection) {
-      this.demandeInscriptionService.soumettre(demandeId).subscribe({
+      this.demandeInscriptionService.soumettre(demandeId, this.infos.matriculeEtudiant.trim()).subscribe({
         next: (reponse) => this.afficherSoumissionFinalisee(reponse.statutPipeline),
         error: (err) => this.echouerSoumission(
           err?.error?.message || 'La demande n\'a pas pu être soumise. Veuillez réessayer.'

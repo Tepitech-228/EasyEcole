@@ -120,7 +120,33 @@ export default class DemandeInscriptionController {
                 return res.status(409).json({ success: false, message: "Cette demande ne peut plus être soumise à cette étape." });
             }
 
+            const matriculeEtudiant = typeof req.body?.matriculeEtudiant === 'string'
+                ? req.body.matriculeEtudiant.trim()
+                : '';
+            if (demande.typeDemande !== 'reinscription' && (!matriculeEtudiant || matriculeEtudiant.length > 64 || /[\u0000-\u001f]/.test(matriculeEtudiant))) {
+                return res.status(400).json({ success: false, message: "Veuillez saisir un matricule étudiant valide (64 caractères maximum)." });
+            }
+            if (matriculeEtudiant) {
+                const dossierAvecMatricule = await DossierEtudiant.findOne({
+                    where: { matricule: matriculeEtudiant, utilisateurId: { [Op.ne]: req.utilisateurId } },
+                    paranoid: false,
+                });
+                if (dossierAvecMatricule) {
+                    return res.status(409).json({ success: false, message: "Ce matricule étudiant est déjà attribué." });
+                }
+                const autreDemande = await DemandeInscription.findOne({
+                    where: {
+                        matriculeEtudiant,
+                        utilisateurId: { [Op.ne]: req.utilisateurId },
+                    },
+                });
+                if (autreDemande) {
+                    return res.status(409).json({ success: false, message: "Ce matricule étudiant est déjà utilisé par une autre demande." });
+                }
+            }
+
             await demande.update({
+                ...(matriculeEtudiant ? { matriculeEtudiant } : {}),
                 statutPipeline: 'soumis',
                 soumissionComite: false,
                 motifPipeline: null
@@ -770,6 +796,25 @@ export default class DemandeInscriptionController {
             return res.status(404).json({ success: false, message: "Demande non trouvée" })
         }
 
+        const matriculeEtudiant = demandeInscription.typeDemande === 'reinscription'
+            ? ''
+            : String(demandeInscription.matriculeEtudiant || '').trim()
+        if (demandeInscription.typeDemande !== 'reinscription' && !matriculeEtudiant) {
+            return res.status(400).json({ success: false, message: "Un matricule étudiant doit être renseigné avant la validation du dossier." })
+        }
+        if (matriculeEtudiant) {
+            const dossierAvecMatricule = await DossierEtudiant.findOne({
+                where: {
+                    matricule: matriculeEtudiant,
+                    utilisateurId: { [Op.ne]: demandeInscription.utilisateurId },
+                },
+                paranoid: false,
+            })
+            if (dossierAvecMatricule) {
+                return res.status(409).json({ success: false, message: "Ce matricule étudiant est déjà attribué à un autre étudiant." })
+            }
+        }
+
         // Vérifier info personnelles
         if (!demandeInscription.utilisateur?.apprenant) {
             return res.status(400).json({ success: false, message: "Les informations personnelles ne sont pas complètes" })
@@ -910,23 +955,24 @@ export default class DemandeInscriptionController {
                 ? await Etablissement.findByPk(demandeInscription.etablissementId)
                 : null
 
-            // Le matricule final est unique en base. En cas de validation
-            // concurrente, deux demandes peuvent calculer le même ordre :
-            // on réessaie avec l'ordre suivant sur conflit d'unicité.
-            let matriculeFinal = ''
+            // Une première inscription reprend le matricule proposé par l'étudiant.
+            // Les réinscriptions historiques conservent la génération automatique.
+            let matriculeFinal = matriculeEtudiant
             let dossierEtudiant: DossierEtudiant | null = null
-            for (let tentative = 1; tentative <= 3; tentative++) {
-                const ordre = await DossierEtudiant.prochainOrdreMatricule()
-                matriculeFinal = IDGenerator.getInstance().generateMatriculeFinal(
-                    parcoursChoisiFinal?.parcours!,
-                    anneeLibelle,
-                    classeMatricule,
-                    ordre,
-                    etablissement,
-                    'jour'
-                )
+            const nombreTentatives = matriculeEtudiant ? 1 : 3
+            for (let tentative = 1; tentative <= nombreTentatives; tentative++) {
+                if (!matriculeEtudiant) {
+                    const ordre = await DossierEtudiant.prochainOrdreMatricule()
+                    matriculeFinal = IDGenerator.getInstance().generateMatriculeFinal(
+                        parcoursChoisiFinal?.parcours!,
+                        anneeLibelle,
+                        classeMatricule,
+                        ordre,
+                        etablissement,
+                        'jour'
+                    )
+                }
                 await demandeInscription.update({ matricule: matriculeFinal })
-
                 const codeQR = JSON.stringify({ matricule: matriculeFinal, utilisateurId: demandeInscription.utilisateurId })
                 const candidat = new DossierEtudiant()
                 candidat.utilisateurId = demandeInscription.utilisateurId
@@ -946,11 +992,13 @@ export default class DemandeInscriptionController {
                 } catch (error: any) {
                     const estConflit = error?.name === 'SequelizeUniqueConstraintError'
                         || error?.parent?.code === 'ER_DUP_ENTRY'
-                    if (!estConflit || tentative === 3) throw error
+                    if (!estConflit || tentative === nombreTentatives) throw error
                 }
             }
             if (!dossierEtudiant) {
-                throw new Error('Impossible de générer un matricule unique après 3 tentatives')
+                throw new Error(matriculeEtudiant
+                    ? "Impossible d'attribuer le matricule étudiant proposé."
+                    : 'Impossible de générer un matricule unique après 3 tentatives')
             }
             // Enrôlement facial systématique : indépendant du consentement facultatif.
             if (savedCursus.etablissementId) {

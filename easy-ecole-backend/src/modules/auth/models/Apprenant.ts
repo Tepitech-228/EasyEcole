@@ -19,6 +19,7 @@ export class Apprenant extends Model<InferAttributes<Apprenant>, InferCreationAt
   declare cni: CreationOptional<string>
   declare typePieceIdentite: CreationOptional<string>
   declare numeroPiece: CreationOptional<string>
+  declare matriculeEtudiant: CreationOptional<string | null>
   declare statutHandicap: CreationOptional<boolean>
   declare natureHandicap: CreationOptional<string>
   declare anneeObtentionBac: CreationOptional<string>
@@ -96,6 +97,10 @@ Apprenant.init({
   },
   numeroPiece: {
     type: new DataTypes.STRING,
+    allowNull: true
+  },
+  matriculeEtudiant: {
+    type: DataTypes.STRING(64),
     allowNull: true
   },
   statutHandicap: {

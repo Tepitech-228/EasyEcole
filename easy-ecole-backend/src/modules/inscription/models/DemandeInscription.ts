@@ -18,6 +18,7 @@ import { Etablissement } from "../../etablissement/models/Etablissement";
 export class DemandeInscription extends Model<InferAttributes<DemandeInscription>, InferCreationAttributes<DemandeInscription>> {
   declare id: CreationOptional<number>
   declare matricule: CreationOptional<string>
+  declare matriculeEtudiant: CreationOptional<string | null>
   /**
    * Type de demande : 'inscription' (1ère inscription) ou 'reinscription'.
    * Permet au comité d'afficher le badge 1ère/réinscription et de filtrer
@@ -93,6 +94,10 @@ DemandeInscription.init({
   matricule: {
     type: new DataTypes.STRING,
     allowNull: false
+  },
+  matriculeEtudiant: {
+    type: DataTypes.STRING(64),
+    allowNull: true
   },
   typeDemande: {
     type: new DataTypes.STRING(20),

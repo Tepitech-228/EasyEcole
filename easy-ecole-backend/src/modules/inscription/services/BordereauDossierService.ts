@@ -1,5 +1,5 @@
 import express from "express";
-import { Transaction } from "sequelize";
+import { Op, Transaction } from "sequelize";
 import { Bordereau } from "../models/Bordereau";
 import { DossierEtudiant } from "../models/DossierEtudiant";
 import { DemandeInscription } from "../models/DemandeInscription";
@@ -83,11 +83,27 @@ export class BordereauDossierService {
         if (!etablissement) throw new Error("Le site d'inscription e-learning est introuvable.");
         const anneeLibelle = demande.session?.anneeAcademique?.libelle || new Date().getFullYear().toString();
         const anneeCode = anneeLibelle.replace(/[^0-9]/g, "").slice(-2) || String(new Date().getFullYear()).slice(-2);
+        const matriculeSaisi = demande.typeDemande === "reinscription"
+            ? ""
+            : String(demande.matriculeEtudiant || "").trim();
+        if (demande.typeDemande !== "reinscription" && !matriculeSaisi) {
+            throw new Error("Un matricule étudiant doit être renseigné avant la validation du dossier.");
+        }
+        if (matriculeSaisi) {
+            const matriculeDejaAttribue = await DossierEtudiant.findOne({
+                where: { matricule: matriculeSaisi, utilisateurId: { [Op.ne]: utilisateurId } },
+                paranoid: false,
+                transaction,
+            });
+            if (matriculeDejaAttribue) {
+                throw new Error("Le matricule étudiant proposé est déjà attribué à un autre étudiant.");
+            }
+        }
         const existingFinal = typeof demande.matricule === "string"
             && /^[0-9]+-EL1J-[0-9]{2}-[A-Z]+$/.test(demande.matricule);
-        const matricule = existingFinal
+        const matricule = matriculeSaisi || (existingFinal
             ? demande.matricule
-            : `${await DossierEtudiant.prochainOrdreMatricule(transaction)}-EL1J-${anneeCode}-${IDGenerator.deriveSiteCode(etablissement)}`;
+            : `${await DossierEtudiant.prochainOrdreMatricule(transaction)}-EL1J-${anneeCode}-${IDGenerator.deriveSiteCode(etablissement)}`);
 
         await demande.update({ matricule, dateValidation: new Date() }, { transaction });
         for (const paiement of (demande.paiementsInscription || [])) {
@@ -284,6 +300,23 @@ export class BordereauDossierService {
         const matriculeExistant = demande.matricule
         const estFormatFinal = typeof matriculeExistant === 'string'
             && MATRICULE_FINAL_REGEX.test(matriculeExistant)
+        const matriculeEtudiantSaisi = demande.typeDemande === 'reinscription'
+            ? ''
+            : String(demande.matriculeEtudiant || '').trim()
+        if (demande.typeDemande !== 'reinscription' && !matriculeEtudiantSaisi) {
+            throw new Error("Un matricule étudiant doit être renseigné avant la validation du dossier.")
+        }
+        if (matriculeEtudiantSaisi) {
+            const utilisateurId = Number(demande.utilisateurId)
+            const matriculeDejaAttribue = await DossierEtudiant.findOne({
+                where: { matricule: matriculeEtudiantSaisi, utilisateurId: { [Op.ne]: utilisateurId } },
+                paranoid: false,
+                transaction,
+            })
+            if (matriculeDejaAttribue) {
+                throw new Error("Le matricule étudiant proposé est déjà attribué à un autre étudiant.")
+            }
+        }
 
         let matricule: string
         if (pedagogieDifferee) {
@@ -291,6 +324,9 @@ export class BordereauDossierService {
             // du comité (finaliserAffectationPedagogique). On utilise ici le
             // matricule temporaire de la demande (NOT NULL) pour satisfaire les FK.
             matricule = demande.matricule
+        } else if (matriculeEtudiantSaisi) {
+            matricule = matriculeEtudiantSaisi
+            await demande.update({ matricule, dateValidation: new Date() }, { transaction })
         } else if (estFormatFinal) {
             matricule = matriculeExistant
         } else {
@@ -755,8 +791,27 @@ export class BordereauDossierService {
         const etablissement = etablissementId ? await Etablissement.findByPk(etablissementId, { transaction }) : null
 
         const MATRICULE_FINAL_REGEX = /^[0-9]+-[A-Z]+[0-9]?[JS]-[0-9]{2}-[A-Z]+$/
+        const matriculeSaisi = demande.typeDemande === 'reinscription'
+            ? ''
+            : String(demande.matriculeEtudiant || '').trim()
+        if (demande.typeDemande !== 'reinscription' && !matriculeSaisi) {
+            throw new Error("Un matricule étudiant doit être renseigné avant la validation du dossier.")
+        }
+        if (matriculeSaisi) {
+            const matriculeDejaAttribue = await DossierEtudiant.findOne({
+                where: { matricule: matriculeSaisi, utilisateurId: { [Op.ne]: utilisateurId } },
+                paranoid: false,
+                transaction,
+            })
+            if (matriculeDejaAttribue) {
+                throw new Error("Le matricule étudiant proposé est déjà attribué à un autre étudiant.")
+            }
+        }
         let matricule: string
-        if (typeof demande.matricule === 'string' && MATRICULE_FINAL_REGEX.test(demande.matricule)) {
+        if (matriculeSaisi) {
+            matricule = matriculeSaisi
+            await demande.update({ matricule, dateValidation: new Date() }, { transaction })
+        } else if (typeof demande.matricule === 'string' && MATRICULE_FINAL_REGEX.test(demande.matricule)) {
             matricule = demande.matricule
         } else {
             const ordre = await DossierEtudiant.prochainOrdreMatricule(transaction)

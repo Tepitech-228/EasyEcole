@@ -213,6 +213,23 @@ describe('ComiteValidationController.decider — correction demandée', () => {
 })
 
 describe('ComiteValidationController.decider — garde-fous', () => {
+  it('refuse la validation d’une première inscription sans matricule étudiant', async () => {
+    const res = mockResponse()
+    ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue({
+      id: 11,
+      utilisateurId: 90,
+      typeDemande: 'inscription',
+      matriculeEtudiant: null,
+      statutPipeline: 'transmis_comite',
+    })
+
+    await Ctrl.decider(reqComite({ decision: 'valide' }), res)
+
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(mockTransaction.rollback).toHaveBeenCalled()
+    expect(ComiteVote.create).not.toHaveBeenCalled()
+  })
+
   it('refuse une décision inconnue (400)', async () => {
     const res = mockResponse()
     await Ctrl.decider(reqComite({ decision: 'annuler', motif: 'x' }), res)

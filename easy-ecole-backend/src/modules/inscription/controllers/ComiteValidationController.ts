@@ -389,12 +389,45 @@ export default class ComiteValidationController {
         try {
             const demande = await DemandeInscription.findOne({
                 where: { id: req.params.id },
+                include: [{
+                    association: DemandeInscription.associations.utilisateur,
+                    include: [{ model: Apprenant, as: 'apprenant' }],
+                }],
                 transaction,
                 lock: transaction.LOCK.UPDATE,
             })
             if (!demande) {
                 await transaction.rollback()
                 return res.status(404).json({ success: false, message: "Dossier non trouvé" })
+            }
+            const matriculeEtudiant = typeof demande.matriculeEtudiant === 'string'
+                ? demande.matriculeEtudiant.trim()
+                : ''
+            const doitConfirmerMatricule = demande.typeDemande !== 'reinscription'
+            if (decision === 'valide' && doitConfirmerMatricule && !matriculeEtudiant) {
+                await transaction.rollback()
+                return res.status(400).json({ success: false, message: "La demande ne contient pas de matricule étudiant. L'étudiant doit le renseigner avant la validation." })
+            }
+            if (decision === 'valide' && doitConfirmerMatricule) {
+                const matriculeConfirme = typeof req.body.matriculeConfirme === 'string'
+                    ? req.body.matriculeConfirme.trim()
+                    : ''
+                if (matriculeConfirme !== matriculeEtudiant) {
+                    await transaction.rollback()
+                    return res.status(400).json({ success: false, message: "Confirmez le matricule étudiant proposé avant d'enregistrer votre vote." })
+                }
+                const dossierAvecMatricule = await DossierEtudiant.findOne({
+                    where: {
+                        matricule: matriculeEtudiant,
+                        utilisateurId: { [Op.ne]: demande.utilisateurId },
+                    },
+                    paranoid: false,
+                    transaction,
+                })
+                if (dossierAvecMatricule) {
+                    await transaction.rollback()
+                    return res.status(409).json({ success: false, message: "Ce matricule est déjà attribué à un autre étudiant." })
+                }
             }
 
             // Vérifier que le dossier est dans un statut autorisé pour le vote
@@ -463,17 +496,27 @@ export default class ComiteValidationController {
                 transaction,
             })
             if (voteExistant) {
-                await transaction.rollback()
-                return res.status(400).json({ success: false, message: "Vous avez déjà voté" })
+                // Les votes de validation créés avant l'obligation de confirmer
+                // le matricule doivent pouvoir être confirmés explicitement.
+                if (
+                    decision !== 'valide'
+                    || !doitConfirmerMatricule
+                    || voteExistant.decision !== 'valide'
+                    || voteExistant.matriculeConfirme
+                ) {
+                    await transaction.rollback()
+                    return res.status(400).json({ success: false, message: "Vous avez déjà voté" })
+                }
+                await voteExistant.update({ matriculeConfirme: matriculeEtudiant }, { transaction })
+            } else {
+                await ComiteVote.create({
+                    demandeInscriptionId: demande.id,
+                    membreId: currentUserId,
+                    decision,
+                    motif: decision === 'valide' ? null : motif,
+                    matriculeConfirme: decision === 'valide' && doitConfirmerMatricule ? matriculeEtudiant : null,
+                }, { transaction })
             }
-
-            // Créer le vote
-            const vote = await ComiteVote.create({
-                demandeInscriptionId: demande.id,
-                membreId: currentUserId,
-                decision,
-                motif: decision === 'valide' ? null : motif,
-            }, { transaction })
 
             // Si rejet immédiat → dossier rejeté
             if (decision === 'rejete') {
@@ -553,6 +596,12 @@ export default class ComiteValidationController {
                     order: [['membreId', 'ASC']],
                     transaction,
                 })
+                if (
+                    doitConfirmerMatricule
+                    && votesUnanimes.some((vote: any) => vote.matriculeConfirme !== matriculeEtudiant)
+                ) {
+                    throw new Error(`Les votes du comité ne confirment pas tous le matricule étudiant de la demande ${demande.id}.`)
+                }
                 const initialesParMembre = genererInitialesUniquesComite(
                     votesUnanimes.map((vote: any) => vote.membre || {}),
                 )
