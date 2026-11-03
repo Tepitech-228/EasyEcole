@@ -57,22 +57,6 @@
           <span *ngIf="sessionCible.description">— {{ sessionCible.description }}</span>
         </div>
 
-        <div class="ocr-zone">
-          <h3>Vos informations personnelles</h3>
-          <p class="muted">
-            Pré-remplies automatiquement par OCR depuis vos pièces, puis à compléter / corriger / valider.
-          </p>
-          <button class="btn btn-outline btn-sm" (click)="preRemplirInfos()" [disabled]="ocrEnCours">
-            {{ ocrEnCours ? 'Extraction en cours…' : 'Pré-remplir par OCR' }}
-          </button>
-          <div class="infos-grid mt-2">
-            <div class="info-item"><label>Nom</label><input class="form-control" [(ngModel)]="infos.nom" /></div>
-            <div class="info-item"><label>Prénoms</label><input class="form-control" [(ngModel)]="infos.prenoms" /></div>
-            <div class="info-item"><label>Date de naissance</label><input class="form-control" type="date" [(ngModel)]="infos.dateNaissance" /></div>
-            <div class="info-item"><label>Lieu de naissance</label><input class="form-control" [(ngModel)]="infos.lieuNaissance" /></div>
-          </div>
-        </div>
-
         <button class="btn btn-primary btn-lg" (click)="passerEtape2()">Faire ma réinscription →</button>
       </div>
     </div>

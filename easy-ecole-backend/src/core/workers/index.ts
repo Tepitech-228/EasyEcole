@@ -1,9 +1,7 @@
-import { createOcrWorker } from './OcrWorker';
 import { createPdfWorker } from './PdfWorker';
 import { createExcelImportWorker } from './ExcelImportWorker';
 
 const workers = [
-  createOcrWorker(),
   createPdfWorker(),
   createExcelImportWorker(),
 ];

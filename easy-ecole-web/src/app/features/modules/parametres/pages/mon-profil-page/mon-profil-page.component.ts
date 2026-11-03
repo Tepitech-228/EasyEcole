@@ -15,7 +15,6 @@ import { CaissierBanqueService } from 'src/app/data/modules/auth/services/caissi
 import { EnseignantService } from 'src/app/data/modules/auth/services/enseignant.service';
 import { InstitutionService } from 'src/app/data/modules/auth/services/institution.service';
 import { PersonnelAdministratifService } from 'src/app/data/modules/auth/services/personnel-administratif.service';
-import { InscriptionWizardStoreService } from 'src/app/data/modules/inscription/services/inscription-wizard-store.service';
 import { environment } from 'src/environments/environment';
 
 @Component({
@@ -67,9 +66,6 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
 
   // Retour éventuel vers le wizard d'inscription après sauvegarde du profil.
   retourUrl?: string
-
-  // Pré-remplissage OCR reçu du wizard d'inscription (étape 3 redirigée).
-  ocrPreRempli?: { [cle: string]: string }
 
   // Erreurs de validation par étape
   erreursEtape: string[] = []
@@ -204,16 +200,12 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
     private caissierBanqueService: CaissierBanqueService,
     private personnelAdministratifService: PersonnelAdministratifService,
     private router: Router,
-    private activatedRoute: ActivatedRoute,
-    private wizardStore: InscriptionWizardStoreService) {
+    private activatedRoute: ActivatedRoute) {
     super()
 
     this.onboardingMode = this.activatedRoute.snapshot.queryParamMap.get('onboarding') === 'true'
-    // Redirection depuis le wizard d'inscription : on mémorise l'URL de retour
-    // et le pré-remplissage OCR éventuel, puis on consomme le store.
+    // Redirection depuis le wizard d'inscription : on mémorise l'URL de retour.
     this.retourUrl = this.activatedRoute.snapshot.queryParamMap.get('retour') || undefined
-    this.ocrPreRempli = this.wizardStore.ocrPreRemplissage || undefined
-    this.wizardStore.ocrPreRemplissage = null
 
     if(this.rolesValue.isApprenant) {
       this.getApprenant()
@@ -241,41 +233,12 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
         console.log(value)
         this.apprenant = value ?? new Apprenant()
         this.initApprenantForm()
-        this.appliquerPreRemplissageOcr()
         this.supprimerFichier()
       },
       error: (err: HttpErrorResponse) => {
         console.log(err)
       }
     })
-  }
-
-  /**
-   * Pré-remplit le formulaire apprenant avec le résultat OCR consolidé reçu
-   * depuis le wizard d'inscription (étape 3 redirigée vers /parametres/profil).
-   * Ne surcharge PAS les valeurs déjà renseignées en base : l'OCR sert de gain
-   * de temps, l'étudiant garde la main sur chaque champ.
-   */
-  private appliquerPreRemplissageOcr(): void {
-    if (!this.profilForm || !this.ocrPreRempli) return
-    const map: Record<string, string> = {
-      nom: 'nom',
-      prenoms: 'prenoms',
-      dateNaissance: 'dateNaissance',
-      lieuNaissance: 'lieuNaissance',
-      nationalite: 'identite.nationalite',
-      contact: 'contact',
-      numeroPiece: 'numeroPiece',
-      sexe: 'sexe',
-      typePieceIdentite: 'typePieceIdentite',
-    }
-    for (const [cleOcr, cheminForm] of Object.entries(map)) {
-      const valeur = this.ocrPreRempli[cleOcr]
-      if (!valeur) continue
-      const ctrl = this.profilForm.get(cheminForm)
-      if (ctrl && !ctrl.value) ctrl.setValue(valeur)
-    }
-    this.ocrPreRempli = undefined
   }
 
   private getInstitution(): void {

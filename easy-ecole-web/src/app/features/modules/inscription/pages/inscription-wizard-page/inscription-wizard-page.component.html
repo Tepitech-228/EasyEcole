@@ -244,8 +244,7 @@
     </button>
     <h2>Informations personnelles</h2>
     <p class="muted">
-      Les champs ont été <strong>pré-remplis automatiquement</strong> par l'OCR à partir des documents.
-      Veuillez les <strong>compléter, corriger puis valider</strong>.
+      Complétez ou corrigez <strong>manuellement</strong> vos informations personnelles, puis validez.
     </p>
 
     <div class="form-row">
@@ -459,49 +458,6 @@
     <div class="mt-4">
       <button class="btn btn-secondary" (click)="recommencer()">Nouvelle demande</button>
       <a class="btn btn-link" (click)="versReinscription()">Je suis déjà inscrit(e) → Réinscription</a>
-    </div>
-  </div>
-
-  <!-- ============================================================ OCR / ICR -->
-  <div *ngIf="ocrEnCours || ocrResultat" class="ocr-modal-backdrop">
-    <div class="ocr-modal">
-      <ng-container *ngIf="ocrEnCours">
-        <div class="ocr-modal__icon">
-          <svg width="34" height="34" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-          </svg>
-        </div>
-        <h3>Analyse des documents en cours…</h3>
-        <p class="ocr-modal__msg">
-          Le système analyse vos pièces (acte de naissance, CNI…) pour
-          pré-remplir automatiquement vos informations personnelles.
-        </p>
-        <div class="ocr-spinner"></div>
-      </ng-container>
-
-      <ng-container *ngIf="!ocrEnCours && ocrResultat">
-        <div class="ocr-modal__icon ocr-modal__icon--success">
-          <svg width="34" height="34" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-          </svg>
-        </div>
-        <h3>Analyse terminée</h3>
-        <p class="ocr-modal__msg">Données récupérées automatiquement depuis vos pièces :</p>
-
-        <div class="ocr-pourcentage">
-          <span class="ocr-pourcentage__valeur">{{ ocrResultat.pourcentage }}%</span>
-          <span class="ocr-pourcentage__detail">
-            {{ ocrResultat.nbChamps }} champ(s) sur {{ ocrResultat.totalChamps }}
-          </span>
-        </div>
-        <div class="ocr-progress">
-          <div class="ocr-progress__bar" [style.width.%]="ocrResultat.pourcentage"></div>
-        </div>
-
-        <div class="mt-4">
-          <button class="btn btn-primary" (click)="continuerApresOcr()">Continuer</button>
-        </div>
-      </ng-container>
     </div>
   </div>
 

@@ -126,7 +126,7 @@ const routes: Routes = [
         children: [
           {
             // Wizard de 1ère inscription (refonte) : parcours → grade → filière →
-            // documents → informations (pré-remplissage OCR) → récapitulatif → statut.
+            // documents → informations (saisie manuelle) → récapitulatif → statut.
             path: '',
             component: InscriptionWizardPageComponent,
             pathMatch: 'full',

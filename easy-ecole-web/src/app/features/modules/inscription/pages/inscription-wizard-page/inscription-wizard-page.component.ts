@@ -9,7 +9,6 @@ import { DemandeInscriptionService } from 'src/app/data/modules/inscription/serv
 import { ParcoursChoisiService } from 'src/app/data/modules/inscription/services/parcours-choisi.service';
 import { DemandeInscription } from 'src/app/data/modules/inscription/models/DemandeInscription.model';
 import { ParcoursChoisi } from 'src/app/data/modules/inscription/models/ParcoursChoisi.model';
-import { OcrService } from 'src/app/data/modules/inscription/services/ocr.service';
 import { ApprenantService } from 'src/app/data/modules/auth/services/apprenant.service';
 import { BordereauService } from 'src/app/data/modules/inscription/services/bordereau.service';
 import { DossierInscriptionService } from 'src/app/data/modules/inscription/services/dossier-inscription.service';
@@ -32,9 +31,9 @@ interface FiliereSelection {
  *  PHASE 1 : choix du parcours (cycle) → grade → filière (arborescence)
  *  PHASE 2 : choix de session + documents requis de la session + bordereau
  *            (la soumission constitue la demande d'autorisation provisoire)
- *  PHASE 3 : saisie / pré-remplissage des infos personnelles (pré-remplissage
- *            OCR branché via un service d'extraction extensible ; sans moteur
- *            configuré, un formulaire vierge à compléter est proposé)
+ *  PHASE 3 : saisie manuelle des infos personnelles (l'étudiant complète et
+ *            corrige lui-même le formulaire, éventuellement pré-rempli depuis
+ *            les informations déjà enregistrées à son profil)
  *  ÉTAPE 4 : récapitulatif + soumission
  *  ÉTAPE 5 : statut d'inscription. Seules les étapes qui concernent l'étudiant
  *            sont affichées (« Demande envoyée » puis « Dossier validé ») ; la
@@ -91,7 +90,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   // comme fournies sans être re-téléversées à la soumission.
   piecesServeur: Map<string, string> = new Map()
 
-  // Infos personnelles (pré-remplies par OCR, corrigées puis validées)
+  // Infos personnelles (saisies ou reprises du profil, puis corrigées et validées)
   infos: {
     nom: string; prenoms: string; dateNaissance: string; lieuNaissance: string;
     nationalite: string; contact: string; email: string; adresse: string;
@@ -115,10 +114,6 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   /** Motif de la correction demandée (bordereau refusé ou document rejeté au comité). */
   motifCorrection: string | null = null
 
-  // OCR/ICR : popup de progression + % de données récupérées.
-  ocrEnCours: boolean = false
-  ocrResultat: { pourcentage: number; nbChamps: number; totalChamps: number } | null = null
-
   constructor(
     private router: Router,
     private route: ActivatedRoute,
@@ -126,7 +121,6 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     private sessionService: SessionService,
     private demandeInscriptionService: DemandeInscriptionService,
     private parcoursChoisiService: ParcoursChoisiService,
-    private ocrService: OcrService,
     private bordereauService: BordereauService,
     private dossierInscriptionService: DossierInscriptionService,
     private apprenantService: ApprenantService,
@@ -211,7 +205,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.bordereauAReposer = etat.bordereauAReposer || null
 
     // Au retour de la page profil, on récupère les infos réellement ENREGISTRÉES
-    // en base (le store ne contient que le pré-remplissage OCR, souvent vide).
+    // en base (le store ne contient que la saisie locale du wizard).
     // On ne surcharge pas les valeurs déjà présentes dans le wizard.
     this.apprenantService.get().subscribe({
       next: (a: any) => {
@@ -298,7 +292,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
         // personnelles (étape 3) : il est placé directement à l'étape 2 où il
         // re-téléverse UNIQUEMENT ce qui a été rejeté — le bordereau pour
         // l'Audit, les document(s) signalé(s) pour le comité — puis soumet à
-        // nouveau (étape 4). Aucun OCR ni resaisie : infos pré-remplies.
+        // nouveau (étape 4). Aucune resaisie : infos reprises du profil.
         if (estCorrection) {
           this.modeCorrection = estCorrectionBordereau ? 'bordereau' : 'comite'
           this.motifCorrection = demande.motifPipeline || 'Motif non précisé par le service.'
@@ -753,113 +747,14 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   }
 
   // ---------------------------------------------------------------------------
-  // PHASE 3 — Infos personnelles (pré-remplissage OCR + correction)
+  // PHASE 3 — Infos personnelles (saisie manuelle + correction)
   // ---------------------------------------------------------------------------
 
   /**
-   * Branché sur le service d'extraction OCR. En l'absence du moteur configuré,
-   * le backend retourne des champs vides → formulaire à compléter. Quand le
-   * moteur est branché, il pré-remplit ici les champs à partir des pièces
-   * déposées ; l'étudiant corrige puis valide.
-   */
-  lancerExtraction(): void {
-    this.ocrEnCours = true
-    this.ocrResultat = null
-    const fichiers = this.fichiersPriorisesPourOcr()
-
-    this.ocrService.preRemplissage(fichiers).subscribe({
-      next: (res: any) => {
-        const data = res?.data || {}
-        this.appliquerResultatOcr(data)
-        this.ocrEnCours = false
-        this.ocrResultat = this.calculerResultatOcr(data)
-      },
-      error: () => {
-        // Repli : moteur OCR indisponible → l'étudiant complète le profil lui-même.
-        this.infos = this.infosVides()
-        this.ocrEnCours = false
-        this.ocrResultat = { pourcentage: 0, nbChamps: 0, totalChamps: this.CHAMPS_OCR_PROFIL.length }
-      }
-    })
-  }
-
-  /**
-   * Priorise les pièces qui alimentent le plus le profil : l'acte de naissance
-   * et la CNI sont traités EN PREMIER (le référentiel OCR leur accorde la
-   * meilleure fiabilité / le plus de champs), puis les autres documents, puis
-   * le bordereau.
-   */
-  private fichiersPriorisesPourOcr(): File[] {
-    const fichierDe = (motif: RegExp): File | null => {
-      const requis = this.documentsRequis.find((d) => motif.test(d.titre))
-      return requis ? (this.documents[requis.id] || null) : null
-    }
-    const naissance = fichierDe(/naissance|acte|extrait/i)
-    const cni = fichierDe(/cni|cin|carte.?national|carte.?identit/i)
-
-    const autres = this.documentsRequis
-      .map((d) => this.documents[d.id])
-      .filter((f): f is File => !!f)
-      .filter((f) => f !== naissance && f !== cni)
-
-    const ordonnes: File[] = []
-    if (naissance) ordonnes.push(naissance)
-    if (cni) ordonnes.push(cni)
-    ordonnes.push(...autres)
-    if (this.bordereau) ordonnes.push(this.bordereau)
-    return ordonnes
-  }
-
-  /** Champs du profil que l'OCR/ICR peut (re)pré-remplir. */
-  private readonly CHAMPS_OCR_PROFIL = [
-    'nom', 'prenoms', 'dateNaissance', 'lieuNaissance', 'sexe',
-    'nationalite', 'contact', 'adresse', 'numeroPiece'
-  ]
-
-  /** Calcule le % de données récupérées par l'OCR/ICR. */
-  private calculerResultatOcr(d: any): { pourcentage: number; nbChamps: number; totalChamps: number } {
-    const remplis = this.CHAMPS_OCR_PROFIL.filter((c) => !!(d[c] && String(d[c]).trim())).length
-    const total = this.CHAMPS_OCR_PROFIL.length
-    return { pourcentage: Math.round((remplis / total) * 100), nbChamps: remplis, totalChamps: total }
-  }
-
-  /** Ferme la popup OCR et poursuit vers le profil. */
-  continuerApresOcr(): void {
-    this.ocrResultat = null
-    this.redirecterVersProfil()
-  }
-
-  private infosVides(): { nom: string; prenoms: string; dateNaissance: string; lieuNaissance: string; nationalite: string; contact: string; email: string; adresse: string; numeroPiece: string; sexe: string; typePieceIdentite: string } {
-    return { nom: '', prenoms: '', dateNaissance: '', lieuNaissance: '', nationalite: '', contact: '', email: '', adresse: '', numeroPiece: '', sexe: '', typePieceIdentite: '' }
-  }
-
-  /** Applique le résultat OCR consolidé sur les infos du wizard. */
-  private appliquerResultatOcr(d: any): void {
-    this.infos = {
-      nom: d.nom || '',
-      prenoms: d.prenoms || '',
-      dateNaissance: d.dateNaissance || '',
-      lieuNaissance: d.lieuNaissance || '',
-      nationalite: d.nationalite || '',
-      contact: d.contact || '',
-      email: d.email || '',
-      adresse: d.adresse || '',
-      numeroPiece: d.numeroPiece || '',
-      sexe: d.sexe || '',
-      typePieceIdentite: d.typePieceIdentite || ''
-    }
-    this.sauvegarder()
-  }
-
-  /**
    * Sauvegarde l'état du wizard puis redirige vers la page de profil complète
-   * (/parametres/profil) où l'étudiant saisit la TOTALITÉ des champs. On passe
-   * le résultat OCR via le store (pas dans l'URL — pas de PII exposée).
+   * (/parametres/profil) où l'étudiant saisit la TOTALITÉ des champs.
    */
   private redirecterVersProfil(): void {
-    // Conserve les infos OCR dans le store (pré-remplissage du profil).
-    const ocrBrut = this.infos
-
     // Sauvegarde de l'état du wizard (documents incl.) pour restauration au retour.
     this.wizardStore.sauvegarderEtat({
       etape: 4,
@@ -874,15 +769,12 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
       documentsRequis: this.documentsRequis,
       documents: this.documents,
       bordereau: this.bordereau,
-      infos: { ...ocrBrut }
+      infos: { ...this.infos }
     })
 
     // Chemin de retour vers le wizard (étape 4 = récapitulatif).
     const id = this.route.snapshot.paramMap.get('id')
     const retour = id ? `/inscription/demandes/${id}` : '/inscription/demandes'
-
-    // Transmet les valeurs OCR pré-remplies au profil via le store.
-    this.wizardStore.ocrPreRemplissage = { ...ocrBrut }
 
     this.router.navigate(['/parametres/profil'], {
       queryParams: { retour }
@@ -1057,7 +949,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     }
     this.errorMessage = ''
     this.synchroniserSiteDepuisSession()
-    this.lancerExtraction()
+    this.redirecterVersProfil()
   }
 
   passerEtape4(): void {
@@ -1078,7 +970,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   /**
    * Mode correction : après re-téléversement de ce qui a été rejeté (le
    * bordereau pour l'Audit, les documents signalés pour le comité), passage
-   * DIRECT au récapitulatif — ni OCR ni resaisie des informations personnelles.
+   * DIRECT au récapitulatif — ni resaisie des informations personnelles.
    */
   passerEtape4DepuisCorrection(): void {
     if (!this.documentsComplets) {

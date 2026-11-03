@@ -2,7 +2,6 @@ import { Component, HostListener, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { ReinscriptionService } from 'src/app/data/modules/inscription/services/reinscription.service';
-import { OcrService } from 'src/app/data/modules/inscription/services/ocr.service';
 import { DemandeInscriptionService } from 'src/app/data/modules/inscription/services/demande-inscription.service';
 import { ReinscriptionWizardStoreService } from 'src/app/data/modules/inscription/services/reinscription-wizard-store.service';
 
@@ -52,7 +51,7 @@ export class ReinscriptionWizardPageComponent extends BaseComponentClass impleme
   resultat: any = null
   planifications: any[] = []
 
-  // Informations personnelles (pré-remplissage OCR — PHASE 3 harmonisée)
+  // Informations personnelles (saisie manuelle — PHASE 3 harmonisée)
   infos: {
     nom: string; prenoms: string; dateNaissance: string; lieuNaissance: string;
     nationalite: string; contact: string; email: string; adresse: string;
@@ -60,12 +59,10 @@ export class ReinscriptionWizardPageComponent extends BaseComponentClass impleme
     nom: '', prenoms: '', dateNaissance: '', lieuNaissance: '',
     nationalite: '', contact: '', email: '', adresse: ''
   }
-  ocrEnCours = false
 
   constructor(
     private router: Router,
     private reinscriptionService: ReinscriptionService,
-    private ocrService: OcrService,
     private demandeInscriptionService: DemandeInscriptionService,
     private wizardStore: ReinscriptionWizardStoreService
   ) {
@@ -264,35 +261,6 @@ export class ReinscriptionWizardPageComponent extends BaseComponentClass impleme
       return
     }
     this.etape = 4
-  }
-
-  // ---------------------------------------------------------------------------
-  // PHASE 3 harmonisée — pré-remplissage OCR des informations personnelles
-  // ---------------------------------------------------------------------------
-
-  preRemplirInfos(): void {
-    if (this.ocrEnCours) return
-    this.ocrEnCours = true
-    // Pièces disponibles au moment de la réinscription (documents déjà déposés).
-    const fichiers: File[] = Object.values(this.documents).filter((f): f is File => !!f)
-    this.ocrService.preRemplissage(fichiers).subscribe({
-      next: (res: any) => {
-        this.ocrEnCours = false
-        const d = res?.data || {}
-        if (d.nom) this.infos.nom = d.nom
-        if (d.prenoms) this.infos.prenoms = d.prenoms
-        if (d.dateNaissance) this.infos.dateNaissance = d.dateNaissance
-        if (d.lieuNaissance) this.infos.lieuNaissance = d.lieuNaissance
-        if (d.nationalite) this.infos.nationalite = d.nationalite
-        if (d.contact) this.infos.contact = d.contact
-        if (d.email) this.infos.email = d.email
-        if (d.adresse) this.infos.adresse = d.adresse
-        this.sauvegarder()
-      },
-      error: () => {
-        this.ocrEnCours = false
-      }
-    })
   }
 
   // ---------------------------------------------------------------------------

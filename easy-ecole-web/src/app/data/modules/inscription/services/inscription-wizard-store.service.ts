@@ -14,13 +14,6 @@ export type FichierMeta = {
   type: string;
 };
 
-/** Pré-remplissage OCR transmis à la page de profil. */
-export type OcrPreRemplissage = {
-  nom: string; prenoms: string; dateNaissance: string; lieuNaissance: string;
-  nationalite: string; contact: string; email: string; adresse: string;
-  numeroPiece: string;
-};
-
 /** Forme de l'état telle qu'elle est écrite dans le sessionStorage. */
 interface WizardEtatPersiste {
   ts: number;
@@ -38,7 +31,6 @@ interface WizardEtatPersiste {
   documents: { [cle: string]: FichierMeta | null };
   bordereau: FichierMeta | null;
   infos: WizardInfos;
-  ocrPreRemplissage: OcrPreRemplissage | null;
 }
 
 export type WizardInfos = {
@@ -113,13 +105,6 @@ export class InscriptionWizardStoreService {
   /** État en mémoire (navigation interne) — évite un aller-retour JSON. */
   private etat: WizardEtat | null = null;
 
-  /**
-   * Pré-remplissage OCR (champs d'infos personnelles consolidées) transmis à la
-   * page de profil lors de la redirection. Séparé de l'état du wizard pour que la
-   * page profil puisse le consommer sans restaurer tout le wizard.
-   */
-  ocrPreRemplissage: OcrPreRemplissage | null = null;
-
   constructor() {
     // Restaure l'état persisté (s'il existe et n'est pas périmé) : c'est ce qui
     // permet de survivre à un rechargement complet du navigateur.
@@ -149,7 +134,9 @@ export class InscriptionWizardStoreService {
         s.removeItem(InscriptionWizardStoreService.CLE);
         return null;
       }
-      this.ocrPreRemplissage = persistee.ocrPreRemplissage || null;
+      // Les anciennes entrées peuvent contenir des champs désormais ignorés
+      // (ex. pré-remplissage OCR) : la désérialisation ne retient que les champs
+      // connus, donc aucune erreur n'est levée.
       return deserialiser(persistee);
     } catch {
       // Données corrompues : on repart d'un wizard vierge plutôt que de casser.
@@ -163,7 +150,7 @@ export class InscriptionWizardStoreService {
     try {
       s.setItem(
         InscriptionWizardStoreService.CLE,
-        JSON.stringify(serialiser(etat, this.ocrPreRemplissage))
+        JSON.stringify(serialiser(etat))
       );
     } catch {
       // Quota dépassé / stockage indisponible : le wizard continue en mémoire
@@ -203,7 +190,6 @@ export class InscriptionWizardStoreService {
   /** Efface l'état une fois le dossier soumis / abandonné (mémoire + stockage). */
   effacer(): void {
     this.etat = null;
-    this.ocrPreRemplissage = null;
     const s = this.storage;
     if (!s) return;
     try {
@@ -215,7 +201,7 @@ export class InscriptionWizardStoreService {
 }
 
 /** Ne conserve que les données sérialisables ; les File sont réduites à leurs métadonnées. */
-function serialiser(etat: WizardEtat, ocrPreRemplissage: OcrPreRemplissage | null): WizardEtatPersiste {
+function serialiser(etat: WizardEtat): WizardEtatPersiste {
   const documents: { [cle: string]: FichierMeta | null } = {};
   for (const cle of Object.keys(etat.documents || {})) {
     const fichier = etat.documents[cle];
@@ -236,8 +222,7 @@ function serialiser(etat: WizardEtat, ocrPreRemplissage: OcrPreRemplissage | nul
     documentsRequis: etat.documentsRequis || [],
     documents,
     bordereau: etat.bordereau ? { nom: etat.bordereau.name, taille: etat.bordereau.size, type: etat.bordereau.type } : null,
-    infos: { ...(etat.infos || ({} as WizardInfos)) },
-    ocrPreRemplissage
+    infos: { ...(etat.infos || ({} as WizardInfos)) }
   };
 }
 

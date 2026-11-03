@@ -58,7 +58,6 @@ import DossierEtudiantRouter from "./routers/DossierEtudiantRouter";
 import HierarchyRouter from "./routers/HierarchyRouter";
 import PreInscriptionRouter from "./routers/PreInscriptionRouter";
 import ReinscriptionRouter from "./routers/ReinscriptionRouter";
-import OcrRouter from "./routers/OcrRouter";
 import CartesController from "./controllers/CartesController";
 
 import EcueRouter from "./routers/EcueRouter";
@@ -161,7 +160,6 @@ router
     // Routes d'onboarding : elles doivent passer avant les montages racine
     // protégés par InscriptionComplete.
     .use('/paiement', [Authenticate], PaiementStatutRouter)
-    .use('/ocr', [Authenticate], OcrRouter)
     .get('/dashboard', [Authenticate, cache(30)], DashboardController.getDashboard)
     // Montages racine — ne serviront que pour les routes qui n'ont pas matché ci-dessus
     .use('/', [Authenticate, InscriptionComplete], PresenceEnseignantRouter)
