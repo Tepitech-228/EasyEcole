@@ -122,6 +122,10 @@ services:
       - "${HIKVISION_BIND_IP:-0.0.0.0}:${HIKVISION_PORT:-8000}:3000"
     environment:
       NODE_ENV: production
+      # Sans HOST, src/app.ts retombe sur 'localhost' : dans un conteneur,
+      # Node peut alors n'ecouter que sur ::1, et le healthcheck (127.0.0.1)
+      # comme nginx (backend:3000, IP eth0) ne joignent jamais l'API.
+      HOST: "0.0.0.0"
       DB_HOST: ${DB_HOST:-192.168.100.20}
       DB_PORT: ${DB_PORT:-3306}
       DB_NAME: ${DB_NAME:-easyecole}
