@@ -37,7 +37,9 @@
         "test:watch": "jest --watch",
         "test:coverage": "jest --coverage",
         "test:all-endpoints": "node scripts/test-all-endpoints.cjs",
-        "test:e2e": "ts-node scripts/e2e/run-e2e.js"
+        "test:e2e": "ts-node scripts/e2e/run-e2e.js",
+        "guide:generer": "node scripts/guide/generer-guides.cjs",
+        "guide:generer:pdf": "node scripts/guide/generer-guides.cjs --pdf"
     },
     "keywords": [],
     "author": "",

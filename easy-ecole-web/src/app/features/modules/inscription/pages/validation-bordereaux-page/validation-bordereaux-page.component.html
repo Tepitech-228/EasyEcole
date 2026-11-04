@@ -328,14 +328,9 @@
             <div *ngSwitchCase="'inscription'">
                 <span class="material-symbols-outlined text-6xl text-violet-500">task_alt</span>
                 <p class="text-sm text-gray-600 mt-4">
-                    Le bordereau a été <strong>authentifié</strong>. Le dossier est en
-                    <strong>attente de saisie par ESA-COMPTA</strong>.
+                    Le bordereau a été  <strong>authentifié avec succes</strong>
                 </p>
-                <p class="text-sm text-gray-600 mt-2">
-                    Dès la fin de la saisie financière, le dossier sera transmis
-                    <strong>automatiquement au comité d'orientation</strong>, qui validera la création
-                    du dossier étudiant (matricule définitif, cursus, cours).
-                </p>
+                
             </div>
             <ng-container *ngSwitchDefault>
                 <span class="material-symbols-outlined text-6xl text-orange-500">task_alt</span>
@@ -343,7 +338,6 @@
                     Le bordereau a été <strong>authentifié</strong> avec succès.
                 </p>
                 <p class="text-sm text-gray-600 mt-2">
-                    Il sera imputé par le service comptable (ESA-COMPTA) lors de la saisie des informations financières.
                 </p>
             </ng-container>
         </ng-container>
@@ -352,3 +346,4 @@
         <app-custom-button (click)="closeSuccessModal()" text="Fermer"></app-custom-button>
     </div>
 </app-custom-modal>
+

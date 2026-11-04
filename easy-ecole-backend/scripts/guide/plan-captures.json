@@ -1,0 +1,7496 @@
+[
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "01_sessions.png",
+    "slug": "sessions",
+    "route": "/inscription/sessions",
+    "label": "Sessions",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/sessions"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "02_parcours.png",
+    "slug": "parcours",
+    "route": "/inscription/parcours",
+    "label": "Parcours",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/parcours"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "03_salles-de-classe.png",
+    "slug": "salles-de-classe",
+    "route": "/inscription/salles-de-classe",
+    "label": "Salles de classe",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/salles-de-classe"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "04_frais-par-parcours.png",
+    "slug": "frais-par-parcours",
+    "route": "/inscription/frais-parcours",
+    "label": "Frais par parcours",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/frais-parcours"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "05_demandes.png",
+    "slug": "demandes",
+    "route": "/inscription/demandes",
+    "label": "Demandes",
+    "reason": "contexte(1740)",
+    "candidates": [
+      "/inscription/demandes",
+      "/scolarite/secretariat/demandes"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "06_effectifs-inscrits.png",
+    "slug": "effectifs-inscrits",
+    "route": "/inscription/effectifs",
+    "label": "Effectifs inscrits",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/effectifs"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "07_demandes-orientation.png",
+    "slug": "demandes-orientation",
+    "route": "/orientation/demandes",
+    "label": "Demandes orientation",
+    "reason": "unique",
+    "candidates": [
+      "/orientation/demandes"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "08_parcours-orientation.png",
+    "slug": "parcours-orientation",
+    "route": "/orientation/parcours",
+    "label": "Parcours orientation",
+    "reason": "unique",
+    "candidates": [
+      "/orientation/parcours"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "09_preinscriptions.png",
+    "slug": "preinscriptions",
+    "route": "/inscription/comite-orientation",
+    "label": "Preinscriptions",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/comite-orientation"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "10_mes-bordereaux.png",
+    "slug": "mes-bordereaux",
+    "route": "/inscription/bordereaux",
+    "label": "Mes bordereaux",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/bordereaux"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "13_designation-directeur-memoire.png",
+    "slug": "designation-directeur-memoire",
+    "route": "/inscription/designation-memoire",
+    "label": "Désignation directeur mémoire",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/designation-memoire"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "14_configurations.png",
+    "slug": "configurations",
+    "route": "/bourses/configurations",
+    "label": "Configurations",
+    "reason": "unique",
+    "candidates": [
+      "/bourses/configurations"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "15_attributions.png",
+    "slug": "attributions",
+    "route": "/bourses/attributions",
+    "label": "Attributions",
+    "reason": "unique",
+    "candidates": [
+      "/bourses/attributions"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "16_campagne-de-bourses.png",
+    "slug": "campagne-de-bourses",
+    "route": "/bourses/campagne",
+    "label": "Campagne de bourses",
+    "reason": "unique",
+    "candidates": [
+      "/bourses/campagne"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "17_dossiers-etudiants.png",
+    "slug": "dossiers-etudiants",
+    "route": "/inscription/dossiers",
+    "label": "Dossiers etudiants",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/dossiers"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "18_cartes-etudiantes.png",
+    "slug": "cartes-etudiantes",
+    "route": "/inscription/cartes",
+    "label": "Cartes étudiantes",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/cartes"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "19_arborescence-dossiers.png",
+    "slug": "arborescence-dossiers",
+    "route": "/inscription/hierarchy-dossiers",
+    "label": "Arborescence dossiers",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/hierarchy-dossiers"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "20_registres.png",
+    "slug": "registres",
+    "route": "/scolarite/registres",
+    "label": "Registres",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/registres"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "21_equivalences.png",
+    "slug": "equivalences",
+    "route": "/bulletins/equivalences",
+    "label": "Equivalences",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/equivalences"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "22_dispenses.png",
+    "slug": "dispenses",
+    "route": "/bulletins/dispenses",
+    "label": "Dispenses",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/dispenses"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "23_reorientation.png",
+    "slug": "reorientation",
+    "route": "/scolarite/reorientation",
+    "label": "Reorientation",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/reorientation"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "24_reclamations.png",
+    "slug": "reclamations",
+    "route": "/scolarite/mes-reclamations",
+    "label": "Reclamations",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/mes-reclamations"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "25_traiter-reclam.png",
+    "slug": "traiter-reclam",
+    "route": "/scolarite/traiter-reclamations",
+    "label": "Traiter reclam.",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/traiter-reclamations"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "26_emplois-du-temps.png",
+    "slug": "emplois-du-temps",
+    "route": "/cours/emplois-du-temps",
+    "label": "Emplois du temps",
+    "reason": "unique",
+    "candidates": [
+      "/cours/emplois-du-temps"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "27_calendrier.png",
+    "slug": "calendrier",
+    "route": "/scolarite/calendrier",
+    "label": "Calendrier",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/calendrier"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "28_sessions-examens.png",
+    "slug": "sessions-examens",
+    "route": "/bulletins/sessions",
+    "label": "Sessions examens",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/sessions"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "29_rattrapages.png",
+    "slug": "rattrapages",
+    "route": "/bulletins/rattrapages",
+    "label": "Rattrapages",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/rattrapages"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "30_decisions-passage.png",
+    "slug": "decisions-passage",
+    "route": "/scolarite/decisions-passage",
+    "label": "Decisions passage",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/decisions-passage"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "31_enseignants.png",
+    "slug": "enseignants",
+    "route": "/cours/enseignants",
+    "label": "Enseignants",
+    "reason": "unique",
+    "candidates": [
+      "/cours/enseignants"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "32_cahiers-de-texte.png",
+    "slug": "cahiers-de-texte",
+    "route": "/cours/cahiers-de-texte",
+    "label": "Cahiers de texte",
+    "reason": "unique",
+    "candidates": [
+      "/cours/cahiers-de-texte"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "33_cahier-de-presence.png",
+    "slug": "cahier-de-presence",
+    "route": "/cours/presences",
+    "label": "Cahier de présence",
+    "reason": "unique",
+    "candidates": [
+      "/cours/presences"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "34_notes.png",
+    "slug": "notes",
+    "route": "/cours/notes",
+    "label": "Notes",
+    "reason": "contexte(928)",
+    "candidates": [
+      "/cours/notes",
+      "/reporting/notes",
+      "/parent/notes"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "35_bibliotheque.png",
+    "slug": "bibliotheque",
+    "route": "/scolarite/bibliotheque",
+    "label": "Bibliotheque",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/bibliotheque"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "36_gestion-bibliotheque.png",
+    "slug": "gestion-bibliotheque",
+    "route": "/scolarite/gestion-bibliotheque",
+    "label": "Gestion bibliotheque",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/gestion-bibliotheque"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "37_bulletins.png",
+    "slug": "bulletins",
+    "route": "/bulletins",
+    "label": "Bulletins",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "38_moyennes.png",
+    "slug": "moyennes",
+    "route": "/bulletins/moyennes",
+    "label": "Moyennes",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/moyennes"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "39_audit-notes.png",
+    "slug": "audit-notes",
+    "route": "/bulletins/audit-notes",
+    "label": "Audit notes",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/audit-notes"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "40_parametres-notation.png",
+    "slug": "parametres-notation",
+    "route": "/bulletins/parametres-notation",
+    "label": "Paramètres notation",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/parametres-notation"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "41_deliberations-jury.png",
+    "slug": "deliberations-jury",
+    "route": "/bulletins/deliberations-jury",
+    "label": "Délibérations & Jury",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/deliberations-jury"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "42_absences.png",
+    "slug": "absences",
+    "route": "/bulletins/absences",
+    "label": "Absences",
+    "reason": "contexte(1132)",
+    "candidates": [
+      "/bulletins/absences",
+      "/pointage/absences",
+      "/parent/absences"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "43_sanctions-discipline.png",
+    "slug": "sanctions-discipline",
+    "route": "/scolarite/sanctions-discipline",
+    "label": "Sanctions & Discipline",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/sanctions-discipline"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "44_conseils-classe.png",
+    "slug": "conseils-classe",
+    "route": "/scolarite/conseils",
+    "label": "Conseils classe",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/conseils"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "45_annonces.png",
+    "slug": "annonces",
+    "route": "/communication/annonces",
+    "label": "Annonces",
+    "reason": "unique",
+    "candidates": [
+      "/communication/annonces"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "46_vie-estudiantine.png",
+    "slug": "vie-estudiantine",
+    "route": "/communication",
+    "label": "Vie estudiantine",
+    "reason": "unique",
+    "candidates": [
+      "/communication"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "47_suggestions.png",
+    "slug": "suggestions",
+    "route": "/communication/suggestions",
+    "label": "Suggestions",
+    "reason": "unique",
+    "candidates": [
+      "/communication/suggestions"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "48_offres-stage.png",
+    "slug": "offres-stage",
+    "route": "/stages/offres",
+    "label": "Offres stage",
+    "reason": "unique",
+    "candidates": [
+      "/stages/offres"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "49_demandes-stage.png",
+    "slug": "demandes-stage",
+    "route": "/stages/demandes",
+    "label": "Demandes stage",
+    "reason": "unique",
+    "candidates": [
+      "/stages/demandes"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "50_entreprises.png",
+    "slug": "entreprises",
+    "route": "/stages/entreprises",
+    "label": "Entreprises",
+    "reason": "unique",
+    "candidates": [
+      "/stages/entreprises"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "51_paiements.png",
+    "slug": "paiements",
+    "route": "/inscription/paiements",
+    "label": "Paiements",
+    "reason": "contexte(1070)",
+    "candidates": [
+      "/inscription/paiements",
+      "/reporting/paiements",
+      "/parent/paiements"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "52_echeances.png",
+    "slug": "echeances",
+    "route": "/inscription/echeances",
+    "label": "Echeances",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/echeances"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "53_situation-irreguliere.png",
+    "slug": "situation-irreguliere",
+    "route": "/inscription/finance/irreguliers",
+    "label": "Situation irrégulière",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/finance/irreguliers"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "54_situation-financiere.png",
+    "slug": "situation-financiere",
+    "route": "/inscription/finance/situation-financiere",
+    "label": "Situation financière",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/finance/situation-financiere"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "55_valid-bordereaux.png",
+    "slug": "valid-bordereaux",
+    "route": "/inscription/validation-bordereaux",
+    "label": "Valid. bordereaux",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/validation-bordereaux"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "56_validation-comite.png",
+    "slug": "validation-comite",
+    "route": "/inscription/comite-validation",
+    "label": "Validation comité",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/comite-validation"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "57_bordereaux-a-imputer.png",
+    "slug": "bordereaux-a-imputer",
+    "route": "/inscription/finance/bordereaux",
+    "label": "Bordereaux à imputer",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/finance/bordereaux"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "58_bordereaux-en-attente.png",
+    "slug": "bordereaux-en-attente",
+    "route": "/inscription/finance/bordereaux/en-attente",
+    "label": "Bordereaux en attente",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/finance/bordereaux/en-attente"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "59_bordereaux-traites.png",
+    "slug": "bordereaux-traites",
+    "route": "/inscription/finance/bordereaux/traites",
+    "label": "Bordereaux traités",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/finance/bordereaux/traites"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "60_bordereaux-rejetes.png",
+    "slug": "bordereaux-rejetes",
+    "route": "/inscription/finance/bordereaux/rejetes",
+    "label": "Bordereaux rejetés",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/finance/bordereaux/rejetes"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "61_types-de-bordereau.png",
+    "slug": "types-de-bordereau",
+    "route": "/inscription/finance/types-bordereaux",
+    "label": "Types de bordereau",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/finance/types-bordereaux"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "62_comptabilite.png",
+    "slug": "comptabilite",
+    "route": "/comptabilite/dashboard",
+    "label": "Comptabilite",
+    "reason": "unique",
+    "candidates": [
+      "/comptabilite/dashboard"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "63_categories.png",
+    "slug": "categories",
+    "route": "/stocks/categories",
+    "label": "Catégories",
+    "reason": "contexte(916)",
+    "candidates": [
+      "/stocks/categories",
+      "/immobilisations/categories"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "64_transferts.png",
+    "slug": "transferts",
+    "route": "/stocks/transferts",
+    "label": "Transferts",
+    "reason": "unique",
+    "candidates": [
+      "/stocks/transferts"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "65_corrections.png",
+    "slug": "corrections",
+    "route": "/stocks/corrections-stock",
+    "label": "Corrections",
+    "reason": "unique",
+    "candidates": [
+      "/stocks/corrections-stock"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "66_rebuts.png",
+    "slug": "rebuts",
+    "route": "/stocks/rebuts",
+    "label": "Rebuts",
+    "reason": "contexte(1324)",
+    "candidates": [
+      "/stocks/rebuts",
+      "/immobilisations/rebuts"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "67_inventaires.png",
+    "slug": "inventaires",
+    "route": "/stocks/inventaires",
+    "label": "Inventaires",
+    "reason": "contexte(1528)",
+    "candidates": [
+      "/stocks/inventaires",
+      "/immobilisations/inventaires"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "68_fournisseurs.png",
+    "slug": "fournisseurs",
+    "route": "/stocks/fournisseurs",
+    "label": "Fournisseurs",
+    "reason": "contexte(1528)",
+    "candidates": [
+      "/achats/fournisseurs",
+      "/stocks/fournisseurs"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "69_reportings.png",
+    "slug": "reportings",
+    "route": "/stocks/reportings",
+    "label": "Reportings",
+    "reason": "contexte(1528)",
+    "candidates": [
+      "/stocks/reportings",
+      "/immobilisations/reportings"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "70_cycle-de-vie.png",
+    "slug": "cycle-de-vie",
+    "route": "/stocks/cycle-vie",
+    "label": "Cycle de vie",
+    "reason": "unique",
+    "candidates": [
+      "/stocks/cycle-vie"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "71_sites.png",
+    "slug": "sites",
+    "route": "/immobilisations/sites",
+    "label": "Sites",
+    "reason": "contexte(1120)",
+    "candidates": [
+      "/immobilisations/sites",
+      "/administration/sites"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "72_categories.png",
+    "slug": "categories",
+    "route": "/immobilisations/categories",
+    "label": "Categories",
+    "reason": "contexte(1528)",
+    "candidates": [
+      "/stocks/categories",
+      "/immobilisations/categories"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "73_affectations.png",
+    "slug": "affectations",
+    "route": "/immobilisations/affectations",
+    "label": "Affectations",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/affectations"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "74_assurances.png",
+    "slug": "assurances",
+    "route": "/immobilisations/assurances",
+    "label": "Assurances",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/assurances"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "75_sorties-provisoires.png",
+    "slug": "sorties-provisoires",
+    "route": "/immobilisations/sorties-provisoires",
+    "label": "Sorties provisoires",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/sorties-provisoires"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "76_cessions.png",
+    "slug": "cessions",
+    "route": "/immobilisations/cessions",
+    "label": "Cessions",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/cessions"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "77_rebuts.png",
+    "slug": "rebuts",
+    "route": "/immobilisations/rebuts",
+    "label": "Rebuts",
+    "reason": "contexte(1498)",
+    "candidates": [
+      "/stocks/rebuts",
+      "/immobilisations/rebuts"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "78_maintenance.png",
+    "slug": "maintenance",
+    "route": "/immobilisations/maintenances",
+    "label": "Maintenance",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/maintenances"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "79_inventaires.png",
+    "slug": "inventaires",
+    "route": "/immobilisations/inventaires",
+    "label": "Inventaires",
+    "reason": "contexte(1070)",
+    "candidates": [
+      "/stocks/inventaires",
+      "/immobilisations/inventaires"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "80_reportings.png",
+    "slug": "reportings",
+    "route": "/immobilisations/reportings",
+    "label": "Reportings",
+    "reason": "contexte(1070)",
+    "candidates": [
+      "/stocks/reportings",
+      "/immobilisations/reportings"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "81_categories-professionnelles.png",
+    "slug": "categories-professionnelles",
+    "route": "/rh/categories-professionnelles",
+    "label": "Catégories professionnelles",
+    "reason": "unique",
+    "candidates": [
+      "/rh/categories-professionnelles"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "82_grilles-salariales.png",
+    "slug": "grilles-salariales",
+    "route": "/rh/grilles-salariales",
+    "label": "Grilles salariales",
+    "reason": "unique",
+    "candidates": [
+      "/rh/grilles-salariales"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "83_parametres-paie.png",
+    "slug": "parametres-paie",
+    "route": "/rh/parametres-paie",
+    "label": "Paramètres paie",
+    "reason": "unique",
+    "candidates": [
+      "/rh/parametres-paie"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "84_heures-supplementaires.png",
+    "slug": "heures-supplementaires",
+    "route": "/rh/heures-supplementaires",
+    "label": "Heures supplémentaires",
+    "reason": "unique",
+    "candidates": [
+      "/rh/heures-supplementaires"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "85_prets-avances.png",
+    "slug": "prets-avances",
+    "route": "/rh/prets",
+    "label": "Prêts / Avances",
+    "reason": "unique",
+    "candidates": [
+      "/rh/prets"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "86_prestataires.png",
+    "slug": "prestataires",
+    "route": "/rh/prestataires",
+    "label": "Prestataires",
+    "reason": "unique",
+    "candidates": [
+      "/rh/prestataires"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "87_indemnites-prestataires.png",
+    "slug": "indemnites-prestataires",
+    "route": "/rh/indemnites-prestataires",
+    "label": "Indemnités prestataires",
+    "reason": "unique",
+    "candidates": [
+      "/rh/indemnites-prestataires"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "88_contrats.png",
+    "slug": "contrats",
+    "route": "/rh/contrats-enseignant",
+    "label": "Contrats",
+    "reason": "contexte(1712)",
+    "candidates": [
+      "/marche/contrats",
+      "/rh/contrats-enseignant"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "89_planning-personnel.png",
+    "slug": "planning-personnel",
+    "route": "/rh/planning-personnel",
+    "label": "Planning personnel",
+    "reason": "unique",
+    "candidates": [
+      "/rh/planning-personnel"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "90_reportings-rh.png",
+    "slug": "reportings-rh",
+    "route": "/rh/reportings",
+    "label": "Reportings RH",
+    "reason": "unique",
+    "candidates": [
+      "/rh/reportings"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "91_discussions.png",
+    "slug": "discussions",
+    "route": "/communication/discussions",
+    "label": "Discussions",
+    "reason": "unique",
+    "candidates": [
+      "/communication/discussions"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "92_bordereaux.png",
+    "slug": "bordereaux",
+    "route": "/ged/disposal",
+    "label": "Bordereaux",
+    "reason": "unique",
+    "candidates": [
+      "/ged/disposal"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "93_mes-cours.png",
+    "slug": "mes-cours",
+    "route": "/elearning/dashboard",
+    "label": "Mes cours",
+    "reason": "unique",
+    "candidates": [
+      "/elearning/dashboard"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "94_cours-videos.png",
+    "slug": "cours-videos",
+    "route": "/elearning/videos",
+    "label": "Cours vidéos",
+    "reason": "unique",
+    "candidates": [
+      "/elearning/videos"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "95_cours-pdf.png",
+    "slug": "cours-pdf",
+    "route": "/elearning/pdfs",
+    "label": "Cours PDF",
+    "reason": "unique",
+    "candidates": [
+      "/elearning/pdfs"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "96_quiz.png",
+    "slug": "quiz",
+    "route": "/elearning/quiz",
+    "label": "Quiz",
+    "reason": "unique",
+    "candidates": [
+      "/elearning/quiz"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "97_progression.png",
+    "slug": "progression",
+    "route": "/elearning/progression",
+    "label": "Progression",
+    "reason": "unique",
+    "candidates": [
+      "/elearning/progression"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "98_certificats.png",
+    "slug": "certificats",
+    "route": "/elearning/certificats",
+    "label": "Certificats",
+    "reason": "unique",
+    "candidates": [
+      "/elearning/certificats"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "99_devoirs.png",
+    "slug": "devoirs",
+    "route": "/elearning/devoirs",
+    "label": "Devoirs",
+    "reason": "unique",
+    "candidates": [
+      "/elearning/devoirs"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "100_catalogue-e-learning.png",
+    "slug": "catalogue-e-learning",
+    "route": "/elearning/catalogue",
+    "label": "Catalogue e-learning",
+    "reason": "unique",
+    "candidates": [
+      "/elearning/catalogue"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "101_utilisateurs.png",
+    "slug": "utilisateurs",
+    "route": "/administration/utilisateurs",
+    "label": "Utilisateurs",
+    "reason": "unique",
+    "candidates": [
+      "/administration/utilisateurs"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "102_qr-codes.png",
+    "slug": "qr-codes",
+    "route": "/administration/qr-codes",
+    "label": "QR Codes",
+    "reason": "unique",
+    "candidates": [
+      "/administration/qr-codes"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "103_journal-audit.png",
+    "slug": "journal-audit",
+    "route": "/administration/audit-logs",
+    "label": "Journal audit",
+    "reason": "unique",
+    "candidates": [
+      "/administration/audit-logs"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "104_configuration.png",
+    "slug": "configuration",
+    "route": "/administration/configuration",
+    "label": "Configuration",
+    "reason": "unique",
+    "candidates": [
+      "/administration/configuration"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "105_membres-du-comite.png",
+    "slug": "membres-du-comite",
+    "route": "/administration/comite-membres",
+    "label": "Membres du comité",
+    "reason": "unique",
+    "candidates": [
+      "/administration/comite-membres"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "106_profils-dacces.png",
+    "slug": "profils-dacces",
+    "route": "/administration/roles",
+    "label": "Profils d’accès",
+    "reason": "unique",
+    "candidates": [
+      "/administration/roles"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "108_mon-profil.png",
+    "slug": "mon-profil",
+    "route": "/parametres/profil",
+    "label": "Mon profil",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/profil"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "109_mon-compte.png",
+    "slug": "mon-compte",
+    "route": "/parametres/compte",
+    "label": "Mon compte",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/compte"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "110_ecole.png",
+    "slug": "ecole",
+    "route": "/parametres/ecole",
+    "label": "Ecole",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/ecole"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "111_annee-scol.png",
+    "slug": "annee-scol",
+    "route": "/parametres/annees-scolaires",
+    "label": "Annee scol.",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/annees-scolaires"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "112_frais.png",
+    "slug": "frais",
+    "route": "/parametres/frais",
+    "label": "Frais",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/frais"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "113_notifications.png",
+    "slug": "notifications",
+    "route": "/parametres/notifications",
+    "label": "Notifications",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/notifications"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "114_systeme.png",
+    "slug": "systeme",
+    "route": "/administration/configuration",
+    "label": "/administration/configuration",
+    "reason": "override",
+    "candidates": []
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "115_sauvegardes.png",
+    "slug": "sauvegardes",
+    "route": "/parametres/sauvegardes",
+    "label": "Sauvegardes",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/sauvegardes"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "116_types-de-documents.png",
+    "slug": "types-de-documents",
+    "route": "/docgen/types",
+    "label": "Types de documents",
+    "reason": "contexte(1066)",
+    "candidates": [
+      "/docgen/types",
+      "/scolarite/secretariat/types-documents"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "117_modeles.png",
+    "slug": "modeles",
+    "route": "/docgen/templates",
+    "label": "Modeles",
+    "reason": "unique",
+    "candidates": [
+      "/docgen/templates"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "118_cachet-electronique.png",
+    "slug": "cachet-electronique",
+    "route": "/docgen/cachet",
+    "label": "Cachet electronique",
+    "reason": "unique",
+    "candidates": [
+      "/docgen/cachet"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "119_workflows.png",
+    "slug": "workflows",
+    "route": "/docgen/workflows",
+    "label": "Workflows",
+    "reason": "unique",
+    "candidates": [
+      "/docgen/workflows"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "120_tous-les-documents.png",
+    "slug": "tous-les-documents",
+    "route": "/docgen/documents",
+    "label": "Tous les documents",
+    "reason": "unique",
+    "candidates": [
+      "/docgen/documents"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "121_generer.png",
+    "slug": "generer",
+    "route": "/docgen/generer",
+    "label": "Générer",
+    "reason": "unique",
+    "candidates": [
+      "/docgen/generer"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "122_diplomes.png",
+    "slug": "diplomes",
+    "route": "/scolarite/diplomes",
+    "label": "Diplomes",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/diplomes"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "123_demandes-docs.png",
+    "slug": "demandes-docs",
+    "route": "/scolarite/demandes-documents",
+    "label": "Demandes docs",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/demandes-documents"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "124_mes-documents.png",
+    "slug": "mes-documents",
+    "route": "/scolarite/mes-documents",
+    "label": "Mes documents",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/mes-documents"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "125_traiter-demandes.png",
+    "slug": "traiter-demandes",
+    "route": "/scolarite/traiter-demandes",
+    "label": "Traiter demandes",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/traiter-demandes"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "126_demandes-vae.png",
+    "slug": "demandes-vae",
+    "route": "/scolarite/demandes-vae",
+    "label": "Demandes VAE",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/demandes-vae"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "127_signatures.png",
+    "slug": "signatures",
+    "route": "/docgen/signatures",
+    "label": "Signatures",
+    "reason": "unique",
+    "candidates": [
+      "/docgen/signatures"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "128_signature-direction.png",
+    "slug": "signature-direction",
+    "route": "/docgen/signatures/direction",
+    "label": "Signature direction",
+    "reason": "unique",
+    "candidates": [
+      "/docgen/signatures/direction"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "129_demandes-de-documents.png",
+    "slug": "demandes-de-documents",
+    "route": "/scolarite/comite-demandes-documents",
+    "label": "Demandes de documents",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/comite-demandes-documents"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "130_tableau-de-bord.png",
+    "slug": "tableau-de-bord",
+    "route": "/scolarite/secretariat/dashboard",
+    "label": "Tableau de bord",
+    "reason": "contexte(1666)",
+    "candidates": [
+      "/parent",
+      "/scolarite/secretariat/dashboard"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "131_encaissement.png",
+    "slug": "encaissement",
+    "route": "/scolarite/secretariat/encaissement",
+    "label": "Encaissement",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/secretariat/encaissement"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "132_caisse.png",
+    "slug": "caisse",
+    "route": "/scolarite/secretariat/caisse",
+    "label": "Caisse",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/secretariat/caisse"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "133_cloture-caisse.png",
+    "slug": "cloture-caisse",
+    "route": "/scolarite/secretariat/cloture-caisse",
+    "label": "Cloture caisse",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/secretariat/cloture-caisse"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "134_demandes.png",
+    "slug": "demandes",
+    "route": "/scolarite/secretariat/demandes",
+    "label": "Demandes",
+    "reason": "contexte(1688)",
+    "candidates": [
+      "/inscription/demandes",
+      "/scolarite/secretariat/demandes"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "135_autorisations-provisoires.png",
+    "slug": "autorisations-provisoires",
+    "route": "/scolarite/secretariat/autorisations-provisoires",
+    "label": "Autorisations provisoires",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/secretariat/autorisations-provisoires"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "136_types-de-documents.png",
+    "slug": "types-de-documents",
+    "route": "/scolarite/secretariat/types-documents",
+    "label": "Types de documents",
+    "reason": "contexte(1482)",
+    "candidates": [
+      "/docgen/types",
+      "/scolarite/secretariat/types-documents"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "137_journal-caisse.png",
+    "slug": "journal-caisse",
+    "route": "/scolarite/secretariat/journal-caisse",
+    "label": "Journal caisse",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/secretariat/journal-caisse"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "139_tableau-de-bord-du-superviseur.png",
+    "slug": "tableau-de-bord-du-superviseur",
+    "route": "/cours/supervision-generale",
+    "label": "Tableau de bord du superviseur",
+    "reason": "unique",
+    "candidates": [
+      "/cours/supervision-generale"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "140_mon-tableau-de-bord.png",
+    "slug": "mon-tableau-de-bord",
+    "route": "/cours/tableau-de-bord",
+    "label": "Mon tableau de bord",
+    "reason": "unique",
+    "candidates": [
+      "/cours/tableau-de-bord"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "141_unites-d-enseignements.png",
+    "slug": "unites-d-enseignements",
+    "route": "/cours/cours",
+    "label": "Unités d'enseignements",
+    "reason": "unique",
+    "candidates": [
+      "/cours/cours"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "142_planifications.png",
+    "slug": "planifications",
+    "route": "/marche/planifications",
+    "label": "Planifications",
+    "reason": "unique",
+    "candidates": [
+      "/marche/planifications"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "143_ami.png",
+    "slug": "ami",
+    "route": "/marche/ami",
+    "label": "AMI",
+    "reason": "unique",
+    "candidates": [
+      "/marche/ami"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "144_appels-d-offres.png",
+    "slug": "appels-d-offres",
+    "route": "/marche/ao",
+    "label": "Appels d'offres",
+    "reason": "unique",
+    "candidates": [
+      "/marche/ao"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "145_contrats.png",
+    "slug": "contrats",
+    "route": "/marche/contrats",
+    "label": "Contrats",
+    "reason": "contexte(1314)",
+    "candidates": [
+      "/marche/contrats",
+      "/rh/contrats-enseignant"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "146_avenants.png",
+    "slug": "avenants",
+    "route": "/marche/avenants",
+    "label": "Avenants",
+    "reason": "unique",
+    "candidates": [
+      "/marche/avenants"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "147_comptes-bancaires.png",
+    "slug": "comptes-bancaires",
+    "route": "/comptabilite/comptes-bancaires",
+    "label": "Comptes bancaires",
+    "reason": "unique",
+    "candidates": [
+      "/comptabilite/comptes-bancaires"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "148_releves-bancaires.png",
+    "slug": "releves-bancaires",
+    "route": "/comptabilite/releves-bancaires",
+    "label": "Relevés bancaires",
+    "reason": "unique",
+    "candidates": [
+      "/comptabilite/releves-bancaires"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "149_rapprochement.png",
+    "slug": "rapprochement",
+    "route": "/comptabilite/rapprochement",
+    "label": "Rapprochement",
+    "reason": "unique",
+    "candidates": [
+      "/comptabilite/rapprochement"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "150_demandes-achat.png",
+    "slug": "demandes-achat",
+    "route": "/achats/demandes",
+    "label": "Demandes achat",
+    "reason": "unique",
+    "candidates": [
+      "/achats/demandes"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "151_validations.png",
+    "slug": "validations",
+    "route": "/achats/validations",
+    "label": "Validations",
+    "reason": "unique",
+    "candidates": [
+      "/achats/validations"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "152_commandes.png",
+    "slug": "commandes",
+    "route": "/achats/commandes",
+    "label": "Commandes",
+    "reason": "unique",
+    "candidates": [
+      "/achats/commandes"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "153_receptions.png",
+    "slug": "receptions",
+    "route": "/achats/receptions",
+    "label": "Receptions",
+    "reason": "unique",
+    "candidates": [
+      "/achats/receptions"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "154_factures.png",
+    "slug": "factures",
+    "route": "/achats/factures",
+    "label": "Factures",
+    "reason": "unique",
+    "candidates": [
+      "/achats/factures"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "155_fournisseurs.png",
+    "slug": "fournisseurs",
+    "route": "/achats/fournisseurs",
+    "label": "Fournisseurs",
+    "reason": "contexte(1528)",
+    "candidates": [
+      "/achats/fournisseurs",
+      "/stocks/fournisseurs"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "156_budgets.png",
+    "slug": "budgets",
+    "route": "/achats/budgets",
+    "label": "Budgets",
+    "reason": "unique",
+    "candidates": [
+      "/achats/budgets"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "157_articles.png",
+    "slug": "articles",
+    "route": "/stocks/articles",
+    "label": "Articles",
+    "reason": "unique",
+    "candidates": [
+      "/stocks/articles"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "158_mouvements.png",
+    "slug": "mouvements",
+    "route": "/stocks/mouvements",
+    "label": "Mouvements",
+    "reason": "unique",
+    "candidates": [
+      "/stocks/mouvements"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "159_besoins.png",
+    "slug": "besoins",
+    "route": "/stocks/besoins",
+    "label": "Besoins",
+    "reason": "unique",
+    "candidates": [
+      "/stocks/besoins"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "160_demandes-de-prix.png",
+    "slug": "demandes-de-prix",
+    "route": "/stocks/demandes-prix",
+    "label": "Demandes de prix",
+    "reason": "unique",
+    "candidates": [
+      "/stocks/demandes-prix"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "161_immobilisations.png",
+    "slug": "immobilisations",
+    "route": "/immobilisations",
+    "label": "Immobilisations",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "162_employes.png",
+    "slug": "employes",
+    "route": "/rh/employes",
+    "label": "Employes",
+    "reason": "unique",
+    "candidates": [
+      "/rh/employes"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "163_offres-d-emploi.png",
+    "slug": "offres-d-emploi",
+    "route": "/rh/offres-emploi",
+    "label": "Offres d'emploi",
+    "reason": "unique",
+    "candidates": [
+      "/rh/offres-emploi"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "164_candidatures.png",
+    "slug": "candidatures",
+    "route": "/rh/candidatures",
+    "label": "Candidatures",
+    "reason": "unique",
+    "candidates": [
+      "/rh/candidatures"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "165_paie.png",
+    "slug": "paie",
+    "route": "/rh/paie",
+    "label": "Paie",
+    "reason": "unique",
+    "candidates": [
+      "/rh/paie"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "166_prestations.png",
+    "slug": "prestations",
+    "route": "/rh/prestations",
+    "label": "Prestations",
+    "reason": "unique",
+    "candidates": [
+      "/rh/prestations"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "167_formations.png",
+    "slug": "formations",
+    "route": "/rh/formations",
+    "label": "Formations",
+    "reason": "unique",
+    "candidates": [
+      "/rh/formations"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "168_evaluations.png",
+    "slug": "evaluations",
+    "route": "/rh/evaluations",
+    "label": "Évaluations",
+    "reason": "unique",
+    "candidates": [
+      "/rh/evaluations"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "169_demandes-de-conge.png",
+    "slug": "demandes-de-conge",
+    "route": "/rh/demandes-conge",
+    "label": "Demandes de congé",
+    "reason": "unique",
+    "candidates": [
+      "/rh/demandes-conge"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "170_soldes-de-conge.png",
+    "slug": "soldes-de-conge",
+    "route": "/rh/soldes-conge",
+    "label": "Soldes de congé",
+    "reason": "unique",
+    "candidates": [
+      "/rh/soldes-conge"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "171_terminal.png",
+    "slug": "terminal",
+    "route": "/pointage",
+    "label": "Terminal",
+    "reason": "unique",
+    "candidates": [
+      "/pointage"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "172_historique.png",
+    "slug": "historique",
+    "route": "/pointage/historique",
+    "label": "Historique",
+    "reason": "unique",
+    "candidates": [
+      "/pointage/historique"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "173_shifts.png",
+    "slug": "shifts",
+    "route": "/pointage/shifts",
+    "label": "Shifts",
+    "reason": "unique",
+    "candidates": [
+      "/pointage/shifts"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "174_absences.png",
+    "slug": "absences",
+    "route": "/pointage/absences",
+    "label": "Absences",
+    "reason": "contexte(1508)",
+    "candidates": [
+      "/bulletins/absences",
+      "/pointage/absences",
+      "/parent/absences"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "175_planning.png",
+    "slug": "planning",
+    "route": "/pointage/planning",
+    "label": "Planning",
+    "reason": "unique",
+    "candidates": [
+      "/pointage/planning"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "176_rapports.png",
+    "slug": "rapports",
+    "route": "/pointage/rapports",
+    "label": "Rapports",
+    "reason": "unique",
+    "candidates": [
+      "/pointage/rapports"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "177_dashboard.png",
+    "slug": "dashboard",
+    "route": "/reporting",
+    "label": "Dashboard",
+    "reason": "unique",
+    "candidates": [
+      "/reporting"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "178_effectifs.png",
+    "slug": "effectifs",
+    "route": "/reporting/effectifs",
+    "label": "Effectifs",
+    "reason": "unique",
+    "candidates": [
+      "/reporting/effectifs"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "179_notes.png",
+    "slug": "notes",
+    "route": "/reporting/notes",
+    "label": "Notes",
+    "reason": "contexte(1070)",
+    "candidates": [
+      "/cours/notes",
+      "/reporting/notes",
+      "/parent/notes"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "180_paiements.png",
+    "slug": "paiements",
+    "route": "/reporting/paiements",
+    "label": "Paiements",
+    "reason": "contexte(1284)",
+    "candidates": [
+      "/inscription/paiements",
+      "/reporting/paiements",
+      "/parent/paiements"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "181_rh.png",
+    "slug": "rh",
+    "route": "/reporting/rh",
+    "label": "RH",
+    "reason": "unique",
+    "candidates": [
+      "/reporting/rh"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "182_catalogue.png",
+    "slug": "catalogue",
+    "route": "/ged/catalog",
+    "label": "Catalogue",
+    "reason": "unique",
+    "candidates": [
+      "/ged/catalog"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "183_recherche-avancee.png",
+    "slug": "recherche-avancee",
+    "route": "/ged/search",
+    "label": "Recherche avancee",
+    "reason": "unique",
+    "candidates": [
+      "/ged/search"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "184_dossiers.png",
+    "slug": "dossiers",
+    "route": "/ged/folders",
+    "label": "Dossiers",
+    "reason": "unique",
+    "candidates": [
+      "/ged/folders"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "185_televerser.png",
+    "slug": "televerser",
+    "route": "/ged/upload",
+    "label": "Televerser",
+    "reason": "unique",
+    "candidates": [
+      "/ged/upload"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "186_conservation.png",
+    "slug": "conservation",
+    "route": "/ged/conservation",
+    "label": "Conservation",
+    "reason": "unique",
+    "candidates": [
+      "/ged/conservation"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "187_gestion-e-learning.png",
+    "slug": "gestion-e-learning",
+    "route": "/elearning/admin/gestion",
+    "label": "Gestion e-learning",
+    "reason": "unique",
+    "candidates": [
+      "/elearning/admin/gestion"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "194_non-conformites.png",
+    "slug": "non-conformites",
+    "route": "/qualite/non-conformites",
+    "label": "Non-conformités",
+    "reason": "unique",
+    "candidates": [
+      "/qualite/non-conformites"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "195_audits.png",
+    "slug": "audits",
+    "route": "/qualite/audits",
+    "label": "Audits",
+    "reason": "unique",
+    "candidates": [
+      "/qualite/audits"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "196_revues-direction.png",
+    "slug": "revues-direction",
+    "route": "/qualite/revues-direction",
+    "label": "Revues direction",
+    "reason": "unique",
+    "candidates": [
+      "/qualite/revues-direction"
+    ]
+  },
+  {
+    "dossier": "admin",
+    "role": "admin",
+    "fichier": "197_enquetes-satisfaction.png",
+    "slug": "enquetes-satisfaction",
+    "route": "/qualite/enquetes-satisfaction",
+    "label": "Enquêtes satisfaction",
+    "reason": "unique",
+    "candidates": [
+      "/qualite/enquetes-satisfaction"
+    ]
+  },
+  {
+    "dossier": "apprenant",
+    "role": "apprenant",
+    "fichier": "02_parcours.png",
+    "slug": "parcours",
+    "route": "/inscription/parcours",
+    "label": "Parcours",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/parcours"
+    ]
+  },
+  {
+    "dossier": "apprenant",
+    "role": "apprenant",
+    "fichier": "03_demandes.png",
+    "slug": "demandes",
+    "route": "/inscription/demandes",
+    "label": "Demandes",
+    "reason": "contexte(898)",
+    "candidates": [
+      "/inscription/demandes",
+      "/scolarite/secretariat/demandes"
+    ]
+  },
+  {
+    "dossier": "apprenant",
+    "role": "apprenant",
+    "fichier": "04_demandes-orientation.png",
+    "slug": "demandes-orientation",
+    "route": "/orientation/demandes",
+    "label": "Demandes orientation",
+    "reason": "unique",
+    "candidates": [
+      "/orientation/demandes"
+    ]
+  },
+  {
+    "dossier": "apprenant",
+    "role": "apprenant",
+    "fichier": "05_parcours-orientation.png",
+    "slug": "parcours-orientation",
+    "route": "/orientation/parcours",
+    "label": "Parcours orientation",
+    "reason": "unique",
+    "candidates": [
+      "/orientation/parcours"
+    ]
+  },
+  {
+    "dossier": "apprenant",
+    "role": "apprenant",
+    "fichier": "06_mes-bordereaux.png",
+    "slug": "mes-bordereaux",
+    "route": "/inscription/bordereaux",
+    "label": "Mes bordereaux",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/bordereaux"
+    ]
+  },
+  {
+    "dossier": "apprenant",
+    "role": "apprenant",
+    "fichier": "07_mon-dossier.png",
+    "slug": "mon-dossier",
+    "route": "/inscription/mon-dossier",
+    "label": "Mon dossier",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/mon-dossier"
+    ]
+  },
+  {
+    "dossier": "apprenant",
+    "role": "apprenant",
+    "fichier": "09_reorientation.png",
+    "slug": "reorientation",
+    "route": "/scolarite/reorientation",
+    "label": "Reorientation",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/reorientation"
+    ]
+  },
+  {
+    "dossier": "apprenant",
+    "role": "apprenant",
+    "fichier": "10_reclamations.png",
+    "slug": "reclamations",
+    "route": "/scolarite/mes-reclamations",
+    "label": "Reclamations",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/mes-reclamations"
+    ]
+  },
+  {
+    "dossier": "apprenant",
+    "role": "apprenant",
+    "fichier": "12_calendrier.png",
+    "slug": "calendrier",
+    "route": "/scolarite/calendrier",
+    "label": "Calendrier",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/calendrier"
+    ]
+  },
+  {
+    "dossier": "apprenant",
+    "role": "apprenant",
+    "fichier": "17_bibliotheque.png",
+    "slug": "bibliotheque",
+    "route": "/scolarite/bibliotheque",
+    "label": "Bibliotheque",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/bibliotheque"
+    ]
+  },
+  {
+    "dossier": "apprenant",
+    "role": "apprenant",
+    "fichier": "19_annonces.png",
+    "slug": "annonces",
+    "route": "/communication/annonces",
+    "label": "Annonces",
+    "reason": "unique",
+    "candidates": [
+      "/communication/annonces"
+    ]
+  },
+  {
+    "dossier": "apprenant",
+    "role": "apprenant",
+    "fichier": "20_vie-estudiantine.png",
+    "slug": "vie-estudiantine",
+    "route": "/communication",
+    "label": "Vie estudiantine",
+    "reason": "unique",
+    "candidates": [
+      "/communication"
+    ]
+  },
+  {
+    "dossier": "apprenant",
+    "role": "apprenant",
+    "fichier": "21_suggestions.png",
+    "slug": "suggestions",
+    "route": "/communication/suggestions",
+    "label": "Suggestions",
+    "reason": "unique",
+    "candidates": [
+      "/communication/suggestions"
+    ]
+  },
+  {
+    "dossier": "apprenant",
+    "role": "apprenant",
+    "fichier": "24_paiements.png",
+    "slug": "paiements",
+    "route": "/inscription/paiements",
+    "label": "Paiements",
+    "reason": "contexte(428)",
+    "candidates": [
+      "/inscription/paiements",
+      "/reporting/paiements",
+      "/parent/paiements"
+    ]
+  },
+  {
+    "dossier": "apprenant",
+    "role": "apprenant",
+    "fichier": "25_echeances.png",
+    "slug": "echeances",
+    "route": "/inscription/echeances",
+    "label": "Echeances",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/echeances"
+    ]
+  },
+  {
+    "dossier": "apprenant",
+    "role": "apprenant",
+    "fichier": "26_discussions.png",
+    "slug": "discussions",
+    "route": "/communication/discussions",
+    "label": "Discussions",
+    "reason": "unique",
+    "candidates": [
+      "/communication/discussions"
+    ]
+  },
+  {
+    "dossier": "apprenant",
+    "role": "apprenant",
+    "fichier": "34_mon-profil.png",
+    "slug": "mon-profil",
+    "route": "/parametres/profil",
+    "label": "Mon profil",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/profil"
+    ]
+  },
+  {
+    "dossier": "apprenant",
+    "role": "apprenant",
+    "fichier": "35_mon-compte.png",
+    "slug": "mon-compte",
+    "route": "/parametres/compte",
+    "label": "Mon compte",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/compte"
+    ]
+  },
+  {
+    "dossier": "apprenant",
+    "role": "apprenant",
+    "fichier": "36_diplomes.png",
+    "slug": "diplomes",
+    "route": "/scolarite/diplomes",
+    "label": "Diplomes",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/diplomes"
+    ]
+  },
+  {
+    "dossier": "apprenant",
+    "role": "apprenant",
+    "fichier": "37_demandes-docs.png",
+    "slug": "demandes-docs",
+    "route": "/scolarite/demandes-documents",
+    "label": "Demandes docs",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/demandes-documents"
+    ]
+  },
+  {
+    "dossier": "apprenant",
+    "role": "apprenant",
+    "fichier": "38_mes-documents.png",
+    "slug": "mes-documents",
+    "route": "/scolarite/mes-documents",
+    "label": "Mes documents",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/mes-documents"
+    ]
+  },
+  {
+    "dossier": "apprenant",
+    "role": "apprenant",
+    "fichier": "39_demandes-vae.png",
+    "slug": "demandes-vae",
+    "route": "/scolarite/demandes-vae",
+    "label": "Demandes VAE",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/demandes-vae"
+    ]
+  },
+  {
+    "dossier": "cabinet-comptable",
+    "role": "cabinet_comptable",
+    "fichier": "01_paiements.png",
+    "slug": "paiements",
+    "route": "/inscription/paiements",
+    "label": "Paiements",
+    "reason": "contexte(1070)",
+    "candidates": [
+      "/inscription/paiements",
+      "/reporting/paiements",
+      "/parent/paiements"
+    ]
+  },
+  {
+    "dossier": "cabinet-comptable",
+    "role": "cabinet_comptable",
+    "fichier": "02_echeances.png",
+    "slug": "echeances",
+    "route": "/inscription/echeances",
+    "label": "Echeances",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/echeances"
+    ]
+  },
+  {
+    "dossier": "cabinet-comptable",
+    "role": "cabinet_comptable",
+    "fichier": "03_situation-irreguliere.png",
+    "slug": "situation-irreguliere",
+    "route": "/inscription/finance/irreguliers",
+    "label": "Situation irrégulière",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/finance/irreguliers"
+    ]
+  },
+  {
+    "dossier": "cabinet-comptable",
+    "role": "cabinet_comptable",
+    "fichier": "04_situation-financiere.png",
+    "slug": "situation-financiere",
+    "route": "/inscription/finance/situation-financiere",
+    "label": "Situation financière",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/finance/situation-financiere"
+    ]
+  },
+  {
+    "dossier": "cabinet-comptable",
+    "role": "cabinet_comptable",
+    "fichier": "05_valid-bordereaux.png",
+    "slug": "valid-bordereaux",
+    "route": "/inscription/validation-bordereaux",
+    "label": "Valid. bordereaux",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/validation-bordereaux"
+    ]
+  },
+  {
+    "dossier": "cabinet-comptable",
+    "role": "cabinet_comptable",
+    "fichier": "06_comptabilite.png",
+    "slug": "comptabilite",
+    "route": "/comptabilite/dashboard",
+    "label": "Comptabilite",
+    "reason": "unique",
+    "candidates": [
+      "/comptabilite/dashboard"
+    ]
+  },
+  {
+    "dossier": "cabinet-comptable",
+    "role": "cabinet_comptable",
+    "fichier": "07_mon-profil.png",
+    "slug": "mon-profil",
+    "route": "/parametres/profil",
+    "label": "Mon profil",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/profil"
+    ]
+  },
+  {
+    "dossier": "cabinet-comptable",
+    "role": "cabinet_comptable",
+    "fichier": "08_mon-compte.png",
+    "slug": "mon-compte",
+    "route": "/parametres/compte",
+    "label": "Mon compte",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/compte"
+    ]
+  },
+  {
+    "dossier": "cabinet-comptable",
+    "role": "cabinet_comptable",
+    "fichier": "09_mes-bordereaux.png",
+    "slug": "mes-bordereaux",
+    "route": "/inscription/bordereaux",
+    "label": "Mes bordereaux",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/bordereaux"
+    ]
+  },
+  {
+    "dossier": "cabinet-comptable",
+    "role": "cabinet_comptable",
+    "fichier": "10_configurations.png",
+    "slug": "configurations",
+    "route": "/bourses/configurations",
+    "label": "Configurations",
+    "reason": "unique",
+    "candidates": [
+      "/bourses/configurations"
+    ]
+  },
+  {
+    "dossier": "cabinet-comptable",
+    "role": "cabinet_comptable",
+    "fichier": "11_attributions.png",
+    "slug": "attributions",
+    "route": "/bourses/attributions",
+    "label": "Attributions",
+    "reason": "unique",
+    "candidates": [
+      "/bourses/attributions"
+    ]
+  },
+  {
+    "dossier": "cabinet-comptable",
+    "role": "cabinet_comptable",
+    "fichier": "12_mon-tableau-de-bord.png",
+    "slug": "mon-tableau-de-bord",
+    "route": "/cours/tableau-de-bord",
+    "label": "Mon tableau de bord",
+    "reason": "unique",
+    "candidates": [
+      "/cours/tableau-de-bord"
+    ]
+  },
+  {
+    "dossier": "cabinet-comptable",
+    "role": "cabinet_comptable",
+    "fichier": "13_immobilisations.png",
+    "slug": "immobilisations",
+    "route": "/immobilisations",
+    "label": "Immobilisations",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations"
+    ]
+  },
+  {
+    "dossier": "cabinet-comptable",
+    "role": "cabinet_comptable",
+    "fichier": "14_sites.png",
+    "slug": "sites",
+    "route": "/immobilisations/sites",
+    "label": "Sites",
+    "reason": "contexte(1498)",
+    "candidates": [
+      "/immobilisations/sites",
+      "/administration/sites"
+    ]
+  },
+  {
+    "dossier": "cabinet-comptable",
+    "role": "cabinet_comptable",
+    "fichier": "15_categories.png",
+    "slug": "categories",
+    "route": "/immobilisations/categories",
+    "label": "Categories",
+    "reason": "contexte(1712)",
+    "candidates": [
+      "/stocks/categories",
+      "/immobilisations/categories"
+    ]
+  },
+  {
+    "dossier": "cabinet-comptable",
+    "role": "cabinet_comptable",
+    "fichier": "16_affectations.png",
+    "slug": "affectations",
+    "route": "/immobilisations/affectations",
+    "label": "Affectations",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/affectations"
+    ]
+  },
+  {
+    "dossier": "cabinet-comptable",
+    "role": "cabinet_comptable",
+    "fichier": "17_assurances.png",
+    "slug": "assurances",
+    "route": "/immobilisations/assurances",
+    "label": "Assurances",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/assurances"
+    ]
+  },
+  {
+    "dossier": "cabinet-comptable",
+    "role": "cabinet_comptable",
+    "fichier": "18_sorties-provisoires.png",
+    "slug": "sorties-provisoires",
+    "route": "/immobilisations/sorties-provisoires",
+    "label": "Sorties provisoires",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/sorties-provisoires"
+    ]
+  },
+  {
+    "dossier": "cabinet-comptable",
+    "role": "cabinet_comptable",
+    "fichier": "19_cessions.png",
+    "slug": "cessions",
+    "route": "/immobilisations/cessions",
+    "label": "Cessions",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/cessions"
+    ]
+  },
+  {
+    "dossier": "cabinet-comptable",
+    "role": "cabinet_comptable",
+    "fichier": "20_rebuts.png",
+    "slug": "rebuts",
+    "route": "/immobilisations/rebuts",
+    "label": "Rebuts",
+    "reason": "contexte(1498)",
+    "candidates": [
+      "/stocks/rebuts",
+      "/immobilisations/rebuts"
+    ]
+  },
+  {
+    "dossier": "cabinet-comptable",
+    "role": "cabinet_comptable",
+    "fichier": "21_maintenance.png",
+    "slug": "maintenance",
+    "route": "/immobilisations/maintenances",
+    "label": "Maintenance",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/maintenances"
+    ]
+  },
+  {
+    "dossier": "cabinet-comptable",
+    "role": "cabinet_comptable",
+    "fichier": "22_inventaires.png",
+    "slug": "inventaires",
+    "route": "/immobilisations/inventaires",
+    "label": "Inventaires",
+    "reason": "contexte(1070)",
+    "candidates": [
+      "/stocks/inventaires",
+      "/immobilisations/inventaires"
+    ]
+  },
+  {
+    "dossier": "cabinet-comptable",
+    "role": "cabinet_comptable",
+    "fichier": "23_reportings.png",
+    "slug": "reportings",
+    "route": "/immobilisations/reportings",
+    "label": "Reportings",
+    "reason": "contexte(1070)",
+    "candidates": [
+      "/stocks/reportings",
+      "/immobilisations/reportings"
+    ]
+  },
+  {
+    "dossier": "cabinet-comptable",
+    "role": "cabinet_comptable",
+    "fichier": "24_paiements.png",
+    "slug": "paiements",
+    "route": "/reporting/paiements",
+    "label": "Paiements",
+    "reason": "role-menu occ=1",
+    "candidates": [
+      "/inscription/paiements",
+      "/reporting/paiements",
+      "/parent/paiements"
+    ]
+  },
+  {
+    "dossier": "caissier-banque",
+    "role": "caissier_banque",
+    "fichier": "01_paiements.png",
+    "slug": "paiements",
+    "route": "/inscription/paiements",
+    "label": "Paiements",
+    "reason": "contexte(200)",
+    "candidates": [
+      "/inscription/paiements",
+      "/reporting/paiements",
+      "/parent/paiements"
+    ]
+  },
+  {
+    "dossier": "caissier-banque",
+    "role": "caissier_banque",
+    "fichier": "02_mon-profil.png",
+    "slug": "mon-profil",
+    "route": "/parametres/profil",
+    "label": "Mon profil",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/profil"
+    ]
+  },
+  {
+    "dossier": "caissier-banque",
+    "role": "caissier_banque",
+    "fichier": "03_mon-compte.png",
+    "slug": "mon-compte",
+    "route": "/parametres/compte",
+    "label": "Mon compte",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/compte"
+    ]
+  },
+  {
+    "dossier": "caissier-banque",
+    "role": "caissier_banque",
+    "fichier": "04_mes-bordereaux.png",
+    "slug": "mes-bordereaux",
+    "route": "/inscription/bordereaux",
+    "label": "Mes bordereaux",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/bordereaux"
+    ]
+  },
+  {
+    "dossier": "caissier-banque",
+    "role": "caissier_banque",
+    "fichier": "05_configurations.png",
+    "slug": "configurations",
+    "route": "/bourses/configurations",
+    "label": "Configurations",
+    "reason": "unique",
+    "candidates": [
+      "/bourses/configurations"
+    ]
+  },
+  {
+    "dossier": "caissier-banque",
+    "role": "caissier_banque",
+    "fichier": "06_attributions.png",
+    "slug": "attributions",
+    "route": "/bourses/attributions",
+    "label": "Attributions",
+    "reason": "unique",
+    "candidates": [
+      "/bourses/attributions"
+    ]
+  },
+  {
+    "dossier": "caissier-banque",
+    "role": "caissier_banque",
+    "fichier": "07_mon-tableau-de-bord.png",
+    "slug": "mon-tableau-de-bord",
+    "route": "/cours/tableau-de-bord",
+    "label": "Mon tableau de bord",
+    "reason": "unique",
+    "candidates": [
+      "/cours/tableau-de-bord"
+    ]
+  },
+  {
+    "dossier": "caissier-banque",
+    "role": "caissier_banque",
+    "fichier": "08_situation-irreguliere.png",
+    "slug": "situation-irreguliere",
+    "route": "/inscription/finance/irreguliers",
+    "label": "Situation irrégulière",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/finance/irreguliers"
+    ]
+  },
+  {
+    "dossier": "caissier-banque",
+    "role": "caissier_banque",
+    "fichier": "09_situation-financiere.png",
+    "slug": "situation-financiere",
+    "route": "/inscription/finance/situation-financiere",
+    "label": "Situation financière",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/finance/situation-financiere"
+    ]
+  },
+  {
+    "dossier": "caissier-banque",
+    "role": "caissier_banque",
+    "fichier": "10_valid-bordereaux.png",
+    "slug": "valid-bordereaux",
+    "route": "/inscription/validation-bordereaux",
+    "label": "Valid. bordereaux",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/validation-bordereaux"
+    ]
+  },
+  {
+    "dossier": "caissier-banque",
+    "role": "caissier_banque",
+    "fichier": "11_comptabilite.png",
+    "slug": "comptabilite",
+    "route": "/comptabilite/dashboard",
+    "label": "Comptabilite",
+    "reason": "unique",
+    "candidates": [
+      "/comptabilite/dashboard"
+    ]
+  },
+  {
+    "dossier": "caissier-banque",
+    "role": "caissier_banque",
+    "fichier": "12_immobilisations.png",
+    "slug": "immobilisations",
+    "route": "/immobilisations",
+    "label": "Immobilisations",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations"
+    ]
+  },
+  {
+    "dossier": "caissier-banque",
+    "role": "caissier_banque",
+    "fichier": "13_sites.png",
+    "slug": "sites",
+    "route": "/immobilisations/sites",
+    "label": "Sites",
+    "reason": "contexte(1528)",
+    "candidates": [
+      "/immobilisations/sites",
+      "/administration/sites"
+    ]
+  },
+  {
+    "dossier": "caissier-banque",
+    "role": "caissier_banque",
+    "fichier": "14_categories.png",
+    "slug": "categories",
+    "route": "/immobilisations/categories",
+    "label": "Categories",
+    "reason": "contexte(1732)",
+    "candidates": [
+      "/stocks/categories",
+      "/immobilisations/categories"
+    ]
+  },
+  {
+    "dossier": "caissier-banque",
+    "role": "caissier_banque",
+    "fichier": "15_affectations.png",
+    "slug": "affectations",
+    "route": "/immobilisations/affectations",
+    "label": "Affectations",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/affectations"
+    ]
+  },
+  {
+    "dossier": "caissier-banque",
+    "role": "caissier_banque",
+    "fichier": "16_assurances.png",
+    "slug": "assurances",
+    "route": "/immobilisations/assurances",
+    "label": "Assurances",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/assurances"
+    ]
+  },
+  {
+    "dossier": "caissier-banque",
+    "role": "caissier_banque",
+    "fichier": "17_sorties-provisoires.png",
+    "slug": "sorties-provisoires",
+    "route": "/immobilisations/sorties-provisoires",
+    "label": "Sorties provisoires",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/sorties-provisoires"
+    ]
+  },
+  {
+    "dossier": "caissier-banque",
+    "role": "caissier_banque",
+    "fichier": "18_cessions.png",
+    "slug": "cessions",
+    "route": "/immobilisations/cessions",
+    "label": "Cessions",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/cessions"
+    ]
+  },
+  {
+    "dossier": "caissier-banque",
+    "role": "caissier_banque",
+    "fichier": "19_rebuts.png",
+    "slug": "rebuts",
+    "route": "/immobilisations/rebuts",
+    "label": "Rebuts",
+    "reason": "contexte(1498)",
+    "candidates": [
+      "/stocks/rebuts",
+      "/immobilisations/rebuts"
+    ]
+  },
+  {
+    "dossier": "caissier-banque",
+    "role": "caissier_banque",
+    "fichier": "20_maintenance.png",
+    "slug": "maintenance",
+    "route": "/immobilisations/maintenances",
+    "label": "Maintenance",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/maintenances"
+    ]
+  },
+  {
+    "dossier": "caissier-banque",
+    "role": "caissier_banque",
+    "fichier": "21_inventaires.png",
+    "slug": "inventaires",
+    "route": "/immobilisations/inventaires",
+    "label": "Inventaires",
+    "reason": "contexte(1070)",
+    "candidates": [
+      "/stocks/inventaires",
+      "/immobilisations/inventaires"
+    ]
+  },
+  {
+    "dossier": "caissier-banque",
+    "role": "caissier_banque",
+    "fichier": "22_reportings.png",
+    "slug": "reportings",
+    "route": "/immobilisations/reportings",
+    "label": "Reportings",
+    "reason": "contexte(1070)",
+    "candidates": [
+      "/stocks/reportings",
+      "/immobilisations/reportings"
+    ]
+  },
+  {
+    "dossier": "caissier-banque",
+    "role": "caissier_banque",
+    "fichier": "23_paiements.png",
+    "slug": "paiements",
+    "route": "/reporting/paiements",
+    "label": "Paiements",
+    "reason": "role-menu occ=1",
+    "candidates": [
+      "/inscription/paiements",
+      "/reporting/paiements",
+      "/parent/paiements"
+    ]
+  },
+  {
+    "dossier": "comite-orientation",
+    "role": "comite_orientation",
+    "fichier": "01_preinscriptions.png",
+    "slug": "preinscriptions",
+    "route": "/inscription/comite-orientation",
+    "label": "Preinscriptions",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/comite-orientation"
+    ]
+  },
+  {
+    "dossier": "comite-orientation",
+    "role": "comite_orientation",
+    "fichier": "02_configurations.png",
+    "slug": "configurations",
+    "route": "/bourses/configurations",
+    "label": "Configurations",
+    "reason": "unique",
+    "candidates": [
+      "/bourses/configurations"
+    ]
+  },
+  {
+    "dossier": "comite-orientation",
+    "role": "comite_orientation",
+    "fichier": "03_attributions.png",
+    "slug": "attributions",
+    "route": "/bourses/attributions",
+    "label": "Attributions",
+    "reason": "unique",
+    "candidates": [
+      "/bourses/attributions"
+    ]
+  },
+  {
+    "dossier": "comite-orientation",
+    "role": "comite_orientation",
+    "fichier": "04_campagne-de-bourses.png",
+    "slug": "campagne-de-bourses",
+    "route": "/bourses/campagne",
+    "label": "Campagne de bourses",
+    "reason": "unique",
+    "candidates": [
+      "/bourses/campagne"
+    ]
+  },
+  {
+    "dossier": "comite-orientation",
+    "role": "comite_orientation",
+    "fichier": "05_validation-comite.png",
+    "slug": "validation-comite",
+    "route": "/inscription/comite-validation",
+    "label": "Validation comité",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/comite-validation"
+    ]
+  },
+  {
+    "dossier": "comite-orientation",
+    "role": "comite_orientation",
+    "fichier": "06_mon-profil.png",
+    "slug": "mon-profil",
+    "route": "/parametres/profil",
+    "label": "Mon profil",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/profil"
+    ]
+  },
+  {
+    "dossier": "comite-orientation",
+    "role": "comite_orientation",
+    "fichier": "07_mon-compte.png",
+    "slug": "mon-compte",
+    "route": "/parametres/compte",
+    "label": "Mon compte",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/compte"
+    ]
+  },
+  {
+    "dossier": "comite-orientation",
+    "role": "comite_orientation",
+    "fichier": "08_demandes-de-documents.png",
+    "slug": "demandes-de-documents",
+    "route": "/scolarite/comite-demandes-documents",
+    "label": "Demandes de documents",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/comite-demandes-documents"
+    ]
+  },
+  {
+    "dossier": "comite-orientation",
+    "role": "comite_orientation",
+    "fichier": "09_mon-tableau-de-bord.png",
+    "slug": "mon-tableau-de-bord",
+    "route": "/cours/tableau-de-bord",
+    "label": "Mon tableau de bord",
+    "reason": "unique",
+    "candidates": [
+      "/cours/tableau-de-bord"
+    ]
+  },
+  {
+    "dossier": "commun",
+    "role": "admin",
+    "fichier": "01_connexion.png",
+    "slug": "connexion",
+    "route": "/auth/connexion",
+    "label": "/auth/connexion",
+    "reason": "override",
+    "candidates": []
+  },
+  {
+    "dossier": "enseignant",
+    "role": "enseignant",
+    "fichier": "01_salles-de-classe.png",
+    "slug": "salles-de-classe",
+    "route": "/inscription/salles-de-classe",
+    "label": "Salles de classe",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/salles-de-classe"
+    ]
+  },
+  {
+    "dossier": "enseignant",
+    "role": "enseignant",
+    "fichier": "02_equivalences.png",
+    "slug": "equivalences",
+    "route": "/bulletins/equivalences",
+    "label": "Equivalences",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/equivalences"
+    ]
+  },
+  {
+    "dossier": "enseignant",
+    "role": "enseignant",
+    "fichier": "03_dispenses.png",
+    "slug": "dispenses",
+    "route": "/bulletins/dispenses",
+    "label": "Dispenses",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/dispenses"
+    ]
+  },
+  {
+    "dossier": "enseignant",
+    "role": "enseignant",
+    "fichier": "04_emplois-du-temps.png",
+    "slug": "emplois-du-temps",
+    "route": "/cours/emplois-du-temps",
+    "label": "Emplois du temps",
+    "reason": "unique",
+    "candidates": [
+      "/cours/emplois-du-temps"
+    ]
+  },
+  {
+    "dossier": "enseignant",
+    "role": "enseignant",
+    "fichier": "05_calendrier.png",
+    "slug": "calendrier",
+    "route": "/scolarite/calendrier",
+    "label": "Calendrier",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/calendrier"
+    ]
+  },
+  {
+    "dossier": "enseignant",
+    "role": "enseignant",
+    "fichier": "06_sessions-examens.png",
+    "slug": "sessions-examens",
+    "route": "/bulletins/sessions",
+    "label": "Sessions examens",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/sessions"
+    ]
+  },
+  {
+    "dossier": "enseignant",
+    "role": "enseignant",
+    "fichier": "07_rattrapages.png",
+    "slug": "rattrapages",
+    "route": "/bulletins/rattrapages",
+    "label": "Rattrapages",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/rattrapages"
+    ]
+  },
+  {
+    "dossier": "enseignant",
+    "role": "enseignant",
+    "fichier": "08_mon-tableau-de-bord.png",
+    "slug": "mon-tableau-de-bord",
+    "route": "/cours/tableau-de-bord",
+    "label": "Mon tableau de bord",
+    "reason": "unique",
+    "candidates": [
+      "/cours/tableau-de-bord"
+    ]
+  },
+  {
+    "dossier": "enseignant",
+    "role": "enseignant",
+    "fichier": "09_cahiers-de-texte.png",
+    "slug": "cahiers-de-texte",
+    "route": "/cours/cahiers-de-texte",
+    "label": "Cahiers de texte",
+    "reason": "unique",
+    "candidates": [
+      "/cours/cahiers-de-texte"
+    ]
+  },
+  {
+    "dossier": "enseignant",
+    "role": "enseignant",
+    "fichier": "10_cahier-de-presence.png",
+    "slug": "cahier-de-presence",
+    "route": "/cours/presences",
+    "label": "Cahier de présence",
+    "reason": "unique",
+    "candidates": [
+      "/cours/presences"
+    ]
+  },
+  {
+    "dossier": "enseignant",
+    "role": "enseignant",
+    "fichier": "11_notes.png",
+    "slug": "notes",
+    "route": "/cours/notes",
+    "label": "Notes",
+    "reason": "contexte(924)",
+    "candidates": [
+      "/cours/notes",
+      "/reporting/notes",
+      "/parent/notes"
+    ]
+  },
+  {
+    "dossier": "enseignant",
+    "role": "enseignant",
+    "fichier": "12_bibliotheque.png",
+    "slug": "bibliotheque",
+    "route": "/scolarite/bibliotheque",
+    "label": "Bibliotheque",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/bibliotheque"
+    ]
+  },
+  {
+    "dossier": "enseignant",
+    "role": "enseignant",
+    "fichier": "13_bulletins.png",
+    "slug": "bulletins",
+    "route": "/bulletins",
+    "label": "Bulletins",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins"
+    ]
+  },
+  {
+    "dossier": "enseignant",
+    "role": "enseignant",
+    "fichier": "14_moyennes.png",
+    "slug": "moyennes",
+    "route": "/bulletins/moyennes",
+    "label": "Moyennes",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/moyennes"
+    ]
+  },
+  {
+    "dossier": "enseignant",
+    "role": "enseignant",
+    "fichier": "15_absences.png",
+    "slug": "absences",
+    "route": "/bulletins/absences",
+    "label": "Absences",
+    "reason": "contexte(710)",
+    "candidates": [
+      "/bulletins/absences",
+      "/pointage/absences",
+      "/parent/absences"
+    ]
+  },
+  {
+    "dossier": "enseignant",
+    "role": "enseignant",
+    "fichier": "16_conseils-classe.png",
+    "slug": "conseils-classe",
+    "route": "/scolarite/conseils",
+    "label": "Conseils classe",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/conseils"
+    ]
+  },
+  {
+    "dossier": "enseignant",
+    "role": "enseignant",
+    "fichier": "17_annonces.png",
+    "slug": "annonces",
+    "route": "/communication/annonces",
+    "label": "Annonces",
+    "reason": "unique",
+    "candidates": [
+      "/communication/annonces"
+    ]
+  },
+  {
+    "dossier": "enseignant",
+    "role": "enseignant",
+    "fichier": "18_vie-estudiantine.png",
+    "slug": "vie-estudiantine",
+    "route": "/communication",
+    "label": "Vie estudiantine",
+    "reason": "unique",
+    "candidates": [
+      "/communication"
+    ]
+  },
+  {
+    "dossier": "enseignant",
+    "role": "enseignant",
+    "fichier": "20_catalogue-e-learning.png",
+    "slug": "catalogue-e-learning",
+    "route": "/elearning/catalogue",
+    "label": "Catalogue e-learning",
+    "reason": "unique",
+    "candidates": [
+      "/elearning/catalogue"
+    ]
+  },
+  {
+    "dossier": "enseignant",
+    "role": "enseignant",
+    "fichier": "21_mon-profil.png",
+    "slug": "mon-profil",
+    "route": "/parametres/profil",
+    "label": "Mon profil",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/profil"
+    ]
+  },
+  {
+    "dossier": "enseignant",
+    "role": "enseignant",
+    "fichier": "22_mon-compte.png",
+    "slug": "mon-compte",
+    "route": "/parametres/compte",
+    "label": "Mon compte",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/compte"
+    ]
+  },
+  {
+    "dossier": "enseignant",
+    "role": "enseignant",
+    "fichier": "23_tous-les-documents.png",
+    "slug": "tous-les-documents",
+    "route": "/docgen/documents",
+    "label": "Tous les documents",
+    "reason": "unique",
+    "candidates": [
+      "/docgen/documents"
+    ]
+  },
+  {
+    "dossier": "enseignant",
+    "role": "enseignant",
+    "fichier": "25_unites-d-enseignements.png",
+    "slug": "unites-d-enseignements",
+    "route": "/cours/cours",
+    "label": "Unités d'enseignements",
+    "reason": "unique",
+    "candidates": [
+      "/cours/cours"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "01_situation-irreguliere.png",
+    "slug": "situation-irreguliere",
+    "route": "/inscription/finance/irreguliers",
+    "label": "Situation irrégulière",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/finance/irreguliers"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "02_situation-financiere.png",
+    "slug": "situation-financiere",
+    "route": "/inscription/finance/situation-financiere",
+    "label": "Situation financière",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/finance/situation-financiere"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "03_bordereaux-a-imputer.png",
+    "slug": "bordereaux-a-imputer",
+    "route": "/inscription/finance/bordereaux",
+    "label": "Bordereaux à imputer",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/finance/bordereaux"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "04_bordereaux-en-attente.png",
+    "slug": "bordereaux-en-attente",
+    "route": "/inscription/finance/bordereaux/en-attente",
+    "label": "Bordereaux en attente",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/finance/bordereaux/en-attente"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "05_bordereaux-traites.png",
+    "slug": "bordereaux-traites",
+    "route": "/inscription/finance/bordereaux/traites",
+    "label": "Bordereaux traités",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/finance/bordereaux/traites"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "06_bordereaux-rejetes.png",
+    "slug": "bordereaux-rejetes",
+    "route": "/inscription/finance/bordereaux/rejetes",
+    "label": "Bordereaux rejetés",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/finance/bordereaux/rejetes"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "07_types-de-bordereau.png",
+    "slug": "types-de-bordereau",
+    "route": "/inscription/finance/types-bordereaux",
+    "label": "Types de bordereau",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/finance/types-bordereaux"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "08_mes-bordereaux.png",
+    "slug": "mes-bordereaux",
+    "route": "/inscription/bordereaux",
+    "label": "Mes bordereaux",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/bordereaux"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "09_configurations.png",
+    "slug": "configurations",
+    "route": "/bourses/configurations",
+    "label": "Configurations",
+    "reason": "unique",
+    "candidates": [
+      "/bourses/configurations"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "10_attributions.png",
+    "slug": "attributions",
+    "route": "/bourses/attributions",
+    "label": "Attributions",
+    "reason": "unique",
+    "candidates": [
+      "/bourses/attributions"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "11_mon-tableau-de-bord.png",
+    "slug": "mon-tableau-de-bord",
+    "route": "/cours/tableau-de-bord",
+    "label": "Mon tableau de bord",
+    "reason": "unique",
+    "candidates": [
+      "/cours/tableau-de-bord"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "12_paiements.png",
+    "slug": "paiements",
+    "route": "/inscription/paiements",
+    "label": "Paiements",
+    "reason": "contexte(662)",
+    "candidates": [
+      "/inscription/paiements",
+      "/reporting/paiements",
+      "/parent/paiements"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "13_valid-bordereaux.png",
+    "slug": "valid-bordereaux",
+    "route": "/inscription/validation-bordereaux",
+    "label": "Valid. bordereaux",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/validation-bordereaux"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "14_comptabilite.png",
+    "slug": "comptabilite",
+    "route": "/comptabilite/dashboard",
+    "label": "Comptabilite",
+    "reason": "unique",
+    "candidates": [
+      "/comptabilite/dashboard"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "15_immobilisations.png",
+    "slug": "immobilisations",
+    "route": "/immobilisations",
+    "label": "Immobilisations",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "16_sites.png",
+    "slug": "sites",
+    "route": "/immobilisations/sites",
+    "label": "Sites",
+    "reason": "contexte(1528)",
+    "candidates": [
+      "/immobilisations/sites",
+      "/administration/sites"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "17_categories.png",
+    "slug": "categories",
+    "route": "/immobilisations/categories",
+    "label": "Categories",
+    "reason": "contexte(1732)",
+    "candidates": [
+      "/stocks/categories",
+      "/immobilisations/categories"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "18_affectations.png",
+    "slug": "affectations",
+    "route": "/immobilisations/affectations",
+    "label": "Affectations",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/affectations"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "19_assurances.png",
+    "slug": "assurances",
+    "route": "/immobilisations/assurances",
+    "label": "Assurances",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/assurances"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "20_sorties-provisoires.png",
+    "slug": "sorties-provisoires",
+    "route": "/immobilisations/sorties-provisoires",
+    "label": "Sorties provisoires",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/sorties-provisoires"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "21_cessions.png",
+    "slug": "cessions",
+    "route": "/immobilisations/cessions",
+    "label": "Cessions",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/cessions"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "22_rebuts.png",
+    "slug": "rebuts",
+    "route": "/immobilisations/rebuts",
+    "label": "Rebuts",
+    "reason": "contexte(1498)",
+    "candidates": [
+      "/stocks/rebuts",
+      "/immobilisations/rebuts"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "23_maintenance.png",
+    "slug": "maintenance",
+    "route": "/immobilisations/maintenances",
+    "label": "Maintenance",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/maintenances"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "24_inventaires.png",
+    "slug": "inventaires",
+    "route": "/immobilisations/inventaires",
+    "label": "Inventaires",
+    "reason": "contexte(1070)",
+    "candidates": [
+      "/stocks/inventaires",
+      "/immobilisations/inventaires"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "25_reportings.png",
+    "slug": "reportings",
+    "route": "/immobilisations/reportings",
+    "label": "Reportings",
+    "reason": "contexte(1070)",
+    "candidates": [
+      "/stocks/reportings",
+      "/immobilisations/reportings"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "26_paiements.png",
+    "slug": "paiements",
+    "route": "/reporting/paiements",
+    "label": "Paiements",
+    "reason": "role-menu occ=1",
+    "candidates": [
+      "/inscription/paiements",
+      "/reporting/paiements",
+      "/parent/paiements"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "27_mon-profil.png",
+    "slug": "mon-profil",
+    "route": "/parametres/profil",
+    "label": "Mon profil",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/profil"
+    ]
+  },
+  {
+    "dossier": "esa-compta",
+    "role": "esa_compta",
+    "fichier": "28_mon-compte.png",
+    "slug": "mon-compte",
+    "route": "/parametres/compte",
+    "label": "Mon compte",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/compte"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "01_sessions.png",
+    "slug": "sessions",
+    "route": "/inscription/sessions",
+    "label": "Sessions",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/sessions"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "02_parcours.png",
+    "slug": "parcours",
+    "route": "/inscription/parcours",
+    "label": "Parcours",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/parcours"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "03_salles-de-classe.png",
+    "slug": "salles-de-classe",
+    "route": "/inscription/salles-de-classe",
+    "label": "Salles de classe",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/salles-de-classe"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "04_frais-par-parcours.png",
+    "slug": "frais-par-parcours",
+    "route": "/inscription/frais-parcours",
+    "label": "Frais par parcours",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/frais-parcours"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "05_demandes.png",
+    "slug": "demandes",
+    "route": "/inscription/demandes",
+    "label": "Demandes",
+    "reason": "contexte(1740)",
+    "candidates": [
+      "/inscription/demandes",
+      "/scolarite/secretariat/demandes"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "06_effectifs-inscrits.png",
+    "slug": "effectifs-inscrits",
+    "route": "/inscription/effectifs",
+    "label": "Effectifs inscrits",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/effectifs"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "07_demandes-orientation.png",
+    "slug": "demandes-orientation",
+    "route": "/orientation/demandes",
+    "label": "Demandes orientation",
+    "reason": "unique",
+    "candidates": [
+      "/orientation/demandes"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "08_parcours-orientation.png",
+    "slug": "parcours-orientation",
+    "route": "/orientation/parcours",
+    "label": "Parcours orientation",
+    "reason": "unique",
+    "candidates": [
+      "/orientation/parcours"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "09_designation-directeur-memoire.png",
+    "slug": "designation-directeur-memoire",
+    "route": "/inscription/designation-memoire",
+    "label": "Désignation directeur mémoire",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/designation-memoire"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "10_configurations.png",
+    "slug": "configurations",
+    "route": "/bourses/configurations",
+    "label": "Configurations",
+    "reason": "unique",
+    "candidates": [
+      "/bourses/configurations"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "11_attributions.png",
+    "slug": "attributions",
+    "route": "/bourses/attributions",
+    "label": "Attributions",
+    "reason": "unique",
+    "candidates": [
+      "/bourses/attributions"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "12_campagne-de-bourses.png",
+    "slug": "campagne-de-bourses",
+    "route": "/bourses/campagne",
+    "label": "Campagne de bourses",
+    "reason": "unique",
+    "candidates": [
+      "/bourses/campagne"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "13_dossiers-etudiants.png",
+    "slug": "dossiers-etudiants",
+    "route": "/inscription/dossiers",
+    "label": "Dossiers etudiants",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/dossiers"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "14_cartes-etudiantes.png",
+    "slug": "cartes-etudiantes",
+    "route": "/inscription/cartes",
+    "label": "Cartes étudiantes",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/cartes"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "15_arborescence-dossiers.png",
+    "slug": "arborescence-dossiers",
+    "route": "/inscription/hierarchy-dossiers",
+    "label": "Arborescence dossiers",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/hierarchy-dossiers"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "16_registres.png",
+    "slug": "registres",
+    "route": "/scolarite/registres",
+    "label": "Registres",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/registres"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "17_equivalences.png",
+    "slug": "equivalences",
+    "route": "/bulletins/equivalences",
+    "label": "Equivalences",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/equivalences"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "18_dispenses.png",
+    "slug": "dispenses",
+    "route": "/bulletins/dispenses",
+    "label": "Dispenses",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/dispenses"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "19_reorientation.png",
+    "slug": "reorientation",
+    "route": "/scolarite/reorientation",
+    "label": "Reorientation",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/reorientation"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "20_traiter-reclam.png",
+    "slug": "traiter-reclam",
+    "route": "/scolarite/traiter-reclamations",
+    "label": "Traiter reclam.",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/traiter-reclamations"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "21_emplois-du-temps.png",
+    "slug": "emplois-du-temps",
+    "route": "/cours/emplois-du-temps",
+    "label": "Emplois du temps",
+    "reason": "unique",
+    "candidates": [
+      "/cours/emplois-du-temps"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "22_calendrier.png",
+    "slug": "calendrier",
+    "route": "/scolarite/calendrier",
+    "label": "Calendrier",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/calendrier"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "23_sessions-examens.png",
+    "slug": "sessions-examens",
+    "route": "/bulletins/sessions",
+    "label": "Sessions examens",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/sessions"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "24_rattrapages.png",
+    "slug": "rattrapages",
+    "route": "/bulletins/rattrapages",
+    "label": "Rattrapages",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/rattrapages"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "25_decisions-passage.png",
+    "slug": "decisions-passage",
+    "route": "/scolarite/decisions-passage",
+    "label": "Decisions passage",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/decisions-passage"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "26_enseignants.png",
+    "slug": "enseignants",
+    "route": "/cours/enseignants",
+    "label": "Enseignants",
+    "reason": "unique",
+    "candidates": [
+      "/cours/enseignants"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "27_cahiers-de-texte.png",
+    "slug": "cahiers-de-texte",
+    "route": "/cours/cahiers-de-texte",
+    "label": "Cahiers de texte",
+    "reason": "unique",
+    "candidates": [
+      "/cours/cahiers-de-texte"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "28_cahier-de-presence.png",
+    "slug": "cahier-de-presence",
+    "route": "/cours/presences",
+    "label": "Cahier de présence",
+    "reason": "unique",
+    "candidates": [
+      "/cours/presences"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "29_notes.png",
+    "slug": "notes",
+    "route": "/cours/notes",
+    "label": "Notes",
+    "reason": "contexte(928)",
+    "candidates": [
+      "/cours/notes",
+      "/reporting/notes",
+      "/parent/notes"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "30_bibliotheque.png",
+    "slug": "bibliotheque",
+    "route": "/scolarite/bibliotheque",
+    "label": "Bibliotheque",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/bibliotheque"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "31_gestion-bibliotheque.png",
+    "slug": "gestion-bibliotheque",
+    "route": "/scolarite/gestion-bibliotheque",
+    "label": "Gestion bibliotheque",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/gestion-bibliotheque"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "32_bulletins.png",
+    "slug": "bulletins",
+    "route": "/bulletins",
+    "label": "Bulletins",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "33_moyennes.png",
+    "slug": "moyennes",
+    "route": "/bulletins/moyennes",
+    "label": "Moyennes",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/moyennes"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "34_parametres-notation.png",
+    "slug": "parametres-notation",
+    "route": "/bulletins/parametres-notation",
+    "label": "Paramètres notation",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/parametres-notation"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "35_deliberations-jury.png",
+    "slug": "deliberations-jury",
+    "route": "/bulletins/deliberations-jury",
+    "label": "Délibérations & Jury",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/deliberations-jury"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "36_absences.png",
+    "slug": "absences",
+    "route": "/bulletins/absences",
+    "label": "Absences",
+    "reason": "contexte(1132)",
+    "candidates": [
+      "/bulletins/absences",
+      "/pointage/absences",
+      "/parent/absences"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "37_sanctions-discipline.png",
+    "slug": "sanctions-discipline",
+    "route": "/scolarite/sanctions-discipline",
+    "label": "Sanctions & Discipline",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/sanctions-discipline"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "38_conseils-classe.png",
+    "slug": "conseils-classe",
+    "route": "/scolarite/conseils",
+    "label": "Conseils classe",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/conseils"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "39_annonces.png",
+    "slug": "annonces",
+    "route": "/communication/annonces",
+    "label": "Annonces",
+    "reason": "unique",
+    "candidates": [
+      "/communication/annonces"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "40_vie-estudiantine.png",
+    "slug": "vie-estudiantine",
+    "route": "/communication",
+    "label": "Vie estudiantine",
+    "reason": "unique",
+    "candidates": [
+      "/communication"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "41_offres-stage.png",
+    "slug": "offres-stage",
+    "route": "/stages/offres",
+    "label": "Offres stage",
+    "reason": "unique",
+    "candidates": [
+      "/stages/offres"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "42_entreprises.png",
+    "slug": "entreprises",
+    "route": "/stages/entreprises",
+    "label": "Entreprises",
+    "reason": "unique",
+    "candidates": [
+      "/stages/entreprises"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "43_paiements.png",
+    "slug": "paiements",
+    "route": "/inscription/paiements",
+    "label": "Paiements",
+    "reason": "contexte(866)",
+    "candidates": [
+      "/inscription/paiements",
+      "/reporting/paiements",
+      "/parent/paiements"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "44_echeances.png",
+    "slug": "echeances",
+    "route": "/inscription/echeances",
+    "label": "Echeances",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/echeances"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "45_situation-irreguliere.png",
+    "slug": "situation-irreguliere",
+    "route": "/inscription/finance/irreguliers",
+    "label": "Situation irrégulière",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/finance/irreguliers"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "46_situation-financiere.png",
+    "slug": "situation-financiere",
+    "route": "/inscription/finance/situation-financiere",
+    "label": "Situation financière",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/finance/situation-financiere"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "47_categories.png",
+    "slug": "categories",
+    "route": "/stocks/categories",
+    "label": "Catégories",
+    "reason": "contexte(916)",
+    "candidates": [
+      "/stocks/categories",
+      "/immobilisations/categories"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "48_transferts.png",
+    "slug": "transferts",
+    "route": "/stocks/transferts",
+    "label": "Transferts",
+    "reason": "unique",
+    "candidates": [
+      "/stocks/transferts"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "49_corrections.png",
+    "slug": "corrections",
+    "route": "/stocks/corrections-stock",
+    "label": "Corrections",
+    "reason": "unique",
+    "candidates": [
+      "/stocks/corrections-stock"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "50_rebuts.png",
+    "slug": "rebuts",
+    "route": "/stocks/rebuts",
+    "label": "Rebuts",
+    "reason": "contexte(1324)",
+    "candidates": [
+      "/stocks/rebuts",
+      "/immobilisations/rebuts"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "51_inventaires.png",
+    "slug": "inventaires",
+    "route": "/stocks/inventaires",
+    "label": "Inventaires",
+    "reason": "contexte(1528)",
+    "candidates": [
+      "/stocks/inventaires",
+      "/immobilisations/inventaires"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "52_fournisseurs.png",
+    "slug": "fournisseurs",
+    "route": "/stocks/fournisseurs",
+    "label": "Fournisseurs",
+    "reason": "contexte(1528)",
+    "candidates": [
+      "/achats/fournisseurs",
+      "/stocks/fournisseurs"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "53_reportings.png",
+    "slug": "reportings",
+    "route": "/stocks/reportings",
+    "label": "Reportings",
+    "reason": "contexte(1528)",
+    "candidates": [
+      "/stocks/reportings",
+      "/immobilisations/reportings"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "54_cycle-de-vie.png",
+    "slug": "cycle-de-vie",
+    "route": "/stocks/cycle-vie",
+    "label": "Cycle de vie",
+    "reason": "unique",
+    "candidates": [
+      "/stocks/cycle-vie"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "55_sites.png",
+    "slug": "sites",
+    "route": "/immobilisations/sites",
+    "label": "Sites",
+    "reason": "contexte(1120)",
+    "candidates": [
+      "/immobilisations/sites",
+      "/administration/sites"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "56_categories.png",
+    "slug": "categories",
+    "route": "/immobilisations/categories",
+    "label": "Categories",
+    "reason": "contexte(1528)",
+    "candidates": [
+      "/stocks/categories",
+      "/immobilisations/categories"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "57_affectations.png",
+    "slug": "affectations",
+    "route": "/immobilisations/affectations",
+    "label": "Affectations",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/affectations"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "58_assurances.png",
+    "slug": "assurances",
+    "route": "/immobilisations/assurances",
+    "label": "Assurances",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/assurances"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "59_sorties-provisoires.png",
+    "slug": "sorties-provisoires",
+    "route": "/immobilisations/sorties-provisoires",
+    "label": "Sorties provisoires",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/sorties-provisoires"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "60_cessions.png",
+    "slug": "cessions",
+    "route": "/immobilisations/cessions",
+    "label": "Cessions",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/cessions"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "61_rebuts.png",
+    "slug": "rebuts",
+    "route": "/immobilisations/rebuts",
+    "label": "Rebuts",
+    "reason": "contexte(1498)",
+    "candidates": [
+      "/stocks/rebuts",
+      "/immobilisations/rebuts"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "62_maintenance.png",
+    "slug": "maintenance",
+    "route": "/immobilisations/maintenances",
+    "label": "Maintenance",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/maintenances"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "63_inventaires.png",
+    "slug": "inventaires",
+    "route": "/immobilisations/inventaires",
+    "label": "Inventaires",
+    "reason": "contexte(1070)",
+    "candidates": [
+      "/stocks/inventaires",
+      "/immobilisations/inventaires"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "64_reportings.png",
+    "slug": "reportings",
+    "route": "/immobilisations/reportings",
+    "label": "Reportings",
+    "reason": "contexte(1070)",
+    "candidates": [
+      "/stocks/reportings",
+      "/immobilisations/reportings"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "65_planning-personnel.png",
+    "slug": "planning-personnel",
+    "route": "/rh/planning-personnel",
+    "label": "Planning personnel",
+    "reason": "unique",
+    "candidates": [
+      "/rh/planning-personnel"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "67_catalogue-e-learning.png",
+    "slug": "catalogue-e-learning",
+    "route": "/elearning/catalogue",
+    "label": "Catalogue e-learning",
+    "reason": "unique",
+    "candidates": [
+      "/elearning/catalogue"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "68_utilisateurs.png",
+    "slug": "utilisateurs",
+    "route": "/administration/utilisateurs",
+    "label": "Utilisateurs",
+    "reason": "unique",
+    "candidates": [
+      "/administration/utilisateurs"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "69_qr-codes.png",
+    "slug": "qr-codes",
+    "route": "/administration/qr-codes",
+    "label": "QR Codes",
+    "reason": "unique",
+    "candidates": [
+      "/administration/qr-codes"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "70_journal-audit.png",
+    "slug": "journal-audit",
+    "route": "/administration/audit-logs",
+    "label": "Journal audit",
+    "reason": "unique",
+    "candidates": [
+      "/administration/audit-logs"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "71_configuration.png",
+    "slug": "configuration",
+    "route": "/administration/configuration",
+    "label": "Configuration",
+    "reason": "unique",
+    "candidates": [
+      "/administration/configuration"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "72_profils-dacces.png",
+    "slug": "profils-dacces",
+    "route": "/administration/roles",
+    "label": "Profils d’accès",
+    "reason": "unique",
+    "candidates": [
+      "/administration/roles"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "73_mon-profil.png",
+    "slug": "mon-profil",
+    "route": "/parametres/profil",
+    "label": "Mon profil",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/profil"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "74_mon-compte.png",
+    "slug": "mon-compte",
+    "route": "/parametres/compte",
+    "label": "Mon compte",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/compte"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "75_ecole.png",
+    "slug": "ecole",
+    "route": "/parametres/ecole",
+    "label": "Ecole",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/ecole"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "76_annee-scol.png",
+    "slug": "annee-scol",
+    "route": "/parametres/annees-scolaires",
+    "label": "Annee scol.",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/annees-scolaires"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "77_frais.png",
+    "slug": "frais",
+    "route": "/parametres/frais",
+    "label": "Frais",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/frais"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "78_notifications.png",
+    "slug": "notifications",
+    "route": "/parametres/notifications",
+    "label": "Notifications",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/notifications"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "79_systeme.png",
+    "slug": "systeme",
+    "route": "/administration/configuration",
+    "label": "/administration/configuration",
+    "reason": "override",
+    "candidates": []
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "80_sauvegardes.png",
+    "slug": "sauvegardes",
+    "route": "/parametres/sauvegardes",
+    "label": "Sauvegardes",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/sauvegardes"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "81_types-de-documents.png",
+    "slug": "types-de-documents",
+    "route": "/docgen/types",
+    "label": "Types de documents",
+    "reason": "contexte(1066)",
+    "candidates": [
+      "/docgen/types",
+      "/scolarite/secretariat/types-documents"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "82_modeles.png",
+    "slug": "modeles",
+    "route": "/docgen/templates",
+    "label": "Modeles",
+    "reason": "unique",
+    "candidates": [
+      "/docgen/templates"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "83_cachet-electronique.png",
+    "slug": "cachet-electronique",
+    "route": "/docgen/cachet",
+    "label": "Cachet electronique",
+    "reason": "unique",
+    "candidates": [
+      "/docgen/cachet"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "84_workflows.png",
+    "slug": "workflows",
+    "route": "/docgen/workflows",
+    "label": "Workflows",
+    "reason": "unique",
+    "candidates": [
+      "/docgen/workflows"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "85_tous-les-documents.png",
+    "slug": "tous-les-documents",
+    "route": "/docgen/documents",
+    "label": "Tous les documents",
+    "reason": "unique",
+    "candidates": [
+      "/docgen/documents"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "86_generer.png",
+    "slug": "generer",
+    "route": "/docgen/generer",
+    "label": "Générer",
+    "reason": "unique",
+    "candidates": [
+      "/docgen/generer"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "87_diplomes.png",
+    "slug": "diplomes",
+    "route": "/scolarite/diplomes",
+    "label": "Diplomes",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/diplomes"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "88_demandes-docs.png",
+    "slug": "demandes-docs",
+    "route": "/scolarite/demandes-documents",
+    "label": "Demandes docs",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/demandes-documents"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "89_traiter-demandes.png",
+    "slug": "traiter-demandes",
+    "route": "/scolarite/traiter-demandes",
+    "label": "Traiter demandes",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/traiter-demandes"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "90_demandes-vae.png",
+    "slug": "demandes-vae",
+    "route": "/scolarite/demandes-vae",
+    "label": "Demandes VAE",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/demandes-vae"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "91_signatures.png",
+    "slug": "signatures",
+    "route": "/docgen/signatures",
+    "label": "Signatures",
+    "reason": "unique",
+    "candidates": [
+      "/docgen/signatures"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "92_signature-direction.png",
+    "slug": "signature-direction",
+    "route": "/docgen/signatures/direction",
+    "label": "Signature direction",
+    "reason": "unique",
+    "candidates": [
+      "/docgen/signatures/direction"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "93_tableau-de-bord.png",
+    "slug": "tableau-de-bord",
+    "route": "/scolarite/secretariat/dashboard",
+    "label": "Tableau de bord",
+    "reason": "contexte(1466)",
+    "candidates": [
+      "/parent",
+      "/scolarite/secretariat/dashboard"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "94_encaissement.png",
+    "slug": "encaissement",
+    "route": "/scolarite/secretariat/encaissement",
+    "label": "Encaissement",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/secretariat/encaissement"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "95_caisse.png",
+    "slug": "caisse",
+    "route": "/scolarite/secretariat/caisse",
+    "label": "Caisse",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/secretariat/caisse"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "96_cloture-caisse.png",
+    "slug": "cloture-caisse",
+    "route": "/scolarite/secretariat/cloture-caisse",
+    "label": "Cloture caisse",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/secretariat/cloture-caisse"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "97_demandes.png",
+    "slug": "demandes",
+    "route": "/scolarite/secretariat/demandes",
+    "label": "Demandes",
+    "reason": "contexte(1888)",
+    "candidates": [
+      "/inscription/demandes",
+      "/scolarite/secretariat/demandes"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "98_autorisations-provisoires.png",
+    "slug": "autorisations-provisoires",
+    "route": "/scolarite/secretariat/autorisations-provisoires",
+    "label": "Autorisations provisoires",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/secretariat/autorisations-provisoires"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "99_types-de-documents.png",
+    "slug": "types-de-documents",
+    "route": "/scolarite/secretariat/types-documents",
+    "label": "Types de documents",
+    "reason": "contexte(1682)",
+    "candidates": [
+      "/docgen/types",
+      "/scolarite/secretariat/types-documents"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "100_journal-caisse.png",
+    "slug": "journal-caisse",
+    "route": "/scolarite/secretariat/journal-caisse",
+    "label": "Journal caisse",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/secretariat/journal-caisse"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "101_mes-bordereaux.png",
+    "slug": "mes-bordereaux",
+    "route": "/inscription/bordereaux",
+    "label": "Mes bordereaux",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/bordereaux"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "102_reclamations.png",
+    "slug": "reclamations",
+    "route": "/scolarite/mes-reclamations",
+    "label": "Reclamations",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/mes-reclamations"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "104_mon-tableau-de-bord.png",
+    "slug": "mon-tableau-de-bord",
+    "route": "/cours/tableau-de-bord",
+    "label": "Mon tableau de bord",
+    "reason": "unique",
+    "candidates": [
+      "/cours/tableau-de-bord"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "105_unites-d-enseignements.png",
+    "slug": "unites-d-enseignements",
+    "route": "/cours/cours",
+    "label": "Unités d'enseignements",
+    "reason": "unique",
+    "candidates": [
+      "/cours/cours"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "106_valid-bordereaux.png",
+    "slug": "valid-bordereaux",
+    "route": "/inscription/validation-bordereaux",
+    "label": "Valid. bordereaux",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/validation-bordereaux"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "107_comptabilite.png",
+    "slug": "comptabilite",
+    "route": "/comptabilite/dashboard",
+    "label": "Comptabilite",
+    "reason": "unique",
+    "candidates": [
+      "/comptabilite/dashboard"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "108_articles.png",
+    "slug": "articles",
+    "route": "/stocks/articles",
+    "label": "Articles",
+    "reason": "unique",
+    "candidates": [
+      "/stocks/articles"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "109_mouvements.png",
+    "slug": "mouvements",
+    "route": "/stocks/mouvements",
+    "label": "Mouvements",
+    "reason": "unique",
+    "candidates": [
+      "/stocks/mouvements"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "110_immobilisations.png",
+    "slug": "immobilisations",
+    "route": "/immobilisations",
+    "label": "Immobilisations",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "111_employes.png",
+    "slug": "employes",
+    "route": "/rh/employes",
+    "label": "Employes",
+    "reason": "unique",
+    "candidates": [
+      "/rh/employes"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "112_paie.png",
+    "slug": "paie",
+    "route": "/rh/paie",
+    "label": "Paie",
+    "reason": "unique",
+    "candidates": [
+      "/rh/paie"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "113_historique.png",
+    "slug": "historique",
+    "route": "/pointage/historique",
+    "label": "Historique",
+    "reason": "unique",
+    "candidates": [
+      "/pointage/historique"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "114_rapports.png",
+    "slug": "rapports",
+    "route": "/pointage/rapports",
+    "label": "Rapports",
+    "reason": "unique",
+    "candidates": [
+      "/pointage/rapports"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "115_dashboard.png",
+    "slug": "dashboard",
+    "route": "/reporting",
+    "label": "Dashboard",
+    "reason": "unique",
+    "candidates": [
+      "/reporting"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "116_effectifs.png",
+    "slug": "effectifs",
+    "route": "/reporting/effectifs",
+    "label": "Effectifs",
+    "reason": "unique",
+    "candidates": [
+      "/reporting/effectifs"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "117_notes.png",
+    "slug": "notes",
+    "route": "/reporting/notes",
+    "label": "Notes",
+    "reason": "contexte(642)",
+    "candidates": [
+      "/cours/notes",
+      "/reporting/notes",
+      "/parent/notes"
+    ]
+  },
+  {
+    "dossier": "institution",
+    "role": "institution",
+    "fichier": "118_paiements.png",
+    "slug": "paiements",
+    "route": "/reporting/paiements",
+    "label": "Paiements",
+    "reason": "contexte(856)",
+    "candidates": [
+      "/inscription/paiements",
+      "/reporting/paiements",
+      "/parent/paiements"
+    ]
+  },
+  {
+    "dossier": "parent",
+    "role": "parent",
+    "fichier": "01_mon-profil.png",
+    "slug": "mon-profil",
+    "route": "/parametres/profil",
+    "label": "Mon profil",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/profil"
+    ]
+  },
+  {
+    "dossier": "parent",
+    "role": "parent",
+    "fichier": "02_mon-compte.png",
+    "slug": "mon-compte",
+    "route": "/parametres/compte",
+    "label": "Mon compte",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/compte"
+    ]
+  },
+  {
+    "dossier": "parent",
+    "role": "parent",
+    "fichier": "03_mon-dossier.png",
+    "slug": "mon-dossier",
+    "route": "/inscription/mon-dossier",
+    "label": "Mon dossier",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/mon-dossier"
+    ]
+  },
+  {
+    "dossier": "parent",
+    "role": "parent",
+    "fichier": "04_reclamations.png",
+    "slug": "reclamations",
+    "route": "/scolarite/mes-reclamations",
+    "label": "Reclamations",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/mes-reclamations"
+    ]
+  },
+  {
+    "dossier": "parent",
+    "role": "parent",
+    "fichier": "05_emplois-du-temps.png",
+    "slug": "emplois-du-temps",
+    "route": "/cours/emplois-du-temps",
+    "label": "Emplois du temps",
+    "reason": "unique",
+    "candidates": [
+      "/cours/emplois-du-temps"
+    ]
+  },
+  {
+    "dossier": "parent",
+    "role": "parent",
+    "fichier": "06_mon-tableau-de-bord.png",
+    "slug": "mon-tableau-de-bord",
+    "route": "/cours/tableau-de-bord",
+    "label": "Mon tableau de bord",
+    "reason": "unique",
+    "candidates": [
+      "/cours/tableau-de-bord"
+    ]
+  },
+  {
+    "dossier": "parent",
+    "role": "parent",
+    "fichier": "07_demandes-docs.png",
+    "slug": "demandes-docs",
+    "route": "/scolarite/demandes-documents",
+    "label": "Demandes docs",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/demandes-documents"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "01_situation-financiere.png",
+    "slug": "situation-financiere",
+    "route": "/inscription/finance/situation-financiere",
+    "label": "Situation financière",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/finance/situation-financiere"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "02_tableau-de-bord.png",
+    "slug": "tableau-de-bord",
+    "route": "/scolarite/secretariat/dashboard",
+    "label": "Tableau de bord",
+    "reason": "contexte(1066)",
+    "candidates": [
+      "/parent",
+      "/scolarite/secretariat/dashboard"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "03_encaissement.png",
+    "slug": "encaissement",
+    "route": "/scolarite/secretariat/encaissement",
+    "label": "Encaissement",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/secretariat/encaissement"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "04_caisse.png",
+    "slug": "caisse",
+    "route": "/scolarite/secretariat/caisse",
+    "label": "Caisse",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/secretariat/caisse"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "05_cloture-caisse.png",
+    "slug": "cloture-caisse",
+    "route": "/scolarite/secretariat/cloture-caisse",
+    "label": "Cloture caisse",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/secretariat/cloture-caisse"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "06_demandes.png",
+    "slug": "demandes",
+    "route": "/scolarite/secretariat/demandes",
+    "label": "Demandes",
+    "reason": "contexte(1688)",
+    "candidates": [
+      "/inscription/demandes",
+      "/scolarite/secretariat/demandes"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "07_autorisations-provisoires.png",
+    "slug": "autorisations-provisoires",
+    "route": "/scolarite/secretariat/autorisations-provisoires",
+    "label": "Autorisations provisoires",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/secretariat/autorisations-provisoires"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "08_types-de-documents.png",
+    "slug": "types-de-documents",
+    "route": "/scolarite/secretariat/types-documents",
+    "label": "Types de documents",
+    "reason": "contexte(1482)",
+    "candidates": [
+      "/docgen/types",
+      "/scolarite/secretariat/types-documents"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "09_journal-caisse.png",
+    "slug": "journal-caisse",
+    "route": "/scolarite/secretariat/journal-caisse",
+    "label": "Journal caisse",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/secretariat/journal-caisse"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "11_parcours.png",
+    "slug": "parcours",
+    "route": "/inscription/parcours",
+    "label": "Parcours",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/parcours"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "12_demandes.png",
+    "slug": "demandes",
+    "route": "/inscription/demandes",
+    "label": "Demandes",
+    "reason": "contexte(1098)",
+    "candidates": [
+      "/inscription/demandes",
+      "/scolarite/secretariat/demandes"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "13_effectifs-inscrits.png",
+    "slug": "effectifs-inscrits",
+    "route": "/inscription/effectifs",
+    "label": "Effectifs inscrits",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/effectifs"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "14_demandes-orientation.png",
+    "slug": "demandes-orientation",
+    "route": "/orientation/demandes",
+    "label": "Demandes orientation",
+    "reason": "unique",
+    "candidates": [
+      "/orientation/demandes"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "15_parcours-orientation.png",
+    "slug": "parcours-orientation",
+    "route": "/orientation/parcours",
+    "label": "Parcours orientation",
+    "reason": "unique",
+    "candidates": [
+      "/orientation/parcours"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "16_mes-bordereaux.png",
+    "slug": "mes-bordereaux",
+    "route": "/inscription/bordereaux",
+    "label": "Mes bordereaux",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/bordereaux"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "17_configurations.png",
+    "slug": "configurations",
+    "route": "/bourses/configurations",
+    "label": "Configurations",
+    "reason": "unique",
+    "candidates": [
+      "/bourses/configurations"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "18_attributions.png",
+    "slug": "attributions",
+    "route": "/bourses/attributions",
+    "label": "Attributions",
+    "reason": "unique",
+    "candidates": [
+      "/bourses/attributions"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "19_campagne-de-bourses.png",
+    "slug": "campagne-de-bourses",
+    "route": "/bourses/campagne",
+    "label": "Campagne de bourses",
+    "reason": "unique",
+    "candidates": [
+      "/bourses/campagne"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "20_dossiers-etudiants.png",
+    "slug": "dossiers-etudiants",
+    "route": "/inscription/dossiers",
+    "label": "Dossiers etudiants",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/dossiers"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "21_cartes-etudiantes.png",
+    "slug": "cartes-etudiantes",
+    "route": "/inscription/cartes",
+    "label": "Cartes étudiantes",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/cartes"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "22_registres.png",
+    "slug": "registres",
+    "route": "/scolarite/registres",
+    "label": "Registres",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/registres"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "23_reclamations.png",
+    "slug": "reclamations",
+    "route": "/scolarite/mes-reclamations",
+    "label": "Reclamations",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/mes-reclamations"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "24_traiter-reclam.png",
+    "slug": "traiter-reclam",
+    "route": "/scolarite/traiter-reclamations",
+    "label": "Traiter reclam.",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/traiter-reclamations"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "25_emplois-du-temps.png",
+    "slug": "emplois-du-temps",
+    "route": "/cours/emplois-du-temps",
+    "label": "Emplois du temps",
+    "reason": "unique",
+    "candidates": [
+      "/cours/emplois-du-temps"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "26_calendrier.png",
+    "slug": "calendrier",
+    "route": "/scolarite/calendrier",
+    "label": "Calendrier",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/calendrier"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "27_rattrapages.png",
+    "slug": "rattrapages",
+    "route": "/bulletins/rattrapages",
+    "label": "Rattrapages",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/rattrapages"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "29_mon-tableau-de-bord.png",
+    "slug": "mon-tableau-de-bord",
+    "route": "/cours/tableau-de-bord",
+    "label": "Mon tableau de bord",
+    "reason": "unique",
+    "candidates": [
+      "/cours/tableau-de-bord"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "31_unites-d-enseignements.png",
+    "slug": "unites-d-enseignements",
+    "route": "/cours/cours",
+    "label": "Unités d'enseignements",
+    "reason": "unique",
+    "candidates": [
+      "/cours/cours"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "32_cahier-de-presence.png",
+    "slug": "cahier-de-presence",
+    "route": "/cours/presences",
+    "label": "Cahier de présence",
+    "reason": "unique",
+    "candidates": [
+      "/cours/presences"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "33_notes.png",
+    "slug": "notes",
+    "route": "/cours/notes",
+    "label": "Notes",
+    "reason": "contexte(916)",
+    "candidates": [
+      "/cours/notes",
+      "/reporting/notes",
+      "/parent/notes"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "34_bulletins.png",
+    "slug": "bulletins",
+    "route": "/bulletins",
+    "label": "Bulletins",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "35_moyennes.png",
+    "slug": "moyennes",
+    "route": "/bulletins/moyennes",
+    "label": "Moyennes",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/moyennes"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "36_conseils-classe.png",
+    "slug": "conseils-classe",
+    "route": "/scolarite/conseils",
+    "label": "Conseils classe",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/conseils"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "37_annonces.png",
+    "slug": "annonces",
+    "route": "/communication/annonces",
+    "label": "Annonces",
+    "reason": "unique",
+    "candidates": [
+      "/communication/annonces"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "38_vie-estudiantine.png",
+    "slug": "vie-estudiantine",
+    "route": "/communication",
+    "label": "Vie estudiantine",
+    "reason": "unique",
+    "candidates": [
+      "/communication"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "39_paiements.png",
+    "slug": "paiements",
+    "route": "/inscription/paiements",
+    "label": "Paiements",
+    "reason": "contexte(666)",
+    "candidates": [
+      "/inscription/paiements",
+      "/reporting/paiements",
+      "/parent/paiements"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "40_situation-irreguliere.png",
+    "slug": "situation-irreguliere",
+    "route": "/inscription/finance/irreguliers",
+    "label": "Situation irrégulière",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/finance/irreguliers"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "41_valid-bordereaux.png",
+    "slug": "valid-bordereaux",
+    "route": "/inscription/validation-bordereaux",
+    "label": "Valid. bordereaux",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/validation-bordereaux"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "42_comptabilite.png",
+    "slug": "comptabilite",
+    "route": "/comptabilite/dashboard",
+    "label": "Comptabilite",
+    "reason": "unique",
+    "candidates": [
+      "/comptabilite/dashboard"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "43_articles.png",
+    "slug": "articles",
+    "route": "/stocks/articles",
+    "label": "Articles",
+    "reason": "unique",
+    "candidates": [
+      "/stocks/articles"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "44_mouvements.png",
+    "slug": "mouvements",
+    "route": "/stocks/mouvements",
+    "label": "Mouvements",
+    "reason": "unique",
+    "candidates": [
+      "/stocks/mouvements"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "45_immobilisations.png",
+    "slug": "immobilisations",
+    "route": "/immobilisations",
+    "label": "Immobilisations",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "46_sites.png",
+    "slug": "sites",
+    "route": "/immobilisations/sites",
+    "label": "Sites",
+    "reason": "contexte(1528)",
+    "candidates": [
+      "/immobilisations/sites",
+      "/administration/sites"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "47_categories.png",
+    "slug": "categories",
+    "route": "/immobilisations/categories",
+    "label": "Categories",
+    "reason": "contexte(1732)",
+    "candidates": [
+      "/stocks/categories",
+      "/immobilisations/categories"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "48_affectations.png",
+    "slug": "affectations",
+    "route": "/immobilisations/affectations",
+    "label": "Affectations",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/affectations"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "49_assurances.png",
+    "slug": "assurances",
+    "route": "/immobilisations/assurances",
+    "label": "Assurances",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/assurances"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "50_sorties-provisoires.png",
+    "slug": "sorties-provisoires",
+    "route": "/immobilisations/sorties-provisoires",
+    "label": "Sorties provisoires",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/sorties-provisoires"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "51_cessions.png",
+    "slug": "cessions",
+    "route": "/immobilisations/cessions",
+    "label": "Cessions",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/cessions"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "52_rebuts.png",
+    "slug": "rebuts",
+    "route": "/immobilisations/rebuts",
+    "label": "Rebuts",
+    "reason": "contexte(1498)",
+    "candidates": [
+      "/stocks/rebuts",
+      "/immobilisations/rebuts"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "53_maintenance.png",
+    "slug": "maintenance",
+    "route": "/immobilisations/maintenances",
+    "label": "Maintenance",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/maintenances"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "54_inventaires.png",
+    "slug": "inventaires",
+    "route": "/immobilisations/inventaires",
+    "label": "Inventaires",
+    "reason": "contexte(1070)",
+    "candidates": [
+      "/stocks/inventaires",
+      "/immobilisations/inventaires"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "55_reportings.png",
+    "slug": "reportings",
+    "route": "/immobilisations/reportings",
+    "label": "Reportings",
+    "reason": "contexte(1070)",
+    "candidates": [
+      "/stocks/reportings",
+      "/immobilisations/reportings"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "56_employes.png",
+    "slug": "employes",
+    "route": "/rh/employes",
+    "label": "Employes",
+    "reason": "unique",
+    "candidates": [
+      "/rh/employes"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "57_paie.png",
+    "slug": "paie",
+    "route": "/rh/paie",
+    "label": "Paie",
+    "reason": "unique",
+    "candidates": [
+      "/rh/paie"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "58_historique.png",
+    "slug": "historique",
+    "route": "/pointage/historique",
+    "label": "Historique",
+    "reason": "unique",
+    "candidates": [
+      "/pointage/historique"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "59_rapports.png",
+    "slug": "rapports",
+    "route": "/pointage/rapports",
+    "label": "Rapports",
+    "reason": "unique",
+    "candidates": [
+      "/pointage/rapports"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "60_dashboard.png",
+    "slug": "dashboard",
+    "route": "/reporting",
+    "label": "Dashboard",
+    "reason": "unique",
+    "candidates": [
+      "/reporting"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "61_effectifs.png",
+    "slug": "effectifs",
+    "route": "/reporting/effectifs",
+    "label": "Effectifs",
+    "reason": "unique",
+    "candidates": [
+      "/reporting/effectifs"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "62_notes.png",
+    "slug": "notes",
+    "route": "/reporting/notes",
+    "label": "Notes",
+    "reason": "contexte(642)",
+    "candidates": [
+      "/cours/notes",
+      "/reporting/notes",
+      "/parent/notes"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "63_paiements.png",
+    "slug": "paiements",
+    "route": "/reporting/paiements",
+    "label": "Paiements",
+    "reason": "contexte(856)",
+    "candidates": [
+      "/inscription/paiements",
+      "/reporting/paiements",
+      "/parent/paiements"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "64_mon-profil.png",
+    "slug": "mon-profil",
+    "route": "/parametres/profil",
+    "label": "Mon profil",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/profil"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "65_mon-compte.png",
+    "slug": "mon-compte",
+    "route": "/parametres/compte",
+    "label": "Mon compte",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/compte"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "66_demandes-docs.png",
+    "slug": "demandes-docs",
+    "route": "/scolarite/demandes-documents",
+    "label": "Demandes docs",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/demandes-documents"
+    ]
+  },
+  {
+    "dossier": "personnel-administratif",
+    "role": "personnel_administratif",
+    "fichier": "67_traiter-demandes.png",
+    "slug": "traiter-demandes",
+    "route": "/scolarite/traiter-demandes",
+    "label": "Traiter demandes",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/traiter-demandes"
+    ]
+  },
+  {
+    "dossier": "ressources-humaines",
+    "role": "ressources_humaines",
+    "fichier": "01_categories-professionnelles.png",
+    "slug": "categories-professionnelles",
+    "route": "/rh/categories-professionnelles",
+    "label": "Catégories professionnelles",
+    "reason": "unique",
+    "candidates": [
+      "/rh/categories-professionnelles"
+    ]
+  },
+  {
+    "dossier": "ressources-humaines",
+    "role": "ressources_humaines",
+    "fichier": "02_grilles-salariales.png",
+    "slug": "grilles-salariales",
+    "route": "/rh/grilles-salariales",
+    "label": "Grilles salariales",
+    "reason": "unique",
+    "candidates": [
+      "/rh/grilles-salariales"
+    ]
+  },
+  {
+    "dossier": "ressources-humaines",
+    "role": "ressources_humaines",
+    "fichier": "03_parametres-paie.png",
+    "slug": "parametres-paie",
+    "route": "/rh/parametres-paie",
+    "label": "Paramètres paie",
+    "reason": "unique",
+    "candidates": [
+      "/rh/parametres-paie"
+    ]
+  },
+  {
+    "dossier": "ressources-humaines",
+    "role": "ressources_humaines",
+    "fichier": "04_heures-supplementaires.png",
+    "slug": "heures-supplementaires",
+    "route": "/rh/heures-supplementaires",
+    "label": "Heures supplémentaires",
+    "reason": "unique",
+    "candidates": [
+      "/rh/heures-supplementaires"
+    ]
+  },
+  {
+    "dossier": "ressources-humaines",
+    "role": "ressources_humaines",
+    "fichier": "05_prets-avances.png",
+    "slug": "prets-avances",
+    "route": "/rh/prets",
+    "label": "Prêts / Avances",
+    "reason": "unique",
+    "candidates": [
+      "/rh/prets"
+    ]
+  },
+  {
+    "dossier": "ressources-humaines",
+    "role": "ressources_humaines",
+    "fichier": "06_prestataires.png",
+    "slug": "prestataires",
+    "route": "/rh/prestataires",
+    "label": "Prestataires",
+    "reason": "unique",
+    "candidates": [
+      "/rh/prestataires"
+    ]
+  },
+  {
+    "dossier": "ressources-humaines",
+    "role": "ressources_humaines",
+    "fichier": "07_indemnites-prestataires.png",
+    "slug": "indemnites-prestataires",
+    "route": "/rh/indemnites-prestataires",
+    "label": "Indemnités prestataires",
+    "reason": "unique",
+    "candidates": [
+      "/rh/indemnites-prestataires"
+    ]
+  },
+  {
+    "dossier": "ressources-humaines",
+    "role": "ressources_humaines",
+    "fichier": "08_contrats.png",
+    "slug": "contrats",
+    "route": "/rh/contrats-enseignant",
+    "label": "Contrats",
+    "reason": "contexte(1712)",
+    "candidates": [
+      "/marche/contrats",
+      "/rh/contrats-enseignant"
+    ]
+  },
+  {
+    "dossier": "ressources-humaines",
+    "role": "ressources_humaines",
+    "fichier": "09_planning-personnel.png",
+    "slug": "planning-personnel",
+    "route": "/rh/planning-personnel",
+    "label": "Planning personnel",
+    "reason": "unique",
+    "candidates": [
+      "/rh/planning-personnel"
+    ]
+  },
+  {
+    "dossier": "ressources-humaines",
+    "role": "ressources_humaines",
+    "fichier": "10_reportings-rh.png",
+    "slug": "reportings-rh",
+    "route": "/rh/reportings",
+    "label": "Reportings RH",
+    "reason": "unique",
+    "candidates": [
+      "/rh/reportings"
+    ]
+  },
+  {
+    "dossier": "ressources-humaines",
+    "role": "ressources_humaines",
+    "fichier": "11_mon-profil.png",
+    "slug": "mon-profil",
+    "route": "/parametres/profil",
+    "label": "Mon profil",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/profil"
+    ]
+  },
+  {
+    "dossier": "ressources-humaines",
+    "role": "ressources_humaines",
+    "fichier": "12_mon-compte.png",
+    "slug": "mon-compte",
+    "route": "/parametres/compte",
+    "label": "Mon compte",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/compte"
+    ]
+  },
+  {
+    "dossier": "ressources-humaines",
+    "role": "ressources_humaines",
+    "fichier": "13_mon-tableau-de-bord.png",
+    "slug": "mon-tableau-de-bord",
+    "route": "/cours/tableau-de-bord",
+    "label": "Mon tableau de bord",
+    "reason": "unique",
+    "candidates": [
+      "/cours/tableau-de-bord"
+    ]
+  },
+  {
+    "dossier": "ressources-humaines",
+    "role": "ressources_humaines",
+    "fichier": "14_employes.png",
+    "slug": "employes",
+    "route": "/rh/employes",
+    "label": "Employes",
+    "reason": "unique",
+    "candidates": [
+      "/rh/employes"
+    ]
+  },
+  {
+    "dossier": "ressources-humaines",
+    "role": "ressources_humaines",
+    "fichier": "15_paie.png",
+    "slug": "paie",
+    "route": "/rh/paie",
+    "label": "Paie",
+    "reason": "unique",
+    "candidates": [
+      "/rh/paie"
+    ]
+  },
+  {
+    "dossier": "ressources-humaines",
+    "role": "ressources_humaines",
+    "fichier": "16_demandes-de-conge.png",
+    "slug": "demandes-de-conge",
+    "route": "/rh/demandes-conge",
+    "label": "Demandes de congé",
+    "reason": "unique",
+    "candidates": [
+      "/rh/demandes-conge"
+    ]
+  },
+  {
+    "dossier": "ressources-humaines",
+    "role": "ressources_humaines",
+    "fichier": "17_soldes-de-conge.png",
+    "slug": "soldes-de-conge",
+    "route": "/rh/soldes-conge",
+    "label": "Soldes de congé",
+    "reason": "unique",
+    "candidates": [
+      "/rh/soldes-conge"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "01_tableau-de-bord.png",
+    "slug": "tableau-de-bord",
+    "route": "/scolarite/secretariat/dashboard",
+    "label": "Tableau de bord",
+    "reason": "contexte(1066)",
+    "candidates": [
+      "/parent",
+      "/scolarite/secretariat/dashboard"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "02_encaissement.png",
+    "slug": "encaissement",
+    "route": "/scolarite/secretariat/encaissement",
+    "label": "Encaissement",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/secretariat/encaissement"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "03_caisse.png",
+    "slug": "caisse",
+    "route": "/scolarite/secretariat/caisse",
+    "label": "Caisse",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/secretariat/caisse"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "04_cloture-caisse.png",
+    "slug": "cloture-caisse",
+    "route": "/scolarite/secretariat/cloture-caisse",
+    "label": "Cloture caisse",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/secretariat/cloture-caisse"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "05_demandes.png",
+    "slug": "demandes",
+    "route": "/scolarite/secretariat/demandes",
+    "label": "Demandes",
+    "reason": "contexte(1688)",
+    "candidates": [
+      "/inscription/demandes",
+      "/scolarite/secretariat/demandes"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "06_autorisations-provisoires.png",
+    "slug": "autorisations-provisoires",
+    "route": "/scolarite/secretariat/autorisations-provisoires",
+    "label": "Autorisations provisoires",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/secretariat/autorisations-provisoires"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "07_types-de-documents.png",
+    "slug": "types-de-documents",
+    "route": "/scolarite/secretariat/types-documents",
+    "label": "Types de documents",
+    "reason": "contexte(1482)",
+    "candidates": [
+      "/docgen/types",
+      "/scolarite/secretariat/types-documents"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "08_journal-caisse.png",
+    "slug": "journal-caisse",
+    "route": "/scolarite/secretariat/journal-caisse",
+    "label": "Journal caisse",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/secretariat/journal-caisse"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "10_parcours.png",
+    "slug": "parcours",
+    "route": "/inscription/parcours",
+    "label": "Parcours",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/parcours"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "11_demandes.png",
+    "slug": "demandes",
+    "route": "/inscription/demandes",
+    "label": "Demandes",
+    "reason": "contexte(1098)",
+    "candidates": [
+      "/inscription/demandes",
+      "/scolarite/secretariat/demandes"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "12_effectifs-inscrits.png",
+    "slug": "effectifs-inscrits",
+    "route": "/inscription/effectifs",
+    "label": "Effectifs inscrits",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/effectifs"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "13_demandes-orientation.png",
+    "slug": "demandes-orientation",
+    "route": "/orientation/demandes",
+    "label": "Demandes orientation",
+    "reason": "unique",
+    "candidates": [
+      "/orientation/demandes"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "14_parcours-orientation.png",
+    "slug": "parcours-orientation",
+    "route": "/orientation/parcours",
+    "label": "Parcours orientation",
+    "reason": "unique",
+    "candidates": [
+      "/orientation/parcours"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "15_mes-bordereaux.png",
+    "slug": "mes-bordereaux",
+    "route": "/inscription/bordereaux",
+    "label": "Mes bordereaux",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/bordereaux"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "16_configurations.png",
+    "slug": "configurations",
+    "route": "/bourses/configurations",
+    "label": "Configurations",
+    "reason": "unique",
+    "candidates": [
+      "/bourses/configurations"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "17_attributions.png",
+    "slug": "attributions",
+    "route": "/bourses/attributions",
+    "label": "Attributions",
+    "reason": "unique",
+    "candidates": [
+      "/bourses/attributions"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "18_campagne-de-bourses.png",
+    "slug": "campagne-de-bourses",
+    "route": "/bourses/campagne",
+    "label": "Campagne de bourses",
+    "reason": "unique",
+    "candidates": [
+      "/bourses/campagne"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "19_dossiers-etudiants.png",
+    "slug": "dossiers-etudiants",
+    "route": "/inscription/dossiers",
+    "label": "Dossiers etudiants",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/dossiers"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "20_cartes-etudiantes.png",
+    "slug": "cartes-etudiantes",
+    "route": "/inscription/cartes",
+    "label": "Cartes étudiantes",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/cartes"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "21_registres.png",
+    "slug": "registres",
+    "route": "/scolarite/registres",
+    "label": "Registres",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/registres"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "22_reclamations.png",
+    "slug": "reclamations",
+    "route": "/scolarite/mes-reclamations",
+    "label": "Reclamations",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/mes-reclamations"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "23_traiter-reclam.png",
+    "slug": "traiter-reclam",
+    "route": "/scolarite/traiter-reclamations",
+    "label": "Traiter reclam.",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/traiter-reclamations"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "24_emplois-du-temps.png",
+    "slug": "emplois-du-temps",
+    "route": "/cours/emplois-du-temps",
+    "label": "Emplois du temps",
+    "reason": "unique",
+    "candidates": [
+      "/cours/emplois-du-temps"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "25_calendrier.png",
+    "slug": "calendrier",
+    "route": "/scolarite/calendrier",
+    "label": "Calendrier",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/calendrier"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "26_rattrapages.png",
+    "slug": "rattrapages",
+    "route": "/bulletins/rattrapages",
+    "label": "Rattrapages",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/rattrapages"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "28_mon-tableau-de-bord.png",
+    "slug": "mon-tableau-de-bord",
+    "route": "/cours/tableau-de-bord",
+    "label": "Mon tableau de bord",
+    "reason": "unique",
+    "candidates": [
+      "/cours/tableau-de-bord"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "30_unites-d-enseignements.png",
+    "slug": "unites-d-enseignements",
+    "route": "/cours/cours",
+    "label": "Unités d'enseignements",
+    "reason": "unique",
+    "candidates": [
+      "/cours/cours"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "31_cahier-de-presence.png",
+    "slug": "cahier-de-presence",
+    "route": "/cours/presences",
+    "label": "Cahier de présence",
+    "reason": "unique",
+    "candidates": [
+      "/cours/presences"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "32_notes.png",
+    "slug": "notes",
+    "route": "/cours/notes",
+    "label": "Notes",
+    "reason": "contexte(916)",
+    "candidates": [
+      "/cours/notes",
+      "/reporting/notes",
+      "/parent/notes"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "33_bulletins.png",
+    "slug": "bulletins",
+    "route": "/bulletins",
+    "label": "Bulletins",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "34_moyennes.png",
+    "slug": "moyennes",
+    "route": "/bulletins/moyennes",
+    "label": "Moyennes",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/moyennes"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "35_conseils-classe.png",
+    "slug": "conseils-classe",
+    "route": "/scolarite/conseils",
+    "label": "Conseils classe",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/conseils"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "36_annonces.png",
+    "slug": "annonces",
+    "route": "/communication/annonces",
+    "label": "Annonces",
+    "reason": "unique",
+    "candidates": [
+      "/communication/annonces"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "37_vie-estudiantine.png",
+    "slug": "vie-estudiantine",
+    "route": "/communication",
+    "label": "Vie estudiantine",
+    "reason": "unique",
+    "candidates": [
+      "/communication"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "38_paiements.png",
+    "slug": "paiements",
+    "route": "/inscription/paiements",
+    "label": "Paiements",
+    "reason": "contexte(870)",
+    "candidates": [
+      "/inscription/paiements",
+      "/reporting/paiements",
+      "/parent/paiements"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "39_situation-irreguliere.png",
+    "slug": "situation-irreguliere",
+    "route": "/inscription/finance/irreguliers",
+    "label": "Situation irrégulière",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/finance/irreguliers"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "40_situation-financiere.png",
+    "slug": "situation-financiere",
+    "route": "/inscription/finance/situation-financiere",
+    "label": "Situation financière",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/finance/situation-financiere"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "41_valid-bordereaux.png",
+    "slug": "valid-bordereaux",
+    "route": "/inscription/validation-bordereaux",
+    "label": "Valid. bordereaux",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/validation-bordereaux"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "42_comptabilite.png",
+    "slug": "comptabilite",
+    "route": "/comptabilite/dashboard",
+    "label": "Comptabilite",
+    "reason": "unique",
+    "candidates": [
+      "/comptabilite/dashboard"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "43_articles.png",
+    "slug": "articles",
+    "route": "/stocks/articles",
+    "label": "Articles",
+    "reason": "unique",
+    "candidates": [
+      "/stocks/articles"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "44_mouvements.png",
+    "slug": "mouvements",
+    "route": "/stocks/mouvements",
+    "label": "Mouvements",
+    "reason": "unique",
+    "candidates": [
+      "/stocks/mouvements"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "45_immobilisations.png",
+    "slug": "immobilisations",
+    "route": "/immobilisations",
+    "label": "Immobilisations",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "46_sites.png",
+    "slug": "sites",
+    "route": "/immobilisations/sites",
+    "label": "Sites",
+    "reason": "contexte(1528)",
+    "candidates": [
+      "/immobilisations/sites",
+      "/administration/sites"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "47_categories.png",
+    "slug": "categories",
+    "route": "/immobilisations/categories",
+    "label": "Categories",
+    "reason": "contexte(1732)",
+    "candidates": [
+      "/stocks/categories",
+      "/immobilisations/categories"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "48_affectations.png",
+    "slug": "affectations",
+    "route": "/immobilisations/affectations",
+    "label": "Affectations",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/affectations"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "49_assurances.png",
+    "slug": "assurances",
+    "route": "/immobilisations/assurances",
+    "label": "Assurances",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/assurances"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "50_sorties-provisoires.png",
+    "slug": "sorties-provisoires",
+    "route": "/immobilisations/sorties-provisoires",
+    "label": "Sorties provisoires",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/sorties-provisoires"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "51_cessions.png",
+    "slug": "cessions",
+    "route": "/immobilisations/cessions",
+    "label": "Cessions",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/cessions"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "52_rebuts.png",
+    "slug": "rebuts",
+    "route": "/immobilisations/rebuts",
+    "label": "Rebuts",
+    "reason": "contexte(1498)",
+    "candidates": [
+      "/stocks/rebuts",
+      "/immobilisations/rebuts"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "53_maintenance.png",
+    "slug": "maintenance",
+    "route": "/immobilisations/maintenances",
+    "label": "Maintenance",
+    "reason": "unique",
+    "candidates": [
+      "/immobilisations/maintenances"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "54_inventaires.png",
+    "slug": "inventaires",
+    "route": "/immobilisations/inventaires",
+    "label": "Inventaires",
+    "reason": "contexte(1070)",
+    "candidates": [
+      "/stocks/inventaires",
+      "/immobilisations/inventaires"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "55_reportings.png",
+    "slug": "reportings",
+    "route": "/immobilisations/reportings",
+    "label": "Reportings",
+    "reason": "contexte(1070)",
+    "candidates": [
+      "/stocks/reportings",
+      "/immobilisations/reportings"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "56_employes.png",
+    "slug": "employes",
+    "route": "/rh/employes",
+    "label": "Employes",
+    "reason": "unique",
+    "candidates": [
+      "/rh/employes"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "57_paie.png",
+    "slug": "paie",
+    "route": "/rh/paie",
+    "label": "Paie",
+    "reason": "unique",
+    "candidates": [
+      "/rh/paie"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "58_historique.png",
+    "slug": "historique",
+    "route": "/pointage/historique",
+    "label": "Historique",
+    "reason": "unique",
+    "candidates": [
+      "/pointage/historique"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "59_rapports.png",
+    "slug": "rapports",
+    "route": "/pointage/rapports",
+    "label": "Rapports",
+    "reason": "unique",
+    "candidates": [
+      "/pointage/rapports"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "60_dashboard.png",
+    "slug": "dashboard",
+    "route": "/reporting",
+    "label": "Dashboard",
+    "reason": "unique",
+    "candidates": [
+      "/reporting"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "61_effectifs.png",
+    "slug": "effectifs",
+    "route": "/reporting/effectifs",
+    "label": "Effectifs",
+    "reason": "unique",
+    "candidates": [
+      "/reporting/effectifs"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "62_notes.png",
+    "slug": "notes",
+    "route": "/reporting/notes",
+    "label": "Notes",
+    "reason": "contexte(642)",
+    "candidates": [
+      "/cours/notes",
+      "/reporting/notes",
+      "/parent/notes"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "63_paiements.png",
+    "slug": "paiements",
+    "route": "/reporting/paiements",
+    "label": "Paiements",
+    "reason": "contexte(856)",
+    "candidates": [
+      "/inscription/paiements",
+      "/reporting/paiements",
+      "/parent/paiements"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "64_mon-profil.png",
+    "slug": "mon-profil",
+    "route": "/parametres/profil",
+    "label": "Mon profil",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/profil"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "65_mon-compte.png",
+    "slug": "mon-compte",
+    "route": "/parametres/compte",
+    "label": "Mon compte",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/compte"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "66_demandes-docs.png",
+    "slug": "demandes-docs",
+    "route": "/scolarite/demandes-documents",
+    "label": "Demandes docs",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/demandes-documents"
+    ]
+  },
+  {
+    "dossier": "secretaire",
+    "role": "secretaire",
+    "fichier": "67_traiter-demandes.png",
+    "slug": "traiter-demandes",
+    "route": "/scolarite/traiter-demandes",
+    "label": "Traiter demandes",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/traiter-demandes"
+    ]
+  },
+  {
+    "dossier": "superviseur-general",
+    "role": "superviseur_general",
+    "fichier": "01_salles-de-classe.png",
+    "slug": "salles-de-classe",
+    "route": "/inscription/salles-de-classe",
+    "label": "Salles de classe",
+    "reason": "unique",
+    "candidates": [
+      "/inscription/salles-de-classe"
+    ]
+  },
+  {
+    "dossier": "superviseur-general",
+    "role": "superviseur_general",
+    "fichier": "02_emplois-du-temps.png",
+    "slug": "emplois-du-temps",
+    "route": "/cours/emplois-du-temps",
+    "label": "Emplois du temps",
+    "reason": "unique",
+    "candidates": [
+      "/cours/emplois-du-temps"
+    ]
+  },
+  {
+    "dossier": "superviseur-general",
+    "role": "superviseur_general",
+    "fichier": "03_calendrier.png",
+    "slug": "calendrier",
+    "route": "/scolarite/calendrier",
+    "label": "Calendrier",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/calendrier"
+    ]
+  },
+  {
+    "dossier": "superviseur-general",
+    "role": "superviseur_general",
+    "fichier": "04_sessions-examens.png",
+    "slug": "sessions-examens",
+    "route": "/bulletins/sessions",
+    "label": "Sessions examens",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/sessions"
+    ]
+  },
+  {
+    "dossier": "superviseur-general",
+    "role": "superviseur_general",
+    "fichier": "05_rattrapages.png",
+    "slug": "rattrapages",
+    "route": "/bulletins/rattrapages",
+    "label": "Rattrapages",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/rattrapages"
+    ]
+  },
+  {
+    "dossier": "superviseur-general",
+    "role": "superviseur_general",
+    "fichier": "06_tableau-de-bord-du-superviseur.png",
+    "slug": "tableau-de-bord-du-superviseur",
+    "route": "/cours/supervision-generale",
+    "label": "Tableau de bord du superviseur",
+    "reason": "unique",
+    "candidates": [
+      "/cours/supervision-generale"
+    ]
+  },
+  {
+    "dossier": "superviseur-general",
+    "role": "superviseur_general",
+    "fichier": "08_cahiers-de-texte.png",
+    "slug": "cahiers-de-texte",
+    "route": "/cours/cahiers-de-texte",
+    "label": "Cahiers de texte",
+    "reason": "unique",
+    "candidates": [
+      "/cours/cahiers-de-texte"
+    ]
+  },
+  {
+    "dossier": "superviseur-general",
+    "role": "superviseur_general",
+    "fichier": "09_cahier-de-presence.png",
+    "slug": "cahier-de-presence",
+    "route": "/cours/presences",
+    "label": "Cahier de présence",
+    "reason": "unique",
+    "candidates": [
+      "/cours/presences"
+    ]
+  },
+  {
+    "dossier": "superviseur-general",
+    "role": "superviseur_general",
+    "fichier": "10_notes.png",
+    "slug": "notes",
+    "route": "/cours/notes",
+    "label": "Notes",
+    "reason": "contexte(912)",
+    "candidates": [
+      "/cours/notes",
+      "/reporting/notes",
+      "/parent/notes"
+    ]
+  },
+  {
+    "dossier": "superviseur-general",
+    "role": "superviseur_general",
+    "fichier": "11_bulletins.png",
+    "slug": "bulletins",
+    "route": "/bulletins",
+    "label": "Bulletins",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins"
+    ]
+  },
+  {
+    "dossier": "superviseur-general",
+    "role": "superviseur_general",
+    "fichier": "12_moyennes.png",
+    "slug": "moyennes",
+    "route": "/bulletins/moyennes",
+    "label": "Moyennes",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/moyennes"
+    ]
+  },
+  {
+    "dossier": "superviseur-general",
+    "role": "superviseur_general",
+    "fichier": "13_deliberations-jury.png",
+    "slug": "deliberations-jury",
+    "route": "/bulletins/deliberations-jury",
+    "label": "Délibérations & Jury",
+    "reason": "unique",
+    "candidates": [
+      "/bulletins/deliberations-jury"
+    ]
+  },
+  {
+    "dossier": "superviseur-general",
+    "role": "superviseur_general",
+    "fichier": "14_conseils-classe.png",
+    "slug": "conseils-classe",
+    "route": "/scolarite/conseils",
+    "label": "Conseils classe",
+    "reason": "unique",
+    "candidates": [
+      "/scolarite/conseils"
+    ]
+  },
+  {
+    "dossier": "superviseur-general",
+    "role": "superviseur_general",
+    "fichier": "17_unites-d-enseignements.png",
+    "slug": "unites-d-enseignements",
+    "route": "/cours/cours",
+    "label": "Unités d'enseignements",
+    "reason": "unique",
+    "candidates": [
+      "/cours/cours"
+    ]
+  },
+  {
+    "dossier": "superviseur-general",
+    "role": "superviseur_general",
+    "fichier": "18_historique.png",
+    "slug": "historique",
+    "route": "/pointage/historique",
+    "label": "Historique",
+    "reason": "unique",
+    "candidates": [
+      "/pointage/historique"
+    ]
+  },
+  {
+    "dossier": "superviseur-general",
+    "role": "superviseur_general",
+    "fichier": "19_shifts.png",
+    "slug": "shifts",
+    "route": "/pointage/shifts",
+    "label": "Shifts",
+    "reason": "unique",
+    "candidates": [
+      "/pointage/shifts"
+    ]
+  },
+  {
+    "dossier": "superviseur-general",
+    "role": "superviseur_general",
+    "fichier": "20_absences.png",
+    "slug": "absences",
+    "route": "/pointage/absences",
+    "label": "Absences",
+    "reason": "contexte(1070)",
+    "candidates": [
+      "/bulletins/absences",
+      "/pointage/absences",
+      "/parent/absences"
+    ]
+  },
+  {
+    "dossier": "superviseur-general",
+    "role": "superviseur_general",
+    "fichier": "21_rapports.png",
+    "slug": "rapports",
+    "route": "/pointage/rapports",
+    "label": "Rapports",
+    "reason": "unique",
+    "candidates": [
+      "/pointage/rapports"
+    ]
+  },
+  {
+    "dossier": "superviseur-general",
+    "role": "superviseur_general",
+    "fichier": "22_dashboard.png",
+    "slug": "dashboard",
+    "route": "/reporting",
+    "label": "Dashboard",
+    "reason": "unique",
+    "candidates": [
+      "/reporting"
+    ]
+  },
+  {
+    "dossier": "superviseur-general",
+    "role": "superviseur_general",
+    "fichier": "23_effectifs.png",
+    "slug": "effectifs",
+    "route": "/reporting/effectifs",
+    "label": "Effectifs",
+    "reason": "unique",
+    "candidates": [
+      "/reporting/effectifs"
+    ]
+  },
+  {
+    "dossier": "superviseur-general",
+    "role": "superviseur_general",
+    "fichier": "24_notes.png",
+    "slug": "notes",
+    "route": "/reporting/notes",
+    "label": "Notes",
+    "reason": "contexte(642)",
+    "candidates": [
+      "/cours/notes",
+      "/reporting/notes",
+      "/parent/notes"
+    ]
+  },
+  {
+    "dossier": "superviseur-general",
+    "role": "superviseur_general",
+    "fichier": "25_mon-profil.png",
+    "slug": "mon-profil",
+    "route": "/parametres/profil",
+    "label": "Mon profil",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/profil"
+    ]
+  },
+  {
+    "dossier": "superviseur-general",
+    "role": "superviseur_general",
+    "fichier": "26_mon-compte.png",
+    "slug": "mon-compte",
+    "route": "/parametres/compte",
+    "label": "Mon compte",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/compte"
+    ]
+  },
+  {
+    "dossier": "surveillant",
+    "role": "surveillant",
+    "fichier": "01_emplois-du-temps.png",
+    "slug": "emplois-du-temps",
+    "route": "/cours/emplois-du-temps",
+    "label": "Emplois du temps",
+    "reason": "unique",
+    "candidates": [
+      "/cours/emplois-du-temps"
+    ]
+  },
+  {
+    "dossier": "surveillant",
+    "role": "surveillant",
+    "fichier": "02_mon-tableau-de-bord.png",
+    "slug": "mon-tableau-de-bord",
+    "route": "/cours/tableau-de-bord",
+    "label": "Mon tableau de bord",
+    "reason": "unique",
+    "candidates": [
+      "/cours/tableau-de-bord"
+    ]
+  },
+  {
+    "dossier": "surveillant",
+    "role": "surveillant",
+    "fichier": "03_cahier-de-presence.png",
+    "slug": "cahier-de-presence",
+    "route": "/cours/presences",
+    "label": "Cahier de présence",
+    "reason": "unique",
+    "candidates": [
+      "/cours/presences"
+    ]
+  },
+  {
+    "dossier": "surveillant",
+    "role": "surveillant",
+    "fichier": "04_absences.png",
+    "slug": "absences",
+    "route": "/pointage/absences",
+    "label": "Absences",
+    "reason": "role-menu occ=0",
+    "candidates": [
+      "/bulletins/absences",
+      "/pointage/absences",
+      "/parent/absences"
+    ]
+  },
+  {
+    "dossier": "surveillant",
+    "role": "surveillant",
+    "fichier": "05_mon-profil.png",
+    "slug": "mon-profil",
+    "route": "/parametres/profil",
+    "label": "Mon profil",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/profil"
+    ]
+  },
+  {
+    "dossier": "surveillant",
+    "role": "surveillant",
+    "fichier": "06_mon-compte.png",
+    "slug": "mon-compte",
+    "route": "/parametres/compte",
+    "label": "Mon compte",
+    "reason": "unique",
+    "candidates": [
+      "/parametres/compte"
+    ]
+  }
+]

@@ -10,6 +10,7 @@ export class ComiteVote extends Model<InferAttributes<ComiteVote>, InferCreation
   declare membreId: ForeignKey<Utilisateur['id']>
   declare decision: 'valide' | 'correction_demandee' | 'rejete'
   declare motif: CreationOptional<string | null>
+  declare matriculeConfirme: CreationOptional<string | null>
   /**
    * Règle métier — validation collégiale du comité :
    *   • Unanimité requise pour valider : TOUS les membres doivent voter 'valide'.
@@ -54,6 +55,11 @@ ComiteVote.init({
   },
   motif: {
     type: new DataTypes.TEXT,
+    allowNull: true,
+    defaultValue: null
+  },
+  matriculeConfirme: {
+    type: DataTypes.STRING(64),
     allowNull: true,
     defaultValue: null
   },

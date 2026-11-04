@@ -76,7 +76,8 @@ router.get('/bordereaux-a-traiter', [AuthEsacompta, CheckPermission('action.fina
   try {
     const etablissementId = Number((req as any).etablissementId);
     const hasActiveSite = Number.isSafeInteger(etablissementId) && etablissementId > 0;
-    if (!hasActiveSite && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
+    const canBypassSiteSelection = (req as any).utilisateurRole === RolesUtilisateur.ADMIN || (req as any).utilisateurRole === RolesUtilisateur.ESA_COMPTA;
+    if (!hasActiveSite && !canBypassSiteSelection) {
       return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
     }
 

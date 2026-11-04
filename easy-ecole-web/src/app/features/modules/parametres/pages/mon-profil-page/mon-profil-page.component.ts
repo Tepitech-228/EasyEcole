@@ -66,6 +66,7 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
 
   // Retour éventuel vers le wizard d'inscription après sauvegarde du profil.
   retourUrl?: string
+  exigerMatriculeEtudiant = false
 
   // Erreurs de validation par étape
   erreursEtape: string[] = []
@@ -115,6 +116,7 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
     'personnePrevenir.boitePostale': 'Boîte postale (personne à prévenir)',
     'typePieceIdentite': 'Type de pièce d\'identité',
     'numeroPiece': 'N° de la pièce d\'identité',
+    'matriculeEtudiant': 'Matricule étudiant',
   }
 
   // Assistant d'édition du profil apprenant (étapes)
@@ -130,7 +132,7 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
   // Champs requis à valider pour passer d'une étape à l'autre
   private readonly champsParEtape: string[][] = [
     ['nom', 'prenoms', 'sexe', 'dateNaissance', 'lieuNaissance',
-      'identite.nationalite', 'identite.situationMatrimoniale', 'identite.etatPhysique'],
+      'identite.nationalite', 'identite.situationMatrimoniale', 'identite.etatPhysique', 'matriculeEtudiant'],
     ['typePieceIdentite', 'numeroPiece', 'periode', 'statutEtudiant'],
     ['contact', 'adresse.boitePostale', 'adresse.prorietaireBoitePostale', 'adresse.telMobile',
       'adresse.quartier', 'adresse.ville', 'adresse.pays'],
@@ -206,6 +208,7 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
     this.onboardingMode = this.activatedRoute.snapshot.queryParamMap.get('onboarding') === 'true'
     // Redirection depuis le wizard d'inscription : on mémorise l'URL de retour.
     this.retourUrl = this.activatedRoute.snapshot.queryParamMap.get('retour') || undefined
+    this.exigerMatriculeEtudiant = !!this.retourUrl?.startsWith('/inscription/')
 
     if(this.rolesValue.isApprenant) {
       this.getApprenant()
@@ -508,6 +511,8 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
       cni: new FormControl(this.apprenant?.cni ?? null, []),
       typePieceIdentite: new FormControl(this.apprenant?.typePieceIdentite ?? 'CNI', [Validators.required]),
       numeroPiece: new FormControl(this.apprenant?.numeroPiece ?? null, [Validators.required]),
+      matriculeEtudiant: new FormControl(this.apprenant?.matriculeEtudiant ?? null,
+        this.exigerMatriculeEtudiant ? [Validators.required, Validators.maxLength(64)] : [Validators.maxLength(64)]),
       statutHandicap: new FormControl(this.apprenant?.statutHandicap ?? false, []),
       natureHandicap: new FormControl(this.apprenant?.natureHandicap ?? null, []),
       statutEtudiant: new FormControl(this.apprenant?.statutEtudiant ?? 'nouveau', [Validators.required]),

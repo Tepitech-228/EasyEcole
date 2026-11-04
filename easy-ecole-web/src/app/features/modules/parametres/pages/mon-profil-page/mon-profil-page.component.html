@@ -94,9 +94,23 @@
                     </div>
                 </div>
                 <div class="col-span-2">
-                    <label for="identifiant" class="mb-2 block text-sm leading-6 text-gray-600">Matricule</label>
+                    <label for="identifiant" class="mb-2 block text-sm leading-6 text-gray-600">Identifiant de connexion</label>
                     <input type="text" id="identifiant" formControlName="identifiant" [disabled]="true"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 bg-gray-100">
+                </div>
+                <div class="col-span-2">
+                    <label for="matriculeEtudiant" class="mb-2 block text-sm leading-6 text-gray-600">
+                        Matricule étudiant <span *ngIf="exigerMatriculeEtudiant" class="text-red-600">*</span>
+                    </label>
+                    <input type="text" id="matriculeEtudiant" formControlName="matriculeEtudiant" maxlength="64"
+                        placeholder="Saisissez le matricule à valider par le comité"
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('matriculeEtudiant')!.invalid && (profilForm.get('matriculeEtudiant')!.dirty || profilForm.get('matriculeEtudiant')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('matriculeEtudiant')!.errors?.['required']"
+                            text="Veuillez saisir votre matricule étudiant"></app-form-message>
+                        <app-form-message *ngIf="profilForm.get('matriculeEtudiant')!.errors?.['maxlength']"
+                            text="Le matricule étudiant ne peut pas dépasser 64 caractères"></app-form-message>
+                    </div>
                 </div>
                 <div class="col-span-2">
                     <label for="sexe" class="mb-2 block text-sm leading-6 text-gray-600">Sexe <span class="text-red-600">*</span></label>

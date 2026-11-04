@@ -120,7 +120,7 @@
     </div>
     <div class="flex items-center justify-between py-3">
         <app-custom-button (click)="closeUploadBordereauModal()" text="Annuler" [outlined]="true" color="gray"></app-custom-button>
-        <app-custom-button (click)="uploadBordereau()" text="Uploader" [disabled]="!selectedFile"></app-custom-button>
+        <app-custom-button (click)="uploadBordereau()" [text]="isUploadingBordereau ? 'Téléversement…' : 'Uploader'" [disabled]="!selectedFile || isUploadingBordereau"></app-custom-button>
     </div>
 </app-custom-modal>
 

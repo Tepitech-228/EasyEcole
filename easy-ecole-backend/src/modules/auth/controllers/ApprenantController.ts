@@ -172,7 +172,7 @@ export default class ApprenantController {
             // en n'incluant que les champs présents (Angular envoie null pour les vides)
             const apprenantFields = [
                 'dateNaissance', 'lieuNaissance', 'sexe', 'nationalite', 'cni',
-                'typePieceIdentite', 'numeroPiece', 'statutHandicap', 'natureHandicap',
+                'typePieceIdentite', 'numeroPiece', 'matriculeEtudiant', 'statutHandicap', 'natureHandicap',
                 'anneeObtentionBac', 'serieBac', 'anneePremiereInscription',
                 'nombreInscriptions', 'statutEtudiant', 'periode', 'diplomePrepare'
             ]
@@ -244,7 +244,7 @@ export default class ApprenantController {
             // ————————————————————————— CREATE path (même logique de stripNulls) —————————
             const apprenantFields = [
                 'dateNaissance', 'lieuNaissance', 'sexe', 'nationalite', 'cni',
-                'typePieceIdentite', 'numeroPiece', 'statutHandicap', 'natureHandicap',
+                'typePieceIdentite', 'numeroPiece', 'matriculeEtudiant', 'statutHandicap', 'natureHandicap',
                 'anneeObtentionBac', 'serieBac', 'anneePremiereInscription',
                 'nombreInscriptions', 'statutEtudiant', 'periode', 'diplomePrepare'
             ]

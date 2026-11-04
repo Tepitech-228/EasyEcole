@@ -39,8 +39,11 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
   detailComplet: DossierComite | null = null
   showDetailModal: boolean = false
   loadingDetail: boolean = false
+  showValidationConfirmModal = false
 
   decisionEnCours: 'valide' | 'correction_demandee' | 'rejete' | null = null
+  matriculeConfirme = false
+  matriculeEtudiantSaisi: string = ''
   motifDecision: string = ''
   processingDecision: boolean = false
   successMessage: string = ''
@@ -389,18 +392,52 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
   preparerDecision(decision: 'valide' | 'correction_demandee' | 'rejete'): void {
     this.decisionEnCours = decision
     this.motifDecision = ''
+    this.matriculeConfirme = false
+    this.matriculeEtudiantSaisi = (this.selectedDossier?.matriculeEtudiant || this.selectedDossier?.matricule || '').trim()
+    this.showValidationConfirmModal = false
   }
 
   annulerDecision(): void {
     this.decisionEnCours = null
     this.motifDecision = ''
+    this.matriculeConfirme = false
+    this.matriculeEtudiantSaisi = ''
+    this.showValidationConfirmModal = false
   }
 
-  confirmerDecision(): void {
+  ouvrirConfirmationValidation(): void {
+    if (!this.selectedDossier?.id || !this.decisionEnCours) return
+    const doitConfirmerMatricule = this.decisionEnCours === 'valide' && !this.estReinscription(this.selectedDossier)
+    if (doitConfirmerMatricule && !this.matriculeEtudiantSaisi.trim()) {
+      this.apiErrorMessage = 'Renseignez le matricule étudiant avant de valider.'
+      this.error = true
+      setTimeout(() => { this.error = false; this.apiErrorMessage = '' }, 6000)
+      return
+    }
+    this.showValidationConfirmModal = true
+  }
+
+  fermerConfirmationValidation(): void {
+    this.showValidationConfirmModal = false
+  }
+
+  validerDemandeApresConfirmation(): void {
+    this.showValidationConfirmModal = false
+    this.executerDecision()
+  }
+
+  private executerDecision(): void {
     if (!this.selectedDossier?.id || !this.decisionEnCours) return
     if (this.decisionEnCours !== 'valide' && !this.motifDecision.trim()) return
     if (this.decisionEnCours !== 'valide' && this.documentsAReposer.length === 0) {
       this.apiErrorMessage = 'Sélectionnez au moins une pièce fautive à faire re-téléverser avant de confirmer.'
+      this.error = true
+      return
+    }
+    const doitConfirmerMatricule = this.decisionEnCours === 'valide' && !this.estReinscription(this.selectedDossier)
+    const matriculeEtudiant = (this.matriculeEtudiantSaisi || this.selectedDossier.matriculeEtudiant || this.selectedDossier.matricule || '').trim()
+    if (this.decisionEnCours === 'valide' && doitConfirmerMatricule && (!matriculeEtudiant || !this.matriculeConfirme)) {
+      this.apiErrorMessage = 'Confirmez le matricule étudiant avant de voter pour la validation.'
       this.error = true
       return
     }
@@ -409,7 +446,14 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
     const dossierIdsAReposer = this.decisionEnCours !== 'valide' && this.documentsAReposer.length
       ? this.documentsAReposer
       : undefined
-    this.comiteService.decider(this.selectedDossier.id, this.decisionEnCours, this.motifDecision, dossierIdsAReposer).subscribe({
+    this.comiteService.decider(
+      this.selectedDossier.id,
+      this.decisionEnCours,
+      this.motifDecision,
+      dossierIdsAReposer,
+      this.decisionEnCours === 'valide' && doitConfirmerMatricule ? matriculeEtudiant : undefined,
+      this.decisionEnCours === 'valide' && doitConfirmerMatricule ? matriculeEtudiant : undefined
+    ).subscribe({
       next: (res) => {
         this.processingDecision = false
         const matricule = res?.data?.matricule
@@ -428,6 +472,14 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
         setTimeout(() => { this.error = false; this.apiErrorMessage = '' }, 6000)
       }
     })
+  }
+
+  confirmerDecision(): void {
+    if (this.decisionEnCours === 'valide') {
+      this.ouvrirConfirmationValidation()
+      return
+    }
+    this.executerDecision()
   }
 
   libelleDecision(d: string | null | undefined): string {

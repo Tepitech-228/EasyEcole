@@ -13,6 +13,7 @@ import { ParcoursService } from 'src/app/data/modules/inscription/services/parco
 import { environment } from 'src/environments/environment';
 import { AuthService, SiteUtilisateur } from 'src/app/data/modules/auth/services/auth.service';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
+import { InscriptionWizardStoreService } from 'src/app/data/modules/inscription/services/inscription-wizard-store.service';
 
 /**
  * Page de choix de session d'inscription (réservée aux apprenants).
@@ -46,7 +47,6 @@ export class ChoisirSessionPageComponent extends BaseComponentClass implements O
   parcoursList: Parcours[] = []
 
   selectedParcours: 'all' | 'licence' | 'master' | 'mba' | 'bts' | 'doctorat' = 'all'
-  selectedFiliereId: string = 'all'
 
   readonly parcoursFilters = [
     { key: 'all', label: 'Tous' },
@@ -73,6 +73,7 @@ export class ChoisirSessionPageComponent extends BaseComponentClass implements O
     private parcoursService: ParcoursService,
     private authService: AuthService,
     private localStorage: LocalStorageService,
+    private wizardStore: InscriptionWizardStoreService,
   ) {
     super()
   }
@@ -106,6 +107,12 @@ export class ChoisirSessionPageComponent extends BaseComponentClass implements O
     if (Number.isSafeInteger(siteId) && siteId > 0) {
       this.activerSiteSelectionne(siteId)
     }
+  }
+
+  rechoisirSite(): void {
+    this.siteVerrouille = false
+    this.siteSelectionneId = ''
+    this.errorMessage = null
   }
 
   private activerSiteSelectionne(siteId: number): void {
@@ -145,15 +152,6 @@ export class ChoisirSessionPageComponent extends BaseComponentClass implements O
     this.parcoursService.getAll().subscribe({
       next: (parcours) => {
         this.parcoursList = parcours || []
-        if (this.selectedFiliereId !== 'all') {
-          const selectedParcours = this.parcoursList.find(p => String(p.id) === String(this.selectedFiliereId))
-          if (selectedParcours && selectedParcours.niveauEtudeId) {
-            const level = this.getParcoursFilterKey(this.getNiveauLibelle(String(selectedParcours.niveauEtudeId)))
-            if (level !== 'all') {
-              this.selectedParcours = level
-            }
-          }
-        }
       },
       error: () => {
         this.parcoursList = []
@@ -201,43 +199,8 @@ export class ChoisirSessionPageComponent extends BaseComponentClass implements O
     return this.sessions.filter((session: Session) => {
       const niveauLibelle = this.getNiveauLibelle(session.niveauEtudeId)
       const parcoursKey = this.getParcoursFilterKey(niveauLibelle)
-
-      if (this.selectedParcours !== 'all' && parcoursKey !== this.selectedParcours) {
-        return false
-      }
-
-      if (this.selectedFiliereId !== 'all') {
-        const selectedParcours = this.parcoursList.find(p => String(p.id) === String(this.selectedFiliereId))
-        if (!selectedParcours) return false
-        const selectedNiveauId = selectedParcours.niveauEtudeId ? String(selectedParcours.niveauEtudeId) : null
-        if (!selectedNiveauId) return false
-        return String(session.niveauEtudeId) === selectedNiveauId
-      }
-
-      return true
+      return this.selectedParcours === 'all' || parcoursKey === this.selectedParcours
     })
-  }
-
-  get filieresDisponibles(): Parcours[] {
-    const niveauxFiltres = this.parcoursList.filter((parcours) => {
-      const niveauLibelle = this.getNiveauLibelle(String(parcours.niveauEtudeId || ''))
-      if (this.selectedParcours === 'all') return true
-      return this.getParcoursFilterKey(niveauLibelle) === this.selectedParcours
-    })
-
-    return niveauxFiltres.sort((a, b) => (a.titre || '').localeCompare(b.titre || ''))
-  }
-
-  onParcoursFilterChange(): void {
-    if (this.selectedFiliereId !== 'all') {
-      const selectedParcours = this.parcoursList.find(p => String(p.id) === String(this.selectedFiliereId))
-      if (selectedParcours && selectedParcours.niveauEtudeId) {
-        const niveauKey = this.getParcoursFilterKey(this.getNiveauLibelle(String(selectedParcours.niveauEtudeId)))
-        if (niveauKey !== 'all') {
-          this.selectedParcours = niveauKey
-        }
-      }
-    }
   }
 
   getNiveauLibelle(id: string): string {
@@ -285,6 +248,10 @@ export class ChoisirSessionPageComponent extends BaseComponentClass implements O
     this.creationLoading = true
     this.errorMessage = null
     const ouvrirWizard = (demandeId: string): void => {
+      // Une nouvelle demande doit repartir d'un wizard vierge : le sessionStorage
+      // pouvait conserver un brouillon précédent et faire sauter les étapes 2/3
+      // au chargement de la page. On le nettoie avant d'ouvrir le nouveau flux.
+      this.wizardStore.effacer()
       this.creationLoading = false
       this.router.navigate(['/inscription/demandes', demandeId], {
         queryParams: { sessionId: session.id, niveauEtudeId: session.niveauEtudeId }

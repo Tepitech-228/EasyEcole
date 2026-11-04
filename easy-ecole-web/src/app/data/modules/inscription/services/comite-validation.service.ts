@@ -17,6 +17,7 @@ export interface VoteComite {
   membreId?: number
   decision: 'valide' | 'correction_demandee' | 'rejete' | null
   motif?: string | null
+  matriculeConfirme?: string | null
   dateVote?: string | null
 }
 
@@ -31,6 +32,8 @@ export interface MembreComite {
 
 export interface DossierComite {
   id?: number
+  matricule?: string
+  matriculeEtudiant?: string | null
   statutPipeline?: string | null
   motifPipeline?: string | null
   typeDemande?: string | null
@@ -92,8 +95,21 @@ export class ComiteValidationService {
     return this.httpClient.get<{ data: DossierComite }>(`${this.SERVICE_URL}/dossiers/${id}`)
   }
 
-  decider(id: number | string, decision: 'valide' | 'correction_demandee' | 'rejete', motif?: string, dossierIdsAReposer?: number[]): Observable<any> {
-    return this.httpClient.post(`${this.SERVICE_URL}/dossiers/${id}/decider`, { decision, motif, dossierIdsAReposer })
+  decider(
+    id: number | string,
+    decision: 'valide' | 'correction_demandee' | 'rejete',
+    motif?: string,
+    dossierIdsAReposer?: number[],
+    matriculeConfirme?: string,
+    matriculeEtudiant?: string,
+  ): Observable<any> {
+    return this.httpClient.post(`${this.SERVICE_URL}/dossiers/${id}/decider`, {
+      decision,
+      motif,
+      dossierIdsAReposer,
+      matriculeConfirme,
+      matriculeEtudiant,
+    })
   }
 
   /**

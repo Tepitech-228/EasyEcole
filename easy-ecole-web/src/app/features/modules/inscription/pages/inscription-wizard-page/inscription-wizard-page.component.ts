@@ -109,6 +109,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
 
   resultat: any = null
   private parcoursDejaRattache = false
+  showSubmitConfirmationModal = false
 
   /** Mode correction du dossier : 'bordereau' (refus Audit/Cabinet) ou 'comite' (document(s) rejeté(s) au comité). */
   modeCorrection: 'bordereau' | 'comite' | null = null
@@ -814,12 +815,18 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   }
 
   private synchroniserSiteDepuisSession(): void {
-    if (
-      this.infos.etablissementId
-      && this.sitesDisponibles.some(site => Number(site.id) === Number(this.infos.etablissementId))
-    ) {
-      this.siteVerrouille = true
+    const siteId = Number(this.infos.etablissementId)
+    const siteDisponible = Number.isSafeInteger(siteId)
+      && siteId > 0
+      && this.sitesDisponibles.some(site => Number(site.id) === siteId)
+
+    if (!siteDisponible) {
+      this.siteVerrouille = false
+      this.siteIdConfirme = null
+      return
     }
+
+    this.siteVerrouille = this.siteIdConfirme != null && Number(this.siteIdConfirme) === siteId
   }
 
   get siteSelectionValide(): boolean {
@@ -878,6 +885,22 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
         this.sitesError = err?.error?.message || 'Le site choisi n’a pas pu être affecté à votre compte.'
       }
     })
+  }
+
+  rechoisirSite(): void {
+    this.siteVerrouille = false
+    this.siteIdConfirme = null
+    this.infos.etablissementId = ''
+    this.sessionSelectionneeId = undefined
+    this.sessionVerrouillee = false
+    this.documentsRequis = []
+    this.documents = {}
+    this.bordereau = null
+    this.documentsAReposer = {}
+    this.bordereauAReposer = null
+    this.errorMessage = ''
+    this.sitesError = ''
+    this.sauvegarder()
   }
 
   nomSiteSelectionne(): string {
@@ -1032,7 +1055,35 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
    *   1) POST /demandes-inscription            → crée la demande (demande d'autorisation)
    *   2) POST /parcours-choisis                 → rattache le parcours (filière) choisi
    */
-  soumettre(): void {
+  confirmerSoumission(): void {
+    this.showSubmitConfirmationModal = false
+    this.envoyerSoumission()
+  }
+
+  ouvrirConfirmationSoumission(): void {
+    if (this.submitting) return
+    this.errorMessage = ''
+
+    if (!this.modeCorrection && !this.infos.matriculeEtudiant.trim()) {
+      this.errorMessage = 'Veuillez saisir votre matricule étudiant dans vos informations personnelles.'
+      return
+    }
+
+    if (!this.sessionSelectionneeId || (this.modeFormation === 'presentiel' && !this.filiereChoisie)) {
+      this.errorMessage = this.modeFormation === 'en_ligne'
+        ? 'Veuillez choisir une session d’inscription.'
+        : 'Session ou filière manquante.'
+      return
+    }
+
+    this.showSubmitConfirmationModal = true
+  }
+
+  fermerConfirmationSoumission(): void {
+    this.showSubmitConfirmationModal = false
+  }
+
+  private envoyerSoumission(): void {
     if (this.submitting) return
     this.errorMessage = ''
 
@@ -1131,6 +1182,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   }
 
   recommencer(): void {
+    this.showSubmitConfirmationModal = false
     // Repartir d'une demande neuve : on efface aussi la saisie persistée,
     // pour ne pas ressusciter un ancien brouillon au prochain rechargement.
     this.wizardStore.effacer()
@@ -1169,6 +1221,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
 
   private afficherSoumissionFinalisee(statutPipeline?: string): void {
     this.submitting = false
+    this.showSubmitConfirmationModal = false
     // En correction comité, le backend renvoie le statut réel du dossier
     // ('transmis_comite' une fois toutes les pièces signalées re-téléversées) :
     // on l'affiche tel quel au lieu de forcer « soumis ».

@@ -45,6 +45,12 @@ export class DatabaseConnection {
 
     private static instance: DatabaseConnection;
     private _sequelize: Sequelize;
+    // "Single-flight" : de nombreux seeds appellent db.init() à l'import, en plus
+    // du boot. Sans ce garde, plusieurs init() concurrents lancent authenticate() +
+    // sync + ensure* + seeds en parallèle, ce qui provoque des deadlocks MySQL et
+    // des "Prepared statement needs to be re-prepared". On ne garde donc qu'une
+    // seule exécution réelle par process, les appels suivants attendent la même promesse.
+    private _initPromise: Promise<void> | null = null;
 
     constructor() {
         const config = getDbConfig()
@@ -97,6 +103,13 @@ export class DatabaseConnection {
     }
 
     async init(): Promise<void> {
+        if (!this._initPromise) {
+            this._initPromise = this._runInit();
+        }
+        return this._initPromise;
+    }
+
+    private async _runInit(): Promise<void> {
         try {
             await this._sequelize.authenticate();
             console.log('Database connected successfully');

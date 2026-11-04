@@ -400,9 +400,13 @@ export default class ComiteValidationController {
                 await transaction.rollback()
                 return res.status(404).json({ success: false, message: "Dossier non trouvé" })
             }
-            const matriculeEtudiant = typeof demande.matriculeEtudiant === 'string'
+            const matriculeActuel = typeof demande.matriculeEtudiant === 'string'
                 ? demande.matriculeEtudiant.trim()
                 : ''
+            const matriculeSaisi = typeof req.body.matriculeEtudiant === 'string'
+                ? req.body.matriculeEtudiant.trim()
+                : matriculeActuel
+            const matriculeEtudiant = matriculeSaisi || matriculeActuel
             const doitConfirmerMatricule = demande.typeDemande !== 'reinscription'
             if (decision === 'valide' && doitConfirmerMatricule && !matriculeEtudiant) {
                 await transaction.rollback()
@@ -415,6 +419,10 @@ export default class ComiteValidationController {
                 if (matriculeConfirme !== matriculeEtudiant) {
                     await transaction.rollback()
                     return res.status(400).json({ success: false, message: "Confirmez le matricule étudiant proposé avant d'enregistrer votre vote." })
+                }
+                if (matriculeSaisi && matriculeSaisi !== matriculeActuel) {
+                    demande.matriculeEtudiant = matriculeSaisi
+                    await demande.save({ transaction })
                 }
                 const dossierAvecMatricule = await DossierEtudiant.findOne({
                     where: {

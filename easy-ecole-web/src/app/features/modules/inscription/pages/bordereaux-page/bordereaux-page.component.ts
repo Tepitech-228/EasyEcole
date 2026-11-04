@@ -14,6 +14,7 @@ import { environment } from 'src/environments/environment';
 export class BordereauxPageComponent extends BaseComponentClass implements OnInit {
 
   error: boolean = false
+  isUploadingBordereau = false
 
   showUploadBordereauModal: boolean = false
   showDetailsBordereauModal: boolean = false
@@ -93,22 +94,27 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
   }
 
   uploadBordereau(): void {
-    if (this.selectedFile) {
-      const formData = new FormData()
-      formData.append('fichier', this.selectedFile)
-
-      this.bordereauService.upload(formData).subscribe({
-        next: () => {
-          this.getBordereaux()
-          this.closeUploadBordereauModal()
-        },
-        error: (err) => {
-          console.log(err)
-          this.error = true
-          setTimeout(() => { this.error = false }, 3000)
-        }
-      })
+    if (!this.selectedFile || this.isUploadingBordereau) {
+      return
     }
+
+    this.isUploadingBordereau = true
+    const formData = new FormData()
+    formData.append('fichier', this.selectedFile)
+
+    this.bordereauService.upload(formData).subscribe({
+      next: () => {
+        this.isUploadingBordereau = false
+        this.getBordereaux()
+        this.closeUploadBordereauModal()
+      },
+      error: (err) => {
+        this.isUploadingBordereau = false
+        console.log(err)
+        this.error = true
+        setTimeout(() => { this.error = false }, 3000)
+      }
+    })
   }
 
   isImageFile(fichier: string): boolean {
@@ -158,6 +164,7 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
   closeUploadBordereauModal(): void {
     this.showUploadBordereauModal = false
     this.selectedFile = undefined
+    this.isUploadingBordereau = false
   }
 
   openDetailsBordereauModal(bordereau: Bordereau): void {

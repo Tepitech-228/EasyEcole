@@ -59,6 +59,8 @@ export const hasChoixFinal = (parcoursChoisis?: Array<{ choixFinal?: any; parcou
     return parcoursChoisis.some(pc => isChoixFinalValue(pc?.choixFinal));
 };
 
+const BORDEREAU_INSCRIPTION_ACTIF_STATUTS = ['en_attente', 'en_saisie_comptable', 'valide', 'traite'] as const;
+
 export const getParcoursFinal = <T extends { choixFinal?: any; parcoursId?: number | string | null }>(parcoursChoisis?: Array<T> | null): T | undefined => {
     if (!Array.isArray(parcoursChoisis) || parcoursChoisis.length === 0) return undefined;
 
@@ -91,16 +93,14 @@ export default class BordereauController {
             options.where = { utilisateurId: (req as any).utilisateurId }
         }
         const etablissementId = Number((req as any).etablissementId);
+        const hasActiveSite = Number.isSafeInteger(etablissementId) && etablissementId > 0;
         if ((req as any).utilisateurRole === RolesUtilisateur.ESA_COMPTA) {
-            if (!Number.isSafeInteger(etablissementId) || etablissementId <= 0) {
-                return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+            if (hasActiveSite) {
+                options.where = { ...options.where, etablissementId };
             }
+        } else if ((req as any).utilisateurRole === RolesUtilisateur.ADMIN && hasActiveSite) {
             options.where = { ...options.where, etablissementId };
-        } else if ((req as any).utilisateurRole === RolesUtilisateur.ADMIN
-            && Number.isSafeInteger(etablissementId) && etablissementId > 0) {
-            options.where = { ...options.where, etablissementId };
-        } else if ((req as any).utilisateurRole === RolesUtilisateur.APPRENANT
-            && Number.isSafeInteger(etablissementId) && etablissementId > 0) {
+        } else if ((req as any).utilisateurRole === RolesUtilisateur.APPRENANT && hasActiveSite) {
             options.where = { ...options.where, etablissementId };
         }
 
@@ -246,50 +246,88 @@ export default class BordereauController {
             return res.status(400).json({ success: false, message: "Fichier bordereau requis" });
         }
 
-        let bordereau: Bordereau = new Bordereau();
-        bordereau.type = type || null
-        bordereau.echeanceId = echeanceId
-        bordereau.utilisateurId = (req as any).utilisateurId
-        bordereau.etablissementId = etablissementId
-        bordereau.fichier = fichier
-        bordereau.montant = req.body.montant ? Number(req.body.montant) : null
-        bordereau.referenceBancaire = req.body.referenceBancaire ?? null
-        bordereau.statut = 'en_attente'
-        bordereau.dateSoumission = new Date()
-        bordereau.modalite = req.body.modalite ?? '1x'
-
-        await bordereau.save()
-            .then(async (bordereau) => {
-                // ── Cycle rejet → re-correction (flux inscription) ──
-                // Si l'Audit a refusé le bordereau précédent (statutPipeline='rejete'),
-                // ce nouveau dépôt relance le dossier : on repasse la demande à 'soumis'
-                // et on purge le motif. L'étudiant re-soumet ensuite depuis le wizard.
-                // Erreur non bloquante : on loggue et on répond 201 (le bordereau est
-                // déjà créé ; un échec ici serait retenté lors de la re-soumission).
-                if (type === 'inscription') {
-                    try {
-                        const demande = await DemandeInscription.findOne({
-                            where: { utilisateurId: bordereau.utilisateurId },
-                            order: [['createdAt', 'DESC']],
-                        });
-                        if (demande && demande.statutPipeline === 'rejete') {
-                            demande.statutPipeline = 'soumis';
-                            demande.motifPipeline = null;
-                            demande.soumissionComite = false;
-                            await demande.save();
-                        }
-                    } catch (err) {
-                        console.error('[BORDEREAU][create] Échec remise à soumis de la demande:', err);
-                    }
+        const transaction = await DatabaseConnection.getInstance().sequelize.transaction();
+        try {
+            if (type === 'inscription') {
+                const demandeId = Number(req.body.demandeId)
+                let demandeCourante: DemandeInscription | null = null
+                if (Number.isSafeInteger(demandeId) && demandeId > 0) {
+                    demandeCourante = await DemandeInscription.findOne({
+                        where: { id: demandeId, utilisateurId: (req as any).utilisateurId },
+                        attributes: ['id', 'createdAt'],
+                        transaction,
+                        lock: transaction.LOCK.UPDATE,
+                    })
                 }
 
-                return res.status(201).send(bordereau);
-            })
-            .catch((error) => {
-                return res.status(400).json({ success: false, error: error });
-            });
+                // Les bordereaux rejetés ne sont pas actifs : un étudiant peut renvoyer
+                // un nouveau bordereau après refus sans que l'ancien document bloque la
+                // création du remplacement ni reste dans la file d'attente de validation.
+                const whereClause: any = {
+                    utilisateurId: (req as any).utilisateurId,
+                    type: 'inscription',
+                    statut: { [Op.in]: [...BORDEREAU_INSCRIPTION_ACTIF_STATUTS] },
+                }
+                if (demandeCourante?.createdAt) {
+                    whereClause.createdAt = { [Op.gte]: new Date(demandeCourante.createdAt) }
+                }
 
-        return null
+                const bordereauActif = await Bordereau.findOne({
+                    where: whereClause,
+                    order: [['createdAt', 'DESC']],
+                    transaction,
+                    lock: transaction.LOCK.UPDATE,
+                })
+                if (bordereauActif) {
+                    await transaction.rollback();
+                    return res.status(409).json({
+                        success: false,
+                        message: 'Un bordereau d\'inscription est déjà actif pour cette demande. Merci de ne pas le renvoyer.'
+                    })
+                }
+            }
+
+            let bordereau: Bordereau = new Bordereau();
+            bordereau.type = type || null
+            bordereau.echeanceId = echeanceId
+            bordereau.utilisateurId = (req as any).utilisateurId
+            bordereau.etablissementId = etablissementId
+            bordereau.fichier = fichier
+            bordereau.montant = req.body.montant ? Number(req.body.montant) : null
+            bordereau.referenceBancaire = req.body.referenceBancaire ?? null
+            bordereau.statut = 'en_attente'
+            bordereau.dateSoumission = new Date()
+            bordereau.modalite = req.body.modalite ?? '1x'
+            bordereau.moyenPaiement = req.body.moyenPaiement ?? null
+            bordereau.banque = req.body.banque ?? null
+
+            await bordereau.save({ transaction })
+
+            if (type === 'inscription') {
+                try {
+                    const demande = await DemandeInscription.findOne({
+                        where: { utilisateurId: bordereau.utilisateurId },
+                        order: [['createdAt', 'DESC']],
+                        transaction,
+                    });
+                    if (demande && demande.statutPipeline === 'rejete') {
+                        demande.statutPipeline = 'soumis';
+                        demande.motifPipeline = null;
+                        demande.soumissionComite = false;
+                        await demande.save({ transaction });
+                    }
+                } catch (err) {
+                    console.error('[BORDEREAU][create] Échec remise à soumis de la demande:', err);
+                }
+            }
+
+            await transaction.commit();
+            return res.status(201).send(bordereau);
+        } catch (error) {
+            await transaction.rollback();
+            console.error('[BORDEREAU][create] Erreur création bordereau:', error);
+            return res.status(400).json({ success: false, error: error });
+        }
     }
 
     static async validerBordereau(req: Request, res: Response): Promise<Response | null> {

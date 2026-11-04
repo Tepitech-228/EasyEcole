@@ -131,25 +131,8 @@
     <h2>Demande d'autorisation provisoire d'inscription</h2>
     <p class="muted">Sélectionnez votre session puis déposez les documents liés au parcours et au grade choisis.</p>
 
-    <div class="field-wrapper">
-      <label for="inscription-site-filter">Site d'inscription *</label>
-      <div *ngIf="siteVerrouille" class="form-control" role="status">
-        {{ nomSiteSelectionne() }}
-      </div>
-      <select *ngIf="!siteVerrouille" id="inscription-site-filter" name="etablissementIdFilter"
-          [(ngModel)]="infos.etablissementId"
-          (change)="surChoixSite()"
-          required
-          [disabled]="sitesLoading || sitesDisponibles.length === 0"
-          class="form-control native-select">
-        <option value="">— Choisir un site —</option>
-        <option *ngFor="let site of sitesDisponibles" [value]="site.id">{{ site.nom }}</option>
-      </select>
-      <p *ngIf="sitesError" class="text-red-600" role="alert">{{ sitesError }}</p>
-      <p *ngIf="!sitesLoading && !sitesError && sitesDisponibles.length === 0" class="text-red-600" role="alert">
-        Aucun site actif n’est disponible pour votre inscription. Contactez l’administration.
-      </p>
-    </div>
+    <!-- Le site est choisi au bon moment avant la sélection de la session, puis
+         il n'est plus affiché dans cet écran de dépôt des pièces. -->
 
     <!-- Session dropdown : select natif stylé (sélection fiable) -->
     <div class="field-wrapper">
@@ -309,8 +292,13 @@
     <div class="mt-3">
       <div class="form-group">
         <label for="inscription-site">Site d'inscription *</label>
-        <div *ngIf="siteVerrouille" class="form-control" role="status">
-          {{ nomSiteSelectionne() }}
+        <div *ngIf="siteVerrouille" class="d-flex align-items-center gap-2">
+          <div class="form-control" role="status">
+            {{ nomSiteSelectionne() }}
+          </div>
+          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="rechoisirSite()">
+            Changer le site
+          </button>
         </div>
         <select *ngIf="!siteVerrouille" id="inscription-site" name="etablissementId"
             [(ngModel)]="infos.etablissementId"
@@ -424,7 +412,7 @@
     </div>
 
     <div class="mt-4">
-      <button class="btn btn-primary" [disabled]="submitting" (click)="soumettre()">
+      <button class="btn btn-primary" [disabled]="submitting" (click)="ouvrirConfirmationSoumission()">
         {{ submitting ? 'Soumission…' : "Soumettre la demande d'autorisation provisoire" }}
         <svg *ngIf="!submitting" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
@@ -469,3 +457,32 @@
   </div>
 
 </div>
+
+<app-custom-modal
+  title="Confirmation"
+  subtitle="Êtes-vous sûr de vouloir valider cette demande ?"
+  [center]="true"
+  [showModal]="showSubmitConfirmationModal"
+  (onCloseModal)="fermerConfirmationSoumission()">
+  <div class="space-y-4">
+    <p class="text-sm text-gray-600">
+      Votre dossier sera transmis pour traitement. Vérifiez les informations du récapitulatif avant de confirmer.
+    </p>
+    <div class="flex justify-end gap-x-3">
+      <button
+        type="button"
+        (click)="fermerConfirmationSoumission()"
+        [disabled]="submitting"
+        class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition-colors duration-150">
+        Annuler
+      </button>
+      <button
+        type="button"
+        (click)="confirmerSoumission()"
+        [disabled]="submitting"
+        class="inline-flex items-center px-4 py-2 text-sm font-semibold text-white rounded-lg bg-green-600 hover:bg-green-700 disabled:opacity-50 transition-colors duration-150">
+        {{ submitting ? 'Soumission…' : 'Oui, valider' }}
+      </button>
+    </div>
+  </div>
+</app-custom-modal>
