@@ -23,7 +23,7 @@ jest.mock('../../../modules/inscription/models/DemandeInscription', () => {
 })
 
 jest.mock('../../../modules/inscription/models/Session', () => ({
-  Session: { findOne: jest.fn() },
+  Session: { findOne: jest.fn(), findAll: jest.fn() },
 }))
 
 jest.mock('../../../modules/inscription/models/ParcoursChoisi', () => ({
@@ -78,9 +78,12 @@ beforeEach(() => {
   ;(Session.findOne as jest.Mock).mockResolvedValue({
     id: 3,
     etablissementId: null,
+    anneeAcademiqueId: 12,
     dateDebut: new Date(Date.now() - 60_000),
     dateFin: new Date(Date.now() + 60_000),
   })
+  ;(Session.findAll as jest.Mock).mockResolvedValue([])
+  ;(DemandeInscription.findAll as jest.Mock).mockResolvedValue([])
   ;(SiteUtilisateur.findAll as jest.Mock).mockResolvedValue([])
   ;(SiteUtilisateur.findOrCreate as jest.Mock).mockResolvedValue([{}, false])
   ;(Etablissement.findOne as jest.Mock).mockResolvedValue({ id: 4 })
@@ -175,6 +178,34 @@ describe('DemandeInscriptionController.soumettreDemande', () => {
     expect(res.status).toHaveBeenCalledWith(200)
   })
 
+  it('refuses a second submission when the request is already marked as submitted', async () => {
+    ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue({
+      id: 10,
+      utilisateurId: 7,
+      sessionId: 3,
+      modeFormation: 'en_ligne',
+      statutPipeline: 'soumis',
+      update: jest.fn(),
+    })
+    const req = mockRequest({
+      utilisateurRole: 'apprenant',
+      utilisateurId: 7,
+      params: { id: '10' },
+      body: { matriculeEtudiant: 'ET-2026-001' },
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.soumettreDemande(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(409)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      success: false,
+      alreadySubmitted: true,
+      message: expect.stringContaining('déjà été soumise'),
+    }))
+    expect(DemandeInscription.findOne).toHaveBeenCalled()
+  })
+
   it('requires a proposed student matricule before submission', async () => {
     ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue({
       id: 10,
@@ -263,6 +294,27 @@ describe('DemandeInscriptionController.createDemandeInscription — 1ère inscri
     expect(res.json).toHaveBeenCalledWith({ alreadySignUp: true })
   })
 
+  it('refuse une seconde inscription sur le même site pour la même année académique', async () => {
+    const req = mockRequest({
+      utilisateurRole: 'apprenant',
+      utilisateurId: 7,
+      etablissementId: 4,
+      body: { sessionId: 3, etablissementId: 4, dateDemande: '2026-09-01' },
+    } as any)
+    const res = mockResponse()
+    ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue(null)
+    ;(DemandeInscription.findAll as jest.Mock).mockResolvedValue([{ id: 9, sessionId: 6 }])
+    ;(Session.findAll as jest.Mock).mockResolvedValue([{ id: 6 }])
+
+    await Ctrl.createDemandeInscription(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      alreadySignUp: true,
+      message: 'Vous avez déjà une inscription dans cette session.',
+    }))
+  })
+
   it('crée une nouvelle demande quand aucune n’existe (201)', async () => {
     const req = mockRequest({
       utilisateurRole: 'apprenant',
@@ -303,7 +355,7 @@ describe('DemandeInscriptionController.createDemandeInscription — 1ère inscri
 
     expect(Session.findOne).toHaveBeenCalledWith({
       where: { id: 3 },
-      attributes: ['id', 'etablissementId', 'dateDebut', 'dateFin'],
+      attributes: ['id', 'etablissementId', 'anneeAcademiqueId', 'dateDebut', 'dateFin'],
     })
     expect((DemandeInscription as jest.Mock).mock.results[0].value.etablissementId).toBe(4)
     expect(SiteUtilisateur.findOrCreate).toHaveBeenCalledWith({
@@ -333,7 +385,7 @@ describe('DemandeInscriptionController.createDemandeInscription — 1ère inscri
     })
     expect(Session.findOne).toHaveBeenCalledWith({
       where: { id: 3 },
-      attributes: ['id', 'etablissementId', 'dateDebut', 'dateFin'],
+      attributes: ['id', 'etablissementId', 'anneeAcademiqueId', 'dateDebut', 'dateFin'],
     })
     expect(res.status).toHaveBeenCalledWith(201)
   })
@@ -356,7 +408,7 @@ describe('DemandeInscriptionController.createDemandeInscription — 1ère inscri
 
     expect(Session.findOne).toHaveBeenCalledWith({
       where: { id: 3 },
-      attributes: ['id', 'etablissementId', 'dateDebut', 'dateFin'],
+      attributes: ['id', 'etablissementId', 'anneeAcademiqueId', 'dateDebut', 'dateFin'],
     })
     expect(res.status).toHaveBeenCalledWith(201)
   })

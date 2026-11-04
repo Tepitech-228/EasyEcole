@@ -116,7 +116,14 @@ export default class DemandeInscriptionController {
                 });
             }
 
-            if (demande.statutPipeline && demande.statutPipeline !== 'soumis') {
+            if (demande.statutPipeline === 'soumis') {
+                return res.status(409).json({
+                    success: false,
+                    message: "Cette demande a déjà été soumise. Merci de patienter pendant son traitement.",
+                    alreadySubmitted: true,
+                });
+            }
+            if (demande.statutPipeline && !['soumis', 'correction_demandee'].includes(demande.statutPipeline)) {
                 return res.status(409).json({ success: false, message: "Cette demande ne peut plus être soumise à cette étape." });
             }
 
@@ -504,7 +511,7 @@ export default class DemandeInscriptionController {
             }
             const session = await Session.findOne({
                 where: { id: sessionId },
-                attributes: ['id', 'etablissementId', 'dateDebut', 'dateFin']
+                attributes: ['id', 'etablissementId', 'anneeAcademiqueId', 'dateDebut', 'dateFin']
             });
             if (!session) {
                 return res.status(404).json({ success: false, message: "Session non trouvée" });
@@ -517,6 +524,39 @@ export default class DemandeInscriptionController {
                 || new Date(session.dateFin).getTime() < maintenant
             ) {
                 return res.status(400).json({ success: false, message: "Cette session d'inscription n'est pas ouverte." });
+            }
+
+            if (session.anneeAcademiqueId) {
+                const demandesExistantes = await DemandeInscription.findAll({
+                    where: {
+                        utilisateurId: (req as any).utilisateurId,
+                        etablissementId: submittedSiteId,
+                    },
+                    attributes: ['id', 'sessionId'],
+                });
+
+                const demandesExistantesArray = Array.isArray(demandesExistantes) ? demandesExistantes : [];
+                const idsSessions = demandesExistantesArray
+                    .map(demande => Number(demande.sessionId))
+                    .filter((id): id is number => Number.isSafeInteger(id) && id > 0);
+
+                if (idsSessions.length > 0) {
+                    const sessionsMemeAnnee = await Session.findAll({
+                        where: {
+                            id: { [Op.in]: idsSessions },
+                            anneeAcademiqueId: Number(session.anneeAcademiqueId),
+                        },
+                        attributes: ['id'],
+                    });
+
+                    const sessionsMemeAnneeArray = Array.isArray(sessionsMemeAnnee) ? sessionsMemeAnnee : [];
+                    if (sessionsMemeAnneeArray.length > 0) {
+                        return res.status(400).json({
+                            alreadySignUp: true,
+                            message: "Vous avez déjà une inscription dans cette session."
+                        });
+                    }
+                }
             }
 
             const affectations = await SiteUtilisateur.findAll({
