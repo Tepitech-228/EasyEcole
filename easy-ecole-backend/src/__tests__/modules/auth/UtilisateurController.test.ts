@@ -1,3 +1,4 @@
+import { Op } from 'sequelize'
 import { mockRequest, mockResponse } from '../../helpers/express-mocks'
 import UtilisateurController from '../../../modules/auth/controllers/UtilisateurController'
 
@@ -414,20 +415,36 @@ describe('UtilisateurController.definirSiteActif for applicants', () => {
     expect(res.status).toHaveBeenCalledWith(200)
   })
 
-  it('does not let an applicant change an already selected site', async () => {
+  it('lets an applicant change an already selected site', async () => {
     const req = mockRequest({
       utilisateurId: 7,
       utilisateurRole: 'apprenant',
       body: { etablissementId: 5 },
     } as any)
     const res = mockResponse()
+    const update = jest.fn().mockResolvedValue({})
     ;(Etablissement.findOne as jest.Mock).mockResolvedValue({ id: 5 })
-    ;(Utilisateur.findByPk as jest.Mock).mockResolvedValue({ id: 7, etablissementId: 4 })
+    ;(Utilisateur.findByPk as jest.Mock).mockResolvedValue({ id: 7, etablissementId: 4, update })
+    ;(SiteUtilisateur.findOne as jest.Mock).mockResolvedValue(null)
+    ;(SiteUtilisateur.destroy as jest.Mock).mockResolvedValue(1)
+    ;(SiteUtilisateur.findOrCreate as jest.Mock).mockResolvedValue([{ id: 2 }, true])
 
     await UtilisateurController.definirSiteActif(req, res)
 
-    expect(res.status).toHaveBeenCalledWith(403)
-    expect(SiteUtilisateur.findOne).not.toHaveBeenCalled()
+    expect(SiteUtilisateur.destroy).toHaveBeenCalledWith({
+      where: { utilisateurId: 7, etablissementId: { [Op.ne]: 5 } },
+    })
+    expect(SiteUtilisateur.findOrCreate).toHaveBeenCalledWith({
+      where: { utilisateurId: 7, etablissementId: 5 },
+      defaults: { utilisateurId: 7, etablissementId: 5 },
+    })
+    expect(update).toHaveBeenCalledWith({ etablissementId: 5 })
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      success: true,
+      etablissementId: 5,
+      accessToken: expect.any(String),
+    }))
   })
 })
 
