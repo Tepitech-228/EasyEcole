@@ -277,7 +277,7 @@ export const REF_PERMISSIONS: RefPermission[] = [
   { key: 'action.stocks.transfert.creer', libelle: 'Creer un transfert', module: 'Stocks', type: 'action', parentKey: 'menu.stocks' },
   { key: 'action.stocks.transfert.annuler', libelle: 'Annuler un transfert', module: 'Stocks', type: 'action', parentKey: 'menu.stocks' },
   { key: 'menu.comite-orientation', libelle: 'Comité orientation', module: 'Administration', type: 'menu', parentKey: null },
-  { key: 'menu.comite-orientation.preinscriptions', libelle: 'Préinscriptions', module: 'Administration', type: 'menu', parentKey: 'menu.comite-orientation' },
+  { key: 'menu.comite-orientation.preinscriptions', libelle: 'Inscription', module: 'Administration', type: 'menu', parentKey: 'menu.comite-orientation' },
   { key: 'menu.reporting', libelle: 'Reporting', module: 'Reporting', type: 'menu', parentKey: null },
   { key: 'menu.reporting.dashboard', libelle: 'Dashboard', module: 'Reporting', type: 'menu', parentKey: 'menu.reporting' },
   { key: 'menu.reporting.effectifs', libelle: 'Effectifs', module: 'Reporting', type: 'menu', parentKey: 'menu.reporting' },

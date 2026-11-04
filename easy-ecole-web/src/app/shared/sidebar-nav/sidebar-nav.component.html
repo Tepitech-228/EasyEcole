@@ -17,7 +17,10 @@
       (click)="toggleMosaic()"
       [attr.aria-expanded]="mosaicOpen">
       <div class="pole-icon" [style.-webkit-mask-image]="'url(assets/icons/' + activePole?.icon + '.svg)'" [style.mask-image]="'url(assets/icons/' + activePole?.icon + '.svg)'"></div>
-      <span>{{ activePole?.label || '' }}</span>
+      <span class="active-pole-text">
+        <span class="pole-active-tag">Pôle actif</span>
+        <span class="active-pole-name">{{ activePole?.label || '' }}</span>
+      </span>
       <svg class="switch-chev" [class.open]="mosaicOpen" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
       </svg>

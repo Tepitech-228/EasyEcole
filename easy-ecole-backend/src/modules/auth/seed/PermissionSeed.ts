@@ -302,7 +302,7 @@ const ALL_PERMISSIONS: Array<{ key: string; libelle: string; module: string; typ
 
     // ============ COMITÉ ORIENTATION ============
     { key: 'menu.comite-orientation', libelle: 'Comité orientation', module: 'Administration', type: 'menu' },
-    { key: 'menu.comite-orientation.preinscriptions', libelle: 'Préinscriptions', module: 'Administration', type: 'menu', parentKey: 'menu.comite-orientation' },
+    { key: 'menu.comite-orientation.preinscriptions', libelle: 'Inscription', module: 'Administration', type: 'menu', parentKey: 'menu.comite-orientation' },
 
     // ============ REPORTING ============
     { key: 'menu.reporting', libelle: 'Reporting', module: 'Reporting', type: 'menu' },

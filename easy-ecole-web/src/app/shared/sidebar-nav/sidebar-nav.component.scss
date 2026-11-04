@@ -169,12 +169,12 @@
   font-family: var(--ds-font-primary);
 
   span {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 800;
     color: #fff !important;
     text-align: center;
-    line-height: 1.15;
-    max-width: 110px;
+    line-height: 1.2;
+    max-width: 120px;
     overflow: hidden;
     text-overflow: ellipsis;
     display: -webkit-box;
@@ -270,11 +270,11 @@
 }
 
 .group-title {
-  font-size: 10px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 800;
   letter-spacing: 1px;
   text-transform: uppercase;
-  color: var(--ds-text-secondary);
+  color: #fff;
 }
 
 .group-chevron {

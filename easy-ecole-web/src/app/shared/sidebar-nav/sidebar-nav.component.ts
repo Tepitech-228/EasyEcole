@@ -16,7 +16,7 @@ export class SidebarNavComponent implements OnInit {
   poles: MenuPole[] = [];
   activePoleLabel: string | null = null;
   openGroupLabel: string | null = null;
-  mosaicOpen = false;
+  mosaicOpen = true;
   openItemLabel: string | null = null;
 
   loading: boolean = true;
