@@ -112,14 +112,6 @@ export default class UtilisateurController {
             const utilisateur = await Utilisateur.findByPk(req.utilisateurId!);
             if (!utilisateur) return res.status(401).json({ success: false, message: "Utilisateur non trouvé" });
             const siteDejaChoisi = Number(utilisateur.etablissementId);
-            if (
-                req.utilisateurRole === RolesUtilisateur.APPRENANT
-                && Number.isSafeInteger(siteDejaChoisi)
-                && siteDejaChoisi > 0
-                && siteDejaChoisi !== etablissementId
-            ) {
-                return res.status(403).json({ success: false, message: "Vous avez déjà choisi votre site d’inscription" });
-            }
             if (req.utilisateurRole !== RolesUtilisateur.ADMIN) {
                 const affectation = await SiteUtilisateur.findOne({
                     where: { utilisateurId: req.utilisateurId!, etablissementId }
@@ -128,13 +120,14 @@ export default class UtilisateurController {
                     if (req.utilisateurRole !== RolesUtilisateur.APPRENANT) {
                         return res.status(403).json({ success: false, message: "Vous n’êtes pas affecté à ce site" });
                     }
-                    const autreAffectation = await SiteUtilisateur.findOne({
-                        where: { utilisateurId: req.utilisateurId! },
-                        attributes: ['id']
+                    // Un apprenant peut changer de site : on garantit une seule affectation
+                    // en supprimant les anciennes lignes pointant vers un autre établissement.
+                    await SiteUtilisateur.destroy({
+                        where: {
+                            utilisateurId: req.utilisateurId!,
+                            etablissementId: { [Op.ne]: etablissementId }
+                        }
                     });
-                    if (autreAffectation && siteDejaChoisi !== etablissementId) {
-                        return res.status(403).json({ success: false, message: "Vous n’êtes pas affecté à ce site" });
-                    }
                     await SiteUtilisateur.findOrCreate({
                         where: { utilisateurId: req.utilisateurId!, etablissementId },
                         defaults: { utilisateurId: req.utilisateurId!, etablissementId }
