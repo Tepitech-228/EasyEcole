@@ -1,0 +1,2 @@
+﻿const mysql=require('mysql2/promise');
+(async()=>{const c=await mysql.createConnection({host:'127.0.0.1',port:3307,user:'root',password:'',database:'easyecole'});const [r]=await c.query("SELECT role,COUNT(*) n FROM aut_utilisateurs WHERE deletedAt IS NULL GROUP BY role ORDER BY role");console.table(r);const [rh]=await c.query("SELECT id,identifiant,role FROM aut_utilisateurs WHERE role='ressources_humaines'");console.log('RH',rh);await c.end()})()

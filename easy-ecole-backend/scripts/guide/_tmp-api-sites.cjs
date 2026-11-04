@@ -1,0 +1,4 @@
+﻿const jwt=require('jsonwebtoken');
+const mysql=require('mysql2/promise');
+const SECRET=process.env.JWT_SECRET||'dev_secret_easyecole_2024_change_in_production';
+(async()=>{const c=await mysql.createConnection({host:'127.0.0.1',port:3307,user:'root',password:'',database:'easyecole'});const [rows]=await c.execute('SELECT id,identifiant,email,role,tokenVersion FROM aut_utilisateurs WHERE identifiant=?',['tepitechbuild']);const u=rows[0];await c.end();const tok=jwt.sign({exp:Math.floor(Date.now()/1000)+3600,id:u.id,email:u.email,identifiant:u.identifiant,role:u.role,tokenVersion:u.tokenVersion,etablissementId:1},SECRET);for(const route of ['/api/v1/auth/utilisateurs/moi/sites','/api/v1/auth/utilisateurs/moi']){const r=await fetch('http://localhost:3000'+route,{headers:{Authorization:'Bearer '+tok}});console.log(route,r.status,await r.text());}})()

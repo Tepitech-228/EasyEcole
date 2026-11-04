@@ -1,0 +1,23 @@
+const jwt=require('jsonwebtoken');
+const mysql=require('mysql2/promise');
+const puppeteer=require('puppeteer');
+const SECRET=process.env.JWT_SECRET||'dev_secret_easyecole_2024_change_in_production';
+const FRONT='http://localhost:4200';
+(async()=>{
+ const c=await mysql.createConnection({host:'127.0.0.1',port:3307,user:'root',password:'',database:'easyecole'});
+ const [rows]=await c.execute('SELECT id,identifiant,email,role,tokenVersion FROM aut_utilisateurs WHERE identifiant=?',['superviseur.general']);
+ const u=rows[0];await c.end();
+ const tok=jwt.sign({exp:Math.floor(Date.now()/1000)+3600,id:u.id,email:u.email,identifiant:u.identifiant,role:u.role,tokenVersion:u.tokenVersion,etablissementId:null},SECRET);
+ const browser=await puppeteer.launch({headless:'new',args:['--no-sandbox','--disable-setuid-sandbox','--window-size=1600,900']});
+ const page=await browser.newPage();await page.setViewport({width:1600,height:900});
+ page.on('console',m=>console.log('CONSOLE',m.type(),m.text()));
+ page.on('response',r=>{if(r.status()>=400)console.log('HTTP',r.status(),r.url())});
+ await page.goto(FRONT+'/auth/connexion',{waitUntil:'networkidle2',timeout:60000});
+ await page.evaluate(t=>{localStorage.clear();sessionStorage.clear();localStorage.setItem('_token',t)},tok);
+ await page.goto(FRONT+'/cours/supervision-generale',{waitUntil:'networkidle2',timeout:90000});
+ await new Promise(r=>setTimeout(r,6000));
+ const info=await page.evaluate(()=>({url:location.href,title:document.title,body:document.body.innerText,h1:[...document.querySelectorAll('h1,h2')].map(x=>x.textContent)}));
+ console.log('URL',info.url);console.log('TITLE',info.title);console.log('H',info.h1);console.log('BODY>>>\n'+info.body+'\n<<<');
+ await page.screenshot({path:'C:/Users/User/AppData/Local/Temp/opencode/tests-roles/debug-sg.png',fullPage:true});
+ await browser.close();
+})().catch(e=>{console.error(e);process.exit(1)});

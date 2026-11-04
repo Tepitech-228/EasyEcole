@@ -1,0 +1,2 @@
+﻿const mysql=require('mysql2/promise');
+(async()=>{const c=await mysql.createConnection({host:'127.0.0.1',port:3307,user:'root',password:'',database:'easyecole'});const [t]=await c.query("SHOW TABLES");console.log(t.map(x=>Object.values(x)[0]).filter(x=>x.toLowerCase().includes('etab')).join('\n'));const [r]=await c.query('SELECT * FROM aut_utilisateur_etablissements LIMIT 50');console.log(r);await c.end()})()
