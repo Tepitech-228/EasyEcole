@@ -92,7 +92,7 @@ describe('BordereauDossierService.finaliserAffectationPedagogique', () => {
       update: jest.fn().mockResolvedValue(undefined),
     }
     DemandeInscription.findOne.mockResolvedValue(demande)
-    DossierEtudiant.findOne.mockImplementation(({ where }) =>
+    DossierEtudiant.findOne.mockImplementation(({ where }: { where: { matricule?: string } }) =>
       Promise.resolve(where.matricule ? null : dossier),
     )
 
@@ -103,9 +103,10 @@ describe('BordereauDossierService.finaliserAffectationPedagogique', () => {
     expect(NiveauEtude.findByPk).toHaveBeenCalledWith(44, { transaction: expect.anything() })
     expect(CursusApprenant.findOrCreate).toHaveBeenCalledWith(
       expect.objectContaining({
+        where: { demandeInscriptionId: 12 },
         defaults: expect.objectContaining({ niveauEtudeId: 44 }),
+        transaction: expect.anything(),
       }),
-      { transaction: expect.anything() },
     )
   })
 })
