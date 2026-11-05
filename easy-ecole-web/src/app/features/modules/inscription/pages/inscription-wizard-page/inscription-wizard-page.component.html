@@ -232,21 +232,21 @@
 
     <div class="form-group">
       <label for="inscription-photo">Photo de l’étudiant <span aria-hidden="true">*</span></label>
-      <div *ngIf="photoFichier" class="mb-2">
-        <img [src]="PHOTOS_PATH + photoFichier" alt="Photo actuelle de l’étudiant"
+      <div *ngIf="photoApercu || photoFichier" class="mb-2">
+        <img [src]="photoApercu || PHOTOS_PATH + photoFichier" alt="Photo actuelle de l’étudiant"
              class="object-cover w-24 h-24 rounded-full border-2 border-gray-300">
       </div>
       <input id="inscription-photo" type="file" class="form-control"
              accept="image/jpeg,image/png,image/gif,image/webp"
              (change)="surSelectionPhoto($event)" [disabled]="photoUploadEnCours">
       <small *ngIf="photoSelectionnee" role="status">
-        Photo sélectionnée : {{ photoSelectionnee.name }}. Elle sera enregistrée avant la validation.
+        Téléversement de {{ photoSelectionnee.name }} en cours…
       </small>
-      <small *ngIf="photoEnregistree && !photoSelectionnee" class="text-green-700" role="status">
-        Une photo est déjà enregistrée sur votre profil.
+      <small *ngIf="photoEnregistree && !photoSelectionnee && !photoUploadEnCours" class="text-green-700" role="status">
+        Photo enregistrée sur votre profil.
       </small>
-      <small *ngIf="!photoEnregistree && !photoSelectionnee" class="text-amber-700" role="status">
-        Ajoutez une photo avant de valider vos informations personnelles.
+      <small *ngIf="!photoEnregistree && !photoSelectionnee && !photoUploadEnCours" class="text-amber-700" role="status">
+        Vous pouvez téléverser votre photo dès maintenant, sans remplir les autres informations.
       </small>
       <small *ngIf="photoErreur" class="text-red-600" role="alert">{{ photoErreur }}</small>
     </div>
@@ -343,9 +343,9 @@
         </small>
       </div>
       <button class="btn btn-primary"
-              [disabled]="!infosCompletes || (!photoEnregistree && !photoSelectionnee) || photoUploadEnCours || sitesLoading || !!sitesError"
+              [disabled]="photoUploadEnCours"
               (click)="passerEtape4()">
-        {{ photoUploadEnCours ? 'Enregistrement de la photo…' : 'Valider et continuer' }}
+        {{ photoUploadEnCours ? 'Téléversement de la photo…' : 'Valider et continuer' }}
         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
         </svg>
@@ -481,6 +481,21 @@
   </div>
 
 </div>
+
+<app-custom-modal
+  title="Photo obligatoire"
+  subtitle="Une photo est nécessaire pour poursuivre votre inscription."
+  [center]="true"
+  [showModal]="showPhotoRequiredModal"
+  (onCloseModal)="showPhotoRequiredModal = false">
+  <div class="photo-required-modal-content" role="alert" aria-live="assertive">
+    <div class="photo-required-modal-icon" aria-hidden="true">!</div>
+    <p>Veuillez téléverser votre photo. Elle est obligatoire pour continuer votre inscription.</p>
+    <button type="button" class="btn btn-primary" (click)="fermerAlertePhotoEtChoisir()">
+      Téléverser ma photo
+    </button>
+  </div>
+</app-custom-modal>
 
 <app-custom-modal
   title="Confirmation"

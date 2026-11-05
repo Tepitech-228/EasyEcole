@@ -1,5 +1,5 @@
 import { ToastService } from 'src/app/core/services/toast.service';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpEventType } from '@angular/common/http';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
@@ -47,7 +47,7 @@ interface FiliereSelection {
   templateUrl: './inscription-wizard-page.component.html',
   styleUrls: ['./inscription-wizard-page.component.scss']
 })
-export class InscriptionWizardPageComponent extends BaseComponentClass implements OnInit {
+export class InscriptionWizardPageComponent extends BaseComponentClass implements OnInit, OnDestroy {
 
   loading = false
   submitting = false
@@ -86,6 +86,9 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   photoSelectionnee: File | null = null
   photoUploadEnCours = false
   photoErreur = ''
+  photoApercu = ''
+  showPhotoRequiredModal = false
+  private photoApercuObjectUrl: string | null = null
 
   // Pièces qui avaient été sélectionnées avant un RECHARGEMENT du navigateur et
   // qui doivent être re-sélectionnées : le contenu binaire n'est pas conservé
@@ -163,6 +166,12 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     if (demandeId) {
       this.chargerDemandeExistante(demandeId)
       return
+    }
+
+    ngOnDestroy(): void {
+      if (this.photoApercuObjectUrl) {
+        URL.revokeObjectURL(this.photoApercuObjectUrl)
+      }
     }
 
     // Restauration de l'état dans deux cas :
@@ -822,6 +831,35 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
 
     this.photoSelectionnee = photo
     this.photoErreur = ''
+    this.showPhotoRequiredModal = false
+    input.value = ''
+    if (this.photoApercuObjectUrl) {
+      URL.revokeObjectURL(this.photoApercuObjectUrl)
+    }
+    this.photoApercuObjectUrl = URL.createObjectURL(photo)
+    this.photoApercu = this.photoApercuObjectUrl
+    this.photoUploadEnCours = true
+
+    this.apprenantService.updatePhoto(photo).subscribe({
+      next: (resultat: any) => {
+        this.photoUploadEnCours = false
+        this.photoSelectionnee = null
+        if (!resultat?.success) {
+          this.photoErreur = 'La photo n’a pas pu être enregistrée. Réessayez.'
+          return
+        }
+
+        this.photoEnregistree = true
+        this.photoFichier = ''
+        this.photoErreur = ''
+        this.toastService.success('Votre photo a été téléversée avec succès.')
+      },
+      error: (err) => {
+        this.photoUploadEnCours = false
+        this.photoSelectionnee = null
+        this.photoErreur = err?.error?.message || 'La photo n’a pas pu être enregistrée. Réessayez.'
+      }
+    })
   }
 
   private chargerSitesDisponibles(): void {
@@ -1022,34 +1060,18 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   passerEtape4(): void {
     if (this.photoUploadEnCours) return
     if (!this.photoEnregistree && !this.photoSelectionnee) {
-      this.photoErreur = 'La photo est obligatoire avant de valider vos informations personnelles.'
-      return
-    }
-
-    if (this.photoSelectionnee) {
-      this.photoUploadEnCours = true
-      this.photoErreur = ''
-      this.apprenantService.updatePhoto(this.photoSelectionnee).subscribe({
-        next: (resultat: any) => {
-          this.photoUploadEnCours = false
-          if (!resultat?.success) {
-            this.photoErreur = 'La photo n’a pas pu être enregistrée. Réessayez.'
-            return
-          }
-          this.photoEnregistree = true
-          this.photoFichier = ''
-          this.photoSelectionnee = null
-          this.continuerApresValidationPhoto()
-        },
-        error: (err) => {
-          this.photoUploadEnCours = false
-          this.photoErreur = err?.error?.message || 'La photo n’a pas pu être enregistrée. Réessayez.'
-        }
-      })
+      this.showPhotoRequiredModal = true
       return
     }
 
     this.continuerApresValidationPhoto()
+  }
+
+  fermerAlertePhotoEtChoisir(): void {
+    this.showPhotoRequiredModal = false
+    if (typeof document !== 'undefined') {
+      document.getElementById('inscription-photo')?.click()
+    }
   }
 
   private continuerApresValidationPhoto(): void {
