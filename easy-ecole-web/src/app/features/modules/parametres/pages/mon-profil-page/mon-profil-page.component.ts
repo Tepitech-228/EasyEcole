@@ -39,6 +39,10 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
   updateError: boolean = false
   updateSuccess: boolean = false
   updatePhotoSuccess: boolean = false
+  photoUploadEnCours = false
+  photoEnregistree = false
+  photoErreur = ''
+  showPhotoRequiredModal = false
 
   apprenant?: Apprenant
   institution?: Institution
@@ -148,13 +152,32 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
 
   allerEtape(numero: number): void {
     if (numero >= 1 && numero <= this.totalEtapes) {
+      if (this.exigerMatriculeEtudiant && this.etapeActuelle === 1 && numero > 1) {
+        if (this.photoUploadEnCours) return
+        if (!this.photoEnregistree) {
+          this.showPhotoRequiredModal = true
+          return
+        }
+      }
       this.etapeActuelle = numero
     }
   }
 
   etapeSuivante(): void {
+    if (this.exigerMatriculeEtudiant && this.etapeActuelle === 1) {
+      if (this.photoUploadEnCours) return
+      if (!this.photoEnregistree) {
+        this.showPhotoRequiredModal = true
+        return
+      }
+    }
     if (!this.validerEtape(this.etapeActuelle)) return
     if (this.etapeActuelle < this.totalEtapes) this.etapeActuelle++
+  }
+
+  fermerAlertePhotoEtChoisir(): void {
+    this.showPhotoRequiredModal = false
+    document.getElementById('inscription-photo')?.click()
   }
 
   etapePrecedente(): void {
@@ -235,6 +258,7 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
       next: (value) => {
         console.log(value)
         this.apprenant = value ?? new Apprenant()
+        this.photoEnregistree = !!this.apprenant.photo
         this.initApprenantForm()
         this.supprimerFichier()
       },
@@ -298,29 +322,45 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
   }
   
   choisirFichier(): void {
-    let input: HTMLInputElement = document.createElement('input');
+    const input: HTMLInputElement = document.createElement('input');
     input.type = 'file';
-    input.accept = "image/*"
+    input.accept = 'image/jpeg,image/png,image/gif,image/webp'
 
-    input.onchange = _ => {
-      if (input.files) {
-        let file: File | undefined = input.files[0]
-        if (file) {
-          this.file = file
-
-          const reader = new FileReader();
-          reader.onload = () => {
-            this.imageURL = reader.result as string;
-          }
-          reader.readAsDataURL(file)
-        }
-      }
-      else {
-        console.log("Error")
-      }
+    input.onchange = () => {
+      const file = input.files?.[0]
+      if (file) this.selectionnerPhoto(file)
     };
 
     input.click();
+  }
+
+  surSelectionPhotoProfil(event: Event): void {
+    const input = event.target as HTMLInputElement
+    const photo = input.files?.[0]
+    input.value = ''
+    if (photo) this.selectionnerPhoto(photo)
+  }
+
+  private selectionnerPhoto(photo: File): void {
+    const typesAutorises = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    if (!typesAutorises.includes(photo.type) || photo.size > 5 * 1024 * 1024) {
+      this.file = undefined
+      this.photoErreur = 'Choisissez une image JPG, PNG, GIF ou WEBP de 5 Mo maximum.'
+      return
+    }
+
+    this.file = photo
+    this.photoErreur = ''
+    this.showPhotoRequiredModal = false
+    const reader = new FileReader()
+    reader.onload = () => {
+      this.imageURL = reader.result as string
+    }
+    reader.readAsDataURL(photo)
+
+    if (this.exigerMatriculeEtudiant) {
+      this.modifierPhotoProfil()
+    }
   }
 
   supprimerFichier(): void {
@@ -329,16 +369,28 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
   }
 
   modifierPhotoProfil(): void {
-    if(this.file) {
+    if (this.file && !this.photoUploadEnCours) {
+      this.photoErreur = ''
+      this.photoUploadEnCours = true
       this.apprenantService.updatePhoto(this.file).subscribe({
         next: (value) => {
-          console.log()
+          this.photoUploadEnCours = false
+          if (!value?.success) {
+            this.photoErreur = 'La photo n’a pas pu être enregistrée. Réessayez.'
+            return
+          }
+
+          this.photoEnregistree = true
+          this.file = undefined
           this.updatePhotoSuccess = true
           setTimeout(() => { this.updatePhotoSuccess = false }, 2000)
-          this.getApprenant()
+          if (!this.exigerMatriculeEtudiant) {
+            this.getApprenant()
+          }
         },
         error: (err: HttpErrorResponse) => {
-          console.log(err)
+          this.photoUploadEnCours = false
+          this.photoErreur = err.error?.message || 'La photo n’a pas pu être enregistrée. Réessayez.'
           this.updateError = true
           setTimeout(() => { this.updateError = false }, 2000)
         }

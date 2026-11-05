@@ -16,7 +16,7 @@
 </div>
 
 <div class="w-full" *ngIf="apprenant && rolesValue.isApprenant">
-    <div class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+    <div *ngIf="!exigerMatriculeEtudiant" class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
         <div class="mt-2 flex items-center gap-x-8">
             <img class="h-36 w-36 rounded-md object-cover object-center border-2 border-gray-300"
                 [src]="imageURL ? imageURL : apprenant.photo ? PHOTOS_PATH + apprenant.photo : 'assets/images/blank-profile-picture.png'" alt="profile">
@@ -74,6 +74,29 @@
         <section *ngIf="etapeActuelle === 1" class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
             <h2 class="text-base font-semibold leading-7 text-gray-900 mb-1">Informations personnelles</h2>
             <p class="text-sm text-gray-500 mb-6">Votre identité et votre état civil</p>
+            <div *ngIf="exigerMatriculeEtudiant" class="profil-photo-area">
+                <img class="profil-photo-preview"
+                    [src]="imageURL ? imageURL : apprenant.photo ? PHOTOS_PATH + apprenant.photo : 'assets/images/blank-profile-picture.png'"
+                    alt="Photo de l’étudiant">
+                <div class="profil-photo-actions">
+                    <label for="inscription-photo" class="mb-1 block text-sm font-semibold text-gray-800">
+                        Photo de l’étudiant <span class="text-red-600">*</span>
+                    </label>
+                    <input id="inscription-photo" type="file" accept="image/jpeg,image/png,image/gif,image/webp"
+                        (change)="surSelectionPhotoProfil($event)" [disabled]="photoUploadEnCours">
+                    <small *ngIf="photoUploadEnCours" class="text-blue-700" role="status">
+                        Téléversement de la photo en cours…
+                    </small>
+                    <small *ngIf="photoEnregistree && !photoUploadEnCours" class="text-green-700" role="status">
+                        Photo enregistrée. Vous pouvez continuer.
+                    </small>
+                    <small *ngIf="photoErreur" class="text-red-600" role="alert">{{ photoErreur }}</small>
+                    <small *ngIf="!photoEnregistree && !photoUploadEnCours && !photoErreur"
+                        class="profil-photo-warning" role="status">
+                        Téléversez votre photo avant de passer à la suite de votre inscription.
+                    </small>
+                </div>
+            </div>
             <div class="grid grid-cols-6 gap-x-8 gap-y-6">
                 <div class="col-span-2">
                     <label for="nom" class="mb-2 block text-sm leading-6 text-gray-600">Nom <span class="text-red-600">*</span></label>
@@ -83,6 +106,7 @@
                         <app-form-message *ngIf="profilForm.get('nom')!.errors?.['required']"
                             text="Veuillez saisir votre nom"></app-form-message>
                     </div>
+
                 </div>
                 <div class="col-span-2">
                     <label for="prenoms" class="mb-2 block text-sm leading-6 text-gray-600">Prénoms <span class="text-red-600">*</span></label>
@@ -611,6 +635,21 @@
         </div>
     </form>
 </div>
+
+<app-custom-modal
+    title="Photo obligatoire"
+    subtitle="Une photo est nécessaire pour poursuivre votre inscription."
+    [center]="true"
+    [showModal]="showPhotoRequiredModal"
+    (onCloseModal)="showPhotoRequiredModal = false">
+    <div class="photo-required-modal-content" role="alert" aria-live="assertive">
+        <div class="photo-required-modal-icon" aria-hidden="true">!</div>
+        <p>Veuillez téléverser votre photo avant de continuer la saisie de vos informations personnelles.</p>
+        <button type="button" class="btn btn-primary" (click)="fermerAlertePhotoEtChoisir()">
+            Téléverser ma photo
+        </button>
+    </div>
+</app-custom-modal>
 
 <div class="w-full" *ngIf="institution && rolesValue.isInstitution">
     <form [formGroup]="profilForm" *ngIf="profilForm">
