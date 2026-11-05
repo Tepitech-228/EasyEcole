@@ -213,6 +213,33 @@ describe('ComiteValidationController.decider — correction demandée', () => {
 })
 
 describe('ComiteValidationController.decider — garde-fous', () => {
+  it('retente une transaction annulée par un interblocage MySQL', async () => {
+    const res = mockResponse()
+    const deadlock = Object.assign(new Error('Deadlock found when trying to get lock'), {
+      code: 'ER_LOCK_DEADLOCK',
+    })
+    ;(DemandeInscription.findOne as jest.Mock)
+      .mockRejectedValueOnce(deadlock)
+      .mockResolvedValueOnce({
+        id: 11,
+        utilisateurId: 90,
+        typeDemande: 'inscription',
+        matriculeEtudiant: null,
+        statutPipeline: 'transmis_comite',
+      })
+
+    await Ctrl.decider(reqComite({ decision: 'valide' }), res)
+
+    expect(DatabaseConnection.getInstance().sequelize.transaction).toHaveBeenCalledTimes(2)
+    expect(DemandeInscription.findOne).toHaveBeenCalledTimes(2)
+    expect(mockTransaction.rollback).toHaveBeenCalledTimes(2)
+    expect(res.status).toHaveBeenLastCalledWith(400)
+    expect(res.json).toHaveBeenLastCalledWith({
+      success: false,
+      message: "La demande ne contient pas de matricule étudiant. L'étudiant doit le renseigner avant la validation.",
+    })
+  })
+
   it('refuse la validation d’une première inscription sans matricule étudiant', async () => {
     const res = mockResponse()
     ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue({

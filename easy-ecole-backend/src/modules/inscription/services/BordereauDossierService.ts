@@ -24,7 +24,7 @@ import { IDGenerator } from "../../../core/helpers/IDGenerator";
 import { DocumentPDFGenerator } from "../../../core/helpers/DocumentPDFGenerator";
 import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
 import { EmailSender } from "../../../core/helpers/EmailSender";
-import { GenerateurCarteService } from "../services/GenerateurCarteService";
+import { CarteData, GenerateurCarteService } from "../services/GenerateurCarteService";
 import { DossierStorageService } from "../services/DossierStorageService";
 import { resolveStoredDocumentPath } from "../../../core/services/DocumentStorageService";
 import { FolderAutoService } from "../../ged/services/FolderAutoService";
@@ -66,13 +66,25 @@ const getParcoursFinal = <T extends { choixFinal?: any; parcoursId?: number | st
     return undefined;
 };
 
+export interface CarteEtudiantDifferee {
+    dossierId: number;
+    data: CarteData;
+    rangement?: {
+        anneeAcademique: string;
+        parcours: string;
+        classe: string;
+        niveau: string;
+        matricule: string;
+    };
+}
+
 export class BordereauDossierService {
 
     private static async finaliserDossierElearning(
         demande: DemandeInscription,
         req: any,
         transaction: Transaction,
-    ): Promise<{ matricule: string }> {
+    ): Promise<{ matricule: string; carteEtudiant?: CarteEtudiantDifferee }> {
         const utilisateurId = Number(demande.utilisateurId);
         const siteId = Number(demande.etablissementId || req.etablissementId || 0);
         if (!Number.isSafeInteger(siteId) || siteId <= 0) {
@@ -140,10 +152,11 @@ export class BordereauDossierService {
             }, { transaction });
         }
 
-        try {
-            const user = demande.utilisateur as any;
-            const apprenant = user?.apprenant;
-            const cartePath = await GenerateurCarteService.generer({
+        const user = demande.utilisateur as any;
+        const apprenant = user?.apprenant;
+        const carteEtudiant: CarteEtudiantDifferee = {
+            dossierId: Number(dossier.id),
+            data: {
                 nom: user?.nom || "",
                 prenom: user?.prenoms || "",
                 matricule,
@@ -154,11 +167,8 @@ export class BordereauDossierService {
                 anneeAcademique: anneeLibelle,
                 email: user?.email || "",
                 utilisateurId,
-            });
-            await dossier.update({ cartePath, carteGeneree: true }, { transaction });
-        } catch (error) {
-            console.error("Erreur génération carte étudiant e-learning:", error);
-        }
+            },
+        };
 
         if (demande.utilisateur) {
             EmailSender.getInstance().sendQuitusEtMatricule(
@@ -167,7 +177,35 @@ export class BordereauDossierService {
                 matricule,
             ).catch((error: any) => console.error("Erreur envoi matricule e-learning:", error));
         }
-        return { matricule };
+        return { matricule, carteEtudiant };
+    }
+
+    static async genererCarteEtudiantDifferee(carteEtudiant: CarteEtudiantDifferee): Promise<void> {
+        const cartePath = await GenerateurCarteService.generer(carteEtudiant.data);
+        const dossier = await DossierEtudiant.findByPk(carteEtudiant.dossierId);
+        if (!dossier) {
+            throw new Error(`Dossier étudiant ${carteEtudiant.dossierId} introuvable après génération de la carte.`);
+        }
+        await dossier.update({ cartePath, carteGeneree: true });
+
+        if (carteEtudiant.rangement) {
+            const carteSource = resolveStoredDocumentPath(cartePath, [
+                process.cwd(),
+                path.resolve(process.cwd(), 'public'),
+            ]);
+            if (carteSource) {
+                const rangement = carteEtudiant.rangement;
+                DossierStorageService.copierFichier(
+                    carteSource,
+                    rangement.anneeAcademique,
+                    rangement.parcours,
+                    rangement.classe,
+                    rangement.niveau,
+                    rangement.matricule,
+                    'cartes',
+                );
+            }
+        }
     }
 
     static async creerDossierEtudiantDepuisBordereau(
@@ -716,7 +754,7 @@ export class BordereauDossierService {
         req: any,
         transaction: Transaction,
         options: { initialesComite?: string } = {},
-    ): Promise<{ matricule: string }> {
+    ): Promise<{ matricule: string; carteEtudiant?: CarteEtudiantDifferee }> {
         const demande = await DemandeInscription.findOne({
             where: { utilisateurId },
             include: [
@@ -999,11 +1037,13 @@ export class BordereauDossierService {
             }
         }
 
+        let carteEtudiant: CarteEtudiantDifferee | undefined;
         if (dossier) {
-            try {
-                const user = demande.utilisateur as any
-                const apprenant = user?.apprenant
-                const cartePath = await GenerateurCarteService.generer({
+            const user = demande.utilisateur as any
+            const apprenant = user?.apprenant
+            carteEtudiant = {
+                dossierId: Number(dossier.id),
+                data: {
                     nom: user?.nom || '',
                     prenom: user?.prenoms || '',
                     matricule,
@@ -1014,19 +1054,15 @@ export class BordereauDossierService {
                     anneeAcademique: anneeLibelle,
                     email: user?.email || '',
                     utilisateurId: demande.utilisateurId,
-                })
-                await dossier.update({ cartePath, carteGeneree: true }, { transaction })
-
-                const carteSource = resolveStoredDocumentPath(cartePath, [
-                    process.cwd(),
-                    path.resolve(process.cwd(), 'public'),
-                ])
-                if (carteSource) {
-                    DossierStorageService.copierFichier(carteSource, anneeLibelle, parcoursNom, classeNom, niveauNom, matricule, 'cartes')
-                }
-            } catch (cardError) {
-                console.error("Erreur génération carte étudiant:", cardError)
-            }
+                },
+                rangement: {
+                    anneeAcademique: anneeLibelle,
+                    parcours: parcoursNom,
+                    classe: classeNom,
+                    niveau: niveauNom,
+                    matricule,
+                },
+            };
         }
 
         if (demande.utilisateur) {
@@ -1037,7 +1073,7 @@ export class BordereauDossierService {
             ).catch((err: any) => console.error("Erreur envoi email matricule:", err))
         }
 
-        return { matricule }
+        return { matricule, carteEtudiant }
     }
 
     /**

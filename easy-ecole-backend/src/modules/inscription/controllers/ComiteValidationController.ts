@@ -353,6 +353,14 @@ export default class ComiteValidationController {
      * Chaque membre ne peut voter qu'une seule fois (contrainte UNIQUE).
      */
     static async decider(req: Request, res: Response): Promise<Response | null> {
+        return this.deciderAttempt(req, res, 0)
+    }
+
+    private static async deciderAttempt(
+        req: Request,
+        res: Response,
+        deadlockRetries: number,
+    ): Promise<Response | null> {
         const role = (req as any).utilisateurRole
         if (role != RolesUtilisateur.COMITE_ORIENTATION && role != RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false })
@@ -661,6 +669,7 @@ export default class ComiteValidationController {
                     { initialesComite }
                 )
                 matriculeFinal = finalisation.matricule
+                const carteEtudiantDifferee = finalisation.carteEtudiant
 
                 demande.statutPipeline = 'valide'
                 demande.motifPipeline = null
@@ -747,6 +756,17 @@ export default class ComiteValidationController {
 
                 await transaction.commit()
 
+                if (carteEtudiantDifferee) {
+                    setImmediate(() => {
+                        void BordereauDossierService.genererCarteEtudiantDifferee(carteEtudiantDifferee).catch(error => {
+                            console.error(
+                                `[Comite] Échec de génération différée de la carte étudiant pour le dossier ${carteEtudiantDifferee.dossierId}:`,
+                                error,
+                            )
+                        })
+                    })
+                }
+
                 // Email de validation UNIQUEMENT à l'unanimité
                 ComiteValidationController.envoyerEmailValidation(demande.utilisateurId, matriculeFinal)
 
@@ -757,6 +777,7 @@ export default class ComiteValidationController {
                         decision,
                         statutPipeline: demande.statutPipeline,
                         matricule: matriculeFinal,
+                        carteEnGeneration: Boolean(carteEtudiantDifferee),
                         quorum: {
                             totalMembres,
                             votesCount: votesValides,
@@ -791,8 +812,25 @@ export default class ComiteValidationController {
                 })
             }
         } catch (error: any) {
-            await transaction.rollback().catch(rbErr => console.error('[COMITE][decider] ROLLBACK EN ÉCHEC — transaction possiblement orpheline:', rbErr))
+            const transactionState = (transaction as typeof transaction & { finished?: string }).finished
+            if (!transactionState) {
+                await transaction.rollback().catch(rbErr => console.error('[COMITE][decider] ROLLBACK EN ÉCHEC — transaction possiblement orpheline:', rbErr))
+            }
+            const errorCode = error?.original?.code || error?.parent?.code || error?.code
+            const isDeadlock = errorCode === 'ER_LOCK_DEADLOCK' || errorCode === 1213 || errorCode === '1213'
+            if (isDeadlock && deadlockRetries < 2) {
+                const nextRetry = deadlockRetries + 1
+                console.warn(`[COMITE][decider] Interblocage MySQL; nouvelle tentative ${nextRetry}/2.`)
+                await new Promise<void>(resolve => setTimeout(resolve, 150 * nextRetry))
+                return this.deciderAttempt(req, res, nextRetry)
+            }
             console.error('[Comite] decider:', error)
+            if (isDeadlock) {
+                return res.status(503).json({
+                    success: false,
+                    message: "La base de données est momentanément occupée. Veuillez réessayer la validation.",
+                })
+            }
             return res.status(400).json({ success: false, message: error.message || 'Erreur interne' })
         }
     }

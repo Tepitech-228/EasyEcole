@@ -22,7 +22,7 @@ jest.mock('../../../modules/inscription/models/Cours', () => ({
 }))
 
 jest.mock('../../../modules/inscription/models/DossierEtudiant', () => ({
-  DossierEtudiant: { findOne: jest.fn() },
+  DossierEtudiant: { findOne: jest.fn(), findByPk: jest.fn() },
 }))
 
 jest.mock('../../../modules/inscription/models/CursusApprenant', () => ({
@@ -38,7 +38,11 @@ jest.mock('../../../modules/inscription/models/Session', () => ({
 }))
 
 jest.mock('../../../modules/inscription/services/DossierStorageService', () => ({
-  DossierStorageService: { creerDossierEtudiant: jest.fn() },
+  DossierStorageService: { creerDossierEtudiant: jest.fn(), copierFichier: jest.fn() },
+}))
+
+jest.mock('../../../modules/inscription/services/GenerateurCarteService', () => ({
+  GenerateurCarteService: { generer: jest.fn().mockResolvedValue('created/cartes/carte-test.pdf') },
 }))
 
 jest.mock('../../../modules/ged/services/FolderAutoService', () => ({
@@ -50,6 +54,7 @@ const { Cours } = require('../../../modules/inscription/models/Cours')
 const { DossierEtudiant } = require('../../../modules/inscription/models/DossierEtudiant')
 const { CursusApprenant } = require('../../../modules/inscription/models/CursusApprenant')
 const { NiveauEtude } = require('../../../modules/inscription/models/NiveauEtude')
+const { GenerateurCarteService } = require('../../../modules/inscription/services/GenerateurCarteService')
 import { BordereauDossierService } from '../../../modules/inscription/services/BordereauDossierService'
 
 describe('BordereauDossierService.finaliserAffectationPedagogique', () => {
@@ -108,5 +113,35 @@ describe('BordereauDossierService.finaliserAffectationPedagogique', () => {
         transaction: expect.anything(),
       }),
     )
+  })
+
+  it('génère et enregistre la carte après la finalisation sans transaction ouverte', async () => {
+    const dossier = { update: jest.fn().mockResolvedValue(undefined) }
+    DossierEtudiant.findByPk.mockResolvedValue(dossier)
+
+    await BordereauDossierService.genererCarteEtudiantDifferee({
+      dossierId: 55,
+      data: {
+        nom: 'Kouassi',
+        prenom: 'Aya',
+        matricule: '2026-L1-J-26-ESA',
+        dateNaissance: '01/01/2005',
+        classe: 'Licence 1',
+        filiere: 'Informatique',
+        anneeAcademique: '2026-2027',
+        email: 'aya@example.test',
+        utilisateurId: 90,
+      },
+    })
+
+    expect(GenerateurCarteService.generer).toHaveBeenCalledWith(expect.objectContaining({
+      utilisateurId: 90,
+      matricule: '2026-L1-J-26-ESA',
+    }))
+    expect(DossierEtudiant.findByPk).toHaveBeenCalledWith(55)
+    expect(dossier.update).toHaveBeenCalledWith({
+      cartePath: 'created/cartes/carte-test.pdf',
+      carteGeneree: true,
+    })
   })
 })

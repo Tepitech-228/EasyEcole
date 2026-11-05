@@ -458,7 +458,7 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
         this.processingDecision = false
         const matricule = res?.data?.matricule
         this.successMessage = this.decisionEnCours === 'valide'
-          ? `Inscription validée${matricule ? ' — Matricule : ' + matricule : ''}. L'étudiant a été notifié par email.`
+          ? `Inscription validée${matricule ? ' — Matricule : ' + matricule : ''}. L'étudiant a été notifié par email.${res?.data?.carteEnGeneration ? ' La carte étudiante est en cours de génération.' : ''}`
           : `Décision enregistrée (« ${this.libelleDecision(this.decisionEnCours)} ») et notifiée à l'étudiant.`
         this.fermerDetail()
         this.charger()
