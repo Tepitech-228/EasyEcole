@@ -1,0 +1,83 @@
+import PDFDocument from 'pdfkit';
+
+interface AutorisationProvisoirePdfData {
+  etablissement: Record<string, any>;
+  etudiant: Record<string, any>;
+  reference: string;
+  dateGeneration: string;
+  initialesComite?: string;
+}
+
+export class AutorisationProvisoirePdfService {
+  static generate(data: AutorisationProvisoirePdfData): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const doc = new PDFDocument({ size: 'A4', margin: 48 });
+      const chunks: Buffer[] = [];
+
+      doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+
+      const navy = '#002147';
+      const gold = '#D4AF37';
+      const etudiant = data.etudiant;
+      const nomComplet = `${etudiant.nom || ''} ${etudiant.prenom || ''}`.trim();
+
+      doc.lineWidth(3).strokeColor(navy).rect(32, 32, 548, 778).stroke();
+      doc.fillColor(navy).font('Helvetica-Bold').fontSize(15)
+        .text(data.etablissement.nom || 'ESA', 52, 52, { width: 330 });
+      doc.fillColor('#333333').font('Helvetica').fontSize(9)
+        .text("Établissement d'Enseignement Supérieur Privé", 52, 72, { width: 330 });
+      doc.moveTo(52, 96).lineTo(560, 96).lineWidth(2).strokeColor(gold).stroke();
+
+      doc.fillColor(navy).font('Helvetica-Bold').fontSize(15)
+        .text("AUTORISATION PROVISOIRE D'INSCRIPTION", 52, 112, { align: 'center' });
+      doc.font('Helvetica-Bold').fontSize(9)
+        .text(`Référence : ${data.reference}`, 52, 136, { align: 'center' });
+      doc.fillColor('#333333').font('Helvetica').fontSize(9)
+        .text(`Émise le ${data.dateGeneration}`, 52, 151, { align: 'center' });
+
+      doc.fillColor('#222222').font('Helvetica').fontSize(10)
+        .text("Le Comité d'Orientation et d'Équivalence autorise provisoirement l'inscription de :", 56, 184, { width: 500 });
+      doc.fillColor(navy).font('Helvetica-Bold').fontSize(12)
+        .text(nomComplet || 'Étudiant', 56, 210, { width: 500 });
+
+      doc.fillColor('#222222').font('Helvetica').fontSize(10);
+      const details = [
+        ['Matricule', etudiant.matricule],
+        ['Date de naissance', etudiant.dateNaissance],
+        ['Lieu de naissance', etudiant.lieuNaissance],
+        ['Nationalité', etudiant.nationalite],
+        ['Année académique', etudiant.anneeAcademique],
+        ['Parcours / filière', etudiant.filiere],
+        ['Niveau', etudiant.niveau],
+      ];
+      let y = 246;
+      for (const [label, value] of details) {
+        doc.fillColor('#555555').font('Helvetica').text(`${label} :`, 56, y, { width: 140 });
+        doc.fillColor('#222222').font('Helvetica-Bold').text(String(value || 'Non renseigné'), 198, y, { width: 350 });
+        y += 24;
+      }
+
+      doc.roundedRect(56, y + 8, 500, 70, 5).lineWidth(1).strokeColor(navy).stroke();
+      doc.fillColor(navy).font('Helvetica-Bold').fontSize(9)
+        .text('Conditions', 68, y + 20);
+      doc.fillColor('#333333').font('Helvetica').fontSize(9)
+        .text(
+          "Cette autorisation est provisoire. L'établissement se réserve le droit de vérifier l'authenticité des pièces fournies. Toute production de faux document peut entraîner des sanctions disciplinaires et judiciaires.",
+          68,
+          y + 36,
+          { width: 476, height: 38, align: 'justify' },
+        );
+
+      doc.fillColor('#333333').font('Helvetica').fontSize(9)
+        .text("Pour le Comité d'Orientation et d'Équivalence", 56, 700, { width: 500, align: 'center' });
+      doc.fillColor(navy).font('Helvetica-Bold').fontSize(10)
+        .text(data.initialesComite || 'Comité d’orientation', 56, 725, { width: 500, align: 'center' });
+      doc.fillColor('#777777').font('Helvetica').fontSize(8)
+        .text(`Document généré le ${data.dateGeneration} — Réf : ${data.reference}`, 52, 780, { width: 508, align: 'center' });
+
+      doc.end();
+    });
+  }
+}
