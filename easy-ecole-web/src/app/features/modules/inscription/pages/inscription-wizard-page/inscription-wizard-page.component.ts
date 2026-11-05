@@ -168,12 +168,6 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
       return
     }
 
-    ngOnDestroy(): void {
-      if (this.photoApercuObjectUrl) {
-        URL.revokeObjectURL(this.photoApercuObjectUrl)
-      }
-    }
-
     // Restauration de l'état dans deux cas :
     //  1) retour de la page profil (/parametres/profil, étape 3 redirigée) ;
     //  2) RECHARGEMENT du navigateur — l'état est relu depuis le sessionStorage,
@@ -193,6 +187,12 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
       this.loadArborescence()
       this.loadSessions()
     })
+  }
+
+  ngOnDestroy(): void {
+    if (this.photoApercuObjectUrl) {
+      URL.revokeObjectURL(this.photoApercuObjectUrl)
+    }
   }
 
   /**
