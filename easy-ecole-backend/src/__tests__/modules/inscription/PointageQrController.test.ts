@@ -217,6 +217,25 @@ describe('PointageController.pointerParQR', () => {
     expect(Pointage.create).not.toHaveBeenCalled()
   })
 
+  it('allows QR attendance and returns a warning for a partially paid installment', async () => {
+    Utilisateur.findByPk.mockResolvedValue({ id: 42, role: 'apprenant' })
+    VerificationPaiementService.verifierDossier.mockReturnValue({
+      statut: 'vert',
+      message: 'Accès autorisé',
+      avertissementPaiement: 'Échéance mois 2 partiellement payée.'
+    })
+    const res = mockResponse()
+
+    await PointageController.pointerParQR(request({ codeQR: validCode, mode: 'arrivee' }), res)
+
+    expect(Pointage.create).toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      success: true,
+      avertissementPaiement: 'Échéance mois 2 partiellement payée.'
+    }))
+  })
+
   it('uses the second scan as the staff departure after confirmation', async () => {
     const update = jest.fn().mockResolvedValue(undefined)
     Pointage.findOne.mockResolvedValue({ id: 7, heureDepart: null, update })

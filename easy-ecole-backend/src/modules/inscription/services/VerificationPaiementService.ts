@@ -6,6 +6,7 @@ export interface VerificationPaiementResult {
     echeancesEnRetard: number
     echeancesRestantes: Echeance[]
     message: string
+    avertissementPaiement: string | null
 }
 
 /**
@@ -35,7 +36,8 @@ export class VerificationPaiementService {
                 statut: 'rouge',
                 echeancesEnRetard: 0,
                 echeancesRestantes: [],
-                message: `Dossier ${dossier.statut}`
+                message: `Dossier ${dossier.statut}`,
+                avertissementPaiement: null
             }
         }
 
@@ -50,15 +52,24 @@ export class VerificationPaiementService {
                 statut: 'rouge',
                 echeancesEnRetard: echeancesImpayees.length,
                 echeancesRestantes: echeancesImpayees,
-                message: `Échéance mois ${premiereImpayee.numeroEcheance} ${premiereImpayee.statut == 'en_retard' ? 'en retard' : 'impayée'}`
+                message: `Échéance mois ${premiereImpayee.numeroEcheance} ${premiereImpayee.statut == 'en_retard' ? 'en retard' : 'impayée'}`,
+                avertissementPaiement: null
             }
         }
+
+        const echeancesPartiellementPayees = (dossier.echeances || []).filter(e => e.statut == 'partiel')
+        const avertissementPaiement = echeancesPartiellementPayees.length === 1
+            ? `Échéance mois ${echeancesPartiellementPayees[0].numeroEcheance} partiellement payée.`
+            : echeancesPartiellementPayees.length > 1
+                ? `${echeancesPartiellementPayees.length} échéances partiellement payées.`
+                : null
 
         return {
             statut: 'vert',
             echeancesEnRetard: 0,
             echeancesRestantes: [],
-            message: 'Accès autorisé'
+            message: 'Accès autorisé',
+            avertissementPaiement
         }
     }
 
@@ -80,7 +91,8 @@ export class VerificationPaiementService {
                 statut: 'vert',
                 echeancesEnRetard: 0,
                 echeancesRestantes: [],
-                message: 'Aucun dossier étudiant à vérifier — accès standard autorisé'
+                message: 'Aucun dossier étudiant à vérifier — accès standard autorisé',
+                avertissementPaiement: null
             }
         }
 
@@ -109,6 +121,7 @@ export class VerificationPaiementService {
                 echeancesEnRetard: 0,
                 echeancesRestantes: [],
                 message: 'Aucun dossier étudiant à vérifier — accès standard autorisé',
+                avertissementPaiement: null,
                 montantRestant: 0,
                 prochaineEcheance: null,
             }

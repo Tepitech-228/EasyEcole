@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { Pointage } from '../models/Pointage.model';
+import { PointageSituationFinanciere } from 'src/app/shared/models/PointageSituationFinanciere.model';
 
 export interface PointageTerminalConfig {
   id: number;
@@ -26,7 +27,13 @@ export interface DepartureConfirmation {
 }
 
 export type PointageScanResponse =
-  | { success: boolean; mode: 'arrivee' | 'depart' | 'passage'; pointage: Pointage }
+  | {
+    success: boolean;
+    mode: 'arrivee' | 'depart' | 'passage';
+    pointage: Pointage;
+    avertissementPaiement?: string;
+    situationFinanciere?: PointageSituationFinanciere;
+  }
   | DepartureConfirmation;
 
 export interface PointageExportParams {
@@ -44,6 +51,7 @@ export interface HikvisionTerminalConfig {
   nom: string;
   sourceIp: string | null;
   protocol: 'hikvision_isapi';
+  population: 'personnel' | 'etudiant';
   hikvisionPort: number;
   hikvisionHttps: boolean;
   username: string | null;
@@ -69,6 +77,7 @@ export interface HikvisionTerminalUpdatePayload {
   username?: string;
   password?: string;
   etablissementId: number;
+  population?: 'personnel' | 'etudiant';
   actif?: boolean;
 }
 
@@ -151,6 +160,7 @@ export class PointageService {
     username: string;
     password: string;
     etablissementId: number;
+    population: 'personnel' | 'etudiant';
   }): Observable<HikvisionTerminalCreationResult> {
     return this.httpClient.post<HikvisionTerminalCreationResult>(`${this.SERVICE_URL}/hikvision-terminaux`, data);
   }

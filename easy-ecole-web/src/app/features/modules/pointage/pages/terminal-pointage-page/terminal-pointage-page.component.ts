@@ -12,6 +12,7 @@ import {
 import { Pointage } from 'src/app/data/modules/inscription/models/Pointage.model';
 import { AuthService, SiteUtilisateur } from 'src/app/data/modules/auth/services/auth.service';
 import { SocketService, TerminalAttendanceEvent } from 'src/app/core/services/socket.service';
+import { PointageSituationFinanciere } from 'src/app/shared/models/PointageSituationFinanciere.model';
 import { environment } from 'src/environments/environment';
 
 interface PendingDepartureConfirmation {
@@ -60,6 +61,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   lastAttendanceName: string = ''
   lastAttendanceRole: string = ''
   lastAttendancePhotoUrl: string = ''
+  lastAttendanceSituationFinanciere: PointageSituationFinanciere | null = null
   manualId: string = ''
   showManualInput: boolean = false
   readonly isAdmin: boolean
@@ -89,7 +91,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     https: false,
     username: '',
     password: '',
-    etablissementId: null as number | null
+    etablissementId: null as number | null,
+    population: '' as '' | 'personnel' | 'etudiant'
   }
   torchSupported: boolean = false
   torchOn: boolean = false
@@ -164,17 +167,19 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     const draft = this.hikvisionDraft
     const etablissementId = Number(draft.etablissementId)
     const editingId = this.editingTerminalId
+    const population = draft.population
     // En édition, le mot de passe est facultatif : vide = conserver l'actuel.
     const identifiantsValides = !!draft.username.trim() && (editingId !== null || !!draft.password)
     if (
       !draft.serialNumber.trim() || !draft.nom.trim() ||
       !identifiantsValides ||
       !Number.isSafeInteger(draft.port) || draft.port < 1 || draft.port > 65535 ||
-      !Number.isSafeInteger(etablissementId) || etablissementId <= 0
+      !Number.isSafeInteger(etablissementId) || etablissementId <= 0 ||
+      (population !== 'personnel' && population !== 'etudiant')
     ) {
       this.terminalConfigError = editingId !== null
-        ? 'Renseignez le numéro de série, le nom, le port, le compte et le site. Le mot de passe peut rester vide pour conserver l’actuel.'
-        : 'Renseignez le numéro de série, le nom, le port, le compte, le mot de passe et le site.'
+        ? 'Renseignez le numéro de série, le nom, le port, le compte, le site et le type de comptes. Le mot de passe peut rester vide pour conserver l’actuel.'
+        : 'Renseignez le numéro de série, le nom, le port, le compte, le mot de passe, le site et le type de comptes.'
       return
     }
 
@@ -188,7 +193,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
         port: draft.port,
         https: draft.https,
         username: draft.username.trim(),
-        etablissementId
+        etablissementId,
+        population
       }
       // Champ omis (et non envoyé vide) : le backend conserve le mot de passe actuel.
       if (draft.password) payload.password = draft.password
@@ -198,7 +204,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
           this.hikvisionTerminals = this.hikvisionTerminals.map(item => item.id === updated.id ? updated : item)
           this.editingTerminalId = null
           this.reinitialiserBrouillonTerminal()
-          this.terminalConfigSuccess = 'Terminal modifié. Les enrôlements en attente seront relancés.'
+          this.terminalConfigSuccess = 'Terminal modifié. Les futurs enrôlements respecteront son type de comptes. Les fiches déjà présentes dans la pointeuse ne sont pas supprimées.'
           this.terminalConfigSaving = false
           this.testerTerminalHikvision(updated)
         },
@@ -218,11 +224,20 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       https: draft.https,
       username: draft.username.trim(),
       password: draft.password,
-      etablissementId
+      etablissementId,
+      population
     }).subscribe({
       next: terminal => {
         this.hikvisionTerminals = [...this.hikvisionTerminals, terminal]
-        this.hikvisionDraft = { ...this.hikvisionDraft, serialNumber: '', sourceIp: '', username: '', password: '', etablissementId }
+        this.hikvisionDraft = {
+          ...this.hikvisionDraft,
+          serialNumber: '',
+          sourceIp: '',
+          username: '',
+          password: '',
+          etablissementId,
+          population: ''
+        }
         this.terminalConfigSuccess = 'Terminal enregistré. Copiez son jeton, puis testez la connexion ISAPI avant le premier pointage.'
         this.terminalConfigSaving = false
         this.afficherJetonTerminal(terminal, terminal.deviceToken)
@@ -248,7 +263,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       https: terminal.hikvisionHttps,
       username: terminal.username || '',
       password: '',
-      etablissementId: terminal.etablissementId
+      etablissementId: terminal.etablissementId,
+      population: terminal.population || 'personnel'
     }
     if (typeof document !== 'undefined') {
       document.querySelector('.pointage-terminal-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -272,7 +288,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       https: false,
       username: '',
       password: '',
-      etablissementId: this.terminalSites.length ? this.terminalSites[0].id : null
+      etablissementId: this.terminalSites.length ? this.terminalSites[0].id : null,
+      population: ''
     }
   }
 
@@ -419,8 +436,9 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     this.lastAttendanceName = this.formatPersonName(event)
     this.lastAttendanceRole = this.roleLabel(event.role)
     this.lastAttendancePhotoUrl = this.buildPhotoUrl(event.photo, event.photoType)
+    this.lastAttendanceSituationFinanciere = event.situationFinanciere || null
     this.scanError = ''
-    this.scanWarning = ''
+    this.scanWarning = event.avertissementPaiement || ''
 
     if (event.mode === 'refuse') {
       this.scanSuccess = ''
@@ -438,7 +456,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       this.scanSuccess = `Arrivée enregistrée à ${event.time}`
     }
     this.playBeepSucces()
-    this.announceAttendance(event, event.mode, event.time)
+    this.announceAttendance(event, event.mode, event.time, event.avertissementPaiement)
   }
 
   ngOnDestroy(): void {
@@ -576,6 +594,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     this.scanWarning = ''
     this.scanSuccess = ''
     this.scannedUser = null
+    this.lastAttendanceSituationFinanciere = null
     this.pointageService.verifierStatutByQR(scan.codeQR).subscribe({
       next: (res) => {
         this.displayScannedResult(res, false)
@@ -598,10 +617,12 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
             this.lastAttendanceName = this.formatPersonName(this.scannedUser)
             this.lastAttendanceRole = this.roleLabel(this.scannedUser?.role)
             this.lastAttendancePhotoUrl = this.scannedUser?.photoUrl || ''
+            this.lastAttendanceSituationFinanciere = result.situationFinanciere || null
             const heure = result.mode === 'passage'
               ? pointage.heureArrivee
               : (result.mode === 'depart' ? pointage.heureDepart : pointage.heureArrivee)
-            this.announceAttendance(this.scannedUser, result.mode, heure || undefined)
+            this.scanWarning = result.avertissementPaiement || ''
+            this.announceAttendance(this.scannedUser, result.mode, heure || undefined, result.avertissementPaiement)
             this.playBeepSucces()
             this.scanSuccess = result.mode === 'depart'
               ? 'Départ enregistré à ' + pointage.heureDepart
@@ -1113,6 +1134,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       role: res.role || 'apprenant',
       statut: autorise ? 'vert' : 'rouge',
       message: res.message || (autorise ? 'Accès autorisé' : 'Accès refusé'),
+      avertissementPaiement: res.avertissementPaiement || '',
       photo: res.photo || '',
       photoUrl: this.buildPhotoUrl(res.photo, res.photoType),
       situationFinanciere: res.situationFinanciere || null
@@ -1146,6 +1168,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
 
   private verifierStatut(codeQR: string): void {
     this.scannedUser = null
+    this.lastAttendanceSituationFinanciere = null
     this.scanError = ''
     this.scanWarning = ''
     this.scanSuccess = ''
@@ -1183,8 +1206,13 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
         this.lastAttendanceName = this.formatPersonName(this.scannedUser)
         this.lastAttendanceRole = this.roleLabel(this.scannedUser?.role)
         this.lastAttendancePhotoUrl = this.scannedUser?.photoUrl || ''
+        this.lastAttendanceSituationFinanciere = 'situationFinanciere' in response
+          ? response.situationFinanciere || null
+          : this.scannedUser?.situationFinanciere || null
         const heure = actualMode === 'depart' ? pointage.heureDepart : pointage.heureArrivee
-        this.announceAttendance(this.scannedUser, actualMode, heure || undefined)
+        const avertissementPaiement = 'avertissementPaiement' in response ? response.avertissementPaiement : null
+        this.scanWarning = avertissementPaiement || ''
+        this.announceAttendance(this.scannedUser, actualMode, heure || undefined, avertissementPaiement)
         this.playBeepSucces()
         this.scanSuccess = actualMode === 'depart'
           ? 'Départ pointé à ' + pointage.heureDepart
@@ -1333,6 +1361,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     this.manualId = ''
     this.showManualInput = false
     this.scannedCodeQR = null
+    this.lastAttendanceSituationFinanciere = null
     this.departureConfirmation = null
     this.departureConfirmationStep = 'choix'
     this.departureConfirmationSaving = false
@@ -1353,7 +1382,12 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     this.speak('ESA, le label des diplômes de qualité')
   }
 
-  private announceAttendance(user: any, mode: 'arrivee' | 'depart' | 'passage' | 'refuse', time?: string): void {
+  private announceAttendance(
+    user: any,
+    mode: 'arrivee' | 'depart' | 'passage' | 'refuse',
+    time?: string,
+    avertissementPaiement?: string | null
+  ): void {
     if (!this.voiceAnnouncementsEnabled) return
     const prenom = (user?.prenoms || '').trim() || this.formatPersonName(user)
     const nomComplet = this.formatPersonName(user)
@@ -1366,7 +1400,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     }
 
     if (estApprenant) {
-      this.speak(`${nomComplet}. Passage enregistré${heure ? ' à ' + heure : ''}.`)
+      const annonce = `${nomComplet}. Passage enregistré${heure ? ' à ' + heure : ''}.`
+      this.speak(avertissementPaiement ? `${annonce} Attention. ${avertissementPaiement}` : annonce)
       return
     }
 

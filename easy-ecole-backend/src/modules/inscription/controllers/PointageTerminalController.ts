@@ -13,6 +13,7 @@ import { PointageTerminal } from "../models/PointageTerminal";
 import { PointageTerminalEvent } from "../models/PointageTerminalEvent";
 import PointageTerminalTokenService from "../services/PointageTerminalTokenService";
 import { VerificationPaiementService } from "../services/VerificationPaiementService";
+import SituationFinanciereService, { SituationFinanciere } from "../services/SituationFinanciereService";
 
 interface AttendanceLog {
     pin: string;
@@ -29,6 +30,8 @@ export interface AttendanceProcessingResult {
     mode: "arrivee" | "depart" | "passage" | "refuse";
     role: string | null;
     motifRefus: string | null;
+    avertissementPaiement: string | null;
+    situationFinanciere: SituationFinanciere | null;
 }
 
 function normalizedIp(ip: string): string {
@@ -271,6 +274,8 @@ export default class PointageTerminalController {
             ? await Utilisateur.findByPk(parsedPin)
             : null;
         let motifRefus: string | null = null;
+        let avertissementPaiement: string | null = null;
+        let situationFinanciere: SituationFinanciere | null = null;
 
         if (log.verifyType === 6 || log.verifyType === 76) {
             // Sur ce terminal, 75 = authentification faciale réussie (la porte
@@ -294,8 +299,10 @@ export default class PointageTerminalController {
                 if (!dossier) {
                     motifRefus = "Aucun dossier d’inscription actif pour cet étudiant.";
                 } else {
+                    situationFinanciere = SituationFinanciereService.calculer(dossier);
                     const paiement = VerificationPaiementService.verifierDossier(dossier);
                     if (paiement.statut === "rouge") motifRefus = paiement.message;
+                    else avertissementPaiement = paiement.avertissementPaiement || null;
                 }
             }
         }
@@ -323,7 +330,7 @@ export default class PointageTerminalController {
                     }
                     if (pendingEvent.statut !== "en_attente") {
                         await transaction.commit();
-                        return { recorded: false, mode: "passage", role: utilisateur?.role ?? null, motifRefus: null };
+                        return { recorded: false, mode: "passage", role: utilisateur?.role ?? null, motifRefus: null, avertissementPaiement: null, situationFinanciere: null };
                     }
                     event = pendingEvent;
                 } else {
@@ -350,7 +357,7 @@ export default class PointageTerminalController {
                         motifRefus
                     }, { transaction });
                     await transaction.commit();
-                    return { recorded: false, mode: "refuse", role: utilisateur?.role ?? null, motifRefus };
+                    return { recorded: false, mode: "refuse", role: utilisateur?.role ?? null, motifRefus, avertissementPaiement: null, situationFinanciere };
                 }
 
                 const estApprenant = utilisateur.role === RolesUtilisateur.APPRENANT;
@@ -388,12 +395,12 @@ export default class PointageTerminalController {
                     motifRefus: null
                 }, { transaction });
                 await transaction.commit();
-                return { recorded: true, mode, role: utilisateur.role, motifRefus: null };
+                return { recorded: true, mode, role: utilisateur.role, motifRefus: null, avertissementPaiement, situationFinanciere };
             } catch (error) {
                 await transaction.rollback();
                 if (estErreurUnique(error)) {
                     const duplicate = await PointageTerminalEvent.findOne({ where: { fingerprint } });
-                    if (duplicate) return { recorded: false, mode: "passage", role: utilisateur?.role ?? null, motifRefus: null };
+                    if (duplicate) return { recorded: false, mode: "passage", role: utilisateur?.role ?? null, motifRefus: null, avertissementPaiement: null, situationFinanciere: null };
                     if (attempt === 0) continue;
                 }
                 throw error;

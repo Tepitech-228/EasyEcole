@@ -1,4 +1,5 @@
 import { Server } from "socket.io";
+import { SituationFinanciere } from "./SituationFinanciereService";
 
 export interface TerminalAttendanceUpdate {
   utilisateurId: number;
@@ -11,6 +12,8 @@ export interface TerminalAttendanceUpdate {
   mode: "arrivee" | "depart" | "passage" | "refuse";
   etablissementId: number;
   motifRefus?: string | null;
+  avertissementPaiement?: string | null;
+  situationFinanciere?: SituationFinanciere | null;
   photo?: string;
   photoType?: "apprenant" | "enseignant" | "profile";
 }

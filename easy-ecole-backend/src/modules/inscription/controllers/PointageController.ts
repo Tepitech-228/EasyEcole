@@ -5,9 +5,10 @@ import { Pointage } from "../models/Pointage";
 import { PointageScan } from "../models/PointageScan";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { DossierEtudiant } from "../models/DossierEtudiant";
-import { Echeance } from "../models/Echeance";
 import { QrTokenService } from "../../../core/services/QrTokenService";
 import { VerificationPaiementService } from "../services/VerificationPaiementService";
+import SituationFinanciereService from "../services/SituationFinanciereService";
+import { SituationFinanciere } from "../services/SituationFinanciereService";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { Apprenant } from "../../auth/models/Apprenant";
 import { PersonnelAdministratif } from "../../auth/models/PersonnelAdministratif";
@@ -903,6 +904,8 @@ export default class PointageController {
             return res.status(400).json({ success: false, code: 'INVALID_QR', message: 'Code QR invalide' })
         }
 
+        let avertissementPaiement: string | null = null
+        let situationFinanciere: SituationFinanciere | null = null
         try {
             const utilisateur = await Utilisateur.findByPk(verified.userId);
             if (!utilisateur) {
@@ -922,6 +925,7 @@ export default class PointageController {
                         message: "Aucun dossier d'inscription actif pour cet étudiant"
                     })
                 }
+                situationFinanciere = SituationFinanciereService.calculer(dossier)
                 const paiement = VerificationPaiementService.verifierDossier(dossier);
                 if (paiement.statut === 'rouge') {
                     return res.status(403).json({
@@ -931,6 +935,7 @@ export default class PointageController {
                         message: paiement.message
                     })
                 }
+                avertissementPaiement = paiement.avertissementPaiement || null
             }
 
             const isStudent = utilisateur.role === RolesUtilisateur.APPRENANT;
@@ -1002,7 +1007,9 @@ export default class PointageController {
                     return res.status(actualMode === 'arrivee' ? 201 : 200).json({
                         success: true,
                         mode: actualMode,
-                        pointage: updated
+                        pointage: updated,
+                        ...(avertissementPaiement ? { avertissementPaiement } : {}),
+                        ...(situationFinanciere ? { situationFinanciere } : {})
                     });
                 } catch (error) {
                     await transaction.rollback();
@@ -1128,7 +1135,7 @@ export default class PointageController {
                 const photoInfo = await PointageController.getPhotoPourPointage(utilisateur, dossier.photo);
 
                 // Calcul de la situation financière détaillée
-                const situationFinanciere = PointageController.calculerSituationFinanciere(dossier);
+                const situationFinanciere = SituationFinanciereService.calculer(dossier);
 
                 if (paiement.statut == 'rouge') {
                     return res.status(200).json({
@@ -1147,6 +1154,7 @@ export default class PointageController {
                 return res.status(200).json({
                     statut: 'vert',
                     message: paiement.message,
+                    ...(paiement.avertissementPaiement ? { avertissementPaiement: paiement.avertissementPaiement } : {}),
                     utilisateurId: dossier.utilisateurId,
                     nom: dossier.utilisateur?.nom || '',
                     prenoms: dossier.utilisateur?.prenoms || '',
@@ -1214,91 +1222,6 @@ export default class PointageController {
      * Calcule la situation financière complète d'un étudiant pour l'affichage
      * lors du scan QR (pointage).
      */
-    private static calculerSituationFinanciere(dossier: DossierEtudiant): any {
-        const echeances = dossier.echeances || [];
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-
-        // Somme globale = total réel facturé (échéances d'inscription + de scolarité).
-        // On s'appuie sur la somme des échéances, qui reflète exactement le dû.
-        // Additionner `dossier.fraisScolarite` aux échéances d'inscription
-        // provoquait un DOUBLE COMPTAGE des frais d'inscription lorsque
-        // `fraisScolarite` portait encore le total d'inscription (aucune
-        // scolarité configurée). Repli sur `fraisScolarite` si aucune échéance.
-        const totalEcheances = echeances.reduce((sum, e) => sum + (e.montant || 0), 0);
-        const sommeGlobale = totalEcheances > 0 ? totalEcheances : (dossier.fraisScolarite || 0);
-
-        // Montant déjà payé
-        const montantPaye = echeances
-            .reduce((sum, e) => sum + (e.montantPaye || 0), 0);
-
-        // Reste à payer
-        const resteAPayer = Math.max(0, sommeGlobale - montantPaye);
-
-        // Délai de paiement : le 5 du mois concerné par l'échéance.
-        // Une échéance non soldée après le 5 de son mois est en retard.
-        const moisDe = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        const dateLimiteEffective = (e: Echeance): Date => {
-            const d = new Date(e.dateLimite as any);
-            return new Date(d.getFullYear(), d.getMonth(), 5);
-        };
-
-        const moisActuel = moisDe(now);
-
-        const lignes = [...echeances]
-            .sort((a, b) => new Date(a.dateLimite as any).getTime() - new Date(b.dateLimite as any).getTime())
-            .map(e => {
-                const montant = e.montant || 0;
-                const paye = Math.min(e.montantPaye || 0, montant);
-                const reste = Math.max(0, montant - paye);
-                const dateLimite = dateLimiteEffective(e);
-                const estPaye = reste <= 0;
-                const enRetard = !estPaye && dateLimite.getTime() < now.getTime();
-                const mois = (e.moisConcerne && String(e.moisConcerne)) || moisDe(dateLimite);
-                return {
-                    id: e.id,
-                    numeroEcheance: e.numeroEcheance,
-                    type: e.type,
-                    mois,
-                    montant,
-                    montantPaye: paye,
-                    resteAPayer: reste,
-                    devise: e.devise,
-                    dateLimite,
-                    statut: e.statut,
-                    estPaye,
-                    enRetard,
-                };
-            });
-
-        const echeancesEnRetard = lignes.filter(l => l.enRetard);
-        const estAJour = echeancesEnRetard.length === 0;
-
-        const moisEnCours = lignes.find(l => moisDe(new Date(l.dateLimite)) === moisActuel) || null;
-
-        return {
-            sommeGlobale,
-            montantPaye,
-            resteAPayer,
-            estAJour,
-            echeancesEnRetard: echeancesEnRetard.length,
-            echeancesPayees: lignes.filter(l => l.estPaye).length,
-            echeancesTotales: lignes.length,
-            moisEnCours: moisEnCours ? {
-                mois: moisEnCours.mois,
-                numeroEcheance: moisEnCours.numeroEcheance,
-                montant: moisEnCours.montant,
-                montantPaye: moisEnCours.montantPaye,
-                resteAPayer: moisEnCours.resteAPayer,
-                dateLimite: moisEnCours.dateLimite,
-                statut: moisEnCours.statut,
-                estPaye: moisEnCours.estPaye,
-                enRetard: moisEnCours.enRetard,
-            } : null,
-            echeances: lignes
-        };
-    }
-
     /**
      * Génère à la volée le QR code de pointage personnel de l'utilisateur
      * connecté (token signé court, format identique aux badges/cartes : lisible

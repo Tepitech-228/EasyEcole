@@ -1,4 +1,4 @@
-<div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
   <header class="pointage-hero mb-7">
     <div class="pointage-hero-copy">
       <span class="pointage-eyebrow"><span></span> PRÉSENCE · CONTRÔLE D’ACCÈS</span>
@@ -100,7 +100,7 @@
 
       <div class="pointage-hikvision-info">
         <strong>Connexion du terminal MinMoe</strong>
-        <p>Renseignez le numéro de série, le compte ISAPI et le site. L’adresse est facultative : elle n’est nécessaire que si le serveur EasyEcole doit joindre le terminal (test ISAPI, enrôlement des visages). Indiquez une IP locale ou le hostname du tunnel inverse (Cloudflare Tunnel, VPN + DNS interne) pour un terminal distant. Sans adresse, le terminal peut uniquement pousser ses pointages avec le jeton généré à l’enregistrement.</p>
+        <p>Renseignez le numéro de série, le compte ISAPI, le site et le type de comptes. Un terminal « Étudiant » reçoit les inscriptions validées ; un terminal « Personnel » reçoit les enseignants et les autres personnels. L’adresse est facultative : elle n’est nécessaire que si le serveur EasyEcole doit joindre le terminal (test ISAPI, enrôlement des visages). Indiquez une IP locale ou le hostname du tunnel inverse (Cloudflare Tunnel, VPN + DNS interne) pour un terminal distant. Sans adresse, le terminal peut uniquement pousser ses pointages avec le jeton généré à l’enregistrement.</p>
         <p>Configurez ensuite sur la pointeuse l’URL d’événement <code>/api/hikvision/event</code> avec le jeton (paramètre <code>token</code>, chemin ou en-tête <code>X-Pointage-Token</code>). Le jeton n’est affiché qu’une seule fois : copiez-le avant de fermer l’encart.</p>
         <p>Le mot de passe est chiffré avant d’être conservé. Après validation d’un dossier, l’enrôlement facial est mis en file de façon systématique. La compatibilité de l’envoi du visage doit être confirmée sur le firmware du terminal.</p>
       </div>
@@ -157,6 +157,14 @@
             <option *ngFor="let site of terminalSites" [ngValue]="site.id">{{ site.nom }}</option>
           </select>
         </label>
+        <label>
+          <span>Type de comptes pris en charge</span>
+          <select name="hikvisionPopulation" [(ngModel)]="hikvisionDraft.population" required>
+            <option value="" disabled>Choisir un type de comptes</option>
+            <option value="etudiant">ÉTUDIANT</option>
+            <option value="personnel">PERSONNEL</option>
+          </select>
+        </label>
         <label class="pointage-terminal-check">
           <input name="hikvisionHttps" type="checkbox" [(ngModel)]="hikvisionDraft.https" (change)="definirPortHikvision()">
           <span>Utiliser HTTPS (certificat du terminal vérifié par le serveur)</span>
@@ -177,6 +185,7 @@
         <article *ngFor="let terminal of hikvisionTerminals" class="pointage-terminal-row">
           <div class="min-w-0">
             <strong>{{ terminal.nom }}</strong>
+            <span>Comptes : {{ terminal.population === 'etudiant' ? 'ÉTUDIANT' : 'PERSONNEL' }}</span>
             <span>{{ terminal.serialNumber }} · {{ terminal.sourceIp ? terminal.sourceIp + ':' + terminal.hikvisionPort : 'Sans adresse (push seul)' }}</span>
             <span>Site : {{ nomSiteTerminal(terminal) }}</span>
             <small>{{ terminalEstEnLigne(terminal) ? 'Connexion ISAPI récente' : (terminal.lastSeenAt ? 'Dernier contact : ' + (terminal.lastSeenAt | date:'short') : 'En attente de connexion') }}</small>
@@ -539,6 +548,9 @@
               <p class="pointage-scanned-role">{{ scannedUser.role }}</p>
               <p *ngIf="scannedUser.matricule" class="pointage-scanned-matricule">{{ scannedUser.matricule }}</p>
               <p *ngIf="scannedUser.message" class="pointage-scanned-message">{{ scannedUser.message }}</p>
+              <p *ngIf="scannedUser.avertissementPaiement" class="pointage-message pointage-message--warning" role="status">
+                {{ scannedUser.avertissementPaiement }}
+              </p>
               <span class="pointage-scanned-badge"
                   [ngClass]="scannedUser.statut === 'vert' ? 'pointage-scanned-badge--vert' : 'pointage-scanned-badge--rouge'">
                 <span class="dot"></span>
@@ -558,7 +570,7 @@
 
               <div class="pointage-finance-grid">
                 <div class="pointage-finance-tile">
-                  <p>Somme globale</p>
+                  <p>Total inscription + scolarité</p>
                   <strong>{{ formatCurrency(scannedUser.situationFinanciere.sommeGlobale) }}</strong>
                 </div>
                 <div class="pointage-finance-tile pointage-finance-tile--paid">
@@ -571,12 +583,13 @@
                 </div>
               </div>
 
-              <div *ngIf="scannedUser.situationFinanciere.moisEnCours" class="pointage-finance-current">
+              <div *ngIf="scannedUser.situationFinanciere.moisEnCours" class="pointage-finance-current"
+                [ngClass]="scannedUser.situationFinanciere.moisEnCours.estPaye ? 'is-paid' : (scannedUser.situationFinanciere.moisEnCours.statut === 'partiel' || scannedUser.situationFinanciere.moisEnCours.montantPaye > 0 ? 'is-partial' : 'is-unpaid')">
                 <p class="pointage-finance-current-title">Échéance du mois en cours (délai : le 5)</p>
                 <div class="pointage-finance-line">
                   <span>{{ libelleMois(scannedUser.situationFinanciere.moisEnCours.mois) }}</span>
-                  <strong [ngClass]="scannedUser.situationFinanciere.moisEnCours.estPaye ? 'is-ok' : 'is-late'">
-                    {{ scannedUser.situationFinanciere.moisEnCours.estPaye ? 'Payée' : (scannedUser.situationFinanciere.moisEnCours.enRetard ? 'En retard' : 'À régler avant le 5') }}
+                  <strong [ngClass]="scannedUser.situationFinanciere.moisEnCours.estPaye ? 'is-ok' : (scannedUser.situationFinanciere.moisEnCours.statut === 'partiel' || scannedUser.situationFinanciere.moisEnCours.montantPaye > 0 ? 'is-partial' : 'is-late')">
+                    {{ scannedUser.situationFinanciere.moisEnCours.estPaye ? 'Payée' : (scannedUser.situationFinanciere.moisEnCours.statut === 'partiel' || scannedUser.situationFinanciere.moisEnCours.montantPaye > 0 ? 'Partiellement payée' : (scannedUser.situationFinanciere.moisEnCours.enRetard ? 'En retard' : 'À régler avant le 5')) }}
                   </strong>
                 </div>
                 <div class="pointage-finance-line">
@@ -592,12 +605,12 @@
                 </div>
                 <ul>
                   <li *ngFor="let ech of scannedUser.situationFinanciere.echeances"
-                    [ngClass]="ech.estPaye ? 'is-paid' : (ech.enRetard ? 'is-late' : 'is-upcoming')">
+                    [ngClass]="ech.estPaye ? 'is-paid' : (ech.statut === 'partiel' || ech.montantPaye > 0 ? 'is-partial' : 'is-unpaid')">
                     <div class="pointage-echeance-copy">
-                      <span class="material-symbols-outlined">{{ ech.estPaye ? 'check_circle' : (ech.enRetard ? 'error' : 'schedule') }}</span>
+                      <span class="material-symbols-outlined">{{ ech.estPaye ? 'check_circle' : (ech.statut === 'partiel' || ech.montantPaye > 0 ? 'warning' : (ech.enRetard ? 'error' : 'schedule')) }}</span>
                       <div>
                         <p>{{ libelleMois(ech.mois) }} <span>· n°{{ ech.numeroEcheance }}</span></p>
-                        <small>{{ ech.estPaye ? 'Payée' : (ech.enRetard ? 'En retard' : 'À venir') }}</small>
+                        <small>{{ ech.estPaye ? 'Payée' : (ech.statut === 'partiel' || ech.montantPaye > 0 ? 'Partiellement payée' : (ech.enRetard ? 'En retard' : 'À venir')) }}</small>
                       </div>
                     </div>
                     <div class="pointage-echeance-amount">
@@ -672,7 +685,7 @@
             </ng-container>
           </div>
 
-          <div *ngIf="scanWarning && !scannedUser" class="pointage-state-card pointage-state-card--warning" role="status">
+          <div *ngIf="scanWarning && !scannedUser && !scanSuccess" class="pointage-state-card pointage-state-card--warning" role="status">
             <div class="state-icon">
               <span class="material-symbols-outlined">info</span>
             </div>
@@ -708,9 +721,61 @@
               <span>{{ lastAttendanceRole }}</span>
             </div>
             <div class="state-desc">{{ scanSuccess }}</div>
+            <div *ngIf="scanWarning" class="pointage-message pointage-message--warning" role="status">
+              {{ scanWarning }}
+            </div>
             <button (click)="resetScan()" class="pointage-btn pointage-btn--success pointage-btn--sm">
               Scanner un autre
             </button>
+          </div>
+
+          <div *ngIf="!scannedUser && lastAttendanceSituationFinanciere as situation"
+            class="pointage-finance pointage-finance--result" role="status">
+            <div class="pointage-finance-head">
+              <h5>Situation financière</h5>
+              <span class="pointage-finance-status"
+                [ngClass]="situation.estAJour ? 'is-ok' : 'is-late'">
+                <span class="material-symbols-outlined">{{ situation.estAJour ? 'check_circle' : 'warning' }}</span>
+                {{ situation.estAJour ? 'À jour' : 'En retard' }}
+              </span>
+            </div>
+            <div class="pointage-finance-grid">
+              <div class="pointage-finance-tile">
+                <p>Total inscription + scolarité</p>
+                <strong>{{ formatCurrency(situation.sommeGlobale) }}</strong>
+              </div>
+              <div class="pointage-finance-tile pointage-finance-tile--paid">
+                <p>Total payé</p>
+                <strong>{{ formatCurrency(situation.montantPaye) }}</strong>
+              </div>
+              <div class="pointage-finance-tile pointage-finance-tile--due">
+                <p>Reste à payer</p>
+                <strong>{{ formatCurrency(situation.resteAPayer) }}</strong>
+              </div>
+            </div>
+            <div *ngIf="situation.echeances?.length" class="pointage-finance-echeances">
+              <div class="pointage-finance-echeances-head">
+                <h6>Mois payés et à payer</h6>
+                <span>{{ situation.echeancesPayees }}/{{ situation.echeancesTotales }} payée(s)</span>
+              </div>
+              <ul>
+                <li *ngFor="let ech of situation.echeances"
+                  [ngClass]="ech.estPaye ? 'is-paid' : (ech.statut === 'partiel' || ech.montantPaye > 0 ? 'is-partial' : 'is-unpaid')">
+                  <div class="pointage-echeance-copy">
+                    <span class="material-symbols-outlined">{{ ech.estPaye ? 'check_circle' : (ech.statut === 'partiel' || ech.montantPaye > 0 ? 'warning' : 'error') }}</span>
+                    <div>
+                      <p>{{ ech.type === 'inscription' ? 'Inscription' : 'Scolarité' }} · {{ libelleMois(ech.mois) }} <span>· n°{{ ech.numeroEcheance }}</span></p>
+                      <small>{{ ech.estPaye ? 'Payée' : (ech.statut === 'partiel' || ech.montantPaye > 0 ? 'Partiellement payée' : (ech.enRetard ? 'En retard' : 'À payer')) }}</small>
+                    </div>
+                  </div>
+                  <div class="pointage-echeance-amount">
+                    <p>{{ formatCurrency(ech.montant) }}</p>
+                    <small *ngIf="ech.montantPaye > 0">payé {{ formatCurrency(ech.montantPaye) }}</small>
+                    <small *ngIf="!ech.estPaye">reste {{ formatCurrency(ech.resteAPayer) }}</small>
+                  </div>
+                </li>
+              </ul>
+            </div>
           </div>
 
         </div>

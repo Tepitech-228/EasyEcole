@@ -16,6 +16,7 @@ import { InscriptionWizardStoreService, FichierMeta } from 'src/app/data/modules
 import { WizardItemType } from 'src/app/data/types/WizardItemType';
 import { AuthService, SiteUtilisateur } from 'src/app/data/modules/auth/services/auth.service';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
+import { environment } from 'src/environments/environment';
 
 interface FiliereSelection {
   id: string;
@@ -79,6 +80,12 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   documentsRequis: Array<{ id: string; titre: string; description?: string; obligatoire?: boolean }> = []
   documents: { [cle: string]: File | null } = {}
   bordereau: File | null = null
+  readonly PHOTOS_PATH = environment.MEDIAS_PATH.AUTH.PHOTOS
+  photoEnregistree = false
+  photoFichier = ''
+  photoSelectionnee: File | null = null
+  photoUploadEnCours = false
+  photoErreur = ''
 
   // Pièces qui avaient été sélectionnées avant un RECHARGEMENT du navigateur et
   // qui doivent être re-sélectionnées : le contenu binaire n'est pas conservé
@@ -405,6 +412,9 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
           this.errorMessage = 'Les informations personnelles n’ont pas pu être chargées.'
           return
         }
+
+        this.photoEnregistree = !!a.photo
+        this.photoFichier = a.photo || ''
 
         const valeursActuelles = { ...this.infos }
         const sourceDateNaissance = a.dateNaissance ? String(a.dateNaissance).split('T')[0] : ''
@@ -797,6 +807,23 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     )
   }
 
+  surSelectionPhoto(event: Event): void {
+    const input = event.target as HTMLInputElement
+    const photo = input.files?.[0]
+    if (!photo) return
+
+    const typesAutorises = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    if (!typesAutorises.includes(photo.type) || photo.size > 5 * 1024 * 1024) {
+      this.photoSelectionnee = null
+      this.photoErreur = 'Choisissez une image JPG, PNG, GIF ou WEBP de 5 Mo maximum.'
+      input.value = ''
+      return
+    }
+
+    this.photoSelectionnee = photo
+    this.photoErreur = ''
+  }
+
   private chargerSitesDisponibles(): void {
     this.sitesLoading = true
     this.sitesError = ''
@@ -952,7 +979,8 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
         icon: icones[i],
         condition: etapes[i].remplie,
         incomplete: false,
-        isBlocked: !(index === 1 || etapes[index - 2].remplie),
+        isBlocked: (this.demandeVerrouillee && index < 5)
+          || !(index === 1 || etapes[index - 2].remplie),
         action: () => this.revenirEtape(index)
       }
     })
@@ -992,6 +1020,39 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   }
 
   passerEtape4(): void {
+    if (this.photoUploadEnCours) return
+    if (!this.photoEnregistree && !this.photoSelectionnee) {
+      this.photoErreur = 'La photo est obligatoire avant de valider vos informations personnelles.'
+      return
+    }
+
+    if (this.photoSelectionnee) {
+      this.photoUploadEnCours = true
+      this.photoErreur = ''
+      this.apprenantService.updatePhoto(this.photoSelectionnee).subscribe({
+        next: (resultat: any) => {
+          this.photoUploadEnCours = false
+          if (!resultat?.success) {
+            this.photoErreur = 'La photo n’a pas pu être enregistrée. Réessayez.'
+            return
+          }
+          this.photoEnregistree = true
+          this.photoFichier = ''
+          this.photoSelectionnee = null
+          this.continuerApresValidationPhoto()
+        },
+        error: (err) => {
+          this.photoUploadEnCours = false
+          this.photoErreur = err?.error?.message || 'La photo n’a pas pu être enregistrée. Réessayez.'
+        }
+      })
+      return
+    }
+
+    this.continuerApresValidationPhoto()
+  }
+
+  private continuerApresValidationPhoto(): void {
     this.synchroniserSiteDepuisSession()
     if (!this.siteSelectionValide) {
       this.errorMessage = 'Choisissez un site auquel vous êtes affecté et une session de ce site.'
@@ -1038,6 +1099,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   }
 
   revenirEtape(etape: number): void {
+    if (this.demandeVerrouillee) return
     this.etape = etape
     this.sauvegarder()
   }
@@ -1061,7 +1123,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   }
 
   ouvrirConfirmationSoumission(): void {
-    if (this.submitting) return
+    if (this.submitting || this.demandeVerrouillee) return
     this.errorMessage = ''
 
     if (!this.modeCorrection && !this.infos.matriculeEtudiant.trim()) {
@@ -1084,7 +1146,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   }
 
   private envoyerSoumission(): void {
-    if (this.submitting) return
+    if (this.submitting || this.demandeVerrouillee) return
     this.errorMessage = ''
 
     if (!this.modeCorrection && !this.infos.matriculeEtudiant.trim()) {
@@ -1182,6 +1244,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   }
 
   recommencer(): void {
+    if (this.demandeVerrouillee) return
     this.showSubmitConfirmationModal = false
     // Repartir d'une demande neuve : on efface aussi la saisie persistée,
     // pour ne pas ressusciter un ancien brouillon au prochain rechargement.
@@ -1326,6 +1389,11 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     if (statut === 'valide') return 'effectuee'
     if (statut === 'correction_demandee' || statut === 'rejete') return 'correction'
     return 'en_attente'
+  }
+
+  get demandeVerrouillee(): boolean {
+    const statut = this.resultat?.statutPipeline
+    return !!statut && statut !== 'rejete' && statut !== 'correction_demandee'
   }
 
   /**

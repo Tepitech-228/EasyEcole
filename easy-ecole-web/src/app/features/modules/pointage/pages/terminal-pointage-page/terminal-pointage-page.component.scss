@@ -925,6 +925,12 @@
 .pointage-scanned-badge--rouge .dot { background: #ef4444; }
 
 .pointage-finance { padding: 0 1.25rem 1.25rem; }
+.pointage-finance--result {
+  margin-top: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+}
 
 .pointage-finance-head {
   display: flex;
@@ -976,13 +982,20 @@
 
 .pointage-finance-current {
   margin-top: 0.65rem;
-  border: 1px solid #fde7c3;
+  border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 0.65rem 0.75rem;
-  background: #fffbeb;
+  background: #f8fafc;
 }
 
-.pointage-finance-current-title { margin: 0 0 0.35rem; color: #92400e; font-size: 0.66rem; font-weight: 700; }
+.pointage-finance-current.is-paid { border-color: #86efac; background: #f0fdf7; }
+.pointage-finance-current.is-partial { border-color: #fbbf24; background: #fffbeb; }
+.pointage-finance-current.is-unpaid { border-color: #fca5a5; background: #fff5f5; }
+
+.pointage-finance-current-title { margin: 0 0 0.35rem; color: #475569; font-size: 0.66rem; font-weight: 700; }
+.pointage-finance-current.is-paid .pointage-finance-current-title { color: #047857; }
+.pointage-finance-current.is-partial .pointage-finance-current-title { color: #92400e; }
+.pointage-finance-current.is-unpaid .pointage-finance-current-title { color: #b91c1c; }
 
 .pointage-finance-line {
   display: flex;
@@ -995,6 +1008,7 @@
 
   strong { font-size: 0.74rem; font-weight: 750; }
   strong.is-ok { color: #047857; }
+  strong.is-partial { color: #b45309; }
   strong.is-late { color: #b91c1c; }
 }
 
@@ -1024,12 +1038,14 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
+    border: 1px solid #e2e8f0;
     border-radius: 10px;
     padding: 0.5rem 0.6rem;
     background: #f8fafc;
 
-    &.is-paid { background: #f0fdf7; }
-    &.is-late { background: #fff5f5; }
+    &.is-paid { border-color: #86efac; background: #f0fdf7; }
+    &.is-partial { border-color: #fbbf24; background: #fffbeb; }
+    &.is-unpaid { border-color: #fca5a5; background: #fff5f5; }
   }
 }
 
@@ -1046,8 +1062,8 @@
 }
 
 .is-paid .pointage-echeance-copy .material-symbols-outlined { color: #059669; }
-.is-late .pointage-echeance-copy .material-symbols-outlined { color: #dc2626; }
-.is-upcoming .pointage-echeance-copy .material-symbols-outlined { color: #94a3b8; }
+.is-partial .pointage-echeance-copy .material-symbols-outlined { color: #d97706; }
+.is-unpaid .pointage-echeance-copy .material-symbols-outlined { color: #dc2626; }
 
 .pointage-echeance-amount {
   flex: 0 0 auto;

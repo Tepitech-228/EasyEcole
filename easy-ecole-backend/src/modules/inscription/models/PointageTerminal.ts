@@ -13,6 +13,7 @@ export class PointageTerminal extends Model<InferAttributes<PointageTerminal>, I
   declare deviceTokenHash: CreationOptional<string | null>
   declare etablissementId: ForeignKey<Etablissement["id"]>
   declare protocol: CreationOptional<"zkteco_adms" | "hikvision_isapi">
+  declare population: CreationOptional<"personnel" | "etudiant">
   declare hikvisionPort: CreationOptional<number | null>
   declare hikvisionHttps: CreationOptional<boolean>
   declare hikvisionUsername: CreationOptional<string | null>
@@ -55,6 +56,11 @@ PointageTerminal.init({
     type: DataTypes.ENUM("zkteco_adms", "hikvision_isapi"),
     allowNull: false,
     defaultValue: "zkteco_adms"
+  },
+  population: {
+    type: DataTypes.ENUM("personnel", "etudiant"),
+    allowNull: false,
+    defaultValue: "personnel"
   },
   hikvisionPort: {
     type: DataTypes.SMALLINT.UNSIGNED,

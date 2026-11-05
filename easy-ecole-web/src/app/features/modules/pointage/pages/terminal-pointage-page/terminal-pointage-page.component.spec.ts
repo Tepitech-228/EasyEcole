@@ -84,6 +84,7 @@ describe('TerminalPointagePageComponent', () => {
   });
 
   it('announces a saved Hikvision attendance event received over Socket.IO', () => {
+    const speak = spyOn(window.speechSynthesis, 'speak');
     pointageService.getToday.and.returnValue(of(null));
     fixture.componentInstance.loading = false;
     fixture.componentInstance.loadError = '';
@@ -98,6 +99,47 @@ describe('TerminalPointagePageComponent', () => {
       time: '09:18:22',
       mode: 'arrivee',
       etablissementId: 1,
+      avertissementPaiement: 'Échéance mois 2 partiellement payée.',
+      situationFinanciere: {
+        sommeGlobale: 3000,
+        montantPaye: 1500,
+        resteAPayer: 1500,
+        estAJour: true,
+        echeancesEnRetard: 0,
+        echeancesPayees: 1,
+        echeancesTotales: 2,
+        moisEnCours: null,
+        echeances: [
+          {
+            id: 1,
+            numeroEcheance: 1,
+            type: 'inscription',
+            mois: '2026-09',
+            montant: 1000,
+            montantPaye: 1000,
+            resteAPayer: 0,
+            devise: 'XAF',
+            dateLimite: '2026-09-01',
+            statut: 'paye',
+            estPaye: true,
+            enRetard: false
+          },
+          {
+            id: 2,
+            numeroEcheance: 2,
+            type: 'scolarite',
+            mois: '2026-11',
+            montant: 2000,
+            montantPaye: 500,
+            resteAPayer: 1500,
+            devise: 'XAF',
+            dateLimite: '2026-11-01',
+            statut: 'partiel',
+            estPaye: false,
+            enRetard: false
+          }
+        ]
+      },
       photo: 'jane-doe.jpg',
       photoType: 'apprenant'
     });
@@ -106,9 +148,113 @@ describe('TerminalPointagePageComponent', () => {
     expect(fixture.componentInstance.lastAttendanceRole).toBe('Étudiant autorisé');
     expect(fixture.componentInstance.lastAttendancePhotoUrl).toContain('/media/photos/apprenants/jane-doe.jpg');
     expect(fixture.componentInstance.scanSuccess).toBe('Arrivée enregistrée à 09:18:22');
+    expect(fixture.componentInstance.scanWarning).toBe('Échéance mois 2 partiellement payée.');
+    expect(fixture.componentInstance.lastAttendanceSituationFinanciere?.sommeGlobale).toBe(3000);
+    expect(speak.calls.mostRecent().args[0].text).toContain('Attention. Échéance mois 2 partiellement payée.');
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.pointage-state-card--success img')?.getAttribute('src'))
       .toContain('/media/photos/apprenants/jane-doe.jpg');
+  });
+
+  it('shows and announces the partial-payment warning after a QR pointage', () => {
+    const speak = spyOn(window.speechSynthesis, 'speak');
+    pointageService.getToday.and.returnValue(of(null));
+    pointageService.pointerParQR.and.returnValue(of({
+      success: true,
+      mode: 'passage',
+      pointage: { heureArrivee: '08:00:00', heureDepart: null } as any,
+      avertissementPaiement: 'Échéance mois 2 partiellement payée.'
+    }));
+    fixture.detectChanges();
+
+    fixture.componentInstance.scannedUser = { userId: '42', nom: 'Doe', prenoms: 'Jane', role: 'apprenant' };
+    fixture.componentInstance.scannedCodeQR = 'signed-qr';
+    fixture.componentInstance.pointerScannedUser('arrivee');
+
+    expect(fixture.componentInstance.scanWarning).toBe('Échéance mois 2 partiellement payée.');
+    expect(speak.calls.mostRecent().args[0].text).toContain('Attention. Échéance mois 2 partiellement payée.');
+  });
+
+  it('shows the combined financial summary after a student attendance event', () => {
+    pointageService.getToday.and.returnValue(of(null));
+    fixture.detectChanges();
+
+    terminalAttendanceEvents.next({
+      utilisateurId: 12,
+      nom: 'Doe',
+      prenoms: 'Jane',
+      role: 'apprenant',
+      employeeNoString: 'ESA001',
+      date: '2026-10-18',
+      time: '09:18:22',
+      mode: 'passage',
+      etablissementId: 1,
+      situationFinanciere: {
+        sommeGlobale: 3000,
+        montantPaye: 1500,
+        resteAPayer: 1500,
+        estAJour: true,
+        echeancesEnRetard: 0,
+        echeancesPayees: 1,
+        echeancesTotales: 2,
+        moisEnCours: null,
+        echeances: [
+          {
+            id: 1, numeroEcheance: 1, type: 'inscription', mois: '2026-09',
+            montant: 1000, montantPaye: 1000, resteAPayer: 0, devise: 'XAF',
+            dateLimite: '2026-09-01', statut: 'paye', estPaye: true, enRetard: false
+          },
+          {
+            id: 2, numeroEcheance: 2, type: 'scolarite', mois: '2026-11',
+            montant: 2000, montantPaye: 500, resteAPayer: 1500, devise: 'XAF',
+            dateLimite: '2026-11-01', statut: 'partiel', estPaye: false, enRetard: false
+          }
+        ]
+      }
+    });
+    fixture.detectChanges();
+
+    const summary = fixture.nativeElement.querySelector('.pointage-finance--result');
+    expect(summary.textContent).toContain('Total inscription + scolarité');
+    expect(summary.textContent).toContain('Total payé');
+    expect(summary.textContent).toContain('Reste à payer');
+    expect(summary.textContent).toContain('Inscription');
+    expect(summary.textContent).toContain('Scolarité');
+    const installments = summary.querySelectorAll('.pointage-finance-echeances li');
+    expect(installments[0].classList.contains('is-paid')).toBeTrue();
+    expect(installments[1].classList.contains('is-partial')).toBeTrue();
+  });
+
+  it('uses green, orange, and red frames for paid, partial, and unpaid installments', () => {
+    pointageService.getToday.and.returnValue(of(null));
+    fixture.detectChanges();
+    fixture.componentInstance.scannedUser = {
+      userId: '42',
+      nom: 'Doe',
+      prenoms: 'Jane',
+      role: 'apprenant',
+      statut: 'vert',
+      situationFinanciere: {
+        echeancesPayees: 1,
+        echeancesTotales: 3,
+        moisEnCours: {
+          mois: '2026-11', estPaye: false, statut: 'partiel',
+          montantPaye: 50, resteAPayer: 50, enRetard: false
+        },
+        echeances: [
+          { id: 1, mois: '2026-09', numeroEcheance: 1, montant: 100, montantPaye: 100, resteAPayer: 0, estPaye: true, statut: 'paye' },
+          { id: 2, mois: '2026-10', numeroEcheance: 2, montant: 100, montantPaye: 50, resteAPayer: 50, estPaye: false, statut: 'partiel' },
+          { id: 3, mois: '2026-11', numeroEcheance: 3, montant: 100, montantPaye: 0, resteAPayer: 100, estPaye: false, statut: 'impaye' }
+        ]
+      }
+    };
+    fixture.detectChanges();
+
+    const cards = fixture.nativeElement.querySelectorAll('.pointage-finance-echeances li');
+    expect(cards[0].classList.contains('is-paid')).toBeTrue();
+    expect(cards[1].classList.contains('is-partial')).toBeTrue();
+    expect(cards[2].classList.contains('is-unpaid')).toBeTrue();
+    expect(fixture.nativeElement.querySelector('.pointage-finance-current').classList.contains('is-partial')).toBeTrue();
   });
 
   it('shows Hikvision as the only facial terminal on the attendance page', () => {

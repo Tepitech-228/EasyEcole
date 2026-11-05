@@ -36,7 +36,10 @@ export class CustomWizardComponent implements OnInit {
   cercleClasses(item: WizardItemType, index: number): string {
     const base: string[] = []
 
-    if (item.condition && !item.incomplete) {
+    if (item.isBlocked) {
+      base.push('bg-gray-100', 'border-gray-300', 'text-gray-400')
+    }
+    else if (item.condition && !item.incomplete) {
       // Étape terminée
       base.push(this.activeColor, 'border-transparent', 'text-white')
     }
@@ -57,6 +60,9 @@ export class CustomWizardComponent implements OnInit {
   }
 
   numeroClasses(item: WizardItemType): string {
+    if (item.isBlocked) {
+      return 'bg-gray-100 border-gray-300 text-gray-400'
+    }
     if (item.condition && !item.incomplete) {
       return 'bg-green-600 border-green-600 text-white'
     }
@@ -67,6 +73,9 @@ export class CustomWizardComponent implements OnInit {
   }
 
   labelClasses(item: WizardItemType, index?: number): string {
+    if (item.isBlocked) {
+      return 'text-gray-400'
+    }
     if (item.condition && !item.incomplete) {
       return 'text-green-700'
     }

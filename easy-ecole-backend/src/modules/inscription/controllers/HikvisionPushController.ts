@@ -175,6 +175,7 @@ async function traiterEvenement(terminal: PointageTerminal, eventId: number): Pr
           mode: "refuse",
           etablissementId: Number(terminal.etablissementId),
           motifRefus: recorded.motifRefus,
+          situationFinanciere: recorded.situationFinanciere,
           ...photo
         });
       }
@@ -191,6 +192,8 @@ async function traiterEvenement(terminal: PointageTerminal, eventId: number): Pr
       time: pendingEvent.heure,
       mode: recorded.mode,
       etablissementId: Number(terminal.etablissementId),
+      avertissementPaiement: recorded.avertissementPaiement,
+      situationFinanciere: recorded.situationFinanciere,
       ...photo
     });
   } catch (error) {

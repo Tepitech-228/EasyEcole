@@ -235,6 +235,31 @@ describe("PointageTerminalController ADMS", () => {
     }), expect.objectContaining({ transaction }));
   });
 
+  it("records student attendance and returns a warning for a partially paid installment", async () => {
+    Utilisateur.findByPk.mockResolvedValue({ id: 42, role: "apprenant", etablissementId: 3 });
+    VerificationPaiementService.verifierDossier.mockReturnValue({
+      statut: "vert",
+      message: "Accès autorisé",
+      avertissementPaiement: "Échéance mois 2 partiellement payée."
+    });
+
+    const recorded = await PointageTerminalController.processAttendanceEvent(
+      { id: 5, serialNumber: "ZK12345", etablissementId: 3 } as any,
+      {
+        pin: "42",
+        date: "2026-10-17",
+        time: "08:15:30",
+        statusCode: 5,
+        verifyType: 75,
+        utilisateurId: 42
+      }
+    );
+
+    expect(recorded.recorded).toBe(true);
+    expect(recorded.avertissementPaiement).toBe("Échéance mois 2 partiellement payée.");
+    expect(Pointage.create).toHaveBeenCalled();
+  });
+
   it.each([6, 76])("refuses a denied Hikvision face event (minor %i)", async (verifyType) => {
     const recorded = await PointageTerminalController.processAttendanceEvent(
       { id: 5, serialNumber: "ZK12345", etablissementId: 3 } as any,

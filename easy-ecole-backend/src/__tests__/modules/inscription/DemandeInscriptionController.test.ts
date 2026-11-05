@@ -46,6 +46,10 @@ jest.mock('../../../modules/auth/models/SiteUtilisateur', () => ({
   SiteUtilisateur: { findAll: jest.fn(), findOrCreate: jest.fn() },
 }))
 
+jest.mock('../../../modules/auth/models/Apprenant', () => ({
+  Apprenant: { findOne: jest.fn() },
+}))
+
 jest.mock('../../../modules/etablissement/models/Etablissement', () => ({
   Etablissement: { findOne: jest.fn() },
 }))
@@ -65,6 +69,7 @@ jest.mock('../../../core/helpers/EmailSender', () => ({
 const { DemandeInscription } = require('../../../modules/inscription/models/DemandeInscription')
 const { Session } = require('../../../modules/inscription/models/Session')
 const { SiteUtilisateur } = require('../../../modules/auth/models/SiteUtilisateur')
+const { Apprenant } = require('../../../modules/auth/models/Apprenant')
 const { Etablissement } = require('../../../modules/etablissement/models/Etablissement')
 const { ParcoursChoisi } = require('../../../modules/inscription/models/ParcoursChoisi')
 const { DossierInscription } = require('../../../modules/inscription/models/DossierInscription')
@@ -86,6 +91,7 @@ beforeEach(() => {
   ;(DemandeInscription.findAll as jest.Mock).mockResolvedValue([])
   ;(SiteUtilisateur.findAll as jest.Mock).mockResolvedValue([])
   ;(SiteUtilisateur.findOrCreate as jest.Mock).mockResolvedValue([{}, false])
+  ;(Apprenant.findOne as jest.Mock).mockResolvedValue({ photo: 'photo-etudiant.jpg' })
   ;(Etablissement.findOne as jest.Mock).mockResolvedValue({ id: 4 })
 })
 
@@ -176,6 +182,35 @@ describe('DemandeInscriptionController.soumettreDemande', () => {
       statutPipeline: 'soumis',
     }))
     expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('refuses to submit when the applicant has no profile photo', async () => {
+    const demande = {
+      id: 10,
+      utilisateurId: 7,
+      sessionId: 3,
+      modeFormation: 'en_ligne',
+      statutPipeline: null,
+      update: jest.fn(),
+    }
+    ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue(demande)
+    ;(Apprenant.findOne as jest.Mock).mockResolvedValue({ photo: null })
+    const req = mockRequest({
+      utilisateurRole: 'apprenant',
+      utilisateurId: 7,
+      params: { id: '10' },
+      body: { matriculeEtudiant: 'ET-2026-001' },
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.soumettreDemande(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      success: false,
+      message: expect.stringContaining('photo'),
+    }))
+    expect(demande.update).not.toHaveBeenCalled()
   })
 
   it('refuses a second submission when the request is already marked as submitted', async () => {

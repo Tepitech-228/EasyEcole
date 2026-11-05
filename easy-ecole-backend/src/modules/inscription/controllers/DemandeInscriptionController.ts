@@ -127,6 +127,17 @@ export default class DemandeInscriptionController {
                 return res.status(409).json({ success: false, message: "Cette demande ne peut plus être soumise à cette étape." });
             }
 
+            const apprenant = await Apprenant.findOne({
+                where: { utilisateurId: req.utilisateurId },
+                attributes: ['photo'],
+            });
+            if (!apprenant?.photo) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Veuillez ajouter une photo à votre profil avant de soumettre la demande.",
+                });
+            }
+
             const matriculeEtudiant = typeof req.body?.matriculeEtudiant === 'string'
                 ? req.body.matriculeEtudiant.trim()
                 : '';

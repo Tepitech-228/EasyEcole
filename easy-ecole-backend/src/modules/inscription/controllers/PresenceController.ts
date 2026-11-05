@@ -326,7 +326,8 @@ export default class PresenceController {
                 statut: 'vert',
                 echeancesEnRetard: 0,
                 echeancesRestantes: [],
-                message: 'Accès autorisé'
+                message: 'Accès autorisé',
+                avertissementPaiement: null
             }
             try {
                 paiement = await VerificationPaiementService.verifierPaiement(resolvedUserId)
@@ -340,7 +341,8 @@ export default class PresenceController {
                 paiement: {
                     statut: paiement.statut,
                     echeancesEnRetard: paiement.echeancesEnRetard,
-                    message: paiement.message
+                    message: paiement.message,
+                    avertissementPaiement: paiement.avertissementPaiement
                 }
             })
         } catch (error) {

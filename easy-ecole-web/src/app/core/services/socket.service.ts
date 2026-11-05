@@ -3,6 +3,7 @@ import io from 'socket.io-client';
 import type { Socket } from 'socket.io-client';
 import { environment } from 'src/environments/environment';
 import { Observable, Subject } from 'rxjs';
+import { PointageSituationFinanciere } from 'src/app/shared/models/PointageSituationFinanciere.model';
 
 export interface TerminalAttendanceEvent {
   utilisateurId: number;
@@ -15,6 +16,8 @@ export interface TerminalAttendanceEvent {
   mode: 'arrivee' | 'depart' | 'passage' | 'refuse';
   etablissementId: number;
   motifRefus?: string | null;
+  avertissementPaiement?: string | null;
+  situationFinanciere?: PointageSituationFinanciere | null;
   photo?: string;
   photoType?: 'apprenant' | 'enseignant' | 'profile';
 }

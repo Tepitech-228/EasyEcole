@@ -11,6 +11,12 @@ import HikvisionEnrollmentService from "../services/HikvisionEnrollmentService";
 import PointageTerminalTokenService from "../services/PointageTerminalTokenService";
 import { isHikvisionTerminalAddressAllowed } from "../services/HikvisionTerminalAddressService";
 
+type TerminalPopulation = "personnel" | "etudiant";
+
+function isTerminalPopulation(value: unknown): value is TerminalPopulation {
+    return value === "personnel" || value === "etudiant";
+}
+
 function toClientTerminal(terminal: PointageTerminal, deviceToken?: string): Record<string, unknown> {
     return {
         id: terminal.id,
@@ -18,6 +24,7 @@ function toClientTerminal(terminal: PointageTerminal, deviceToken?: string): Rec
         nom: terminal.nom,
         sourceIp: terminal.sourceIp,
         protocol: terminal.protocol,
+        population: terminal.population || "personnel",
         hikvisionPort: terminal.hikvisionPort,
         hikvisionHttps: terminal.hikvisionHttps,
         // Le mot de passe n'est jamais renvoyé : seulement le compte pour préremplir l'édition.
@@ -39,7 +46,8 @@ const TERMINAL_FIELDS = [
     "username",
     "password",
     "etablissementId",
-    "actif"
+    "actif",
+    "population"
 ] as const;
 
 export default class HikvisionTerminalController {
@@ -74,6 +82,7 @@ export default class HikvisionTerminalController {
         const etablissementId = Number(req.body?.etablissementId);
         const port = Number(req.body?.port ?? (req.body?.https ? 443 : 80));
         const https = req.body?.https === true;
+        const population = req.body?.population === undefined ? "personnel" : req.body.population;
 
         if (
             !/^[A-Za-z0-9._-]{2,64}$/.test(serialNumber) ||
@@ -82,9 +91,10 @@ export default class HikvisionTerminalController {
             !/^[A-Za-z0-9._-]{1,120}$/.test(username) ||
             !password || password.length > 256 ||
             !Number.isSafeInteger(etablissementId) || etablissementId <= 0 ||
-            !Number.isSafeInteger(port) || port < 1 || port > 65535
+            !Number.isSafeInteger(port) || port < 1 || port > 65535 ||
+            !isTerminalPopulation(population)
         ) {
-            return res.status(400).json({ success: false, message: "Modèle, adresse (IP ou hostname), port, compte, mot de passe ou site invalide." });
+            return res.status(400).json({ success: false, message: "Modèle, adresse (IP ou hostname), port, compte, mot de passe, site ou type de comptes invalide." });
         }
 
         let encryptedPassword: string;
@@ -106,6 +116,7 @@ export default class HikvisionTerminalController {
                 deviceTokenHash: generated.hash,
                 etablissementId,
                 protocol: "hikvision_isapi",
+                population,
                 hikvisionPort: port,
                 hikvisionHttps: https,
                 hikvisionUsername: username,
@@ -219,6 +230,9 @@ export default class HikvisionTerminalController {
             const etablissementId = body.etablissementId === undefined ? undefined : Number(body.etablissementId);
             const https = body.https === undefined ? undefined : typeof body.https === "boolean" ? body.https : null;
             const actif = body.actif === undefined ? undefined : typeof body.actif === "boolean" ? body.actif : null;
+            const population = body.population === undefined
+                ? undefined
+                : isTerminalPopulation(body.population) ? body.population : null;
 
             if (
                 serialNumber === null || (serialNumber !== undefined && !/^[A-Za-z0-9._-]{2,64}$/.test(serialNumber)) ||
@@ -228,12 +242,13 @@ export default class HikvisionTerminalController {
                 password === null || (password !== undefined && password.length > 256) ||
                 (port !== undefined && (!Number.isSafeInteger(port) || port < 1 || port > 65535)) ||
                 (etablissementId !== undefined && (!Number.isSafeInteger(etablissementId) || etablissementId <= 0)) ||
-                https === null || actif === null
+                https === null || actif === null || population === null
             ) {
-                return res.status(400).json({ success: false, message: "Modèle, adresse (IP ou hostname), port, compte, mot de passe ou état du terminal invalide." });
+                return res.status(400).json({ success: false, message: "Modèle, adresse (IP ou hostname), port, compte, mot de passe, état ou type de comptes du terminal invalide." });
             }
 
             const siteChanged = etablissementId !== undefined && etablissementId !== Number(terminal.etablissementId);
+            const populationChanged = population !== undefined && population !== terminal.population;
             if (etablissementId !== undefined) {
                 const site = await Etablissement.findOne({ where: { id: etablissementId, actif: true } });
                 if (!site) return res.status(400).json({ success: false, message: "Le site n’existe pas ou est inactif." });
@@ -267,6 +282,7 @@ export default class HikvisionTerminalController {
                 hikvisionHttps?: boolean;
                 hikvisionUsername?: string;
                 hikvisionPasswordEncrypted?: string;
+                population?: "personnel" | "etudiant";
                 actif?: boolean;
             } = {};
             if (serialNumber !== undefined) updates.serialNumber = serialNumber;
@@ -277,17 +293,18 @@ export default class HikvisionTerminalController {
             if (https !== undefined) updates.hikvisionHttps = https === true;
             if (username !== undefined) updates.hikvisionUsername = username;
             if (encryptedPassword !== undefined) updates.hikvisionPasswordEncrypted = encryptedPassword;
+            if (population !== undefined) updates.population = population;
             if (actif !== undefined) updates.actif = actif === true;
 
             await terminal.update(updates);
 
             try {
-                if (siteChanged) {
-                    // Le terminal change de site : les enrôlements en cours pour l'ancien site sont obsolètes.
+                if (siteChanged || populationChanged) {
+                    // A change of site or population invalidates the terminal's existing enrollment queue.
                     await HikvisionEnrollment.destroy({
                         where: {
                             terminalId: terminal.id,
-                            statut: { [Op.ne]: "termine" }
+                            ...(populationChanged ? {} : { statut: { [Op.ne]: "termine" } })
                         }
                     });
                     if (terminal.actif) {

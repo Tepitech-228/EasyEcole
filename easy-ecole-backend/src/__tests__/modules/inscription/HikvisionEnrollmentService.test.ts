@@ -35,6 +35,8 @@ const { Utilisateur } = require("../../../modules/auth/models/Utilisateur");
 const { Enseignant } = require("../../../modules/auth/models/Enseignant");
 const { PersonnelAdministratif } = require("../../../modules/auth/models/PersonnelAdministratif");
 const { SiteUtilisateur } = require("../../../modules/auth/models/SiteUtilisateur");
+const { DossierEtudiant } = require("../../../modules/inscription/models/DossierEtudiant");
+const { DemandeInscription } = require("../../../modules/inscription/models/DemandeInscription");
 const HikvisionIsapiService = require("../../../modules/inscription/services/HikvisionIsapiService").default;
 
 describe("HikvisionEnrollmentService", () => {
@@ -47,7 +49,7 @@ describe("HikvisionEnrollmentService", () => {
     await HikvisionEnrollmentService.enqueueStudent(42, 3, "ESA001", null);
 
     expect(PointageTerminal.findAll).toHaveBeenCalledWith({
-      where: { etablissementId: 3, protocol: "hikvision_isapi", actif: true }
+      where: { etablissementId: 3, protocol: "hikvision_isapi", population: "etudiant", actif: true }
     });
     expect(HikvisionEnrollment.findOrCreate).toHaveBeenCalledTimes(2);
   });
@@ -60,7 +62,7 @@ describe("HikvisionEnrollmentService", () => {
     await HikvisionEnrollmentService.enqueueStudent(42, 3, "ESA001", consentementAt);
 
     expect(PointageTerminal.findAll).toHaveBeenCalledWith({
-      where: { etablissementId: 3, protocol: "hikvision_isapi", actif: true }
+      where: { etablissementId: 3, protocol: "hikvision_isapi", population: "etudiant", actif: true }
     });
     expect(HikvisionEnrollment.findOrCreate).toHaveBeenCalledTimes(2);
     expect(HikvisionEnrollment.findOrCreate).toHaveBeenCalledWith(expect.objectContaining({
@@ -73,6 +75,41 @@ describe("HikvisionEnrollmentService", () => {
         statut: "en_attente"
       })
     }));
+  });
+
+  it("backfills only validated student profiles to a student terminal", async () => {
+    const terminal = { id: 8, etablissementId: 3, population: "etudiant" as const };
+    DossierEtudiant.findAll.mockResolvedValue([
+      { utilisateurId: 42, matricule: "ESA042" },
+      { utilisateurId: 43, matricule: "ESA043" }
+    ]);
+    DemandeInscription.findAll.mockResolvedValue([{ utilisateurId: 42 }]);
+    HikvisionEnrollment.findOrCreate.mockResolvedValue([{}, true]);
+
+    await HikvisionEnrollmentService.enqueueEligibleProfilesForTerminal(terminal);
+
+    expect(HikvisionEnrollment.findOrCreate).toHaveBeenCalledTimes(1);
+    expect(HikvisionEnrollment.findOrCreate).toHaveBeenCalledWith(expect.objectContaining({
+      where: { terminalId: 8, utilisateurId: 42 },
+      defaults: expect.objectContaining({ employeeNo: "ESA042" })
+    }));
+    expect(SiteUtilisateur.findAll).not.toHaveBeenCalled();
+  });
+
+  it("backfills staff profiles without querying student enrollments on a personnel terminal", async () => {
+    const terminal = { id: 9, etablissementId: 3, population: "personnel" as const };
+    SiteUtilisateur.findAll.mockResolvedValue([]);
+    Enseignant.findAll.mockResolvedValue([]);
+    PersonnelAdministratif.findAll.mockResolvedValue([]);
+
+    await HikvisionEnrollmentService.enqueueEligibleProfilesForTerminal(terminal);
+
+    expect(DossierEtudiant.findAll).not.toHaveBeenCalled();
+    expect(DemandeInscription.findAll).not.toHaveBeenCalled();
+    expect(SiteUtilisateur.findAll).toHaveBeenCalledWith({
+      where: { etablissementId: 3 },
+      attributes: ["utilisateurId"]
+    });
   });
 
   it("queues an enrolled teacher to every assigned site's active terminal", async () => {
@@ -118,7 +155,7 @@ describe("HikvisionEnrollmentService", () => {
 
     expect(queued).toBe(1);
     expect(PointageTerminal.findAll).toHaveBeenCalledWith({
-      where: { etablissementId: 6, protocol: "hikvision_isapi", actif: true }
+      where: { etablissementId: 6, protocol: "hikvision_isapi", population: "personnel", actif: true }
     });
     expect(HikvisionEnrollment.findOrCreate).toHaveBeenCalledWith(expect.objectContaining({
       where: { terminalId: 10, utilisateurId: 61 },
