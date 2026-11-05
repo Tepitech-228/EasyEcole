@@ -856,7 +856,12 @@ export class BordereauDossierService {
             await dossier.update({ etablissementId: siteDossierId }, { transaction })
         }
 
-        const niveauEtudeId = parcoursData?.niveauEtudeId ?? classeDerivee?.niveauEtudeId
+        const niveauEtudeId = parcoursData?.niveauEtudeId
+            ?? classeDerivee?.niveauEtudeId
+            ?? demande.session?.niveauEtudeId
+        if (!niveauEtudeId) {
+            throw new Error("Aucun niveau d'étude n'est associé au parcours, à la classe ou à la session de la demande.")
+        }
         const niveauEtude = niveauEtudeId ? await NiveauEtude.findByPk(niveauEtudeId, { transaction }) : null
         const parcoursNom = parcoursData?.type || parcoursData?.titre || 'PARCOURS'
         const niveauNom = niveauEtude?.libelle || 'Niveau'
