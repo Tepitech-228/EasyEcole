@@ -77,8 +77,25 @@ export default class ApprenantController {
         try {
             const apprenant: Apprenant | null = await Apprenant.findOne(options);
 
-            if (apprenant == null)
+            if (apprenant == null) {
+                if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
+                    const utilisateur = await Utilisateur.findByPk((req as any).utilisateurId, {
+                        attributes: ['id', 'nom', 'prenoms', 'email', 'contact', 'photoDeProfil']
+                    })
+                    if (utilisateur?.photoDeProfil) {
+                        return res.status(200).send({
+                            photo: utilisateur.photoDeProfil,
+                            utilisateur: {
+                                nom: utilisateur.nom,
+                                prenoms: utilisateur.prenoms,
+                                email: utilisateur.email,
+                                contact: utilisateur.contact
+                            }
+                        })
+                    }
+                }
                 return res.sendStatus(204)
+            }
 
             return res.status(200).send(apprenant);
         } catch (error) {
@@ -253,8 +270,13 @@ export default class ApprenantController {
                 if (req.body[f] != null) apprenantUpdates[f] = req.body[f]
             }
 
+            const utilisateur = await Utilisateur.findByPk(req.body.utilisateurId, {
+                attributes: ['photoDeProfil']
+            })
+
             await Apprenant.create({
                 ...apprenantUpdates,
+                photo: utilisateur?.photoDeProfil || undefined,
                 adresse: stripNulls(req.body.adresse) || undefined,
                 identite: stripNulls(req.body.identite) || undefined,
                 informationsParents: stripNulls(req.body.informationsParents) || undefined,
@@ -287,45 +309,46 @@ export default class ApprenantController {
 
 
     static async updatePhoto(req: Request, res: Response): Promise<Response | null> {
-        let options: FindOptions<InferAttributes<Apprenant>> = {}
-
+        let apprenant: Apprenant | null = null
         if (req.params.apprenantId) {
             if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole != RolesUtilisateur.ADMIN) {
                 return res.status(403).json({ success: false })
             }
-            options = { where: { id: req.params.apprenantId } }
+            apprenant = await Apprenant.findByPk(req.params.apprenantId)
         }
         else if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
-            options = { where: { utilisateurId: (req as any).utilisateurId } }
+            apprenant = await Apprenant.findOne({ where: { utilisateurId: (req as any).utilisateurId } })
         }
         else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
-            options = { where: { utilisateurId: req.body.utilisateurId } }
+            apprenant = await Apprenant.findOne({ where: { utilisateurId: req.body.utilisateurId } })
+        } else {
+            return res.status(403).json({ success: false })
         }
 
-        let files: any = req.files
-        if (files && files['photo']) {
-            const photo: Express.Multer.File | undefined = files['photo'][0] as Express.Multer.File | undefined
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined
+        const photo = files?.['photo']?.[0]
+        if (!photo) {
+            return res.status(400).json({ success: false, message: "Photo requise" })
+        }
 
-            if (photo) {
-                const apprenant: Apprenant | null = await Apprenant.findOne(options)
-                if (apprenant != null) {
-                    await apprenant.update({ photo: photo.filename })
-                        .then(async () => {
-                            return res.status(200).json({ success: true })
-                        })
-                        .catch((error) => {
-                            return res.status(400).json({ success: false, error: error })
-                        })
-
-                    return null
+        try {
+            if (apprenant) {
+                await apprenant.update({ photo: photo.filename })
+            } else if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
+                const utilisateur = await Utilisateur.findByPk((req as any).utilisateurId)
+                if (!utilisateur) {
+                    return res.status(404).json({ success: false, message: "Utilisateur non trouvé" })
                 }
-                else {
-                    return res.status(404).json({ success: false, message: "Apprenant non trouvé" })
-                }
+                await utilisateur.update({ photoDeProfil: photo.filename })
+            } else {
+                return res.status(404).json({ success: false, message: "Apprenant non trouvé" })
             }
-        }
 
-        return res.status(400).json({ success: false })
+            return res.status(200).json({ success: true })
+        } catch (error) {
+            console.error('[APPRENANT_PHOTO] Échec de l’enregistrement de la photo :', error)
+            return res.status(500).json({ success: false, message: "La photo n’a pas pu être enregistrée" })
+        }
     }
 
     static async deleteApprenant(req: Request, res: Response): Promise<Response | null> {

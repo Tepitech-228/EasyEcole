@@ -150,6 +150,10 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
     return this.etapesProfil.length
   }
 
+  get photoApprenant(): string {
+    return this.apprenant?.photo || this.apprenant?.utilisateur?.photoDeProfil || ''
+  }
+
   allerEtape(numero: number): void {
     if (numero >= 1 && numero <= this.totalEtapes) {
       if (this.exigerMatriculeEtudiant && this.etapeActuelle === 1 && numero > 1) {
@@ -258,7 +262,7 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
       next: (value) => {
         console.log(value)
         this.apprenant = value ?? new Apprenant()
-        this.photoEnregistree = !!this.apprenant.photo
+        this.photoEnregistree = !!this.photoApprenant
         this.initApprenantForm()
         this.supprimerFichier()
       },

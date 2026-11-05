@@ -19,7 +19,7 @@
     <div *ngIf="!exigerMatriculeEtudiant" class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
         <div class="mt-2 flex items-center gap-x-8">
             <img class="h-36 w-36 rounded-md object-cover object-center border-2 border-gray-300"
-                [src]="imageURL ? imageURL : apprenant.photo ? PHOTOS_PATH + apprenant.photo : 'assets/images/blank-profile-picture.png'" alt="profile">
+                [src]="imageURL ? imageURL : photoApprenant ? PHOTOS_PATH + photoApprenant : 'assets/images/blank-profile-picture.png'" alt="profile">
             <div class="flex flex-col gap-y-5">
                 <div *ngIf="apprenant.dateNaissance" class="flex gap-x-5">
                     <app-custom-button (click)="!file ? choisirFichier() : modifierPhotoProfil()" [text]="!file ? 'Changer' : 'Enregistrer'" [outlined]="!file ? true : false"></app-custom-button>
@@ -76,7 +76,7 @@
             <p class="text-sm text-gray-500 mb-6">Votre identité et votre état civil</p>
             <div *ngIf="exigerMatriculeEtudiant" class="profil-photo-area">
                 <img class="profil-photo-preview"
-                    [src]="imageURL ? imageURL : apprenant.photo ? PHOTOS_PATH + apprenant.photo : 'assets/images/blank-profile-picture.png'"
+                    [src]="imageURL ? imageURL : photoApprenant ? PHOTOS_PATH + photoApprenant : 'assets/images/blank-profile-picture.png'"
                     alt="Photo de l’étudiant">
                 <div class="profil-photo-actions">
                     <label for="inscription-photo" class="mb-1 block text-sm font-semibold text-gray-800">
