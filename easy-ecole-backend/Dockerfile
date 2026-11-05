@@ -215,9 +215,8 @@ RUN mkdir -p \
         /app/backups \
         /app/documents
 
-# Utilisateur non-root (les processus Node/Chromium tournent avec --no-sandbox
-# côté application, déjà géré dans le code : voir GenerateurCarteService /
-# PdfGeneratorService qui passent --no-sandbox --disable-setuid-sandbox).
+# Utilisateur non-root. PuppeteerBrowserPool centralise les options Chromium,
+# dont --no-sandbox et la désactivation du rapporteur de crash Crashpad.
 USER node
 
 EXPOSE 3000

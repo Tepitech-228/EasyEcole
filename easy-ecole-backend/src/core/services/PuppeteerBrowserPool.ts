@@ -6,7 +6,13 @@ export async function getPuppeteerBrowser(): Promise<any> {
       const puppeteer = module.default ?? module;
       return puppeteer.launch({
         headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-crash-reporter',
+          '--disable-breakpad',
+        ],
       });
     }).catch((error) => {
       browserPromise = null;
