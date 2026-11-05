@@ -155,6 +155,7 @@ services:
       - "${HIKVISION_BIND_IP:-0.0.0.0}:${HIKVISION_PORT:-8000}:3000"
     environment:
       NODE_ENV: production
+      HOME: /home/node
       HOST: "0.0.0.0"
       DB_HOST: ${DB_HOST:-db}
       DB_PORT: ${DB_PORT:-3306}
@@ -226,6 +227,7 @@ services:
     command: []
     environment:
       NODE_ENV: production
+      HOME: /home/node
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       DB_HOST: ${DB_HOST:-db}
       DB_PORT: ${DB_PORT:-3306}
