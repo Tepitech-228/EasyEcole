@@ -55,6 +55,8 @@ const { DossierEtudiant } = require('../../../modules/inscription/models/Dossier
 const { CursusApprenant } = require('../../../modules/inscription/models/CursusApprenant')
 const { NiveauEtude } = require('../../../modules/inscription/models/NiveauEtude')
 const { GenerateurCarteService } = require('../../../modules/inscription/services/GenerateurCarteService')
+const { DossierStorageService } = require('../../../modules/inscription/services/DossierStorageService')
+const { FolderAutoService } = require('../../../modules/ged/services/FolderAutoService')
 import { BordereauDossierService } from '../../../modules/inscription/services/BordereauDossierService'
 
 describe('BordereauDossierService.finaliserAffectationPedagogique', () => {
@@ -106,6 +108,8 @@ describe('BordereauDossierService.finaliserAffectationPedagogique', () => {
     ).rejects.toThrow('Arrêt du test après la création du cursus')
 
     expect(NiveauEtude.findByPk).toHaveBeenCalledWith(44, { transaction: expect.anything() })
+    expect(DossierStorageService.creerDossierEtudiant).not.toHaveBeenCalled()
+    expect(FolderAutoService.creerDossierMatricule).not.toHaveBeenCalled()
     expect(CursusApprenant.findOrCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { demandeInscriptionId: 12 },
@@ -142,6 +146,38 @@ describe('BordereauDossierService.finaliserAffectationPedagogique', () => {
     expect(dossier.update).toHaveBeenCalledWith({
       cartePath: 'created/cartes/carte-test.pdf',
       carteGeneree: true,
+    })
+  })
+
+  describe('BordereauDossierService.preparerDossierEtudiantDiffere', () => {
+    it('crée les dossiers locaux et GED après la finalisation', async () => {
+      const dossier = {
+        anneeAcademique: '2025-2026',
+        parcours: 'LICENCE',
+        classe: 'À affecter',
+        niveau: 'Licence 1',
+        matricule: '2025-L1-J-26-TEST',
+        anneeAcademiqueId: 22,
+        utilisateurId: 5,
+      }
+
+      await BordereauDossierService.preparerDossierEtudiantDiffere(dossier)
+
+      expect(DossierStorageService.creerDossierEtudiant).toHaveBeenCalledWith(
+        dossier.anneeAcademique,
+        dossier.parcours,
+        dossier.classe,
+        dossier.niveau,
+        dossier.matricule,
+      )
+      expect(FolderAutoService.creerDossierMatricule).toHaveBeenCalledWith({
+        anneeAcademiqueId: dossier.anneeAcademiqueId,
+        parcoursNom: dossier.parcours,
+        classeNom: dossier.classe,
+        niveauNom: dossier.niveau,
+        matricule: dossier.matricule,
+        utilisateurId: dossier.utilisateurId,
+      })
     })
   })
 })

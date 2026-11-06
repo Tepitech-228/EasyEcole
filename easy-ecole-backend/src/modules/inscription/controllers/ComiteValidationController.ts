@@ -353,7 +353,7 @@ export default class ComiteValidationController {
      * Chaque membre ne peut voter qu'une seule fois (contrainte UNIQUE).
      */
     static async decider(req: Request, res: Response): Promise<Response | null> {
-        return this.deciderAttempt(req, res, 0)
+        return ComiteValidationController.deciderAttempt(req, res, 0)
     }
 
     private static async deciderAttempt(
@@ -672,6 +672,7 @@ export default class ComiteValidationController {
                 matriculeFinal = finalisation.matricule
                 const carteEtudiantDifferee = finalisation.carteEtudiant
                 const autorisationDifferee = finalisation.autorisation
+                const dossierEtudiantDiffere = finalisation.dossierEtudiantDiffere
 
                 demande.statutPipeline = 'valide'
                 demande.motifPipeline = null
@@ -758,6 +759,19 @@ export default class ComiteValidationController {
 
                 await transaction.commit()
 
+                if (dossierEtudiantDiffere) {
+                    setImmediate(() => {
+                        void BordereauDossierService.preparerDossierEtudiantDiffere(
+                            dossierEtudiantDiffere,
+                        ).catch(error => {
+                            console.error(
+                                `[Comite] Échec de préparation différée des dossiers étudiant/GED pour la demande ${demande.id}:`,
+                                error,
+                            )
+                        })
+                    })
+                }
+
                 if (carteEtudiantDifferee) {
                     setImmediate(() => {
                         void BordereauDossierService.genererCarteEtudiantDifferee(carteEtudiantDifferee).catch(error => {
@@ -839,7 +853,7 @@ export default class ComiteValidationController {
                 const nextRetry = deadlockRetries + 1
                 console.warn(`[COMITE][decider] Interblocage MySQL; nouvelle tentative ${nextRetry}/2.`)
                 await new Promise<void>(resolve => setTimeout(resolve, 150 * nextRetry))
-                return this.deciderAttempt(req, res, nextRetry)
+                return ComiteValidationController.deciderAttempt(req, res, nextRetry)
             }
             console.error('[Comite] decider:', error)
             if (isDeadlock || isConnectionAcquireTimeout) {

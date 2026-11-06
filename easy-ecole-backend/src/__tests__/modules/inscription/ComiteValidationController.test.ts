@@ -213,6 +213,16 @@ describe('ComiteValidationController.decider — correction demandée', () => {
 })
 
 describe('ComiteValidationController.decider — garde-fous', () => {
+  it('fonctionne lorsque Express appelle le handler sans contexte de classe', async () => {
+    const res = mockResponse()
+    const handler = Ctrl.decider
+
+    await handler(reqComite({ decision: 'invalide' }), res)
+
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(res.json).toHaveBeenCalledWith({ success: false, message: 'Décision invalide' })
+  })
+
   it('renvoie une réponse explicite si la connexion de transaction ne peut pas être obtenue', async () => {
     const res = mockResponse()
     ;(DatabaseConnection.getInstance().sequelize.transaction as jest.Mock).mockRejectedValueOnce(

@@ -89,6 +89,16 @@ export interface AutorisationProvisoireDifferee {
     initialesComite?: string;
 }
 
+export interface DossierEtudiantDiffere {
+    anneeAcademique: string;
+    parcours: string;
+    classe: string;
+    niveau: string;
+    matricule: string;
+    anneeAcademiqueId: number | null;
+    utilisateurId: number;
+}
+
 export class BordereauDossierService {
 
     private static async finaliserDossierElearning(
@@ -765,7 +775,12 @@ export class BordereauDossierService {
         req: any,
         transaction: Transaction,
         options: { initialesComite?: string } = {},
-    ): Promise<{ matricule: string; carteEtudiant?: CarteEtudiantDifferee; autorisation?: AutorisationProvisoireDifferee }> {
+    ): Promise<{
+        matricule: string;
+        carteEtudiant?: CarteEtudiantDifferee;
+        autorisation?: AutorisationProvisoireDifferee;
+        dossierEtudiantDiffere?: DossierEtudiantDiffere;
+    }> {
         const demande = await DemandeInscription.findOne({
             where: { utilisateurId },
             include: [
@@ -917,24 +932,6 @@ export class BordereauDossierService {
         const classeNom = classeDerivee?.libelle ?? 'À affecter'
         const anneeId = demande.session?.anneeAcademiqueId
 
-        try {
-            DossierStorageService.creerDossierEtudiant(anneeLibelle, parcoursNom, classeNom, niveauNom, matricule);
-        } catch (dirError) {
-            console.error("Erreur création dossier étudiant:", dirError);
-        }
-
-        try {
-            if (anneeId && parcoursData && niveauEtude) {
-                await FolderAutoService.creerDossierMatricule({
-                    anneeAcademiqueId: Number(anneeId),
-                    parcoursNom, classeNom, niveauNom, matricule,
-                    utilisateurId: Number((req as any).utilisateurId),
-                });
-            }
-        } catch (gedError) {
-            console.error("Erreur création dossier GED matricule:", gedError)
-        }
-
         // Création systématique du cursus : l'étudiant DOIT avoir son cursus
         // (parcours + niveau + année) à la validation finale, même si aucune
         // classe n'est encore affectée (classeId = null, à mettre à jour
@@ -1084,7 +1081,49 @@ export class BordereauDossierService {
             ).catch((err: any) => console.error("Erreur envoi email matricule:", err))
         }
 
-        return { matricule, carteEtudiant, autorisation: autorisationDifferee }
+        return {
+            matricule,
+            carteEtudiant,
+            autorisation: autorisationDifferee,
+            dossierEtudiantDiffere: {
+                anneeAcademique: anneeLibelle,
+                parcours: parcoursNom,
+                classe: classeNom,
+                niveau: niveauNom,
+                matricule,
+                anneeAcademiqueId: anneeId ? Number(anneeId) : null,
+                utilisateurId: Number((req as any).utilisateurId),
+            },
+        }
+    }
+
+    static async preparerDossierEtudiantDiffere(dossier: DossierEtudiantDiffere): Promise<void> {
+        try {
+            DossierStorageService.creerDossierEtudiant(
+                dossier.anneeAcademique,
+                dossier.parcours,
+                dossier.classe,
+                dossier.niveau,
+                dossier.matricule,
+            )
+        } catch (error) {
+            console.error("Erreur création dossier étudiant:", error)
+        }
+
+        if (dossier.anneeAcademiqueId) {
+            try {
+                await FolderAutoService.creerDossierMatricule({
+                    anneeAcademiqueId: dossier.anneeAcademiqueId,
+                    parcoursNom: dossier.parcours,
+                    classeNom: dossier.classe,
+                    niveauNom: dossier.niveau,
+                    matricule: dossier.matricule,
+                    utilisateurId: dossier.utilisateurId,
+                })
+            } catch (error) {
+                console.error("Erreur création dossier GED matricule:", error)
+            }
+        }
     }
 
     static async genererAutorisationProvisoireDifferee(
