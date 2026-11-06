@@ -88,7 +88,7 @@ Bordereau.init({
     defaultValue: null
   },
   fichier: {
-    type: new DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: false
   },
   montant: {

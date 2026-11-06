@@ -16,6 +16,8 @@ import { TypeOperationBordereau } from "../models/TypeOperationBordereau";
 import { AnneeAcademique } from "../models/AnneeAcademique";
 import { NiveauEtude } from "../models/NiveauEtude";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
+import { Utilisateur } from "../../auth/models/Utilisateur";
+import { EtudiantUploadStorageService } from "../services/EtudiantUploadStorageService";
 
 /**
  * Extrait le numéro de niveau depuis le libellé d'un NiveauEtude
@@ -440,23 +442,40 @@ export default class ReinscriptionController {
         const role = (req as any).utilisateurRole
         const userId = (req as any).utilisateurId
 
+        const files: any = (req as any).files || {}
+        const uploadedFiles = Object.values(files).flat() as Express.Multer.File[]
+        const storedFiles: string[] = []
+        const nettoyerUploads = (): void => {
+            for (const file of uploadedFiles) {
+                try { EtudiantUploadStorageService.removeTemporaryUpload(file); }
+                catch (error) { console.error('[soumettreReinscription] Échec du nettoyage du téléversement:', error); }
+            }
+        }
+        const nettoyerFichiersStockes = (): void => {
+            for (const reference of storedFiles) {
+                try { EtudiantUploadStorageService.removeStoredFile(reference); }
+                catch (error) { console.error('[soumettreReinscription] Échec du nettoyage du fichier étudiant:', error); }
+            }
+        }
+        const { sessionId, classeId, niveauEtudeId } = req.body
+
         if (role !== RolesUtilisateur.APPRENANT) {
+            nettoyerUploads()
             return res.status(403).json({ success: false, message: "Accès réservé aux étudiants" })
         }
-
-        const files: any = (req as any).files || {}
-        const { sessionId, classeId, niveauEtudeId } = req.body
 
         try {
             // Précondition : être déjà un étudiant inscrit (DossierEtudiant existant)
             const dossier = await DossierEtudiant.findOne({ where: { utilisateurId: userId } })
             if (!dossier) {
+                nettoyerUploads()
                 return res.status(400).json({ success: false, message: "Aucun dossier étudiant : la réinscription est réservée aux étudiants déjà inscrits." })
             }
 
             // Session cible requise
             const session = await Session.findByPk(sessionId)
             if (!session) {
+                nettoyerUploads()
                 return res.status(400).json({ success: false, message: "Session de réinscription introuvable" })
             }
 
@@ -469,12 +488,14 @@ export default class ReinscriptionController {
                 },
             })
             if (dejaEnCours) {
+                nettoyerUploads()
                 return res.status(409).json({ success: false, message: "Vous avez déjà une demande (inscription ou réinscription) pour cette session. Il est impossible de soumettre une nouvelle demande sur la même session." })
             }
 
             // Le bordereau de paiement est obligatoire
             const bordereauFile = files['bordereau']?.[0] as Express.Multer.File | undefined
             if (!bordereauFile) {
+                nettoyerUploads()
                 return res.status(400).json({ success: false, message: "Bordereau de paiement de réinscription requis" })
             }
 
@@ -483,6 +504,7 @@ export default class ReinscriptionController {
                 .filter(d => d.obligatoire && !(files[d.code]?.[0]))
                 .map(d => d.libelle)
             if (docsManquants.length > 0) {
+                nettoyerUploads()
                 return res.status(400).json({ success: false, message: `Documents manquants : ${docsManquants.join(', ')}` })
             }
 
@@ -504,8 +526,8 @@ export default class ReinscriptionController {
 
                 // 2) Persister les 6 documents (déjà écrits par multer vers le disque).
                 // On les rattache tous à un dossier documentaire « réinscription »
-                // (créé idempotent pour la session cible). Le code du document est
-                // préfixé dans le nom de fichier pour identification côté comité.
+                // (créé idempotent pour la session cible). Chaque code de document
+                // possède son propre sous-dossier ; le nom original reste inchangé.
                 const dossierReinscription = await DossierInscription.findOrCreate({
                     where: { titre: 'reinscription-6-pieces', sessionId: Number(sessionId) },
                     defaults: {
@@ -517,20 +539,37 @@ export default class ReinscriptionController {
                     transaction,
                 }).then(([d]) => d)
 
-                const UPLOAD_DIR = path.resolve('public', 'inscription', 'reinscription', 'dossiers')
-                if (!fs.existsSync(UPLOAD_DIR)) {
-                    fs.mkdirSync(UPLOAD_DIR, { recursive: true })
+                const utilisateur = await Utilisateur.findByPk(userId, {
+                    attributes: ['id', 'nom', 'prenoms'],
+                })
+                if (!utilisateur) {
+                    throw new Error(`Compte étudiant ${userId} introuvable pour le stockage des pièces`)
                 }
+                const identity = {
+                    id: Number(utilisateur.id),
+                    nom: utilisateur.nom,
+                    prenoms: utilisateur.prenoms,
+                    matricule: dossier.matricule,
+                }
+                const treeFolders = await EtudiantUploadStorageService.resolveTreeFolders({
+                    sessionId: session.id,
+                    etablissementId: dossier.etablissementId,
+                    demandeId: demande.id,
+                    utilisateurId: userId,
+                    typeDemande: 'reinscription',
+                })
+
                 for (const d of DOCUMENTS_REINSCRIPTION) {
                     const f = files[d.code]?.[0] as Express.Multer.File | undefined
                     if (!f) continue
-                    const destName = `${d.code}_${f.filename}`
-                    const destPath = path.join(UPLOAD_DIR, destName)
-                    fs.renameSync(path.resolve(f.path), destPath)
-                    // On stocke un chemin relatif dans nomFichier pour que
-                    // DocumentDossierController.download (résolution #1) retrouve
-                    // le fichier : path.resolve(cwd, nomFichier).
-                    const relPath = path.join('public/inscription/reinscription/dossiers', destName).replace(/\\/g, '/')
+                    const relPath = EtudiantUploadStorageService.store(
+                        f,
+                        identity,
+                        treeFolders,
+                        'Dossiers',
+                        ['REINSCRIPTION', `DEMANDE_${demande.id}`, 'PIECES', `${d.code}_${d.libelle}`],
+                    )
+                    storedFiles.push(relPath)
                     await DemandeInscriptionDossier.findOrCreate({
                         where: { demandeId: demande.id, nomFichier: relPath },
                         defaults: { demandeId: demande.id, dossierId: dossierReinscription.id, nomFichier: relPath },
@@ -552,6 +591,16 @@ export default class ReinscriptionController {
                     statutPaiement: 'pending',
                     dateSoumission: new Date(),
                 }, { transaction })
+                const bordereauPath = EtudiantUploadStorageService.store(
+                    bordereauFile,
+                    identity,
+                    treeFolders,
+                    'Bordereaux',
+                    ['REINSCRIPTION', `DEMANDE_${demande.id}`],
+                )
+                storedFiles.push(bordereauPath)
+                bordereau.fichier = bordereauPath
+                await bordereau.save({ transaction })
 
                 await transaction.commit()
 
@@ -565,6 +614,8 @@ export default class ReinscriptionController {
                 })
             } catch (error) {
                 await transaction.rollback()
+                nettoyerUploads()
+                nettoyerFichiersStockes()
                 const err = error as any
                 if (err?.name === 'SequelizeUniqueConstraintError' || err?.original?.code === 'ER_DUP_ENTRY') {
                     return res.status(409).json({ success: false, message: 'Une demande existe déjà pour cette session (contrainte session-utilisateur).' })
@@ -572,6 +623,8 @@ export default class ReinscriptionController {
                 throw error
             }
         } catch (error) {
+            nettoyerUploads()
+            nettoyerFichiersStockes()
             console.error('[soumettreReinscription]', error)
             return res.status(500).json({ success: false, message: 'Erreur interne du serveur' })
         }

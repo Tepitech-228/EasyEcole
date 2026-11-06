@@ -343,7 +343,7 @@ Liste des processus prédéfinis et créés dynamiquement :
            │
            ▼
 Dossier déposé via Préinscription
-  → Fichier : public/inscription/dossiers/{dossier}.pdf
+  → Le téléversement est d'abord temporaire, puis rangé dans le dossier nominatif de l'étudiant
            │
            ▼
 PréInscription validée
@@ -363,7 +363,7 @@ Document GED créé :
            │
            ▼
 Étudiant paie les frais
-  → Bordereau généré → public/inscription/bordereaux/{bordereau}.pdf
+  → Bordereau rangé dans le dossier nominatif de l'étudiant
            │
            ▼
 ArchiveGedService.archiverBordereau()
@@ -388,6 +388,35 @@ Inscription finalisée
       ├── Paiements/
       └── PV/
 ```
+
+### Rangement des fichiers téléversés
+
+Les nouveaux fichiers sont conservés sous `public/dossiers/` selon la structure définie par les données académiques :
+
+```
+public/dossiers/{Année-académique}/{Site}/{Parcours}/{NIVEAU}/{Filière}/Etudiants/{Nom}_{Prenoms}_{Matricule}/
+├── Dossier-info-personelles/
+├── Dossiers/
+│   ├── INSCRIPTION/DEMANDE_{id}/PIECES/{id}_{intitulePiece}/Version_01/{nomOriginal}
+│   └── REINSCRIPTION/DEMANDE_{id}/PIECES/{code}_{intitulePiece}/Version_01/{nomOriginal}
+└── Bordereaux/
+    ├── INSCRIPTION/DEMANDE_{id}/Version_01/{nomOriginal}
+    ├── REINSCRIPTION/DEMANDE_{id}/Version_01/{nomOriginal}
+    └── {TYPE_PAIEMENT}/DEMANDE_{id}/Version_01/{nomOriginal}
+```
+
+Le niveau de parcours utilise le type de parcours (par exemple `LICENCE` ou `MASTER`), le niveau vient du niveau associé à la session, et la filière du parcours final. Tant qu'aucun choix final n'existe, seul le segment non déterminé est remplacé par `Parcours-en-attente` ou `Filiere-en-attente`; le niveau connu de la session est conservé. Le site est le site d'inscription de la demande, avant le parcours dans l'arborescence. Chaque étudiant a toujours les trois dossiers frères `Dossier-info-personelles`, `Dossiers` et `Bordereaux`. Chaque pièce a son propre sous-dossier portant son intitulé. Les remplacements vont dans `Version_02`, puis `Version_03`, etc. : aucune version précédente n'est écrasée ni supprimée, même si seule la dernière version reste référencée comme pièce active en base. Le nom du fichier reste identique à l'original (hors caractères interdits par le système de fichiers). Le chemin relatif complet de la version active est enregistré en base et utilisé par les routes de téléchargement. Les fichiers déjà enregistrés dans les anciens dépôts restent accessibles par compatibilité.
+
+#### Migration des fichiers historiques
+
+La migration des chemins existants est manuelle et ne démarre pas au déploiement. Depuis le conteneur backend (ou le dossier du backend avec accès au même volume `public/` et à la base) :
+
+```sh
+node lib/modules/inscription/scripts/migrate-student-upload-layout.js
+node lib/modules/inscription/scripts/migrate-student-upload-layout.js --apply
+```
+
+La première commande affiche les sources et destinations prévues sans rien modifier. Après vérification et sauvegarde de la base et des fichiers, la seconde copie les pièces et bordereaux vers la nouvelle arborescence puis met à jour leurs références en base. Les fichiers originaux ne sont pas supprimés. Les éléments déjà rangés sous `Etudiants/` sont ignorés ; les fichiers introuvables ou sans données académiques suffisantes sont signalés et laissés inchangés. La migration `062_student_upload_paths_text.sql` doit être appliquée avant l'opération pour que les références de chemins longs soient stockées sans troncature.
 
 ### Code : appel à l'archivage
 

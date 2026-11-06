@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import * as fs from "fs";
-import * as path from "path";
 import { CountOptions, FindOptions, InferAttributes } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { ComiteVote } from "../models/ComiteVote";
 import { DossierInscription } from "../models/DossierInscription";
 import { DemandeInscriptionDossier } from "../models/DemandeInscriptionDossier";
 import { DemandeInscription } from "../models/DemandeInscription";
+import { Utilisateur } from "../../auth/models/Utilisateur";
+import { EtudiantUploadStorageService } from "../services/EtudiantUploadStorageService";
 
 const getSiteScope = (req: Request): number | null | undefined => {
     if (req.utilisateurRole === RolesUtilisateur.ADMIN) return null;
@@ -109,20 +109,18 @@ export default class DossierInscriptionController {
             return res.status(400).json({ success: false, message: 'Aucun fichier fourni' });
         }
 
-        const { demandeId, dossierId } = req.body;
-        if (!demandeId || !dossierId) {
-            return res.status(400).json({ success: false, message: 'demandeId et dossierId sont requis' });
-        }
-
-        const UPLOAD_DIR = path.resolve('public', 'inscription', 'dossiers');
         const nettoyerFichiersUpload = (): void => {
             for (const fichier of fichiers) {
-                const fichierEcrit = path.join(UPLOAD_DIR, fichier.filename);
-                if (fs.existsSync(fichierEcrit)) {
-                    try { fs.unlinkSync(fichierEcrit); } catch (_) { /* nettoyage best-effort */ }
-                }
+                try { EtudiantUploadStorageService.removeTemporaryUpload(fichier); }
+                catch (error) { console.error('[uploadDossierInscription] Échec du nettoyage du téléversement:', error); }
             }
         };
+        const nouveauxFichiers: string[] = [];
+        const { demandeId, dossierId } = req.body;
+        if (!demandeId || !dossierId) {
+            nettoyerFichiersUpload();
+            return res.status(400).json({ success: false, message: 'demandeId et dossierId sont requis' });
+        }
         if (req.utilisateurRole !== RolesUtilisateur.APPRENANT) {
             nettoyerFichiersUpload();
             return res.status(403).json({ success: false, message: "L'envoi des pièces est réservé aux apprenants" });
@@ -147,6 +145,14 @@ export default class DossierInscriptionController {
             if (Number(demandeExiste.utilisateurId) !== Number(req.utilisateurId)) {
                 nettoyerFichiersUpload();
                 return res.status(403).json({ success: false, message: "Cette demande ne vous appartient pas" });
+            }
+
+            const utilisateur = await Utilisateur.findByPk(req.utilisateurId, {
+                attributes: ['id', 'nom', 'prenoms'],
+            });
+            if (!utilisateur) {
+                nettoyerFichiersUpload();
+                return res.status(404).json({ success: false, message: "Compte étudiant introuvable" });
             }
 
             const statutPipeline = demandeExiste.statutPipeline as string
@@ -195,6 +201,13 @@ export default class DossierInscriptionController {
                 });
             }
 
+            const treeFolders = await EtudiantUploadStorageService.resolveTreeFolders({
+                sessionId: demandeExiste.sessionId,
+                etablissementId: demandeExiste.etablissementId,
+                demandeId,
+                utilisateurId: demandeExiste.utilisateurId,
+                typeDemande: demandeExiste.typeDemande,
+            });
             // Remplacement propre : on supprime les anciens fichiers de CE dossier
             // pour éviter les doublons qui cassent le comptage front/back.
             //
@@ -209,17 +222,39 @@ export default class DossierInscriptionController {
                 where: { demandeId, dossierId },
                 paranoid: false
             });
+            const estBordereau = /bordereau/i.test(dossierRequis.titre || '');
+            for (const fichier of fichiers) {
+                nouveauxFichiers.push(EtudiantUploadStorageService.store(fichier, {
+                    id: Number(utilisateur.id),
+                    nom: utilisateur.nom,
+                    prenoms: utilisateur.prenoms,
+                    matricule: demandeExiste.matriculeEtudiant || demandeExiste.matricule,
+                }, treeFolders, estBordereau ? 'Bordereaux' : 'Dossiers', [
+                    demandeExiste.typeDemande === 'reinscription' ? 'REINSCRIPTION' : 'INSCRIPTION',
+                    `DEMANDE_${demandeId}`,
+                    ...(estBordereau ? [] : ['PIECES']),
+                    `${dossierId}_${dossierRequis.titre}`,
+                ]));
+            }
+
             for (const ancien of anciens) {
                 await ancien.destroy({ force: true });
-                const oldPath = path.join(UPLOAD_DIR, ancien.nomFichier);
-                if (fs.existsSync(oldPath)) {
-                    try { fs.unlinkSync(oldPath); } catch (_) { /* fichier déjà supprimé */ }
+                const ancienChemin = ancien.nomFichier?.replace(/\\/g, '/');
+                if (!ancienChemin?.startsWith('public/dossiers/')) {
+                    try {
+                        EtudiantUploadStorageService.removeStoredFile(
+                            ancien.nomFichier,
+                            'public/inscription/dossiers',
+                        );
+                    } catch (error) {
+                        console.error('[uploadDossierInscription] Échec de suppression de l’ancienne pièce:', error);
+                    }
                 }
             }
 
-            for (const fichier of fichiers) {
+            for (let index = 0; index < fichiers.length; index += 1) {
                 await DemandeInscriptionDossier.create({
-                    nomFichier: fichier.filename,
+                    nomFichier: nouveauxFichiers[index],
                     dossierId,
                     demandeId,
                     correctionDemandee: false,
@@ -247,6 +282,12 @@ export default class DossierInscriptionController {
         } catch (error) {
             // Nettoyage des fichiers déjà écrits par multer pour ne pas laisser d'orphelins
             nettoyerFichiersUpload();
+            for (const fichier of nouveauxFichiers) {
+                try { EtudiantUploadStorageService.removeStoredFile(fichier); }
+                catch (cleanupError) {
+                    console.error('[uploadDossierInscription] Échec du nettoyage de la nouvelle pièce:', cleanupError);
+                }
+            }
             console.error('[uploadDossierInscription]', error);
 
             // Distinguer un refus de format (actionnable par l'étudiant) d'une panne

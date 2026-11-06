@@ -21,6 +21,23 @@ jest.mock('../../../modules/inscription/models/DemandeInscription', () => {
   return { DemandeInscription }
 })
 
+jest.mock('../../../modules/inscription/models/DossierEtudiant', () => ({
+  DossierEtudiant: { findOne: jest.fn() },
+}))
+
+jest.mock('../../../modules/auth/models/Utilisateur', () => ({
+  Utilisateur: { findByPk: jest.fn() },
+}))
+
+jest.mock('../../../modules/inscription/services/EtudiantUploadStorageService', () => ({
+  EtudiantUploadStorageService: {
+    store: jest.fn(() => 'public/dossiers/2026-2027/Site/LICENCE/L1/Informatique/Etudiants/Etudiant_Test_123/Bordereaux/INSCRIPTION/DEMANDE_42/Version_01/bordereau.pdf'),
+    resolveTreeFolders: jest.fn().mockResolvedValue(['2026-2027', 'Site', 'LICENCE', 'L1', 'Informatique']),
+    removeTemporaryUpload: jest.fn(),
+    removeStoredFile: jest.fn(),
+  },
+}))
+
 jest.mock('../../../modules/inscription/models/Echeance', () => ({
   Echeance: {
     findByPk: jest.fn(),
@@ -120,6 +137,8 @@ jest.mock('../../../core/helpers/DatabaseConnection', () => {
 
 const { Bordereau } = require('../../../modules/inscription/models/Bordereau')
 const { DemandeInscription } = require('../../../modules/inscription/models/DemandeInscription')
+const { DossierEtudiant } = require('../../../modules/inscription/models/DossierEtudiant')
+const { Utilisateur } = require('../../../modules/auth/models/Utilisateur')
 const { DatabaseConnection } = require('../../../core/helpers/DatabaseConnection')
 
 import Ctrl from '../../../modules/inscription/controllers/BordereauController'
@@ -205,8 +224,15 @@ describe('BordereauController.createBordereau', () => {
     ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue({
       id: 42,
       createdAt: new Date('2026-10-01T00:00:00Z'),
+      matricule: 'ESA-123',
     })
     ;(Bordereau.findOne as jest.Mock).mockResolvedValue(null)
+    ;(Utilisateur.findByPk as jest.Mock).mockResolvedValue({
+      id: 7,
+      nom: 'Etudiant',
+      prenoms: 'Test',
+    })
+    ;(DossierEtudiant.findOne as jest.Mock).mockResolvedValue(null)
 
     await Ctrl.createBordereau(req, res)
 

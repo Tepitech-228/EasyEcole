@@ -25,6 +25,7 @@ const ROLES_INTERNES_DOSSIERS: string[] = [
  *
  * Le champ nomFichier a contenu, selon l'époque :
  *   - un nom de fichier plat (ex : 2293...pdf) déposé dans public/inscription/dossiers/
+ *   - un chemin sous public/dossiers/<année>/<site>/<parcours>/<niveau>/<filière>/Etudiants/<nom_prenoms_matricule>/
  *   - un chemin relatif complet vers la nouvelle arborescence par dossier étudiant
  *     (ex : public/dossiers/2025-2026/MASTER/ECO-M1-A/Master 1/88354938/dossiers/2293...pdf)
  * Les deux formes sont résolues ici, même logique que BordereauController.downloadBordereau.

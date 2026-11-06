@@ -16,7 +16,7 @@ export class DemandeInscriptionDossier extends Model<InferAttributes<DemandeInsc
 
 DemandeInscriptionDossier.init({
   nomFichier: {
-    type: new DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: false
   },
   correctionDemandee: {

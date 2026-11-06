@@ -40,6 +40,7 @@ import { SnapshotService } from "../services/SnapshotService";
 import { TarifService } from "../services/TarifService";
 import { DocGenGeneratorService } from "../../docgen/services/DocGenGeneratorService";
 import { BordereauDossierService } from "../services/BordereauDossierService";
+import { EtudiantUploadStorageService } from "../services/EtudiantUploadStorageService";
 
 export const isChoixFinalValue = (value: unknown): boolean => {
     if (typeof value === 'boolean') return value;
@@ -208,53 +209,63 @@ export default class BordereauController {
     }
 
     static async createBordereau(req: Request, res: Response): Promise<Response | null> {
+        const files: any = req.files
+        const fichierFile = files?.['fichier']?.[0] as Express.Multer.File | undefined
+        const nettoyerUpload = (): void => {
+            if (!fichierFile) return
+            try { EtudiantUploadStorageService.removeTemporaryUpload(fichierFile); }
+            catch (error) { console.error('[BORDEREAU][create] Échec du nettoyage du téléversement:', error); }
+        }
         if ((req as any).utilisateurRole != RolesUtilisateur.APPRENANT) {
+            nettoyerUpload()
             return res.status(403).json({ success: false })
         }
         const etablissementId = Number((req as any).etablissementId);
         if (!Number.isSafeInteger(etablissementId) || etablissementId <= 0) {
+            nettoyerUpload()
             return res.status(400).json({ success: false, message: "Aucun site actif sélectionné" });
         }
 
         const type = req.body.type
         if (type && !['inscription', 'scolarite', 'rattrapage'].includes(type)) {
+            nettoyerUpload()
             return res.status(400).json({ success: false, message: "Type invalide (inscription, scolarite ou rattrapage)" });
         }
 
         const echeanceId = type === 'scolarite' ? req.body.echeanceId : null
         if (type === 'scolarite' && !echeanceId) {
+            nettoyerUpload()
             return res.status(400).json({ success: false, message: "echeanceId requis pour un bordereau de scolarité" });
         }
 
         if (echeanceId) {
             const echeance = await Echeance.findByPk(echeanceId)
             if (echeance == null) {
+                nettoyerUpload()
                 return res.status(404).json({ success: false, message: "Échéance non trouvée" });
             }
         }
 
         let fichier: string | null = null
-        let files: any = req.files
-        if (files && files['fichier']) {
-            let fichierFile: Express.Multer.File | undefined = (files['fichier'])[0] as Express.Multer.File | undefined
-            if (fichierFile) {
-                fichier = fichierFile.filename
-            }
+        if (fichierFile) {
+            fichier = fichierFile.filename
         }
 
         if (fichier == null) {
+            nettoyerUpload()
             return res.status(400).json({ success: false, message: "Fichier bordereau requis" });
         }
 
         const transaction = await DatabaseConnection.getInstance().sequelize.transaction();
+        let fichierStocke: string | null = null;
         try {
+            let demandeCourante: DemandeInscription | null = null
             if (type === 'inscription') {
                 const demandeId = Number(req.body.demandeId)
-                let demandeCourante: DemandeInscription | null = null
                 if (Number.isSafeInteger(demandeId) && demandeId > 0) {
                     demandeCourante = await DemandeInscription.findOne({
                         where: { id: demandeId, utilisateurId: (req as any).utilisateurId },
-                        attributes: ['id', 'createdAt'],
+                        attributes: ['id', 'createdAt', 'matricule', 'matriculeEtudiant', 'sessionId', 'etablissementId', 'typeDemande'],
                         transaction,
                         lock: transaction.LOCK.UPDATE,
                     })
@@ -280,6 +291,7 @@ export default class BordereauController {
                 })
                 if (bordereauActif) {
                     await transaction.rollback();
+                    nettoyerUpload()
                     return res.status(409).json({
                         success: false,
                         message: 'Un bordereau d\'inscription est déjà actif pour cette demande. Merci de ne pas le renvoyer.'
@@ -303,6 +315,47 @@ export default class BordereauController {
 
             await bordereau.save({ transaction })
 
+            const utilisateur = await Utilisateur.findByPk((req as any).utilisateurId, {
+                attributes: ['id', 'nom', 'prenoms'],
+                transaction,
+            });
+            if (!utilisateur || !fichierFile) {
+                throw new Error("Compte étudiant ou fichier téléversé introuvable pour le stockage du bordereau");
+            }
+            const dossierEtudiant = await DossierEtudiant.findOne({
+                where: { utilisateurId: utilisateur.id },
+                attributes: ['matricule'],
+                transaction,
+            });
+            const identity = {
+                id: Number(utilisateur.id),
+                nom: utilisateur.nom,
+                prenoms: utilisateur.prenoms,
+                matricule: demandeCourante?.matriculeEtudiant
+                    || dossierEtudiant?.matricule
+                    || demandeCourante?.matricule,
+            };
+            const treeFolders = await EtudiantUploadStorageService.resolveTreeFolders({
+                sessionId: demandeCourante?.sessionId,
+                etablissementId: demandeCourante?.etablissementId || bordereau.etablissementId,
+                demandeId: demandeCourante?.id,
+                utilisateurId: utilisateur.id,
+                typeDemande: demandeCourante?.typeDemande,
+            });
+            const dossierFichier = [
+                type === 'inscription' ? 'INSCRIPTION' : (type || 'BORDEREAU').toUpperCase(),
+                `DEMANDE_${demandeCourante?.id || bordereau.id}`,
+            ];
+            fichierStocke = EtudiantUploadStorageService.store(
+                fichierFile,
+                identity,
+                treeFolders,
+                'Bordereaux',
+                dossierFichier,
+            );
+            bordereau.fichier = fichierStocke;
+            await bordereau.save({ transaction });
+
             if (type === 'inscription') {
                 try {
                     const demande = await DemandeInscription.findOne({
@@ -325,6 +378,13 @@ export default class BordereauController {
             return res.status(201).send(bordereau);
         } catch (error) {
             await transaction.rollback();
+            nettoyerUpload()
+            if (fichierStocke) {
+                try { EtudiantUploadStorageService.removeStoredFile(fichierStocke); }
+                catch (cleanupError) {
+                    console.error('[BORDEREAU][create] Échec du nettoyage du bordereau étudiant:', cleanupError);
+                }
+            }
             console.error('[BORDEREAU][create] Erreur création bordereau:', error);
             return res.status(400).json({ success: false, error: error });
         }
@@ -693,7 +753,8 @@ export default class BordereauController {
             const contentType = mimeTypes[ext] || 'application/octet-stream'
 
             res.setHeader('Content-Type', contentType)
-            res.setHeader('Content-Disposition', 'inline; filename="bordereau' + ext + '"')
+            const downloadName = path.basename(filePath).replace(/["\\]/g, '_')
+            res.setHeader('Content-Disposition', `inline; filename="${downloadName}"`)
 
             const stream = fs.createReadStream(filePath)
             stream.on('error', () => {

@@ -768,6 +768,9 @@ export class BordereauDossierService {
         try {
             if (demande.dossiersDemande) {
                 for (const doc of demande.dossiersDemande) {
+                    if (doc.nomFichier?.replace(/\\/g, '/').startsWith('public/dossiers/')) {
+                        continue;
+                    }
                     const sourcePath = path.resolve(process.cwd(), 'public/inscription/dossiers', doc.nomFichier);
                     if (fs.existsSync(sourcePath)) {
                         const newPath = DossierStorageService.deplacerFichier(
@@ -801,6 +804,9 @@ export class BordereauDossierService {
             }
 
             if (bordereau.fichier) {
+                if (bordereau.fichier.replace(/\\/g, '/').startsWith('public/dossiers/')) {
+                    return;
+                }
                 const sourcePath = path.resolve(process.cwd(), 'public/inscription/bordereaux', bordereau.fichier);
                 if (fs.existsSync(sourcePath)) {
                     const newPath = DossierStorageService.deplacerFichier(

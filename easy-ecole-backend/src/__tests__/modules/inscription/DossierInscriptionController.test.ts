@@ -40,10 +40,24 @@ jest.mock('../../../modules/inscription/models/ComiteVote', () => ({
   ComiteVote: { destroy: jest.fn() },
 }))
 
+jest.mock('../../../modules/auth/models/Utilisateur', () => ({
+  Utilisateur: { findByPk: jest.fn() },
+}))
+
+jest.mock('../../../modules/inscription/services/EtudiantUploadStorageService', () => ({
+  EtudiantUploadStorageService: {
+    store: jest.fn(() => 'public/dossiers/2026-2027/Site/LICENCE/L1/Informatique/Etudiants/Etudiant_Test_123/Dossiers/INSCRIPTION/DEMANDE_1/PIECES/2_Diplome/Version_01/document.pdf'),
+    resolveTreeFolders: jest.fn().mockResolvedValue(['2026-2027', 'Site', 'LICENCE', 'L1', 'Informatique']),
+    removeTemporaryUpload: jest.fn(),
+    removeStoredFile: jest.fn(),
+  },
+}))
+
 const { DossierInscription } = require('../../../modules/inscription/models/DossierInscription')
 const { DemandeInscription } = require('../../../modules/inscription/models/DemandeInscription')
 const { DemandeInscriptionDossier } = require('../../../modules/inscription/models/DemandeInscriptionDossier')
 const { ComiteVote } = require('../../../modules/inscription/models/ComiteVote')
+const { Utilisateur } = require('../../../modules/auth/models/Utilisateur')
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -243,10 +257,11 @@ describe('DossierInscriptionController.uploadDossierInscription', () => {
       files: [{ filename: 'document.pdf' }],
     } as any)
     const res = mockResponse()
-    const demande = { utilisateurId: 7, statutPipeline: 'brouillon', sessionId: 3 }
+    const demande = { id: 1, utilisateurId: 7, matricule: 'ESA-123', statutPipeline: 'brouillon', sessionId: 3 }
     ;(DemandeInscription.findByPk as jest.Mock)
       .mockResolvedValueOnce(demande)
       .mockResolvedValueOnce(demande)
+    ;(Utilisateur.findByPk as jest.Mock).mockResolvedValue({ id: 7, nom: 'Etudiant', prenoms: 'Test' })
     ;(DossierInscription.findByPk as jest.Mock).mockResolvedValue({ id: 2, sessionId: 3, titre: 'Diplôme' })
     ;(DemandeInscriptionDossier.findAll as jest.Mock).mockResolvedValue([])
     ;(DemandeInscriptionDossier.create as jest.Mock).mockResolvedValue({})
@@ -254,7 +269,7 @@ describe('DossierInscriptionController.uploadDossierInscription', () => {
     await DossierInscriptionController.uploadDossierInscription(req, res)
 
     expect(DemandeInscriptionDossier.create).toHaveBeenCalledWith({
-      nomFichier: 'document.pdf',
+      nomFichier: expect.stringContaining('public/dossiers/'),
       dossierId: '2',
       demandeId: '1',
       correctionDemandee: false,
@@ -459,7 +474,7 @@ describe('DossierInscriptionController.uploadDossierInscription — reprise apr�
 
     expect(res.status).toHaveBeenCalledWith(201)
     expect(DemandeInscriptionDossier.create).toHaveBeenCalledWith({
-      nomFichier: 'document.pdf',
+      nomFichier: expect.stringContaining('public/dossiers/'),
       dossierId: '2',
       demandeId: '1',
       correctionDemandee: false,
