@@ -62,6 +62,12 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
     RolesUtilisateur.SUPERVISEUR_GENERAL,
   ]
 
+  private readonly rolesCreablesParSurveillant = [
+    RolesUtilisateur.APPRENANT,
+    RolesUtilisateur.ENSEIGNANT,
+    ...this.staffRoles,
+  ]
+
   constructor(
     private utilisateurService: UtilisateurService,
     private toastService: ToastService,
@@ -70,7 +76,16 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
   ) { super() }
 
   ngOnInit(): void {
-    this.loadUtilisateurs()
+    if (!this.rolesValue.isSurveillant) {
+      this.loadUtilisateurs()
+    }
+  }
+
+  get roleKeysForForm(): string[] {
+    if (!this.rolesValue.isSurveillant) return this.roleKeys
+    return this.roleKeys.filter(key =>
+      this.rolesCreablesParSurveillant.includes(RolesUtilisateur[key])
+    )
   }
 
   loadUtilisateurs(): void {

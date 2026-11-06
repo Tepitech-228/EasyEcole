@@ -42,6 +42,26 @@ describe('ROLE_PERMISSIONS d’administration', () => {
       ]))
   })
 
+  it('donne au surveillant uniquement la permission de création dans la gestion des utilisateurs', () => {
+    expect(ROLE_PERMISSIONS['Surveillant']).toContain('menu.administration.utilisateurs')
+    expect(ROLE_PERMISSIONS['Surveillant']).toContain('action.administration.utilisateur.creer')
+    expect(ROLE_PERMISSIONS['Surveillant']).not.toContain('action.administration.utilisateur.modifier')
+    expect(ROLE_PERMISSIONS['Surveillant']).not.toContain('action.administration.utilisateur.supprimer')
+
+    expect(REF_ROLE_PERMISSIONS.filter(item => item.roleNom === 'Surveillant').map(item => item.permissionKey))
+      .toEqual(expect.arrayContaining([
+        'menu.administration.utilisateurs',
+        'action.administration.utilisateur.creer',
+      ]))
+    const groupeAdministration = MENU_CONFIG
+      .flatMap(pole => pole.groups)
+      .find(group => group.label === 'Administration')
+    const entreeUtilisateurs = groupeAdministration?.items
+      .find(item => item.permissionKey === 'menu.administration.utilisateurs')
+    expect(groupeAdministration?.allowedRoles).toContain(RolesUtilisateur.SURVEILLANT)
+    expect(entreeUtilisateurs?.allowedRoles).toContain(RolesUtilisateur.SURVEILLANT)
+  })
+
   it('affiche le pôle RH au surveillant avec le menu Terminal', () => {
     const poleRh = MENU_CONFIG.find(pole => pole.label === 'Ressources Humaines')
     const groupePointage = poleRh?.groups.find(group => group.label === 'Pointage')

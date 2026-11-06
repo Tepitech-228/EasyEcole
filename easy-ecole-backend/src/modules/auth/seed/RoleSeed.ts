@@ -153,6 +153,8 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     ],
     'Surveillant': [
         'menu.tableau-de-bord',
+        'menu.administration.utilisateurs',
+        'action.administration.utilisateur.creer',
         'menu.cours', 'menu.cours.presences', 'menu.cours.cahiers-de-texte',
         'menu.cours.emplois-du-temps', 'menu.cours.notes',
         'menu.scolarite', 'menu.scolarite.discipline', 'menu.scolarite.conseils',
@@ -246,6 +248,8 @@ export class RoleSeed {
 
                 const permissionKeys = roleData.nom === 'Surveillant' && existingPermissionCount > 0
                     ? [
+                        'menu.administration.utilisateurs',
+                        'action.administration.utilisateur.creer',
                         'menu.cours.presences',
                         'menu.cours.cahiers-de-texte',
                         'menu.cours.emplois-du-temps',

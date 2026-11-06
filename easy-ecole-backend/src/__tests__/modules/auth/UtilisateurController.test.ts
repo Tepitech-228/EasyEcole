@@ -189,6 +189,29 @@ describe('UtilisateurController.adminCreateUtilisateur site scope', () => {
     expect(Etablissement.findAll).not.toHaveBeenCalled()
   })
 
+  it('empêche un surveillant de créer un compte administrateur', async () => {
+    const req = mockRequest({
+      utilisateurRole: 'surveillant',
+      utilisateurId: 12,
+      body: {
+        email: 'admin@example.com',
+        identifiant: 'new-admin',
+        motDePasse: 'secret123',
+        role: 'admin',
+      },
+    } as any)
+    const res = mockResponse()
+    ;(Utilisateur.findOne as jest.Mock).mockResolvedValue(null)
+
+    await UtilisateurController.adminCreateUtilisateur(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      message: 'Un surveillant ne peut créer que des comptes apprenants, enseignants ou personnels non-administrateurs.',
+    }))
+    expect(Etablissement.findAll).not.toHaveBeenCalled()
+  })
+
   it('autorise un rôle central sans site de rattachement', async () => {
     const req = mockRequest({
       utilisateurRole: 'admin',

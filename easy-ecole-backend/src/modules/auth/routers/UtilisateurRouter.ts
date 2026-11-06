@@ -65,17 +65,21 @@ function decodeCreatePayload(req: express.Request, res: express.Response, next: 
 }
 
 function authorizeUserCreation(req: express.Request, res: express.Response, next: express.NextFunction): void {
-    if (req.utilisateurRole !== RolesUtilisateur.ADMIN && req.utilisateurRole !== RolesUtilisateur.INSTITUTION) {
+    if (req.utilisateurRole === RolesUtilisateur.ADMIN || req.utilisateurRole === RolesUtilisateur.INSTITUTION) {
+        next()
+        return
+    }
+    if (req.utilisateurRole !== RolesUtilisateur.SURVEILLANT) {
         res.status(403).json({ success: false, message: "Réservé à l'administration" })
         return
     }
-    next()
+    CheckPermission('action.administration.utilisateur.creer')(req, res, next)
 }
 
 /** GET /auth/utilisateurs — Liste tous les utilisateurs (admin/institution) */
 router
     .get('/', [Authenticate], UtilisateurController.getAllUtilisateurs)
-    /** POST /auth/utilisateurs — Créer un utilisateur (admin/institution) */
+    /** POST /auth/utilisateurs — Créer un utilisateur (admin/institution/surveillant autorisé) */
     .post('/', [Authenticate, authorizeUserCreation, upload.single("photo"), decodeCreatePayload], UtilisateurController.adminCreateUtilisateur)
     /** GET /auth/utilisateurs/moi — Retourne l'utilisateur courant (basé sur le token JWT) */
     .get('/moi', [Authenticate], UtilisateurController.getMoi)

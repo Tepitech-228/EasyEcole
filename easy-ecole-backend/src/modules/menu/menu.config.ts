@@ -451,10 +451,10 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
             {
                 label: 'Administration',
                 icon: 'security',
-                allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN],
+                allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN, RolesUtilisateur.SURVEILLANT],
                 roleRestricted: true,
                 items: [
-                    { label: 'Utilisateurs', route: '/administration/utilisateurs', icon: 'people', permissionKey: 'menu.administration.utilisateurs', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Utilisateurs', route: '/administration/utilisateurs', icon: 'people', permissionKey: 'menu.administration.utilisateurs', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN, RolesUtilisateur.SURVEILLANT] },
                     { label: 'Sites', route: '/administration/sites', icon: 'business', allowedRoles: [RolesUtilisateur.ADMIN], roleRestricted: true },
                     { label: 'QR Codes', route: '/administration/qr-codes', icon: 'qr_code', permissionKey: 'menu.administration.qr-codes', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Journal audit', route: '/administration/audit-logs', icon: 'fact_check', permissionKey: 'menu.administration.journal-audit', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },

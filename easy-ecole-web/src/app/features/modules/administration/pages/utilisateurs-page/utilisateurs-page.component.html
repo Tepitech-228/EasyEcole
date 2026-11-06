@@ -1,13 +1,14 @@
 <div class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-    <app-header-title title="Utilisateurs" subtitle="Gestion de tous les utilisateurs du système"></app-header-title>
-    <button (click)="openAddModal()"
+    <app-header-title title="Utilisateurs"
+        [subtitle]="rolesValue.isSurveillant ? 'Création de comptes apprenants, enseignants et personnels non-administrateurs' : 'Gestion de tous les utilisateurs du système'"></app-header-title>
+    <button *ngIf="rolesValue.isAdmin || rolesValue.isInstitution || rolesValue.isSurveillant" (click)="openAddModal()"
         class="inline-flex w-full items-center justify-center gap-x-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 sm:w-auto">
         <span class="material-symbols-outlined text-lg">add</span>
         Nouvel utilisateur
     </button>
 </div>
 
-<div class="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
+<div *ngIf="!rolesValue.isSurveillant" class="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
     <div class="p-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-4">
         <div class="relative w-full sm:w-auto">
             <input type="text" [(ngModel)]="searchTerm" placeholder="Rechercher un utilisateur..."
@@ -157,7 +158,7 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">Rôle</label>
                 <select [(ngModel)]="formData.role"
                     class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
-                    <option *ngFor="let k of roleKeys" [value]="RolesUtilisateur[k]"
+                    <option *ngFor="let k of roleKeysForForm" [value]="RolesUtilisateur[k]"
                         [disabled]="rolesValue.isInstitution && (RolesUtilisateur[k] === RolesUtilisateur.ADMIN || RolesUtilisateur[k] === RolesUtilisateur.INSTITUTION)">
                         {{ roleLabels[RolesUtilisateur[k]] }}
                     </option>

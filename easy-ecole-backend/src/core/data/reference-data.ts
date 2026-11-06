@@ -562,6 +562,8 @@ export const REF_ROLE_PERMISSIONS: RefRolePermission[] = [
   { roleNom: 'Parent', permissionKey: 'menu.scolarite.demandes-docs' },
   { roleNom: 'Parent', permissionKey: 'menu.scolarite.reclamations' },
   { roleNom: 'Parent', permissionKey: 'menu.tableau-de-bord' },
+  { roleNom: 'Surveillant', permissionKey: 'menu.administration.utilisateurs' },
+  { roleNom: 'Surveillant', permissionKey: 'action.administration.utilisateur.creer' },
   { roleNom: 'Surveillant', permissionKey: 'action.scolarite.discipline.sanctionner' },
   { roleNom: 'Surveillant', permissionKey: 'menu.communication' },
   { roleNom: 'Surveillant', permissionKey: 'menu.communication.messagerie' },

@@ -22,6 +22,20 @@ export default class UtilisateurController {
 
     constructor() { }
 
+    private static readonly rolesCreablesParSurveillant: RolesUtilisateur[] = [
+        RolesUtilisateur.APPRENANT,
+        RolesUtilisateur.ENSEIGNANT,
+        RolesUtilisateur.PERSONNEL_ADMINISTRATIF,
+        RolesUtilisateur.CAISSIER_BANQUE,
+        RolesUtilisateur.COMITE_ORIENTATION,
+        RolesUtilisateur.CABINET_COMPTABLE,
+        RolesUtilisateur.RESSOURCES_HUMAINES,
+        RolesUtilisateur.ESA_COMPTA,
+        RolesUtilisateur.SECRETAIRE,
+        RolesUtilisateur.SURVEILLANT,
+        RolesUtilisateur.SUPERVISEUR_GENERAL,
+    ];
+
     private static roleToFonction(role: string): string {
         const map: { [key: string]: string } = {
             [RolesUtilisateur.PERSONNEL_ADMINISTRATIF]: 'Personnel Administratif',
@@ -351,7 +365,11 @@ export default class UtilisateurController {
     static async adminCreateUtilisateur(req: Request, res: Response): Promise<Response> {
         try {
             const role = (req as any).utilisateurRole;
-            if (role !== RolesUtilisateur.ADMIN && role !== RolesUtilisateur.INSTITUTION) {
+            if (
+                role !== RolesUtilisateur.ADMIN
+                && role !== RolesUtilisateur.INSTITUTION
+                && role !== RolesUtilisateur.SURVEILLANT
+            ) {
                 return res.status(403).json({ success: false, message: "Réservé à l'administration" });
             }
 
@@ -377,6 +395,15 @@ export default class UtilisateurController {
 
             const userRole: RolesUtilisateur = req.body.role || RolesUtilisateur.APPRENANT;
             if (
+                role === RolesUtilisateur.SURVEILLANT
+                && !UtilisateurController.rolesCreablesParSurveillant.includes(userRole)
+            ) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Un surveillant ne peut créer que des comptes apprenants, enseignants ou personnels non-administrateurs."
+                });
+            }
+            if (
                 role === RolesUtilisateur.INSTITUTION
                 && [RolesUtilisateur.ADMIN, RolesUtilisateur.INSTITUTION].includes(userRole)
             ) {
@@ -390,7 +417,7 @@ export default class UtilisateurController {
                 return res.status(400).json({ success: false, message: "Un site demandé n’existe pas ou est inactif" });
             }
             const affectations = siteIds || [];
-            if (role === RolesUtilisateur.INSTITUTION) {
+            if ([RolesUtilisateur.INSTITUTION, RolesUtilisateur.SURVEILLANT].includes(role)) {
                 if (!affectations.length) {
                     return res.status(400).json({
                         success: false,
