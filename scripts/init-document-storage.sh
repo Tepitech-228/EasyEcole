@@ -45,11 +45,6 @@
 # Autres options :
 #   INCLUDE_CURRENT_YEAR=false  ne pas ajouter l'annee courante
 #   INCLUDE_NEXT_YEAR=true      pre-creer aussi l'annee suivante
-#   ACADEMIC_YEAR_FROM=2020     premiere annee de la plage (defaut : plus
-#                               ancienne annee connue)
-#   ACADEMIC_YEAR_UNTIL=2050    derniere annee de la plage (defaut : 2050).
-#                               La valeur 2050 cree jusqu'a 2050-2051.
-#   SKIP_YEAR_RANGE=true        ne creer que les annees explicites/decouvertes
 # =============================================================================
 
 set -euo pipefail
@@ -116,13 +111,6 @@ normalize_year() {
   else
     return 1
   fi
-}
-
-year_start() {
-  local normalized
-  normalized="$(normalize_year "$1" || true)"
-  [ -n "$normalized" ] || return 1
-  printf '%s\n' "${normalized%%-*}"
 }
 
 ACADEMIC_YEAR_LIST=()
@@ -273,38 +261,6 @@ fi
 if [ "${INCLUDE_NEXT_YEAR:-false}" = "true" ]; then
   current_start="${CURRENT_ACADEMIC_YEAR%%-*}"
   add_year "$((10#$current_start + 1))"
-fi
-
-# 5. Plage continue jusqu'a ACADEMIC_YEAR_UNTIL (2050 par defaut).
-if [ "${SKIP_YEAR_RANGE:-false}" != "true" ]; then
-  if [ -n "${ACADEMIC_YEAR_FROM:-}" ]; then
-    range_from_start="$(year_start "$ACADEMIC_YEAR_FROM" || true)"
-  else
-    range_from_start=""
-    for academic_year in "${ACADEMIC_YEAR_LIST[@]}"; do
-      candidate_start="${academic_year%%-*}"
-      if [ -z "$range_from_start" ] || [ "$((10#$candidate_start))" -lt "$((10#$range_from_start))" ]; then
-        range_from_start="$candidate_start"
-      fi
-    done
-  fi
-
-  range_until_start="$(year_start "${ACADEMIC_YEAR_UNTIL:-2050}" || true)"
-
-  if [ -z "$range_from_start" ]; then
-    range_from_start="${CURRENT_ACADEMIC_YEAR%%-*}"
-  fi
-
-  if [ -z "$range_until_start" ]; then
-    echo "[init-storage] ACADEMIC_YEAR_UNTIL invalide, plage ignoree." >&2
-  elif [ "$((10#$range_from_start))" -le "$((10#$range_until_start))" ]; then
-    echo "[init-storage] Plage : ${range_from_start}-$((10#$range_from_start + 1)) a ${range_until_start}-$((10#$range_until_start + 1))"
-    for ((start_year = 10#$range_from_start; start_year <= 10#$range_until_start; start_year++)); do
-      add_year "$start_year"
-    done
-  else
-    echo "[init-storage] Plage ignoree : ACADEMIC_YEAR_FROM > ACADEMIC_YEAR_UNTIL." >&2
-  fi
 fi
 
 if [ ${#ACADEMIC_YEAR_LIST[@]} -eq 0 ]; then

@@ -19,12 +19,13 @@
 #
 # INITIALISATION AUTOMATIQUE DU STOCKAGE :
 #   le service one-shot `init-storage` execute scripts/init-document-storage.sh
-#   avant le backend (arborescence, marqueurs .easyecole-mounted, annees
-#   academiques jusqu'a ACADEMIC_YEAR_UNTIL). Aucune commande manuelle sur la VM.
+#   avant le backend (arborescence et marqueurs .easyecole-mounted). Il ne
+#   cree que les annees explicites, presentes en base/sur le montage ou courantes.
+#   Aucune commande manuelle sur la VM.
 #
 # VARIABLES DOKPLOY : DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS,
 #   JWT_SECRET, DOCGEN_SECRET, CORS_ORIGIN, SMTP_*, REDIS_URL, TZ,
-#   ACADEMIC_YEAR_UNTIL (defaut 2050), ACADEMIC_YEAR_FROM, ACADEMIC_YEARS.
+#   ACADEMIC_YEARS.
 #   Les chemins de stockage ont des defauts production ; les surcharger
 #   uniquement si les montages changent.
 #
@@ -64,11 +65,8 @@ services:
       SKIP_MOUNT_CHECK: "true"
       # Les droits sont alignes par docker-entrypoint.sh du backend (phase root).
       FIX_PERMISSIONS: "false"
-      # Derniere annee pre-creee (2050 => 2050-2051).
-      ACADEMIC_YEAR_UNTIL: ${ACADEMIC_YEAR_UNTIL:-2050}
       # Annees supplementaires explicites, ex. "2023-2024 2024-2025".
       ACADEMIC_YEARS: ${ACADEMIC_YEARS:-}
-      ACADEMIC_YEAR_FROM: ${ACADEMIC_YEAR_FROM:-2025-2026}
       # Decouverte des annees dans ins_annees_academiques.
       DB_HOST: ${DB_HOST:-192.168.100.20}
       DB_PORT: ${DB_PORT:-3306}
