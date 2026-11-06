@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DossierInscriptionService } from 'src/app/data/modules/inscription/services/dossier-inscription.service';
 import { DemandeInscriptionService } from 'src/app/data/modules/inscription/services/demande-inscription.service';
+import { compresserImage, ImageIndecodableError, ImageTropVolumineuseError } from 'src/app/shared/utils/image-compression.util';
 
 interface PieceAReposer {
   dossierId: number | string;
@@ -63,14 +64,14 @@ export class InscriptionCorrectionDocumentsPageComponent implements OnInit {
     return piece.dossierInscription?.titre || piece.nomFichier || 'Pièce à remplacer';
   }
 
-  onFileSelected(event: Event, piece: PieceAReposer): void {
+  async onFileSelected(event: Event, piece: PieceAReposer): Promise<void> {
     const input = event.target as HTMLInputElement;
     const fichier = input.files?.[0];
     if (!fichier) return;
 
     const extension = `.${fichier.name.split('.').pop() || ''}`.toLowerCase();
-    if (!['.pdf', '.jpg', '.jpeg', '.png'].includes(extension)) {
-      this.errorMessage = 'Formats acceptés : PDF, JPG, JPEG ou PNG.';
+    if (!['.pdf', '.jpg', '.jpeg', '.png', '.heic', '.heif'].includes(extension)) {
+      this.errorMessage = 'Formats acceptés : PDF, JPG, JPEG, PNG ou HEIC.';
       input.value = '';
       return;
     }
@@ -80,8 +81,24 @@ export class InscriptionCorrectionDocumentsPageComponent implements OnInit {
       return;
     }
 
+    // Même normalisation que dans le wizard : photo mobile > 20 Mo ou HEIC.
+    let fichierPrepare = fichier;
+    try {
+      fichierPrepare = await compresserImage(fichier, {
+        dimensionMax: 2400,
+        qualite: 0.88,
+        tailleMaxOctets: 20 * 1024 * 1024,
+      });
+    } catch (erreur) {
+      this.errorMessage = erreur instanceof ImageIndecodableError || erreur instanceof ImageTropVolumineuseError
+        ? erreur.message
+        : 'Cette image n’a pas pu être préparée. Choisissez un fichier JPG ou PNG.';
+      input.value = '';
+      return;
+    }
+
     this.errorMessage = '';
-    this.fichiers[String(piece.dossierId)] = fichier;
+    this.fichiers[String(piece.dossierId)] = fichierPrepare;
     input.value = '';
   }
 

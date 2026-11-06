@@ -186,7 +186,7 @@
             </svg>
             Choisir
           </div>
-          <input type="file" accept=".pdf,.jpg,.jpeg,.png" (change)="surDocument(d.id, $event)" />
+          <input type="file" accept=".pdf,.jpg,.jpeg,.png,.heic,.heif" (change)="surDocument(d.id, $event)" />
         </div>
 
         <span *ngIf="nomDocument(d.id)" class="doc-filename">
@@ -237,7 +237,7 @@
              class="object-cover w-24 h-24 rounded-full border-2 border-gray-300">
       </div>
       <input id="inscription-photo" type="file" class="form-control"
-             accept="image/jpeg,image/png,image/gif,image/webp"
+             accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif"
              (change)="surSelectionPhoto($event)" [disabled]="photoUploadEnCours">
       <small *ngIf="photoSelectionnee" role="status">
         Téléversement de {{ photoSelectionnee.name }} en cours…

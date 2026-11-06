@@ -25,7 +25,7 @@
           </div>
           <label class="correction-upload">
             <span>Nouveau fichier</span>
-            <input type="file" accept=".pdf,.jpg,.jpeg,.png" (change)="onFileSelected($event, piece)">
+            <input type="file" accept=".pdf,.jpg,.jpeg,.png,.heic,.heif" (change)="onFileSelected($event, piece)">
             <small *ngIf="fichiers[piece.dossierId.toString()] as fichier">Sélectionné : {{ fichier.name }}</small>
           </label>
         </article>

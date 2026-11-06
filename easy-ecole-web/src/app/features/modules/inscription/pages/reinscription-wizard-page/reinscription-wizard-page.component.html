@@ -80,7 +80,7 @@
           </div>
           <label class="btn btn-outline btn-sm">
             {{ documents[d.code] ? 'Changer' : 'Choisir le fichier' }}
-            <input type="file" accept=".pdf,.jpg,.jpeg,.png" style="display:none"
+            <input type="file" accept=".pdf,.jpg,.jpeg,.png,.heic,.heif" style="display:none"
                    (change)="surDocument(d.code, $event)">
           </label>
         </div>
@@ -106,7 +106,7 @@
         </div>
         <label class="btn btn-outline btn-sm">
           {{ bordereau ? 'Changer' : 'Choisir le fichier' }}
-          <input type="file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" (change)="surBordereau($event)">
+          <input type="file" accept=".pdf,.jpg,.jpeg,.png,.heic,.heif" style="display:none" (change)="surBordereau($event)">
         </label>
       </div>
 

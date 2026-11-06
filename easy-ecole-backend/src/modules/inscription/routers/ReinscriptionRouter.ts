@@ -4,6 +4,7 @@ import * as path from "path"
 import * as fs from "fs"
 
 import ReinscriptionController from "../controllers/ReinscriptionController"
+import { normaliserImages } from "../../../core/helpers/NormaliserImage"
 
 const router = express.Router()
 
@@ -22,7 +23,32 @@ const storage = multer.diskStorage({
         callback(null, name)
     },
 })
-const upload = multer({ storage })
+const EXTENSIONS_PDF = new Set(['.pdf'])
+const EXTENSIONS_IMAGE = new Set(['.jpg', '.jpeg', '.png', '.heic', '.heif'])
+const TYPES_PDF = new Set(['application/pdf', 'application/x-pdf', 'application/octet-stream', ''])
+const TYPES_IMAGE = new Set([
+    'image/jpeg', 'image/jpg', 'image/png',
+    'image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence',
+    'application/octet-stream', '',
+])
+const upload = multer({
+    storage,
+    fileFilter: (_req, file, callback) => {
+        const extension = path.extname(file.originalname).toLowerCase()
+        const mime = (file.mimetype || '').toLowerCase()
+        const isPdf = EXTENSIONS_PDF.has(extension) && TYPES_PDF.has(mime)
+        const isImage = EXTENSIONS_IMAGE.has(extension) && TYPES_IMAGE.has(mime)
+        if (isPdf || isImage) {
+            callback(null, true)
+            return
+        }
+        callback(new multer.MulterError(
+            'LIMIT_UNEXPECTED_FILE',
+            'Formats acceptés : PDF, JPG, JPEG, PNG ou HEIC.',
+        ))
+    },
+    limits: { fileSize: 20 * 1024 * 1024, files: 7 },
+})
 
 const REINSCRIPTION_FIELDS = [
     { name: 'demande_dg', maxCount: 1 },
@@ -107,7 +133,12 @@ router.get('/eligibilite', ReinscriptionController.getEligibilite)
  *       201:
  *         description: Dossier de réinscription créé
  */
-router.post('/soumettre', upload.fields(REINSCRIPTION_FIELDS), ReinscriptionController.soumettre)
+router.post(
+    '/soumettre',
+    upload.fields(REINSCRIPTION_FIELDS),
+    normaliserImages({ dimensionMax: 2400, qualite: 88, tailleMaxOctets: 20 * 1024 * 1024 }),
+    ReinscriptionController.soumettre,
+)
 
 /**
  * @openapi

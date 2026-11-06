@@ -4,6 +4,7 @@ import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { ReinscriptionService } from 'src/app/data/modules/inscription/services/reinscription.service';
 import { DemandeInscriptionService } from 'src/app/data/modules/inscription/services/demande-inscription.service';
 import { ReinscriptionWizardStoreService } from 'src/app/data/modules/inscription/services/reinscription-wizard-store.service';
+import { compresserImage, ImageIndecodableError, ImageTropVolumineuseError } from 'src/app/shared/utils/image-compression.util';
 
 interface DocumentRequis {
   code: string;
@@ -224,21 +225,61 @@ export class ReinscriptionWizardPageComponent extends BaseComponentClass impleme
     return !!this.bordereau
   }
 
-  surDocument(code: string, event: any): void {
+  async surDocument(code: string, event: any): Promise<void> {
     const file: File = event?.target?.files?.[0]
-    if (file) {
-      this.documents[code] = file
-      delete this.documentsAReposer[code]
-      this.sauvegarder()
-    }
+    if (!file) return
+
+    const fichierPrepare = await this.preparerFichier(file, event)
+    if (!fichierPrepare) return
+
+    this.errorMessage = ''
+    this.documents[code] = fichierPrepare
+    delete this.documentsAReposer[code]
+    this.sauvegarder()
   }
 
-  surBordereau(event: any): void {
+  async surBordereau(event: any): Promise<void> {
     const file: File = event?.target?.files?.[0]
-    if (file) {
-      this.bordereau = file
-      this.bordereauAReposer = null
-      this.sauvegarder()
+    if (!file) return
+
+    const fichierPrepare = await this.preparerFichier(file, event)
+    if (!fichierPrepare) return
+
+    this.errorMessage = ''
+    this.bordereau = fichierPrepare
+    this.bordereauAReposer = null
+    this.sauvegarder()
+  }
+
+  /**
+   * Normalise une pièce mobile (photo > 20 Mo ou HEIC) en JPEG avant envoi.
+   * Retourne null et affiche un message si le fichier ne peut pas être préparé.
+   */
+  private async preparerFichier(file: File, event: any): Promise<File | null> {
+    const extension = `.${file.name.split('.').pop() || ''}`.toLowerCase()
+    if (!['.pdf', '.jpg', '.jpeg', '.png', '.heic', '.heif'].includes(extension)) {
+      this.errorMessage = 'Formats acceptés : PDF, JPG, JPEG, PNG ou HEIC.'
+      if (event?.target) { event.target.value = '' }
+      return null
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      this.errorMessage = 'La taille maximale autorisée est de 20 Mo.'
+      if (event?.target) { event.target.value = '' }
+      return null
+    }
+
+    try {
+      return await compresserImage(file, {
+        dimensionMax: 2400,
+        qualite: 0.88,
+        tailleMaxOctets: 20 * 1024 * 1024,
+      })
+    } catch (erreur) {
+      this.errorMessage = erreur instanceof ImageIndecodableError || erreur instanceof ImageTropVolumineuseError
+        ? erreur.message
+        : 'Cette image n’a pas pu être préparée. Choisissez un fichier JPG ou PNG.'
+      if (event?.target) { event.target.value = '' }
+      return null
     }
   }
 

@@ -8,10 +8,15 @@ import ApprenantController from "../controllers/ApprenantController"
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
 import Authenticate from "../../../core/middlewares/Authenticate";
 import CheckPermission from "../../../core/middlewares/CheckPermission";
+import { normaliserImages } from "../../../core/helpers/NormaliserImage";
 
 const router = express.Router()
-const ALLOWED_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp'])
-const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp'])
+const ALLOWED_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif'])
+const ALLOWED_MIME_TYPES = new Set([
+    'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+    'image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence',
+    'application/octet-stream', '',
+])
 const storage = multer.diskStorage({
     destination: (req, file, callback) => {
         const dir: string = "public/auth/apprenants/photos/"
@@ -31,9 +36,12 @@ const upload = multer({
     storage,
     fileFilter: (req, file, cb) => {
         const ext = path.extname(file.originalname).toLowerCase()
-        cb(null, ALLOWED_EXTENSIONS.has(ext) && ALLOWED_MIME_TYPES.has(file.mimetype))
+        const mime = (file.mimetype || '').toLowerCase()
+        cb(null, ALLOWED_EXTENSIONS.has(ext) && ALLOWED_MIME_TYPES.has(mime))
     },
-    limits: { fileSize: 5 * 1024 * 1024 },
+    // 20 Mo pour accepter les photos HEIC d'iPhone ; la photo est ensuite
+    // redimensionnée côté serveur (1200 px, JPEG) avant stockage.
+    limits: { fileSize: 20 * 1024 * 1024 },
 })
 
 /**
@@ -116,7 +124,11 @@ router
      *       401:
      *         description: Non autorisé
      */
-    .put('/photo', [Authenticate, upload.fields([{name: 'photo', maxCount: 1}])], ApprenantController.updatePhoto)
+    .put('/photo', [
+        Authenticate,
+        upload.fields([{name: 'photo', maxCount: 1}]),
+        normaliserImages({ dimensionMax: 1200, qualite: 86, tailleMaxOctets: 5 * 1024 * 1024 }),
+    ], ApprenantController.updatePhoto)
     /**
      * @openapi
      * /auth/apprenants/photo/{apprenantId}:
@@ -147,7 +159,11 @@ router
      *       401:
      *         description: Non autorisé
      */
-    .put('/photo/:apprenantId', [Authenticate, upload.fields([{name: 'photo', maxCount: 1}])], ApprenantController.updatePhoto)
+    .put('/photo/:apprenantId', [
+        Authenticate,
+        upload.fields([{name: 'photo', maxCount: 1}]),
+        normaliserImages({ dimensionMax: 1200, qualite: 86, tailleMaxOctets: 5 * 1024 * 1024 }),
+    ], ApprenantController.updatePhoto)
     /**
      * @openapi
      * /auth/apprenants/qr-codes/generate:

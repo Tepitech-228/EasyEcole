@@ -7,6 +7,7 @@ import { customAlphabet } from 'nanoid'
 import DossierInscriptionController from "../controllers/DossierInscriptionController"
 import Authenticate from "../../../core/middlewares/Authenticate";
 import { AuthApprenant } from "../../../core/middlewares/AuthApprenant";
+import { normaliserImages } from "../../../core/helpers/NormaliserImage";
 
 const router = express.Router()
 
@@ -36,14 +37,18 @@ const upload = multer({
         // Les images sont admises car un bordereau est très souvent photographié,
         // et que le module sait déjà les relire (DocumentDossierController).
         const pdfExt = ['.pdf'];
-        const imgExt = ['.jpg', '.jpeg', '.png'];
+        const imgExt = ['.jpg', '.jpeg', '.png', '.heic', '.heif'];
         const pdfMime = [
             'application/pdf',
             'application/x-pdf',
             'application/octet-stream', // MIME vide/générique envoyé par certains navigateurs
             ''
         ];
-        const imgMime = ['image/jpeg', 'image/jpg', 'image/png', 'application/octet-stream', ''];
+        const imgMime = [
+            'image/jpeg', 'image/jpg', 'image/png',
+            'image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence',
+            'application/octet-stream', ''
+        ];
 
         const isPdf = pdfExt.includes(ext) && (pdfMime.includes(mime) || mime === undefined);
         const isImage = imgExt.includes(ext) && (imgMime.includes(mime) || mime === undefined);
@@ -53,7 +58,7 @@ const upload = multer({
         } else {
             cb(new multer.MulterError(
                 'LIMIT_UNEXPECTED_FILE',
-                'Formats acceptés : PDF, JPG, JPEG ou PNG (20 Mo maximum).'
+                'Formats acceptés : PDF, JPG, JPEG, PNG ou HEIC (20 Mo maximum).'
             ));
         }
     },
@@ -117,7 +122,12 @@ router
  *       200:
  *         description: Fichier téléchargé
  */
-    .put('/', [Authenticate, AuthApprenant, upload.array('fichiers', 50)], DossierInscriptionController.uploadDossierInscription)
+    .put('/', [
+        Authenticate,
+        AuthApprenant,
+        upload.array('fichiers', 50),
+        normaliserImages({ dimensionMax: 2400, qualite: 88, tailleMaxOctets: 20 * 1024 * 1024 }),
+    ], DossierInscriptionController.uploadDossierInscription)
 
 // Gestion dédiée des erreurs multer (taille, type, nombre) → 400 explicite au lieu du 500 générique
 router.use((err: any, _req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -125,7 +135,11 @@ router.use((err: any, _req: express.Request, res: express.Response, next: expres
         let message = "Erreur lors de l'upload du fichier";
         if (err.code === 'LIMIT_FILE_SIZE') message = "Le fichier dépasse la taille maximale autorisée (20 Mo)";
         else if (err.code === 'LIMIT_FILE_COUNT') message = "Trop de fichiers envoyés (50 maximum)";
-        else if (err.code === 'LIMIT_UNEXPECTED_FILE') message = "Champ de fichier inattendu";
+        else if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+            message = err.message && err.message !== "Unexpected field"
+                ? err.message
+                : "Champ de fichier inattendu";
+        }
         return res.status(400).json({ success: false, message });
     }
     if (err && err.message === 'Seuls les fichiers PDF sont acceptés') {

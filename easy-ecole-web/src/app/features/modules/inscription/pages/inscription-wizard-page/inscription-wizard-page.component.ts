@@ -16,6 +16,7 @@ import { InscriptionWizardStoreService, FichierMeta } from 'src/app/data/modules
 import { WizardItemType } from 'src/app/data/types/WizardItemType';
 import { AuthService, SiteUtilisateur } from 'src/app/data/modules/auth/services/auth.service';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
+import { compresserImage, ImageIndecodableError, ImageTropVolumineuseError } from 'src/app/shared/utils/image-compression.util';
 import { environment } from 'src/environments/environment';
 
 interface FiliereSelection {
@@ -697,17 +698,17 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.sauvegarder()
   }
 
-  surDocument(cle: string, event: any): void {
+  async surDocument(cle: string, event: any): Promise<void> {
     const file: File = event?.target?.files?.[0]
     if (file) {
       // Contrôle miroir du filtre serveur (DossierInscriptionRouter) : sans cela,
       // un format refusé n'est signalé qu'après l'envoi, et l'étudiant voit
       // « L'un des documents n'a pas pu être téléversé » sans savoir pourquoi.
-      const extensionsAutorisees = ['.pdf', '.jpg', '.jpeg', '.png']
+      const extensionsAutorisees = ['.pdf', '.jpg', '.jpeg', '.png', '.heic', '.heif']
       const extension = ('.' + (file.name.split('.').pop() || '')).toLowerCase()
       if (!extensionsAutorisees.includes(extension)) {
         this.toastService.error(
-          'Formats acceptés : PDF, JPG, JPEG ou PNG. '
+          'Formats acceptés : PDF, JPG, JPEG, PNG ou HEIC. '
           + `Le fichier « ${file.name} » a été refusé.`)
         // Réinitialise le champ pour permettre une nouvelle sélection du même fichier.
         if (event?.target) { event.target.value = '' }
@@ -720,12 +721,31 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
         return
       }
 
-      this.documents[cle] = file
+      // Sur mobile, une photo de document pèse souvent plus que la limite
+      // serveur et le HEIC (iPhone) n'est pas reconnu par le backend : on
+      // normalise l'image en JPEG avant l'envoi.
+      let fichierPrepare = file
+      try {
+        fichierPrepare = await compresserImage(file, {
+          dimensionMax: 2400,
+          qualite: 0.88,
+          tailleMaxOctets: 20 * 1024 * 1024,
+        })
+      } catch (erreur) {
+        const message = erreur instanceof ImageIndecodableError || erreur instanceof ImageTropVolumineuseError
+          ? erreur.message
+          : 'Cette image n’a pas pu être préparée. Choisissez un fichier JPG ou PNG.'
+        this.toastService.error(`${message} (${file.name})`)
+        if (event?.target) { event.target.value = '' }
+        return
+      }
+
+      this.documents[cle] = fichierPrepare
       // La pièce est de nouveau disponible : on retire l'alerte de re-sélection.
       delete this.documentsAReposer[cle]
       const requis = this.documentsRequis.find((d) => d.id === cle)
       if (requis && this.estBordereau(requis)) {
-        this.bordereau = file
+        this.bordereau = fichierPrepare
         this.bordereauAReposer = null
       }
       this.sauvegarder()
@@ -816,31 +836,49 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     )
   }
 
-  surSelectionPhoto(event: Event): void {
+  async surSelectionPhoto(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement
     const photo = input.files?.[0]
     if (!photo) return
 
+    // Une photo prise au téléphone peut dépasser 5 Mo et/ou être un HEIC :
+    // on la redimensionne et on la convertit en JPEG avant l'envoi.
+    let photoPreparee = photo
+    try {
+      photoPreparee = await compresserImage(photo, {
+        dimensionMax: 1200,
+        qualite: 0.86,
+        tailleMaxOctets: 5 * 1024 * 1024,
+      })
+    } catch (erreur) {
+      this.photoSelectionnee = null
+      this.photoErreur = erreur instanceof ImageIndecodableError || erreur instanceof ImageTropVolumineuseError
+        ? erreur.message
+        : 'Cette image n’a pas pu être préparée. Choisissez une photo JPG ou PNG.'
+      input.value = ''
+      return
+    }
+
     const typesAutorises = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-    if (!typesAutorises.includes(photo.type) || photo.size > 5 * 1024 * 1024) {
+    if (!typesAutorises.includes(photoPreparee.type) || photoPreparee.size > 5 * 1024 * 1024) {
       this.photoSelectionnee = null
       this.photoErreur = 'Choisissez une image JPG, PNG, GIF ou WEBP de 5 Mo maximum.'
       input.value = ''
       return
     }
 
-    this.photoSelectionnee = photo
+    this.photoSelectionnee = photoPreparee
     this.photoErreur = ''
     this.showPhotoRequiredModal = false
     input.value = ''
     if (this.photoApercuObjectUrl) {
       URL.revokeObjectURL(this.photoApercuObjectUrl)
     }
-    this.photoApercuObjectUrl = URL.createObjectURL(photo)
+    this.photoApercuObjectUrl = URL.createObjectURL(photoPreparee)
     this.photoApercu = this.photoApercuObjectUrl
     this.photoUploadEnCours = true
 
-    this.apprenantService.updatePhoto(photo).subscribe({
+    this.apprenantService.updatePhoto(photoPreparee).subscribe({
       next: (resultat: any) => {
         this.photoUploadEnCours = false
         this.photoSelectionnee = null

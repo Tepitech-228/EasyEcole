@@ -14,7 +14,13 @@ export function errorHandler(err: Error, _req: Request, res: Response, _next: Ne
     let message = "Erreur lors de l'upload du fichier";
     if (err.code === 'LIMIT_FILE_SIZE') message = "Le fichier dépasse la taille maximale autorisée";
     else if (err.code === 'LIMIT_FILE_COUNT') message = "Trop de fichiers envoyés (maximum autorisé dépassé)";
-    else if (err.code === 'LIMIT_UNEXPECTED_FILE') message = "Champ de fichier inattendu";
+    else if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+      // Conserver le message métier du fileFilter (formats acceptés, HEIC, etc.)
+      // au lieu du « Unexpected field » générique de multer.
+      message = err.message && err.message !== "Unexpected field"
+        ? err.message
+        : "Champ de fichier inattendu";
+    }
     res.status(400).json({ success: false, message });
     return;
   }
