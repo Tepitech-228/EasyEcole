@@ -80,13 +80,6 @@ export class DocumentsPageComponent extends BaseComponentClass implements OnInit
       semestre: this.generateData.semestre || undefined,
       metadata: Object.keys(metadata).length ? metadata : undefined,
     };
-    // API001 : le controller backend extrait sourceId du body sans le réinjecter dans les params du resolver.
-    // Le resolver resolveAutorisationProvisoire lit params.sourceId || params.cursusApprenantId,
-    // on passe donc l'id de la demande via cursusApprenantId en attendant le correctif backend.
-    if (this.generateData.typeCode === 'API001' && payload.sourceId) {
-      payload.sourceType = 'demande_inscription';
-      payload.cursusApprenantId = payload.sourceId;
-    }
     this.documentService.generate(payload).subscribe({
       next: () => { this.showGenerateModal = false; this.getDocuments(); },
       error: (err) => alert('Erreur: ' + (err.error?.message || err.message || 'Erreur lors de la génération'))

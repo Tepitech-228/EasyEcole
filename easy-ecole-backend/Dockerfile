@@ -62,6 +62,13 @@ FROM node:22-bookworm-slim AS runtime
 # et active le mode production côté Sequelize (sync désactivé, pas d'alter).
 ENV NODE_ENV=production
 
+# Chromium/Crashpad a besoin d'un HOME et de repertoires XDG inscriptibles.
+# En conteneur HOME peut valoir /root alors que le process tourne en `node` :
+# Crashpad echoue alors avec "--database is required". /tmp est toujours
+# inscriptible, quel que soit l'utilisateur effectif.
+ENV XDG_CONFIG_HOME=/tmp/.chromium \
+    XDG_CACHE_HOME=/tmp/.chromium
+
 WORKDIR /app
 
 # ---------------------------------------------------------------------------

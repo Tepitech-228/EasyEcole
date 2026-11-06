@@ -154,6 +154,7 @@ export default class PreInscriptionController {
         // explicite dans la réponse : le comité sait que le livrable est manquant.
         const alertes: string[] = [];
         let autorisationReference: string | undefined;
+        let autorisationFilePath: string | undefined;
         try {
             const result = await DocGenGeneratorService.generer({
                 typeCode: 'API001',
@@ -166,6 +167,8 @@ export default class PreInscriptionController {
                 }
             }, req);
 
+            autorisationReference = result.reference;
+            autorisationFilePath = result.filePath;
             await preInscription.update({ autorisationPDF: result.reference })
         } catch (err) {
             console.error("Erreur génération autorisation provisoire PDF (docgen):", err)
@@ -173,9 +176,11 @@ export default class PreInscriptionController {
         }
 
         if (demande.utilisateur) {
-            const attachmentPath = autorisationReference
-                ? path.resolve('storage', 'docgen', `${autorisationReference}.pdf`)
-                : undefined;
+            const attachmentPath = autorisationFilePath
+                ? path.resolve(autorisationFilePath)
+                : autorisationReference
+                    ? path.resolve('storage', 'docgen', `${autorisationReference}.pdf`)
+                    : undefined;
             EmailSender.getInstance().sendPreInscriptionValidee(
                 demande.utilisateur.identifiant,
                 demande.utilisateur.email,

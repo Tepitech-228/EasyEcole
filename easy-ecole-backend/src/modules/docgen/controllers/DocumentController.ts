@@ -73,7 +73,7 @@ export default class DocumentController {
         fs.mkdirSync(STORAGE_DIR, { recursive: true });
       }
 
-      const resolved = await DataResolverService.resolve(typeCode, params);
+      const resolved = await DataResolverService.resolve(typeCode, { ...params, sourceId, sourceType });
       if (!resolved.etudiants || resolved.etudiants.length === 0) {
         return res.status(404).json({ success: false, message: 'Aucun étudiant trouvé pour les critères donnés' });
       }
@@ -100,9 +100,18 @@ export default class DocumentController {
         };
 
         const html = TemplateEngine.render(template.contenu, context);
-        const pdfBuffer = await PdfGeneratorService.generate(html, {
-          ecoleNom: (resolved.etablissement as any).nom || 'ESA',
-          ...getDocGenPdfOptions(typeCode),
+        const pdfBuffer = await PdfGeneratorService.generateDocGen({
+          typeCode,
+          html,
+          etablissement: resolved.etablissement,
+          etudiant,
+          reference,
+          dateGeneration,
+          initialesComite: resolved.initialesComite,
+          options: {
+            ecoleNom: (resolved.etablissement as any).nom || 'ESA',
+            ...getDocGenPdfOptions(typeCode),
+          },
         });
 
         const hash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');

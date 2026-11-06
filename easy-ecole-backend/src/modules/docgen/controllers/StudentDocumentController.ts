@@ -121,7 +121,16 @@ export default class StudentDocumentController {
         };
 
         const html = TemplateEngine.render(template.contenu, context);
-        const pdfBuffer = await PdfGeneratorService.generate(html, { ecoleNom: (resolved.etablissement as any).nom || 'ESA' });
+        const pdfBuffer = await PdfGeneratorService.generateDocGen({
+          typeCode,
+          html,
+          etablissement: resolved.etablissement,
+          etudiant,
+          reference,
+          dateGeneration,
+          initialesComite: resolved.initialesComite,
+          options: { ecoleNom: (resolved.etablissement as any).nom || 'ESA' },
+        });
 
         const hash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
         const fileName = `${reference}.pdf`;

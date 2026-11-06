@@ -2,6 +2,7 @@ import path from 'path';
 import fs from 'fs';
 import { DocGenCachet } from '../models/DocGenCachet';
 import { DocGenLogoService } from './DocGenLogoService';
+import { AutorisationProvisoirePdfService } from './AutorisationProvisoirePdfService';
 import { getPuppeteerBrowser } from '../../../core/services/PuppeteerBrowserPool';
 
 // Hauteur (et marge) à réserver pour l'en-tête institutionnel répété sur chaque page.
@@ -20,17 +21,48 @@ export function getDocGenPdfOptions(typeCode: string): {
   return {};
 }
 
+export interface PdfGeneratorOptions {
+  format?: 'A4' | 'Letter' | string;
+  orientation?: 'portrait' | 'landscape';
+  margins?: { top?: string; right?: string; bottom?: string; left?: string };
+  ecoleNom?: string;
+  /** Surcharge la hauteur de l'en-tête institutionnel (défaut : 36mm). */
+  headerHeightMm?: number;
+  /** Désactive le header institutionnel global (ex. documents qui gèrent leur propre en-tête). */
+  disableHeader?: boolean;
+}
+
+export interface DocGenPdfParams {
+  typeCode: string;
+  html: string;
+  etablissement: Record<string, any>;
+  etudiant: Record<string, any>;
+  reference: string;
+  dateGeneration: string;
+  initialesComite?: string;
+  options?: PdfGeneratorOptions;
+}
+
 export class PdfGeneratorService {
-  static async generate(html: string, options?: {
-    format?: 'A4' | 'Letter' | string;
-    orientation?: 'portrait' | 'landscape';
-    margins?: { top?: string; right?: string; bottom?: string; left?: string };
-    ecoleNom?: string;
-    /** Surcharge la hauteur de l'en-tête institutionnel (défaut : 36mm). */
-    headerHeightMm?: number;
-    /** Désactive le header institutionnel global (ex. documents qui gèrent leur propre en-tête). */
-    disableHeader?: boolean;
-  }): Promise<Buffer> {
+  /**
+   * Génère le PDF d'un document docgen. L'autorisation provisoire d'inscription
+   * (API001) est produite avec pdfkit, sans Chromium : elle reste ainsi
+   * générable dans les conteneurs où Chrome ne peut pas démarrer.
+   */
+  static async generateDocGen(params: DocGenPdfParams): Promise<Buffer> {
+    if (params.typeCode === 'API001') {
+      return AutorisationProvisoirePdfService.generate({
+        etablissement: params.etablissement,
+        etudiant: params.etudiant,
+        reference: params.reference,
+        dateGeneration: params.dateGeneration,
+        initialesComite: params.initialesComite,
+      });
+    }
+    return this.generate(params.html, params.options);
+  }
+
+  static async generate(html: string, options?: PdfGeneratorOptions): Promise<Buffer> {
     const browser = await getPuppeteerBrowser();
 
     let page: any;

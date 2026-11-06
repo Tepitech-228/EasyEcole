@@ -6,7 +6,6 @@ import { DataResolverService } from "../services/DataResolverService";
 import { ReferenceService } from "../services/ReferenceService";
 import { TemplateEngine } from "../services/TemplateEngine";
 import { getDocGenPdfOptions, PdfGeneratorService } from "../services/PdfGeneratorService";
-import { AutorisationProvisoirePdfService } from "../services/AutorisationProvisoirePdfService";
 import { DocGenLogoService } from "../services/DocGenLogoService";
 import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
 import { CursusApprenant } from "../../inscription/models/CursusApprenant";
@@ -84,21 +83,22 @@ export class DocGenGeneratorService {
 
     const html = DocGenLogoService.injectLogo(template.contenu);
     const htmlRendu = TemplateEngine.render(html, context);
-    const pdfBuffer = typeCode === 'API001'
-      ? await AutorisationProvisoirePdfService.generate({
-          etablissement: resolved.etablissement,
-          etudiant,
-          reference,
-          dateGeneration,
-          initialesComite: resolved.initialesComite,
-        })
-      : await PdfGeneratorService.generate(htmlRendu, {
-          ecoleNom: (resolved.etablissement as any).nom || 'ESA',
-          orientation: params.orientation,
-          format: params.format,
-          margins: params.margins,
-          ...getDocGenPdfOptions(typeCode),
-        });
+    const pdfBuffer = await PdfGeneratorService.generateDocGen({
+      typeCode,
+      html: htmlRendu,
+      etablissement: resolved.etablissement,
+      etudiant,
+      reference,
+      dateGeneration,
+      initialesComite: resolved.initialesComite,
+      options: {
+        ecoleNom: (resolved.etablissement as any).nom || 'ESA',
+        orientation: params.orientation,
+        format: params.format,
+        margins: params.margins,
+        ...getDocGenPdfOptions(typeCode),
+      },
+    });
 
     const hash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
     const fileName = `${reference}.pdf`;
