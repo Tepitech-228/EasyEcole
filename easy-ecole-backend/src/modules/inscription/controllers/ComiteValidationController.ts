@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Op } from "sequelize";
+import { Op, Transaction } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { EmailSender } from "../../../core/helpers/EmailSender";
@@ -393,8 +393,9 @@ export default class ComiteValidationController {
 
         const currentUserId = req.utilisateurId as number
 
-        const transaction = await DatabaseConnection.getInstance().sequelize.transaction()
+        let transaction: Transaction | undefined
         try {
+            transaction = await DatabaseConnection.getInstance().sequelize.transaction()
             const demande = await DemandeInscription.findOne({
                 where: { id: req.params.id },
                 include: [{
@@ -812,12 +813,15 @@ export default class ComiteValidationController {
                 })
             }
         } catch (error: any) {
-            const transactionState = (transaction as typeof transaction & { finished?: string }).finished
-            if (!transactionState) {
+            const transactionState = transaction
+                ? (transaction as Transaction & { finished?: string }).finished
+                : undefined
+            if (transaction && !transactionState) {
                 await transaction.rollback().catch(rbErr => console.error('[COMITE][decider] ROLLBACK EN ÉCHEC — transaction possiblement orpheline:', rbErr))
             }
             const errorCode = error?.original?.code || error?.parent?.code || error?.code
             const isDeadlock = errorCode === 'ER_LOCK_DEADLOCK' || errorCode === 1213 || errorCode === '1213'
+            const isConnectionAcquireTimeout = error?.name === 'SequelizeConnectionAcquireTimeoutError'
             if (isDeadlock && deadlockRetries < 2) {
                 const nextRetry = deadlockRetries + 1
                 console.warn(`[COMITE][decider] Interblocage MySQL; nouvelle tentative ${nextRetry}/2.`)
@@ -825,10 +829,12 @@ export default class ComiteValidationController {
                 return this.deciderAttempt(req, res, nextRetry)
             }
             console.error('[Comite] decider:', error)
-            if (isDeadlock) {
+            if (isDeadlock || isConnectionAcquireTimeout) {
                 return res.status(503).json({
                     success: false,
-                    message: "La base de données est momentanément occupée. Veuillez réessayer la validation.",
+                    message: isDeadlock
+                        ? "La base de données est momentanément occupée. Veuillez réessayer la validation."
+                        : "Le serveur ne parvient pas à obtenir une connexion à la base de données. Veuillez réessayer.",
                 })
             }
             return res.status(400).json({ success: false, message: error.message || 'Erreur interne' })

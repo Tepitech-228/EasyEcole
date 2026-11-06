@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { timeout } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 
 export interface Quorum {
@@ -109,7 +110,7 @@ export class ComiteValidationService {
       dossierIdsAReposer,
       matriculeConfirme,
       matriculeEtudiant,
-    })
+    }).pipe(timeout(45_000))
   }
 
   /**

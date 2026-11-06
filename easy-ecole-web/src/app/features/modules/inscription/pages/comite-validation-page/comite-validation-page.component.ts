@@ -466,7 +466,9 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
       },
       error: (err) => {
         console.error(err)
-        this.apiErrorMessage = err?.error?.message || 'Erreur lors de l\'enregistrement de la décision'
+        this.apiErrorMessage = err?.name === 'TimeoutError'
+          ? 'Le serveur met trop de temps à répondre. Vérifiez le statut du dossier avant de soumettre à nouveau la décision.'
+          : err?.error?.message || 'Erreur lors de l\'enregistrement de la décision'
         this.error = true
         this.processingDecision = false
         setTimeout(() => { this.error = false; this.apiErrorMessage = '' }, 6000)

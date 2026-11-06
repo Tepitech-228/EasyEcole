@@ -213,6 +213,24 @@ describe('ComiteValidationController.decider — correction demandée', () => {
 })
 
 describe('ComiteValidationController.decider — garde-fous', () => {
+  it('renvoie une réponse explicite si la connexion de transaction ne peut pas être obtenue', async () => {
+    const res = mockResponse()
+    ;(DatabaseConnection.getInstance().sequelize.transaction as jest.Mock).mockRejectedValueOnce(
+      Object.assign(new Error('Timed out while acquiring a connection'), {
+        name: 'SequelizeConnectionAcquireTimeoutError',
+      }),
+    )
+
+    await Ctrl.decider(reqComite({ decision: 'valide' }), res)
+
+    expect(DemandeInscription.findOne).not.toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(503)
+    expect(res.json).toHaveBeenCalledWith({
+      success: false,
+      message: "Le serveur ne parvient pas à obtenir une connexion à la base de données. Veuillez réessayer.",
+    })
+  })
+
   it('retente une transaction annulée par un interblocage MySQL', async () => {
     const res = mockResponse()
     const deadlock = Object.assign(new Error('Deadlock found when trying to get lock'), {
