@@ -49,4 +49,19 @@ describe('ROLE_PERMISSIONS d’administration', () => {
     expect(poleRh?.allowedRoles).toContain(RolesUtilisateur.SURVEILLANT)
     expect(groupePointage?.items.some(item => item.label === 'Terminal' && item.route === '/pointage')).toBe(true)
   })
+
+  it('ne propose pas Situation financière ni Comptabilite dans le menu, quel que soit le profil', () => {
+    const items = MENU_CONFIG.flatMap(pole =>
+      pole.groups.flatMap(group => group.items),
+    )
+
+    expect(items.some(item =>
+      item.label === 'Situation financière' ||
+      item.route === '/inscription/finance/situation-financiere' ||
+      item.permissionKey === 'menu.finances.situation-financiere' ||
+      item.label.toLowerCase() === 'comptabilite' ||
+      item.route === '/comptabilite/dashboard' ||
+      item.permissionKey === 'menu.finances.comptabilite',
+    )).toBe(false)
+  })
 })

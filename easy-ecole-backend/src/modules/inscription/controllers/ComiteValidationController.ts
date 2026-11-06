@@ -12,7 +12,7 @@ import { Apprenant } from "../../auth/models/Apprenant";
 import { Session } from "../models/Session";
 import { ParcoursChoisi } from "../models/ParcoursChoisi";
 import { Parcours } from "../models/Parcours";
-import { BordereauDossierService } from "../services/BordereauDossierService";
+import { BordereauDossierService, FichiersDossierDiffere } from "../services/BordereauDossierService";
 import { EtatPreInscription, PreInscription } from "../models/PreInscription";
 import { ComiteVote } from "../models/ComiteVote";
 import { genererInitialesUniquesComite } from "../services/ComiteInitialesService";
@@ -607,6 +607,7 @@ export default class ComiteValidationController {
             if (votesValides === totalMembres) {
                 // Unanimité atteinte → finalisation
                 let matriculeFinal: string | null = null
+                let fichiersDossierDiffere: FichiersDossierDiffere | undefined
                 const votesUnanimes = await ComiteVote.findAll({
                     where: { demandeInscriptionId: demande.id, decision: 'valide' },
                     include: [{ association: ComiteVote.associations.membre, attributes: ['nom', 'prenoms'] }],
@@ -655,11 +656,15 @@ export default class ComiteValidationController {
                         preIns.statut = EtatPreInscription.VALIDE
                         await preIns.save({ transaction })
                     }
-                    await BordereauDossierService.creerDossierEtudiantDepuisBordereau(
+                    fichiersDossierDiffere = await BordereauDossierService.creerDossierEtudiantDepuisBordereau(
                         bordereau,
                         req,
                         transaction,
-                        { ignorerVerifFrais: true, pedagogieDifferee: true }
+                        {
+                            ignorerVerifFrais: true,
+                            pedagogieDifferee: true,
+                            defererDeplacementFichiers: true,
+                        }
                     )
                 }
 
@@ -758,6 +763,20 @@ export default class ComiteValidationController {
                 }
 
                 await transaction.commit()
+
+                const fichiersADeplacer = fichiersDossierDiffere
+                if (fichiersADeplacer) {
+                    setImmediate(() => {
+                        void BordereauDossierService.deplacerFichiersDossierDiffere(
+                            fichiersADeplacer,
+                        ).catch(error => {
+                            console.error(
+                                `[Comite] Échec du déplacement différé des fichiers de la demande ${fichiersADeplacer.demandeId}:`,
+                                error,
+                            )
+                        })
+                    })
+                }
 
                 if (dossierEtudiantDiffere) {
                     setImmediate(() => {

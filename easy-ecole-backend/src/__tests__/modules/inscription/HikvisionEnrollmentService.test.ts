@@ -46,7 +46,7 @@ describe("HikvisionEnrollmentService", () => {
     PointageTerminal.findAll.mockResolvedValue([{ id: 8 }, { id: 9 }]);
     HikvisionEnrollment.findOrCreate.mockResolvedValue([{}, true]);
 
-    await HikvisionEnrollmentService.enqueueStudent(42, 3, "ESA001", null);
+    await expect(HikvisionEnrollmentService.enqueueStudent(42, 3, "ESA001", null)).resolves.toBe(2);
 
     expect(PointageTerminal.findAll).toHaveBeenCalledWith({
       where: { etablissementId: 3, protocol: "hikvision_isapi", population: "etudiant", actif: true }

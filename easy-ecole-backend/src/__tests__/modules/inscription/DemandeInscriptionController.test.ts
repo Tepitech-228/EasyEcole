@@ -54,6 +54,14 @@ jest.mock('../../../modules/etablissement/models/Etablissement', () => ({
   Etablissement: { findOne: jest.fn() },
 }))
 
+jest.mock('../../../modules/inscription/services/HikvisionEnrollmentService', () => ({
+  __esModule: true,
+  default: {
+    enqueueStudent: jest.fn(),
+    processPending: jest.fn().mockResolvedValue(undefined),
+  },
+}))
+
 jest.mock('../../../core/helpers/IDGenerator', () => ({
   IDGenerator: {
     getInstance: () => ({ generateInscriptionMatricule: () => 'EI-2026-0042' }),
@@ -75,6 +83,7 @@ const { ParcoursChoisi } = require('../../../modules/inscription/models/Parcours
 const { DossierInscription } = require('../../../modules/inscription/models/DossierInscription')
 const { DemandeInscriptionDossier } = require('../../../modules/inscription/models/DemandeInscriptionDossier')
 const { DossierEtudiant } = require('../../../modules/inscription/models/DossierEtudiant')
+const HikvisionEnrollmentService = require('../../../modules/inscription/services/HikvisionEnrollmentService').default
 
 import Ctrl from '../../../modules/inscription/controllers/DemandeInscriptionController'
 
@@ -93,6 +102,7 @@ beforeEach(() => {
   ;(SiteUtilisateur.findOrCreate as jest.Mock).mockResolvedValue([{}, false])
   ;(Apprenant.findOne as jest.Mock).mockResolvedValue({ photo: 'photo-etudiant.jpg' })
   ;(Etablissement.findOne as jest.Mock).mockResolvedValue({ id: 4 })
+  ;(HikvisionEnrollmentService.enqueueStudent as jest.Mock).mockResolvedValue(1)
 })
 
 describe('DemandeInscriptionController.getAllDemandesInscription', () => {
@@ -160,6 +170,7 @@ describe('DemandeInscriptionController.soumettreDemande', () => {
       id: 10,
       utilisateurId: 7,
       sessionId: 3,
+      etablissementId: 4,
       modeFormation: 'en_ligne',
       statutPipeline: null,
       update: jest.fn().mockResolvedValue(undefined),
@@ -181,7 +192,50 @@ describe('DemandeInscriptionController.soumettreDemande', () => {
       matriculeEtudiant: 'ET-2026-001',
       statutPipeline: 'soumis',
     }))
+    expect(HikvisionEnrollmentService.enqueueStudent).toHaveBeenCalledWith(
+      7,
+      4,
+      'ET-2026-001',
+      null,
+    )
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      hikvisionEnrollmentQueued: true,
+    }))
     expect(res.status).toHaveBeenCalledWith(200)
+    await new Promise<void>(resolve => setImmediate(resolve))
+    expect(HikvisionEnrollmentService.processPending).toHaveBeenCalled()
+  })
+
+  it('keeps the submitted request successful and reports when no terminal is configured', async () => {
+    const demande = {
+      id: 10,
+      utilisateurId: 7,
+      sessionId: 3,
+      etablissementId: 4,
+      modeFormation: 'en_ligne',
+      statutPipeline: null,
+      update: jest.fn().mockResolvedValue(undefined),
+    }
+    ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue(demande)
+    ;(ParcoursChoisi.findOne as jest.Mock).mockResolvedValue(null)
+    ;(DemandeInscription.findOne as jest.Mock).mockResolvedValueOnce(demande).mockResolvedValueOnce(null)
+    ;(HikvisionEnrollmentService.enqueueStudent as jest.Mock).mockResolvedValue(0)
+    const req = mockRequest({
+      utilisateurRole: 'apprenant',
+      utilisateurId: 7,
+      params: { id: '10' },
+      body: { matriculeEtudiant: 'ET-2026-001' },
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.soumettreDemande(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      success: true,
+      hikvisionEnrollmentQueued: false,
+      hikvisionEnrollmentWarning: expect.stringContaining('Aucun terminal'),
+    }))
   })
 
   it('refuses to submit when the applicant has no profile photo', async () => {

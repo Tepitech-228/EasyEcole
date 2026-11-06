@@ -169,10 +169,46 @@ export default class DemandeInscriptionController {
                 soumissionComite: false,
                 motifPipeline: null
             });
+            let hikvisionEnrollmentQueued = false;
+            let hikvisionEnrollmentWarning: string | undefined;
+            const etablissementId = Number(demande.etablissementId);
+            if (Number.isSafeInteger(etablissementId) && etablissementId > 0) {
+                try {
+                    const queuedCount = await HikvisionEnrollmentService.enqueueStudent(
+                        Number(demande.utilisateurId),
+                        etablissementId,
+                        matriculeEtudiant,
+                        demande.consentementHikvisionAt ?? null
+                    );
+                    hikvisionEnrollmentQueued = queuedCount > 0;
+                    if (hikvisionEnrollmentQueued) {
+                        setImmediate(() => {
+                            void HikvisionEnrollmentService.processPending().catch(error => {
+                                console.error(
+                                    `[Hikvision] Traitement immédiat de l'enrôlement impossible pour l'utilisateur ${demande.utilisateurId}:`,
+                                    error,
+                                );
+                            });
+                        });
+                    } else {
+                        hikvisionEnrollmentWarning = "Aucun terminal de pointage étudiant actif n'est configuré pour ce site.";
+                    }
+                } catch (error) {
+                    console.error(
+                        `[Hikvision] Enrôlement non planifié après la soumission de la demande ${demandeId}:`,
+                        error,
+                    );
+                    hikvisionEnrollmentWarning = "Le dossier est soumis, mais l'enrôlement sur la pointeuse n'a pas pu être planifié.";
+                }
+            } else {
+                hikvisionEnrollmentWarning = "Le dossier est soumis, mais aucun site n'est associé pour planifier l'enrôlement sur la pointeuse.";
+            }
             return res.status(200).json({
                 success: true,
                 demandeId,
-                statutPipeline: demande.statutPipeline
+                statutPipeline: demande.statutPipeline,
+                hikvisionEnrollmentQueued,
+                ...(hikvisionEnrollmentWarning ? { hikvisionEnrollmentWarning } : {}),
             });
         } catch (error) {
             console.error('[soumettreDemandeInscription]', error);

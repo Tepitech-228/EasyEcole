@@ -1293,7 +1293,11 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   private finaliserSoumission(demandeId: string, statutPipeline?: string): void {
     if (!this.modeCorrection) {
       this.demandeInscriptionService.soumettre(demandeId, this.infos.matriculeEtudiant.trim()).subscribe({
-        next: (reponse) => this.afficherSoumissionFinalisee(reponse.statutPipeline),
+        next: (reponse) => this.afficherSoumissionFinalisee(
+          reponse.statutPipeline,
+          reponse.hikvisionEnrollmentQueued,
+          reponse.hikvisionEnrollmentWarning,
+        ),
         error: (err) => this.echouerSoumission(
           err?.error?.message || 'La demande n\'a pas pu être soumise. Veuillez réessayer.'
         )
@@ -1304,7 +1308,11 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.afficherSoumissionFinalisee(statutPipeline)
   }
 
-  private afficherSoumissionFinalisee(statutPipeline?: string): void {
+  private afficherSoumissionFinalisee(
+    statutPipeline?: string,
+    hikvisionEnrollmentQueued?: boolean,
+    hikvisionEnrollmentWarning?: string,
+  ): void {
     this.submitting = false
     this.showSubmitConfirmationModal = false
     // En correction comité, le backend renvoie le statut réel du dossier
@@ -1313,7 +1321,9 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.resultat = { statutPipeline: statutPipeline || 'soumis' }
     this.modeCorrection = null
     this.motifCorrection = null
-    this.successMessage = 'Dossier soumis. Vous serez notifié de l\'avancement de votre inscription.'
+    this.successMessage = hikvisionEnrollmentQueued === false
+      ? `Dossier soumis. Vous serez notifié de l'avancement de votre inscription. ${hikvisionEnrollmentWarning || "L'enrôlement sur la pointeuse n'est pas planifié."}`
+      : `Dossier soumis. Vous serez notifié de l'avancement de votre inscription.${hikvisionEnrollmentQueued ? ' La création de votre compte de pointage est en cours.' : ''}`
     this.etape = 5
     // Dossier transmis : la sauvegarde locale n'a plus lieu d'être. Les PII et
     // les pièces de l'étudiant disparaissent du navigateur dès la soumission.
@@ -1333,7 +1343,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
    * En cas d'échec d'un téléversement, on arrête (pas de continuation silencieuse
    * ni de « dossier soumis » abusif).
    * L'enrôlement facial Hikvision est systématique et géré côté backend à la
-   * validation du dossier : aucun consentement n'est requis à la soumission.
+   * soumission du dossier par l'étudiant : aucun consentement n'est requis à la soumission.
    */
   private finaliserFichiers(demandeId: string): void {
     this.televerserFichiers(demandeId)

@@ -89,6 +89,18 @@ export interface AutorisationProvisoireDifferee {
     initialesComite?: string;
 }
 
+export interface FichiersDossierDiffere {
+    demandeId: number;
+    bordereauId: number;
+    baseChemin: {
+        annee: string;
+        parcours: string;
+        classe: string;
+        niveau: string;
+        matricule: string;
+    };
+}
+
 export interface DossierEtudiantDiffere {
     anneeAcademique: string;
     parcours: string;
@@ -233,8 +245,12 @@ export class BordereauDossierService {
         bordereau: Bordereau,
         req: any,
         transaction: Transaction,
-        options?: { ignorerVerifFrais?: boolean; pedagogieDifferee?: boolean },
-    ): Promise<void> {
+        options?: {
+            ignorerVerifFrais?: boolean;
+            pedagogieDifferee?: boolean;
+            defererDeplacementFichiers?: boolean;
+        },
+    ): Promise<FichiersDossierDiffere | undefined> {
         const demande = await DemandeInscription.findOne({
             where: { utilisateurId: bordereau.utilisateurId },
             include: [
@@ -696,9 +712,60 @@ export class BordereauDossierService {
             }
         }
 
-        try {
-            const baseChemin = { annee: anneeLibelle, parcours: parcoursNom, classe: classeNom, niveau: niveauNom, matricule };
+        const baseChemin = { annee: anneeLibelle, parcours: parcoursNom, classe: classeNom, niveau: niveauNom, matricule };
+        let fichiersDossierDiffere: FichiersDossierDiffere | undefined;
+        if (options?.defererDeplacementFichiers) {
+            fichiersDossierDiffere = {
+                demandeId: Number(demande.id),
+                bordereauId: Number(bordereau.id),
+                baseChemin,
+            };
+        } else {
+            await BordereauDossierService.deplacerFichiersDossier(
+                demande,
+                bordereau,
+                baseChemin,
+                transaction,
+            );
+        }
 
+        if (!pedagogieDifferee && demande.utilisateur) {
+            EmailSender.getInstance().sendQuitusEtMatricule(
+                demande.utilisateur.identifiant,
+                demande.utilisateur.email,
+                matricule
+            ).catch((err: any) => console.error("Erreur envoi email matricule:", err))
+        }
+        return fichiersDossierDiffere;
+    }
+
+    static async deplacerFichiersDossierDiffere(fichiers: FichiersDossierDiffere): Promise<void> {
+        const [demande, bordereau] = await Promise.all([
+            DemandeInscription.findByPk(fichiers.demandeId, {
+                include: [
+                    DemandeInscription.associations.dossiersDemande,
+                    DemandeInscription.associations.preInscription,
+                ],
+            }),
+            Bordereau.findByPk(fichiers.bordereauId),
+        ]);
+        if (!demande || !bordereau) {
+            throw new Error(`Demande ${fichiers.demandeId} ou bordereau ${fichiers.bordereauId} introuvable pour le déplacement différé des fichiers.`);
+        }
+        await BordereauDossierService.deplacerFichiersDossier(
+            demande,
+            bordereau,
+            fichiers.baseChemin,
+        );
+    }
+
+    private static async deplacerFichiersDossier(
+        demande: DemandeInscription,
+        bordereau: Bordereau,
+        baseChemin: FichiersDossierDiffere['baseChemin'],
+        transaction?: Transaction,
+    ): Promise<void> {
+        try {
             if (demande.dossiersDemande) {
                 for (const doc of demande.dossiersDemande) {
                     const sourcePath = path.resolve(process.cwd(), 'public/inscription/dossiers', doc.nomFichier);
@@ -709,7 +776,7 @@ export class BordereauDossierService {
                             baseChemin.niveau, baseChemin.matricule, 'dossiers'
                         );
                         doc.nomFichier = DossierStorageService.cheminRelatif(newPath);
-                        await doc.save({ transaction });
+                        await doc.save(transaction ? { transaction } : undefined);
                     }
                 }
             }
@@ -729,7 +796,7 @@ export class BordereauDossierService {
                         baseChemin.niveau, baseChemin.matricule, 'autorisations'
                     );
                     demande.preInscription.autorisationPDF = DossierStorageService.cheminRelatif(newPath);
-                    await demande.preInscription.save({ transaction });
+                    await demande.preInscription.save(transaction ? { transaction } : undefined);
                 }
             }
 
@@ -742,19 +809,11 @@ export class BordereauDossierService {
                         baseChemin.niveau, baseChemin.matricule, 'bordereaux'
                     );
                     bordereau.fichier = DossierStorageService.cheminRelatif(newPath);
-                    await bordereau.save({ transaction });
+                    await bordereau.save(transaction ? { transaction } : undefined);
                 }
             }
         } catch (moveError) {
             console.error("Erreur déplacement fichiers:", moveError);
-        }
-
-        if (!pedagogieDifferee && demande.utilisateur) {
-            EmailSender.getInstance().sendQuitusEtMatricule(
-                demande.utilisateur.identifiant,
-                demande.utilisateur.email,
-                matricule
-            ).catch((err: any) => console.error("Erreur envoi email matricule:", err))
         }
     }
 

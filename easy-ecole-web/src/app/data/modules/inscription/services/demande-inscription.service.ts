@@ -39,8 +39,20 @@ export class DemandeInscriptionService {
     return this.httpClient.post<DemandeInscription>(`${this.SERVICE_URL}`, demandeInscription)
   }
 
-  soumettre(id: string, matriculeEtudiant: string): Observable<{ success: boolean; demandeId: number; statutPipeline: string }> {
-    return this.httpClient.post<{ success: boolean; demandeId: number; statutPipeline: string }>(
+  soumettre(id: string, matriculeEtudiant: string): Observable<{
+    success: boolean
+    demandeId: number
+    statutPipeline: string
+    hikvisionEnrollmentQueued: boolean
+    hikvisionEnrollmentWarning?: string
+  }> {
+    return this.httpClient.post<{
+      success: boolean
+      demandeId: number
+      statutPipeline: string
+      hikvisionEnrollmentQueued: boolean
+      hikvisionEnrollmentWarning?: string
+    }>(
       `${this.SERVICE_URL}/${id}/soumettre`,
       { matriculeEtudiant }
     )

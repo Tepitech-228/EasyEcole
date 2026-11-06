@@ -57,29 +57,22 @@ export default class HikvisionEnrollmentService {
     etablissementId: number,
     employeeNo: string,
     _consentementAt: Date | null = null
-  ): Promise<void> {
+  ): Promise<number> {
     const terminals = await PointageTerminal.findAll({
       where: { etablissementId, protocol: "hikvision_isapi", population: "etudiant", actif: true }
     });
     if (terminals.length === 0) {
       console.warn(`[Hikvision] Aucun terminal actif pour l'inscription de l'utilisateur ${utilisateurId}, site ${etablissementId}.`);
-      return;
+      return 0;
     }
     for (const terminal of terminals) {
-      await HikvisionEnrollment.findOrCreate({
-        where: { terminalId: terminal.id, utilisateurId },
-        defaults: {
-          terminalId: Number(terminal.id),
-          utilisateurId,
-          etablissementId,
-          employeeNo,
-          statut: "en_attente",
-          tentatives: 0,
-          prochaineTentativeAt: new Date(),
-          derniereErreur: null
-        }
-      });
+      await HikvisionEnrollmentService.enqueueForTerminal(
+        { id: terminal.id, etablissementId },
+        utilisateurId,
+        employeeNo,
+      );
     }
+    return terminals.length;
   }
 
   static async enqueueEligibleProfilesForTerminal(

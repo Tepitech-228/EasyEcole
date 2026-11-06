@@ -1,6 +1,7 @@
 jest.mock('../../../modules/inscription/models/DemandeInscription', () => ({
   DemandeInscription: {
     findOne: jest.fn(),
+    findByPk: jest.fn(),
     associations: {
       utilisateur: {},
       parcoursChoisis: {},
@@ -9,8 +10,14 @@ jest.mock('../../../modules/inscription/models/DemandeInscription', () => ({
       coursChoisis: {},
       paiementsInscription: {},
       reponseInscription: {},
+      dossiersDemande: {},
+      preInscription: {},
     },
   },
+}))
+
+jest.mock('../../../modules/inscription/models/Bordereau', () => ({
+  Bordereau: { findByPk: jest.fn() },
 }))
 
 jest.mock('../../../modules/inscription/models/ParcoursChoisi', () => ({
@@ -38,7 +45,12 @@ jest.mock('../../../modules/inscription/models/Session', () => ({
 }))
 
 jest.mock('../../../modules/inscription/services/DossierStorageService', () => ({
-  DossierStorageService: { creerDossierEtudiant: jest.fn(), copierFichier: jest.fn() },
+  DossierStorageService: {
+    creerDossierEtudiant: jest.fn(),
+    copierFichier: jest.fn(),
+    deplacerFichier: jest.fn(),
+    cheminRelatif: jest.fn(),
+  },
 }))
 
 jest.mock('../../../modules/inscription/services/GenerateurCarteService', () => ({
@@ -50,6 +62,8 @@ jest.mock('../../../modules/ged/services/FolderAutoService', () => ({
 }))
 
 const { DemandeInscription } = require('../../../modules/inscription/models/DemandeInscription')
+const { Bordereau } = require('../../../modules/inscription/models/Bordereau')
+const fs = require('fs')
 const { Cours } = require('../../../modules/inscription/models/Cours')
 const { DossierEtudiant } = require('../../../modules/inscription/models/DossierEtudiant')
 const { CursusApprenant } = require('../../../modules/inscription/models/CursusApprenant')
@@ -178,6 +192,43 @@ describe('BordereauDossierService.finaliserAffectationPedagogique', () => {
         matricule: dossier.matricule,
         utilisateurId: dossier.utilisateurId,
       })
+    })
+  })
+
+  describe('BordereauDossierService.deplacerFichiersDossierDiffere', () => {
+    afterEach(() => {
+      jest.restoreAllMocks()
+    })
+
+    it('met à jour le chemin du bordereau après chargement hors transaction', async () => {
+      const bordereau = { fichier: 'bordereau.pdf', save: jest.fn().mockResolvedValue(undefined) }
+      DemandeInscription.findByPk.mockResolvedValue({ dossiersDemande: [], preInscription: null })
+      Bordereau.findByPk.mockResolvedValue(bordereau)
+      DossierStorageService.deplacerFichier.mockReturnValue('destination/bordereau.pdf')
+      DossierStorageService.cheminRelatif.mockReturnValue('destination/bordereau.pdf')
+      jest.spyOn(fs, 'existsSync').mockReturnValue(true)
+
+      await BordereauDossierService.deplacerFichiersDossierDiffere({
+        demandeId: 12,
+        bordereauId: 34,
+        baseChemin: {
+          annee: '2025-2026',
+          parcours: 'LICENCE',
+          classe: 'À affecter',
+          niveau: 'Licence 1',
+          matricule: '2025-L1-J-26-TEST',
+        },
+      })
+
+      expect(DemandeInscription.findByPk).toHaveBeenCalledWith(12, {
+        include: [
+          DemandeInscription.associations.dossiersDemande,
+          DemandeInscription.associations.preInscription,
+        ],
+      })
+      expect(Bordereau.findByPk).toHaveBeenCalledWith(34)
+      expect(bordereau.save).toHaveBeenCalledWith(undefined)
+      expect(bordereau.fichier).toBe('destination/bordereau.pdf')
     })
   })
 })
