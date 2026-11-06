@@ -22,14 +22,38 @@ const baseParams = {
   initialesComite: 'AK, JD',
 }
 
+function mockChromium(pdf: Buffer) {
+  const page = {
+    setContent: jest.fn().mockResolvedValue(undefined),
+    pdf: jest.fn().mockResolvedValue(pdf),
+    close: jest.fn().mockResolvedValue(undefined),
+  }
+  const browser = { newPage: jest.fn().mockResolvedValue(page) }
+  mockGetPuppeteerBrowser.mockResolvedValue(browser)
+  return { browser, page }
+}
+
 describe('PdfGeneratorService.generateDocGen', () => {
-  it("génère l'autorisation provisoire (API001) sans Chromium", async () => {
-    const pdf = Buffer.from('%PDF-1.7')
+  it("génère l'autorisation provisoire (API001) avec Chromium quand il est disponible", async () => {
+    const pdf = Buffer.from('%PDF-1.4 chromium')
+    const { page } = mockChromium(pdf)
+
+    const result = await PdfGeneratorService.generateDocGen({ ...baseParams, typeCode: 'API001' })
+
+    expect(result).toEqual(pdf)
+    expect(mockGetPuppeteerBrowser).toHaveBeenCalled()
+    expect(page.pdf).toHaveBeenCalled()
+    expect(mockAutorisationGenerate).not.toHaveBeenCalled()
+  })
+
+  it("bascule sur pdfkit si Chromium est indisponible pour API001", async () => {
+    const pdf = Buffer.from('%PDF-1.3 pdfkit')
+    mockGetPuppeteerBrowser.mockRejectedValue(new Error('chrome_crashpad_handler: --database is required'))
     mockAutorisationGenerate.mockResolvedValue(pdf)
 
     const result = await PdfGeneratorService.generateDocGen({ ...baseParams, typeCode: 'API001' })
 
-    expect(result).toBe(pdf)
+    expect(result).toEqual(pdf)
     expect(mockAutorisationGenerate).toHaveBeenCalledWith({
       etablissement: baseParams.etablissement,
       etudiant: baseParams.etudiant,
@@ -37,17 +61,15 @@ describe('PdfGeneratorService.generateDocGen', () => {
       dateGeneration: baseParams.dateGeneration,
       initialesComite: baseParams.initialesComite,
     })
-    expect(mockGetPuppeteerBrowser).not.toHaveBeenCalled()
   })
 
-  it('utilise Chromium pour les autres types de documents', async () => {
+  it('ne bascule pas sur pdfkit pour les autres types de documents', async () => {
     mockGetPuppeteerBrowser.mockRejectedValue(new Error('chromium indisponible'))
 
     await expect(
       PdfGeneratorService.generateDocGen({ ...baseParams, typeCode: 'SCO001' }),
     ).rejects.toThrow('chromium indisponible')
 
-    expect(mockGetPuppeteerBrowser).toHaveBeenCalled()
     expect(mockAutorisationGenerate).not.toHaveBeenCalled()
   })
 })

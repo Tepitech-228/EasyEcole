@@ -46,18 +46,27 @@ export interface DocGenPdfParams {
 export class PdfGeneratorService {
   /**
    * Génère le PDF d'un document docgen. L'autorisation provisoire d'inscription
-   * (API001) est produite avec pdfkit, sans Chromium : elle reste ainsi
-   * générable dans les conteneurs où Chrome ne peut pas démarrer.
+   * (API001) privilégie Chromium pour conserver le design du template ; si le
+   * navigateur est indisponible (conteneur sans Crashpad), on bascule sur le
+   * rendu pdfkit afin que la validation du comité ne soit jamais bloquée.
    */
   static async generateDocGen(params: DocGenPdfParams): Promise<Buffer> {
     if (params.typeCode === 'API001') {
-      return AutorisationProvisoirePdfService.generate({
-        etablissement: params.etablissement,
-        etudiant: params.etudiant,
-        reference: params.reference,
-        dateGeneration: params.dateGeneration,
-        initialesComite: params.initialesComite,
-      });
+      try {
+        return await this.generate(params.html, params.options);
+      } catch (error) {
+        console.warn(
+          '[DOCGEN][API001] Chromium indisponible, repli sur pdfkit:',
+          error instanceof Error ? error.message : error,
+        );
+        return AutorisationProvisoirePdfService.generate({
+          etablissement: params.etablissement,
+          etudiant: params.etudiant,
+          reference: params.reference,
+          dateGeneration: params.dateGeneration,
+          initialesComite: params.initialesComite,
+        });
+      }
     }
     return this.generate(params.html, params.options);
   }
