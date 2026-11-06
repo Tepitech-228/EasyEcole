@@ -870,8 +870,9 @@ export default class ComiteValidationController {
             const isConnectionAcquireTimeout = error?.name === 'SequelizeConnectionAcquireTimeoutError'
             if (isDeadlock && deadlockRetries < 2) {
                 const nextRetry = deadlockRetries + 1
-                console.warn(`[COMITE][decider] Interblocage MySQL; nouvelle tentative ${nextRetry}/2.`)
-                await new Promise<void>(resolve => setTimeout(resolve, 150 * nextRetry))
+                const delaiReprise = 150 * 2 ** deadlockRetries + Math.floor(Math.random() * 150)
+                console.warn(`[COMITE][decider] Interblocage MySQL; nouvelle tentative ${nextRetry}/2 dans ${delaiReprise} ms.`)
+                await new Promise<void>(resolve => setTimeout(resolve, delaiReprise))
                 return ComiteValidationController.deciderAttempt(req, res, nextRetry)
             }
             console.error('[Comite] decider:', error)
