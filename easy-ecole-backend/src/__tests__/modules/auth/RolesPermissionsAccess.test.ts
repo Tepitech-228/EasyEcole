@@ -55,7 +55,9 @@ describe('ROLE_PERMISSIONS d’administration', () => {
       ]))
     const groupeAdministration = MENU_CONFIG
       .flatMap(pole => pole.groups)
-      .find(group => group.label === 'Administration')
+      .find(group => group.items.some(item =>
+        item.permissionKey === 'menu.administration.utilisateurs'
+      ))
     const entreeUtilisateurs = groupeAdministration?.items
       .find(item => item.permissionKey === 'menu.administration.utilisateurs')
     expect(groupeAdministration?.allowedRoles).toContain(RolesUtilisateur.SURVEILLANT)
