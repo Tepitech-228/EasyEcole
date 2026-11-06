@@ -141,6 +141,7 @@ services:
       SMTP_PASS: ${SMTP_PASS}
       TZ: ${TZ:-UTC}
       MIGRATIONS_ON_BOOT: ${MIGRATIONS_ON_BOOT:-true}
+      STUDENT_UPLOAD_LAYOUT_MIGRATION_ON_BOOT: ${STUDENT_UPLOAD_LAYOUT_MIGRATION_ON_BOOT:-true}
       DB_BOOTSTRAP_SCHEMA: ${DB_BOOTSTRAP_SCHEMA:-true}
       # Stockage documentaire unifie (voir DocumentStorageService / PdfStorageService).
       DOCUMENTS_STORAGE_DIR: ${DOCUMENTS_STORAGE_DIR:-/app/documents}

@@ -786,20 +786,22 @@ export class BordereauDossierService {
 
             if (demande.preInscription?.autorisationPDF) {
                 const ref = demande.preInscription.autorisationPDF;
-                const candidats = [
-                    path.resolve(process.cwd(), 'storage', 'docgen', ref.endsWith('.pdf') ? ref : `${ref}.pdf`),
-                    path.resolve(process.cwd(), 'public/inscription/autorisations', ref),
-                    path.resolve(process.cwd(), ref),
-                ];
-                const sourcePath = candidats.find(p => fs.existsSync(p));
-                if (sourcePath) {
-                    const newPath = DossierStorageService.deplacerFichier(
-                        sourcePath,
-                        baseChemin.annee, baseChemin.parcours, baseChemin.classe,
-                        baseChemin.niveau, baseChemin.matricule, 'autorisations'
-                    );
-                    demande.preInscription.autorisationPDF = DossierStorageService.cheminRelatif(newPath);
-                    await demande.preInscription.save(transaction ? { transaction } : undefined);
+                if (!ref.replace(/\\/g, '/').startsWith('public/dossiers/')) {
+                    const candidats = [
+                        path.resolve(process.cwd(), 'storage', 'docgen', ref.endsWith('.pdf') ? ref : `${ref}.pdf`),
+                        path.resolve(process.cwd(), 'public/inscription/autorisations', ref),
+                        path.resolve(process.cwd(), ref),
+                    ];
+                    const sourcePath = candidats.find(p => fs.existsSync(p));
+                    if (sourcePath) {
+                        const newPath = DossierStorageService.deplacerFichier(
+                            sourcePath,
+                            baseChemin.annee, baseChemin.parcours, baseChemin.classe,
+                            baseChemin.niveau, baseChemin.matricule, 'autorisations'
+                        );
+                        demande.preInscription.autorisationPDF = DossierStorageService.cheminRelatif(newPath);
+                        await demande.preInscription.save(transaction ? { transaction } : undefined);
+                    }
                 }
             }
 

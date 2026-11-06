@@ -16,8 +16,10 @@
 #    si une migration échoue, le conteneur ne démarre pas (le déploiement est
 #    marqué en échec, pas d'API à moitié). Par défaut elles sont SAUTÉES :
 #    voir le bloc ci-dessous pour le détail.
-# 2. Lance le seed des comptes système + autorisations (idempotent)
-# 3. Démarre l'application (node index.js)
+# 2. Copie les anciens fichiers d'inscription dans l'arborescence étudiant
+#    (non destructive, une seule fois après succès).
+# 3. Lance le seed des comptes système + autorisations (idempotent)
+# 4. Démarre l'application (node index.js)
 #
 # OÙ SONT LES MIGRATIONS ?
 # ----------------------------
@@ -380,6 +382,18 @@ if [ "${MIGRATIONS_ON_BOOT:-true}" = "true" ]; then
 else
   echo "[entrypoint] Migrations au démarrage désactivées (MIGRATIONS_ON_BOOT != true)."
   echo "[entrypoint] → les appliquer à la demande : npm run db:migrate"
+fi
+
+# Copie initiale des fichiers d'inscription vers l'arborescence par étudiant.
+# Elle ne s'exécute qu'après les migrations SQL et se marque terminée en base
+# lorsqu'il ne reste aucune erreur. Les sources sont conservées; un échec est
+# visible dans les logs mais ne bloque pas le démarrage de l'API.
+if [ "${MIGRATIONS_ON_BOOT:-true}" = "true" ] && [ "${STUDENT_UPLOAD_LAYOUT_MIGRATION_ON_BOOT:-true}" = "true" ]; then
+  echo "[entrypoint] Organisation automatique des fichiers étudiants..."
+  node /app/lib/modules/inscription/scripts/migrate-student-upload-layout.js --apply \
+    || echo "[entrypoint] ⚠ Organisation incomplète; les erreurs sont listées ci-dessus et seront retentées au prochain démarrage."
+elif [ "${STUDENT_UPLOAD_LAYOUT_MIGRATION_ON_BOOT:-true}" != "true" ]; then
+  echo "[entrypoint] Organisation automatique des fichiers étudiants désactivée."
 fi
 
 # `|| echo` neutralise volontairement `set -e` sur ces lignes : les seeds

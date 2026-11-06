@@ -11,6 +11,7 @@ import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { EmailSender } from "../../../core/helpers/EmailSender";
 import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
 import { DocGenGeneratorService } from "../../docgen/services/DocGenGeneratorService";
+import { EtudiantUploadStorageService } from "../services/EtudiantUploadStorageService";
 
 export default class PreInscriptionController {
 
@@ -122,7 +123,10 @@ export default class PreInscriptionController {
         const demande = await DemandeInscription.findOne({
             where: { id: demandeId },
             include: [
-                { association: DemandeInscription.associations.utilisateur },
+                {
+                    association: DemandeInscription.associations.utilisateur,
+                    include: [{ association: Utilisateur.associations.apprenant }],
+                },
                 { association: DemandeInscription.associations.session, include: [Session.associations.fraisInscription] },
                 { association: DemandeInscription.associations.parcoursChoisis, include: [{ association: ParcoursChoisi.associations.parcours }] }
             ]
@@ -169,7 +173,35 @@ export default class PreInscriptionController {
 
             autorisationReference = result.reference;
             autorisationFilePath = result.filePath;
-            await preInscription.update({ autorisationPDF: result.reference })
+            let storedReference = result.reference;
+            try {
+                if (!demande.utilisateur || !result.filePath) {
+                    throw new Error("Compte étudiant ou fichier d'autorisation généré introuvable");
+                }
+                const treeFolders = await EtudiantUploadStorageService.resolveTreeFolders({
+                    sessionId: demande.sessionId,
+                    etablissementId: demande.etablissementId,
+                    demandeId: demande.id,
+                    utilisateurId: demande.utilisateurId,
+                    typeDemande: demande.typeDemande,
+                });
+                storedReference = EtudiantUploadStorageService.copyExisting(
+                    result.filePath,
+                    {
+                        id: Number(demande.utilisateur.id),
+                        nom: demande.utilisateur.nom,
+                        prenoms: demande.utilisateur.prenoms,
+                        matricule: demande.matriculeEtudiant || demande.matricule,
+                    },
+                    treeFolders,
+                    "Dossiers",
+                    ["INSCRIPTION", `DEMANDE_${demande.id}`, "AUTORISATIONS"],
+                );
+            } catch (storageError) {
+                console.error("Erreur rangement autorisation provisoire dans le dossier étudiant:", storageError);
+                alertes.push("RANGEMENT_AUTORISATION_ECHEC");
+            }
+            await preInscription.update({ autorisationPDF: storedReference })
         } catch (err) {
             console.error("Erreur génération autorisation provisoire PDF (docgen):", err)
             alertes.push('GENERATION_AUTORISATION_ECHEC')

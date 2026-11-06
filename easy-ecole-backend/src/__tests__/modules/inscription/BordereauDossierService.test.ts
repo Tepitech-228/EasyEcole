@@ -200,6 +200,32 @@ describe('BordereauDossierService.finaliserAffectationPedagogique', () => {
       jest.restoreAllMocks()
     })
 
+    it('keeps an authorization already stored in the student tree', async () => {
+      const preInscription = {
+        autorisationPDF: 'public/dossiers/2025-2026/Site/LICENCE/L1/Informatique/Etudiants/Etudiant/Dossiers/INSCRIPTION/DEMANDE_12/AUTORISATIONS/Version_01/API001.pdf',
+        save: jest.fn().mockResolvedValue(undefined),
+      }
+      const bordereau = { fichier: 'public/dossiers/2025-2026/Etudiants/Etudiant/Bordereaux/bordereau.pdf' }
+      DemandeInscription.findByPk.mockResolvedValue({ dossiersDemande: [], preInscription })
+      Bordereau.findByPk.mockResolvedValue(bordereau)
+      jest.spyOn(fs, 'existsSync').mockReturnValue(true)
+
+      await BordereauDossierService.deplacerFichiersDossierDiffere({
+        demandeId: 12,
+        bordereauId: 34,
+        baseChemin: {
+          annee: '2025-2026',
+          parcours: 'LICENCE',
+          classe: 'À affecter',
+          niveau: 'Licence 1',
+          matricule: '2025-L1-J-26-TEST',
+        },
+      })
+
+      expect(DossierStorageService.deplacerFichier).not.toHaveBeenCalled()
+      expect(preInscription.save).not.toHaveBeenCalled()
+    })
+
     it('met à jour le chemin du bordereau après chargement hors transaction', async () => {
       const bordereau = { fichier: 'bordereau.pdf', save: jest.fn().mockResolvedValue(undefined) }
       DemandeInscription.findByPk.mockResolvedValue({ dossiersDemande: [], preInscription: null })

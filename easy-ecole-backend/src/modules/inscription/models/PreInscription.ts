@@ -52,7 +52,7 @@ PreInscription.init({
     allowNull: true
   },
   autorisationPDF: {
-    type: new DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   createdAt: DataTypes.DATE,

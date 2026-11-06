@@ -398,25 +398,30 @@ public/dossiers/{Année-académique}/{Site}/{Parcours}/{NIVEAU}/{Filière}/Etudi
 ├── Dossier-info-personelles/
 ├── Dossiers/
 │   ├── INSCRIPTION/DEMANDE_{id}/PIECES/{id}_{intitulePiece}/Version_01/{nomOriginal}
-│   └── REINSCRIPTION/DEMANDE_{id}/PIECES/{code}_{intitulePiece}/Version_01/{nomOriginal}
+│   ├── REINSCRIPTION/DEMANDE_{id}/PIECES/{code}_{intitulePiece}/Version_01/{nomOriginal}
+│   └── {INSCRIPTION|REINSCRIPTION}/DEMANDE_{id}/AUTORISATIONS/Version_01/{autorisation}.pdf
 └── Bordereaux/
     ├── INSCRIPTION/DEMANDE_{id}/Version_01/{nomOriginal}
     ├── REINSCRIPTION/DEMANDE_{id}/Version_01/{nomOriginal}
     └── {TYPE_PAIEMENT}/DEMANDE_{id}/Version_01/{nomOriginal}
 ```
 
+Les autorisations provisoires PDF générées après validation par le comité sont également copiées dans `Dossiers/{INSCRIPTION|REINSCRIPTION}/DEMANDE_{id}/AUTORISATIONS/Version_01/`. Le fichier source DocGen est conservé et l'e-mail de validation continue de joindre ce fichier.
+
 Le niveau de parcours utilise le type de parcours (par exemple `LICENCE` ou `MASTER`), le niveau vient du niveau associé à la session, et la filière du parcours final. Tant qu'aucun choix final n'existe, seul le segment non déterminé est remplacé par `Parcours-en-attente` ou `Filiere-en-attente`; le niveau connu de la session est conservé. Le site est le site d'inscription de la demande, avant le parcours dans l'arborescence. Chaque étudiant a toujours les trois dossiers frères `Dossier-info-personelles`, `Dossiers` et `Bordereaux`. Chaque pièce a son propre sous-dossier portant son intitulé. Les remplacements vont dans `Version_02`, puis `Version_03`, etc. : aucune version précédente n'est écrasée ni supprimée, même si seule la dernière version reste référencée comme pièce active en base. Le nom du fichier reste identique à l'original (hors caractères interdits par le système de fichiers). Le chemin relatif complet de la version active est enregistré en base et utilisé par les routes de téléchargement. Les fichiers déjà enregistrés dans les anciens dépôts restent accessibles par compatibilité.
 
 #### Migration des fichiers historiques
 
-La migration des chemins existants est manuelle et ne démarre pas au déploiement. Depuis le conteneur backend (ou le dossier du backend avec accès au même volume `public/` et à la base) :
+La migration historique est lancée automatiquement au démarrage du backend après les migrations SQL. Elle copie les références enregistrées en base (pièces, bordereaux et autorisations provisoires), conserve les originaux, puis met à jour les chemins en base. Le premier démarrage peut donc prendre plus de temps selon le nombre et la taille des fichiers. Une fois terminée sans erreur, son état est enregistré et elle n'est pas rejouée aux démarrages suivants. Si certains fichiers ou leurs données académiques sont indisponibles, ils sont signalés dans les logs et la migration sera retentée au prochain démarrage. La désactivation ponctuelle se fait avec `STUDENT_UPLOAD_LAYOUT_MIGRATION_ON_BOOT=false`.
+
+Pour contrôler manuellement le résultat depuis le conteneur backend (ou le dossier du backend avec accès au même volume `public/` et à la base), la première commande affiche un aperçu sans rien modifier ; la seconde applique la migration :
 
 ```sh
 node lib/modules/inscription/scripts/migrate-student-upload-layout.js
 node lib/modules/inscription/scripts/migrate-student-upload-layout.js --apply
 ```
 
-La première commande affiche les sources et destinations prévues sans rien modifier. Après vérification et sauvegarde de la base et des fichiers, la seconde copie les pièces et bordereaux vers la nouvelle arborescence puis met à jour leurs références en base. Les fichiers originaux ne sont pas supprimés. Les éléments déjà rangés sous `Etudiants/` sont ignorés ; les fichiers introuvables ou sans données académiques suffisantes sont signalés et laissés inchangés. La migration `062_student_upload_paths_text.sql` doit être appliquée avant l'opération pour que les références de chemins longs soient stockées sans troncature.
+Les fichiers originaux ne sont pas supprimés. Les éléments déjà rangés sous `Etudiants/` sont ignorés ; les fichiers introuvables ou sans données académiques suffisantes sont signalés et laissés inchangés. Les migrations SQL `062_student_upload_paths_text.sql` et `063_preinscription_authorization_path_text.sql` doivent être appliquées avant l'opération pour que les références de chemins longs soient stockées sans troncature.
 
 ### Code : appel à l'archivage
 
