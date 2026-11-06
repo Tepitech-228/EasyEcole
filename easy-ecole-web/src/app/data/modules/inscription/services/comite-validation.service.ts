@@ -110,7 +110,7 @@ export class ComiteValidationService {
       dossierIdsAReposer,
       matriculeConfirme,
       matriculeEtudiant,
-    }).pipe(timeout(45_000))
+    }).pipe(timeout(120_000))
   }
 
   /**

@@ -671,6 +671,7 @@ export default class ComiteValidationController {
                 )
                 matriculeFinal = finalisation.matricule
                 const carteEtudiantDifferee = finalisation.carteEtudiant
+                const autorisationDifferee = finalisation.autorisation
 
                 demande.statutPipeline = 'valide'
                 demande.motifPipeline = null
@@ -768,6 +769,17 @@ export default class ComiteValidationController {
                     })
                 }
 
+                if (autorisationDifferee) {
+                    setImmediate(() => {
+                        void BordereauDossierService.genererAutorisationProvisoireDifferee(autorisationDifferee, req).catch(error => {
+                            console.error(
+                                `[Comite] Échec de génération différée de l'autorisation provisoire (document ${autorisationDifferee.demandeDocumentId}):`,
+                                error,
+                            )
+                        })
+                    })
+                }
+
                 // Email de validation UNIQUEMENT à l'unanimité
                 ComiteValidationController.envoyerEmailValidation(demande.utilisateurId, matriculeFinal)
 
@@ -779,6 +791,7 @@ export default class ComiteValidationController {
                         statutPipeline: demande.statutPipeline,
                         matricule: matriculeFinal,
                         carteEnGeneration: Boolean(carteEtudiantDifferee),
+                        autorisationEnGeneration: Boolean(autorisationDifferee),
                         quorum: {
                             totalMembres,
                             votesCount: votesValides,
