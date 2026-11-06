@@ -46,8 +46,7 @@ function incrementerLibelleNiveau(libelle: string): string {
     return `${libelle} (N+1)`
 }
 
-const STATUTS_COMITE = ['transmis_comite', 'authentifie']
-const PIPELINE_COMITE = 'transmis_comite'
+const STATUTS_COMITE = ['transmis_comite']
 
 /** Valeurs acceptées pour le filtre « filière » (colonne Parcours.type). */
 const FILIERES = ['LICENCE', 'MASTER', 'DOCTORAT', 'BTS', 'MBA']
@@ -96,7 +95,9 @@ export default class ComiteValidationController {
 
     /**
      * GET /comite-validations/dossiers
-     * Liste les dossiers transmis au comité (statutPipeline = 'transmis_comite' ou 'authentifie').
+     * Liste les dossiers transmis au comité (statutPipeline = 'transmis_comite').
+     * Un dossier seulement audité (`authentifie`) n'a pas encore été saisi par
+     * le Service Recouvrement : il reste hors de la file du comité.
      * ?tous=true → retourne tous les dossiers du pipeline (historique).
      *
      * Filtres combinables (ET) : anneeId, filiere, parcoursId, niveauId.
@@ -661,6 +662,11 @@ export default class ComiteValidationController {
                         req,
                         transaction,
                         {
+                            // Garantie financière portée par le statut `transmis_comite`
+                            // (saisie ESA-Compta terminée). Le contrôle
+                            // `fraisPayes < fraisTotal` ne peut pas s'appliquer ici :
+                            // `paiementsInscription` est associée au `matricule`, qui
+                            // n'est généré qu'après cette étape.
                             ignorerVerifFrais: true,
                             pedagogieDifferee: true,
                             defererDeplacementFichiers: true,

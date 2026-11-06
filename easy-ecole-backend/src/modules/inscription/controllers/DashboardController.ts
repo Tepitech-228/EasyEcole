@@ -642,10 +642,10 @@ class DashboardController {
      *    et non `PreInscription.statut` (table historique). Mélanger les deux
      *    rendait le total incohérent avec la somme des autres indicateurs.
      *
-     * 2. La file « à traiter » du comité est `IN ('transmis_comite',
-     *    'authentifie')` — cf. STATUTS_COMITE dans ComiteValidationController.
-     *    Compter seulement 'transmis_comite' affichait « 0 à traiter » alors
-     *    que la page du comité remontait des dossiers.
+     * 2. La file « à traiter » du comité est strictement `transmis_comite`
+     *    (cf. STATUTS_COMITE dans ComiteValidationController). Un dossier
+     *    seulement audité (`authentifie`) n'a pas encore été saisi par le
+     *    Service Recouvrement : il ne doit pas être proposé au comité.
      *
      * 3. Une décision d'instruction peut être portée par un VOTE
      *    (ComiteVote) avant que le statut ne bascule. Les rejets et les
@@ -682,7 +682,7 @@ class DashboardController {
 
         const [totalDossiers, enAttente, validesStatut, valides, rejetesStatut, rejetees, correctionsStatut, correctionsDemandees, dossiersRecents, premiereInscription, reinscription] = await Promise.all([
             DemandeInscription.count({ where: { statutPipeline: { [Op.ne]: null } } }),
-            DemandeInscription.count({ where: { statutPipeline: { [Op.in]: ['transmis_comite', 'authentifie'] } } }),
+            DemandeInscription.count({ where: { statutPipeline: 'transmis_comite' } }),
             parStatut('valide'),
             dossiersAvecVote('valide'),
             parStatut('rejete'),

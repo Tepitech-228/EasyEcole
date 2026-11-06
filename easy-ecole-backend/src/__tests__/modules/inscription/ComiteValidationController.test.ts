@@ -310,6 +310,25 @@ describe('ComiteValidationController.decider — garde-fous', () => {
     expect(mockTransaction.rollback).toHaveBeenCalled()
   })
 
+  it('refuse un dossier seulement audité (authentifie) avant la saisie Recouvrement (400)', async () => {
+    const res = mockResponse()
+    ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue({
+      id: 11,
+      utilisateurId: 90,
+      typeDemande: 'reinscription',
+      statutPipeline: 'authentifie',
+      save: jest.fn(),
+    })
+    await Ctrl.decider(reqComite({ decision: 'valide' }), res)
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(res.json).toHaveBeenCalledWith({
+      success: false,
+      message: "Ce dossier n'est pas en attente de validation du comité",
+    })
+    expect(ComiteVote.create).not.toHaveBeenCalled()
+    expect(mockTransaction.rollback).toHaveBeenCalled()
+  })
+
   it('refuse un rôle autre que comité/admin (403)', async () => {
     const res = mockResponse()
     const req = mockRequest({
