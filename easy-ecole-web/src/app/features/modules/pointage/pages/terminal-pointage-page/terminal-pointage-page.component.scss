@@ -123,10 +123,9 @@
   border-radius: 18px;
   padding: 0.85rem 1rem;
   background: #fff;
-  box-shadow: 0 6px 18px rgba(28, 45, 73, 0.055);
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  transition: transform 180ms ease;
 
-  &:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(28, 45, 73, 0.1); }
+  &:hover { transform: translateY(-2px); }
 }
 
 .pointage-method-icon {
