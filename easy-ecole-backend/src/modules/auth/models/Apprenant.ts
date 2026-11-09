@@ -84,8 +84,7 @@ Apprenant.init({
   },
   nationalite: {
     type: new DataTypes.STRING,
-    allowNull: true,
-    defaultValue: 'Ivoirienne'
+    allowNull: true
   },
   cni: {
     type: new DataTypes.STRING,

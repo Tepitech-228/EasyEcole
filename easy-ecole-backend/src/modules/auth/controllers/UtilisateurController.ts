@@ -492,7 +492,7 @@ export default class UtilisateurController {
                         dateNaissance: req.body.dateNaissance || new Date(),
                         lieuNaissance: req.body.lieuNaissance || '',
                         sexe: req.body.sexe || 'M',
-                        nationalite: req.body.nationalite || 'Ivoirienne',
+                        nationalite: req.body.nationalite || null,
                         cni: req.body.cni || null,
                         statutEtudiant: req.body.statutEtudiant || 'nouveau',
                         periode: req.body.periode || 'matin',
@@ -529,7 +529,7 @@ export default class UtilisateurController {
                                 dateNaissance: req.body.dateNaissance || null,
                                 lieuNaissance: req.body.lieuNaissance || null,
                                 sexe: req.body.sexe || 'M',
-                                nationalite: req.body.nationalite || 'Ivoirienne',
+                                nationalite: req.body.nationalite || null,
                                 contact: req.body.contact || null,
                                 plusHautDiplome: req.body.plusHautDiplome || null,
                             }, { transaction });
@@ -588,7 +588,7 @@ export default class UtilisateurController {
                                 dateNaissance: req.body.dateNaissance || null,
                                 lieuNaissance: req.body.lieuNaissance || null,
                                 sexe: req.body.sexe || 'M',
-                                nationalite: req.body.nationalite || 'Ivoirienne',
+                                nationalite: req.body.nationalite || null,
                             }, { transaction });
                             break
                         } catch (createErr: any) {

@@ -90,8 +90,7 @@ PersonnelAdministratif.init({
   },
   nationalite: {
     type: new DataTypes.STRING,
-    allowNull: true,
-    defaultValue: 'Ivoirienne'
+    allowNull: true
   },
   contact: {
     type: new DataTypes.STRING,

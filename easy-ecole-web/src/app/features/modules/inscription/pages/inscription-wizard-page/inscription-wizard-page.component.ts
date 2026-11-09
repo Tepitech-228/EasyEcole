@@ -434,7 +434,9 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
           prenoms: valeursActuelles.prenoms || a.utilisateur?.prenoms || '',
           dateNaissance: valeursActuelles.dateNaissance || sourceDateNaissance || '',
           lieuNaissance: valeursActuelles.lieuNaissance || a.lieuNaissance || '',
-          nationalite: valeursActuelles.nationalite || a.nationalite || a.identite?.nationalite || '',
+          nationalite: a.identite?.nationalite
+            || valeursActuelles.nationalite
+            || (a.nationalite && a.nationalite !== 'Ivoirienne' ? a.nationalite : ''),
           contact: valeursActuelles.contact || a.utilisateur?.contact || a.adresse?.telMobile || '',
           email: valeursActuelles.email || a.utilisateur?.email || '',
           adresse: valeursActuelles.adresse || a.adresse?.ville || '',

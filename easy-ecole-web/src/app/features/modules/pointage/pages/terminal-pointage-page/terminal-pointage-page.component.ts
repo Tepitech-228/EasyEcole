@@ -23,6 +23,8 @@ interface PendingDepartureConfirmation {
   nom: string;
   prenoms: string;
   role: string;
+  displayRole: string;
+  matricule: string;
   photoUrl: string;
 }
 
@@ -46,7 +48,6 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   scanSuccess: string = ''
   /** Départ personnel en attente de double confirmation (2e scan du jour). */
   departureConfirmation: PendingDepartureConfirmation | null = null
-  departureConfirmationStep: 'choix' | 'avertissement' = 'choix'
   departureConfirmationSaving: boolean = false
   scanTimeout: boolean = false
   selfSuccess: string = ''
@@ -60,6 +61,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   voiceError: string = ''
   lastAttendanceName: string = ''
   lastAttendanceRole: string = ''
+  lastAttendanceMatricule: string = ''
   lastAttendancePhotoUrl: string = ''
   lastAttendanceSituationFinanciere: PointageSituationFinanciere | null = null
   manualId: string = ''
@@ -109,6 +111,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   private static readonly SCAN_TIMEOUT_MS = 30000
   private static readonly CACHE_TTL_MS = 60000
   private audioCtx: AudioContext | null = null
+  private permanenceAnnouncementTimer: number | null = null
+  private static lastPermanenceAnnouncementDate: string | null = null
 
   // Lecteur QR externe « Tovi » (clavier HID) : la carte TAPE les caractères.
   static readonly TOVI_FLUSH_MS = 400
@@ -140,6 +144,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     this.terminalAttendanceSubscription = this.socketService.onTerminalAttendance().subscribe(event => {
       this.ngZone.run(() => this.afficherPointageHikvision(event))
     })
+    this.verifierAnnoncePermanence()
+    this.permanenceAnnouncementTimer = window.setInterval(() => this.verifierAnnoncePermanence(), 15000)
   }
 
   private chargerConfigurationTerminaux(): void {
@@ -435,6 +441,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   private afficherPointageHikvision(event: TerminalAttendanceEvent): void {
     this.lastAttendanceName = this.formatPersonName(event)
     this.lastAttendanceRole = this.roleLabel(event.role)
+    this.lastAttendanceMatricule = event.employeeNoString
     this.lastAttendancePhotoUrl = this.buildPhotoUrl(event.photo, event.photoType)
     this.lastAttendanceSituationFinanciere = event.situationFinanciere || null
     this.scanError = ''
@@ -461,6 +468,9 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
 
   ngOnDestroy(): void {
     this.terminalAttendanceSubscription?.unsubscribe()
+    if (this.permanenceAnnouncementTimer !== null) {
+      window.clearInterval(this.permanenceAnnouncementTimer)
+    }
     this.stopScanner()
     this.clearScanTimer()
     this.clearToviFlushTimer()
@@ -616,16 +626,17 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
             const pointage = result.pointage
             this.lastAttendanceName = this.formatPersonName(this.scannedUser)
             this.lastAttendanceRole = this.roleLabel(this.scannedUser?.role)
+            this.lastAttendanceMatricule = this.scannedUser?.matricule || ''
             this.lastAttendancePhotoUrl = this.scannedUser?.photoUrl || ''
             this.lastAttendanceSituationFinanciere = result.situationFinanciere || null
             const heure = result.mode === 'passage'
               ? pointage.heureArrivee
               : (result.mode === 'depart' ? pointage.heureDepart : pointage.heureArrivee)
             this.scanWarning = result.avertissementPaiement || ''
-            this.announceAttendance(this.scannedUser, result.mode, heure || undefined, result.avertissementPaiement)
+            this.announceAttendance(this.scannedUser, result.mode, heure || undefined, result.avertissementPaiement, pointage)
             this.playBeepSucces()
             this.scanSuccess = result.mode === 'depart'
-              ? 'Départ enregistré à ' + pointage.heureDepart
+              ? 'Départ enregistré à ' + pointage.heureDepart + this.tempsPointageMessage(pointage)
               : (result.mode === 'passage'
                 ? 'Passage enregistré à ' + pointage.heureArrivee
                 : 'Arrivée enregistrée à ' + pointage.heureArrivee)
@@ -810,7 +821,9 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
         }
         this.todayPointage = res
         this.selfSuccess = 'Départ pointé à ' + res.heureDepart
+          + this.tempsPointageMessage(res)
         this.playBeepSucces()
+        this.announceAttendance(BaseComponentClass.utilisateur, 'depart', res.heureDepart, null, res)
         setTimeout(() => this.selfSuccess = '', 4000)
       },
       error: (err) => {
@@ -856,7 +869,9 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
         this.selfDepartureConfirmation = null
         this.selfDepartureStep = 'choix'
         this.selfSuccess = 'Départ enregistré à ' + res.heureDepart
+          + this.tempsPointageMessage(res)
         this.playBeepSucces()
+        this.announceAttendance(BaseComponentClass.utilisateur, 'depart', res.heureDepart, null, res)
         setTimeout(() => this.selfSuccess = '', 4000)
       },
       error: (err) => {
@@ -1205,6 +1220,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
           : mode
         this.lastAttendanceName = this.formatPersonName(this.scannedUser)
         this.lastAttendanceRole = this.roleLabel(this.scannedUser?.role)
+        this.lastAttendanceMatricule = this.scannedUser?.matricule || ''
         this.lastAttendancePhotoUrl = this.scannedUser?.photoUrl || ''
         this.lastAttendanceSituationFinanciere = 'situationFinanciere' in response
           ? response.situationFinanciere || null
@@ -1212,10 +1228,10 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
         const heure = actualMode === 'depart' ? pointage.heureDepart : pointage.heureArrivee
         const avertissementPaiement = 'avertissementPaiement' in response ? response.avertissementPaiement : null
         this.scanWarning = avertissementPaiement || ''
-        this.announceAttendance(this.scannedUser, actualMode, heure || undefined, avertissementPaiement)
+        this.announceAttendance(this.scannedUser, actualMode, heure || undefined, avertissementPaiement, pointage)
         this.playBeepSucces()
         this.scanSuccess = actualMode === 'depart'
-          ? 'Départ pointé à ' + pointage.heureDepart
+          ? 'Départ pointé à ' + pointage.heureDepart + this.tempsPointageMessage(pointage)
           : (actualMode === 'passage'
             ? 'Passage enregistré à ' + pointage.heureArrivee
             : 'Arrivée pointée à ' + pointage.heureArrivee)
@@ -1269,26 +1285,26 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       nom: this.scannedUser?.nom || '',
       prenoms: this.scannedUser?.prenoms || '',
       role: this.scannedUser?.role || '',
+      displayRole: this.roleLabel(this.scannedUser?.role),
+      matricule: this.scannedUser?.matricule || '',
       photoUrl: this.scannedUser?.photoUrl || ''
     }
-    this.departureConfirmationStep = 'choix'
     this.departureConfirmationSaving = false
     this.scanError = ''
     this.scanWarning = ''
     this.scanSuccess = ''
+    const nomComplet = this.formatPersonName(this.departureConfirmation)
+    const heure = this.formatHeureCourte(this.departureConfirmation.heure)
+    this.speak(
+      `Deuxième pointage détecté. Voulez-vous pointer le départ de ${nomComplet}`
+      + `${heure ? ' à ' + heure : ''} ?`
+    )
     this.scannedUser = null
-  }
-
-  /** Bouton « Enregistrer » : affiche le panneau d'avertissement. */
-  demanderConfirmationDepart(): void {
-    if (!this.departureConfirmation) return
-    this.departureConfirmationStep = 'avertissement'
   }
 
   /** « Annuler » : aucun départ n'est enregistré. */
   annulerConfirmationDepart(): void {
     this.departureConfirmation = null
-    this.departureConfirmationStep = 'choix'
     this.departureConfirmationSaving = false
     this.resetScan()
     this.resumeReaderQueue()
@@ -1311,7 +1327,6 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
             confirmationToken: response.confirmationToken,
             heure: response.heureDepart
           }
-          this.departureConfirmationStep = 'choix'
           this.scanError = 'La confirmation a expiré. Recommencez l’enregistrement du départ.'
           this.playBeepRefus()
           return
@@ -1321,12 +1336,12 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
         const heure = pointage.heureDepart || pending.heure
         this.lastAttendanceName = this.formatPersonName(personne)
         this.lastAttendanceRole = this.roleLabel(pending.role)
+        this.lastAttendanceMatricule = pending.matricule
         this.lastAttendancePhotoUrl = pending.photoUrl
-        this.announceAttendance(personne, 'depart', heure)
+        this.announceAttendance(personne, 'depart', heure, null, pointage)
         this.playBeepSucces()
-        this.scanSuccess = 'Départ enregistré à ' + heure
+        this.scanSuccess = 'Départ enregistré à ' + heure + this.tempsPointageMessage(pointage)
         this.departureConfirmation = null
-        this.departureConfirmationStep = 'choix'
         this.scannedUser = null
         this.scannedCodeQR = null
         this.resumeReaderQueue()
@@ -1334,7 +1349,6 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       error: (err) => {
         this.departureConfirmationSaving = false
         this.departureConfirmation = null
-        this.departureConfirmationStep = 'choix'
         this.scanError = err.error?.message || 'Le départ n’a pas pu être enregistré. Réessayez.'
         this.playBeepRefus()
         this.resumeReaderQueue()
@@ -1363,7 +1377,6 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     this.scannedCodeQR = null
     this.lastAttendanceSituationFinanciere = null
     this.departureConfirmation = null
-    this.departureConfirmationStep = 'choix'
     this.departureConfirmationSaving = false
   }
 
@@ -1386,7 +1399,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     user: any,
     mode: 'arrivee' | 'depart' | 'passage' | 'refuse',
     time?: string,
-    avertissementPaiement?: string | null
+    avertissementPaiement?: string | null,
+    pointage?: Pick<Pointage, 'heureArrivee' | 'heureDepart'> | null
   ): void {
     if (!this.voiceAnnouncementsEnabled) return
     const prenom = (user?.prenoms || '').trim() || this.formatPersonName(user)
@@ -1406,7 +1420,12 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     }
 
     if (mode === 'depart') {
-      this.speak(`Au revoir ${prenom}. Départ${heure ? ' à ' + heure : ''}.`)
+      const durees = this.calculerDureesPointage(pointage)
+      const bilan = durees
+        ? ` Temps normal : ${this.formaterDureePourVoix(durees.minutesNormales)}.`
+          + ` Heures supplémentaires : ${this.formaterDureePourVoix(durees.minutesSupplementaires)}.`
+        : ''
+      this.speak(`Au revoir ${prenom}. Départ${heure ? ' à ' + heure : ''}.${bilan}`)
       return
     }
 
@@ -1417,6 +1436,59 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     if (!time) return ''
     const match = String(time).match(/^(\d{2}):(\d{2})/)
     return match ? `${match[1]}:${match[2]}` : ''
+  }
+
+  private verifierAnnoncePermanence(): void {
+    if (!this.voiceAnnouncementsEnabled) return
+    const now = new Date()
+    if (now.getHours() !== 18 || now.getMinutes() > 1) return
+
+    const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+    if (TerminalPointagePageComponent.lastPermanenceAnnouncementDate === date) return
+    TerminalPointagePageComponent.lastPermanenceAnnouncementDate = date
+    this.speak('Début de permanence.')
+  }
+
+  private calculerDureesPointage(pointage?: Pick<Pointage, 'heureArrivee' | 'heureDepart'> | null): {
+    minutesNormales: number;
+    minutesSupplementaires: number;
+  } | null {
+    if (!pointage?.heureDepart) return null
+    const minutes = (heure: string): number | null => {
+      const match = String(heure).match(/^([01]\d|2[0-3]):([0-5]\d)/)
+      return match ? Number(match[1]) * 60 + Number(match[2]) : null
+    }
+    const arrivee = minutes(pointage.heureArrivee)
+    const depart = minutes(pointage.heureDepart)
+    if (arrivee === null || depart === null || depart < arrivee) return null
+
+    const debutHeuresSupplementaires = 18 * 60
+    return {
+      minutesNormales: Math.max(0, Math.min(depart, debutHeuresSupplementaires) - arrivee),
+      minutesSupplementaires: Math.max(0, depart - Math.max(arrivee, debutHeuresSupplementaires))
+    }
+  }
+
+  private tempsPointageMessage(pointage: Pick<Pointage, 'heureArrivee' | 'heureDepart'>): string {
+    if (String(BaseComponentClass.utilisateur?.role || '').toLowerCase() === 'apprenant') return ''
+    const durees = this.calculerDureesPointage(pointage)
+    if (!durees) return ''
+    return ` · Temps normal : ${this.formaterDuree(durees.minutesNormales)}`
+      + ` · Heures supplémentaires : ${this.formaterDuree(durees.minutesSupplementaires)}`
+  }
+
+  private formaterDuree(minutes: number): string {
+    return `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, '0')}`
+  }
+
+  private formaterDureePourVoix(minutes: number): string {
+    const heures = Math.floor(minutes / 60)
+    const minutesRestantes = minutes % 60
+    const heuresParole = `${heures} heure${heures === 1 ? '' : 's'}`
+    const minutesParole = minutesRestantes
+      ? ` et ${minutesRestantes} minute${minutesRestantes === 1 ? '' : 's'}`
+      : ''
+    return heuresParole + minutesParole
   }
 
   private speak(text: string): void {

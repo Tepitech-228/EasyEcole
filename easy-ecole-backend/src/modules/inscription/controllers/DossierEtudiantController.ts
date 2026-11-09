@@ -733,10 +733,6 @@ export default class DossierEtudiantController {
                 where,
                 include: [
                     {
-                        association: DossierEtudiant.associations.etablissement,
-                        attributes: ['nom', 'site', 'ville'],
-                    },
-                    {
                         association: DossierEtudiant.associations.utilisateur,
                         include: [{ model: Apprenant, as: 'apprenant' }]
                     }
@@ -771,14 +767,14 @@ export default class DossierEtudiantController {
                 prenom: user.prenoms,
                 matricule: dossier.matricule,
                 dateNaissance: apprenant?.dateNaissance || '',
-                photo: apprenant?.photo || dossier.photo || undefined,
+                photo: apprenant?.photo || dossier.photo || user.photoDeProfil || undefined,
                 classe: (cursus as any)?.classe?.libelle || '',
                 filiere: (cursus as any)?.parcours?.titre || '',
                 anneeAcademique: (cursus as any)?.anneeAcademique?.libelle || '',
                 email: user.email,
                 utilisateurId: dossier.utilisateurId,
                 periode: apprenant?.periode || null,
-                site: dossier.etablissement?.site || dossier.etablissement?.ville || dossier.etablissement?.nom || '',
+                option: (cursus as any)?.classe?.option || null,
             })
 
             await dossier.update({ cartePath, carteGeneree: true })

@@ -9,6 +9,7 @@ import { QrTokenService } from "../../../core/services/QrTokenService";
 import { VerificationPaiementService } from "../services/VerificationPaiementService";
 import SituationFinanciereService from "../services/SituationFinanciereService";
 import { SituationFinanciere } from "../services/SituationFinanciereService";
+import { calculerDureesPointage, formaterDureePointage } from "../services/PointageDureeService";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { Apprenant } from "../../auth/models/Apprenant";
 import { PersonnelAdministratif } from "../../auth/models/PersonnelAdministratif";
@@ -423,11 +424,18 @@ export default class PointageController {
 
             const lignes = pointagesFiltres.map((pointage, index) => {
                 const minutes = PointageController.dureeMinutes(pointage.heureArrivee, pointage.heureDepart);
+                const estPersonnel = pointage.utilisateur?.role !== RolesUtilisateur.APPRENANT;
+                const dureesPointage = estPersonnel
+                    ? calculerDureesPointage(pointage.heureArrivee, pointage.heureDepart)
+                    : { minutesNormales: null, minutesSupplementaires: null };
+                const departManquant = !pointage.heureDepart;
                 const passages = (pointage.scans || [])
                     .map((scan: any) => PointageController.heureCourte(scan.heure))
                     .filter((heure: string) => !!heure);
                 return {
                     numero: index + 1,
+                    utilisateurId: Number(pointage.utilisateurId),
+                    estPersonnel,
                     date: PointageController.formatDateFr(pointage.date),
                     jour: PointageController.formatJourFr(pointage.date),
                     nom: pointage.utilisateur?.nom || '',
@@ -438,6 +446,18 @@ export default class PointageController {
                     depart: PointageController.heureCourte(pointage.heureDepart) || '—',
                     duree: PointageController.formatDuree(minutes),
                     dureeMinutes: minutes,
+                    heuresNormales: !estPersonnel
+                        ? '—'
+                        : departManquant
+                            ? 'En cours'
+                            : formaterDureePointage(dureesPointage.minutesNormales),
+                    heuresNormalesMinutes: dureesPointage.minutesNormales,
+                    heuresSupplementaires: !estPersonnel
+                        ? '—'
+                        : departManquant
+                            ? 'En cours'
+                            : formaterDureePointage(dureesPointage.minutesSupplementaires),
+                    heuresSupplementairesMinutes: dureesPointage.minutesSupplementaires,
                     passages: passages.join(' · '),
                     statut: minutes !== null ? 'Complet' : 'En cours',
                 };
@@ -478,7 +498,8 @@ export default class PointageController {
         });
         feuille.columns = [
             { width: 6 }, { width: 12 }, { width: 12 }, { width: 22 }, { width: 24 },
-            { width: 16 }, { width: 22 }, { width: 10 }, { width: 10 }, { width: 11 }, { width: 20 }, { width: 11 },
+            { width: 16 }, { width: 22 }, { width: 10 }, { width: 10 }, { width: 13 }, { width: 14 },
+            { width: 14 }, { width: 20 }, { width: 11 },
         ];
 
         const bordure: Partial<ExcelJS.Borders> = {
@@ -488,24 +509,31 @@ export default class PointageController {
             right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
         };
 
-        feuille.mergeCells('A1:L1');
+        feuille.mergeCells('A1:N1');
         const titre = feuille.getCell('A1');
         titre.value = 'Historique des pointages';
         titre.font = { name: 'Calibri', size: 16, bold: true, color: { argb: 'FF1F3C75' } };
         titre.alignment = { vertical: 'middle', horizontal: 'left' };
         feuille.getRow(1).height = 30;
 
-        feuille.mergeCells('A2:L2');
+        feuille.mergeCells('A2:N2');
         const sousTitre = feuille.getCell('A2');
         sousTitre.value = meta.periodeLabel;
         sousTitre.font = { name: 'Calibri', size: 10, color: { argb: 'FF64748B' } };
 
-        feuille.mergeCells('A3:L3');
+        feuille.mergeCells('A3:N3');
         const resume = feuille.getCell('A3');
         resume.value = meta.resumeLabel;
         resume.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF334155' } };
 
-        const entetes = ['N°', 'Date', 'Jour', 'Nom', 'Prénoms', 'Identifiant', 'Rôle', 'Arrivée', 'Départ', 'Durée', 'Passages', 'Statut'];
+        feuille.mergeCells('A4:N4');
+        feuille.getCell('A4').value = 'Pour le personnel : heures normales avant 18 h, heures supplémentaires à partir de 18 h. Un départ manquant reste « En cours ».';
+        feuille.getCell('A4').font = { name: 'Calibri', size: 9, italic: true, color: { argb: 'FF64748B' } };
+        feuille.getCell('A4').alignment = { vertical: 'middle', horizontal: 'left' };
+        const entetes = [
+            'N°', 'Date', 'Jour', 'Nom', 'Prénoms', 'Identifiant', 'Rôle', 'Arrivée', 'Départ',
+            'Durée totale', 'Heures normales', 'Heures supplémentaires', 'Passages', 'Statut',
+        ];
         const ligneEntete = 5;
         entetes.forEach((entete, indexColonne) => {
             const cellule = feuille.getCell(ligneEntete, indexColonne + 1);
@@ -521,20 +549,28 @@ export default class PointageController {
             const numeroLigne = ligneEntete + 1 + indexLigne;
             const valeurs = [
                 ligne.numero, ligne.date, ligne.jour, ligne.nom, ligne.prenoms, ligne.identifiant,
-                ligne.role, ligne.arrivee, ligne.depart, ligne.duree, ligne.passages || '—', ligne.statut,
+                ligne.role, ligne.arrivee, ligne.depart, ligne.duree,
+                ligne.heuresNormalesMinutes === null ? ligne.heuresNormales : ligne.heuresNormalesMinutes / 1440,
+                ligne.heuresSupplementairesMinutes === null
+                    ? ligne.heuresSupplementaires
+                    : ligne.heuresSupplementairesMinutes / 1440,
+                ligne.passages || '—', ligne.statut,
             ];
             valeurs.forEach((valeur, indexColonne) => {
                 const cellule = feuille.getCell(numeroLigne, indexColonne + 1);
                 cellule.value = valeur;
+                if ((indexColonne === 10 || indexColonne === 11) && typeof valeur === 'number') {
+                    cellule.numFmt = '[h]:mm';
+                }
                 cellule.font = {
                     name: 'Calibri',
                     size: 9,
-                    bold: indexColonne === 9,
-                    color: { argb: indexColonne === 11 && ligne.statut === 'En cours' ? 'FFB45309' : 'FF334155' },
+                    bold: indexColonne === 9 || indexColonne === 11,
+                    color: { argb: indexColonne === 13 && ligne.statut === 'En cours' ? 'FFB45309' : 'FF334155' },
                 };
                 cellule.alignment = {
                     vertical: 'middle',
-                    horizontal: [3, 4, 6, 10].includes(indexColonne) ? 'left' : 'center',
+                    horizontal: [3, 4, 6, 12].includes(indexColonne) ? 'left' : 'center',
                     wrapText: true,
                 };
                 cellule.border = bordure;
@@ -546,7 +582,7 @@ export default class PointageController {
         });
 
         const ligneTotal = ligneEntete + lignes.length + 1;
-        feuille.mergeCells(`A${ligneTotal}:L${ligneTotal}`);
+        feuille.mergeCells(`A${ligneTotal}:N${ligneTotal}`);
         const total = feuille.getCell(`A${ligneTotal}`);
         total.value = `TOTAL — ${meta.resumeLabel}`;
         total.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF1F3C75' } };
@@ -557,7 +593,121 @@ export default class PointageController {
 
         feuille.autoFilter = {
             from: { row: ligneEntete, column: 1 },
-            to: { row: ligneEntete + lignes.length, column: 12 },
+            to: { row: ligneEntete + lignes.length, column: 14 },
+        };
+
+        const recapitulatif = workbook.addWorksheet('Par personne', {
+            views: [{ state: 'frozen', ySplit: 5 }],
+        });
+        recapitulatif.columns = [
+            { width: 6 }, { width: 24 }, { width: 24 }, { width: 18 }, { width: 28 },
+            { width: 16 }, { width: 18 }, { width: 24 }, { width: 18 },
+        ];
+        recapitulatif.mergeCells('A1:I1');
+        recapitulatif.getCell('A1').value = 'Récapitulatif des heures par personne';
+        recapitulatif.getCell('A1').font = { name: 'Calibri', size: 16, bold: true, color: { argb: 'FF1F3C75' } };
+        recapitulatif.getCell('A1').alignment = { vertical: 'middle', horizontal: 'left' };
+        recapitulatif.getRow(1).height = 30;
+        recapitulatif.mergeCells('A2:I2');
+        recapitulatif.getCell('A2').value = meta.periodeLabel;
+        recapitulatif.getCell('A2').font = { name: 'Calibri', size: 10, color: { argb: 'FF64748B' } };
+        recapitulatif.mergeCells('A3:I3');
+        recapitulatif.getCell('A3').value = 'Les journées sans départ sont comptées comme « En cours » et exclues des totaux définitifs.';
+        recapitulatif.getCell('A3').font = { name: 'Calibri', size: 9, italic: true, color: { argb: 'FF64748B' } };
+
+        const entetesRecapitulatif = [
+            'N°', 'Nom', 'Prénoms', 'Identifiant', 'Rôle', 'Jours complets',
+            'Heures normales', 'Heures supplémentaires', 'Départs manquants',
+        ];
+        entetesRecapitulatif.forEach((entete, indexColonne) => {
+            const cellule = recapitulatif.getCell(5, indexColonne + 1);
+            cellule.value = entete;
+            cellule.font = { name: 'Calibri', size: 9, bold: true, color: { argb: 'FFFFFFFF' } };
+            cellule.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F3C75' } };
+            cellule.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+            cellule.border = bordure;
+        });
+        recapitulatif.getRow(5).height = 28;
+
+        const totauxParPersonne = new Map<number, {
+            nom: string;
+            prenoms: string;
+            identifiant: string;
+            role: string;
+            joursComplets: number;
+            minutesNormales: number;
+            minutesSupplementaires: number;
+            departsManquants: number;
+        }>();
+        lignes.filter(ligne => ligne.estPersonnel).forEach(ligne => {
+            let total = totauxParPersonne.get(ligne.utilisateurId);
+            if (!total) {
+                total = {
+                    nom: ligne.nom,
+                    prenoms: ligne.prenoms,
+                    identifiant: ligne.identifiant,
+                    role: ligne.role,
+                    joursComplets: 0,
+                    minutesNormales: 0,
+                    minutesSupplementaires: 0,
+                    departsManquants: 0,
+                };
+                totauxParPersonne.set(ligne.utilisateurId, total);
+            }
+            if (ligne.statut === 'En cours') {
+                total.departsManquants += 1;
+                return;
+            }
+            total.joursComplets += 1;
+            total.minutesNormales += ligne.heuresNormalesMinutes || 0;
+            total.minutesSupplementaires += ligne.heuresSupplementairesMinutes || 0;
+        });
+
+        const personnesTriees = Array.from(totauxParPersonne.values()).sort((a, b) =>
+            `${a.nom} ${a.prenoms}`.localeCompare(`${b.nom} ${b.prenoms}`, 'fr')
+        );
+        personnesTriees.forEach((personne, indexLigne) => {
+            const ligne = recapitulatif.getRow(6 + indexLigne);
+            const valeurs = [
+                indexLigne + 1, personne.nom, personne.prenoms, personne.identifiant, personne.role,
+                personne.joursComplets, personne.minutesNormales / 1440,
+                personne.minutesSupplementaires / 1440, personne.departsManquants,
+            ];
+            valeurs.forEach((valeur, indexColonne) => {
+                const cellule = ligne.getCell(indexColonne + 1);
+                cellule.value = valeur;
+                cellule.font = { name: 'Calibri', size: 9, color: { argb: 'FF334155' } };
+                cellule.alignment = { vertical: 'middle', horizontal: [1, 2, 3, 4].includes(indexColonne) ? 'left' : 'center' };
+                cellule.border = bordure;
+                if (indexColonne === 6 || indexColonne === 7) cellule.numFmt = '[h]:mm';
+                if (indexLigne % 2 === 1) {
+                    cellule.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+                }
+            });
+        });
+
+        const ligneTotalRecap = 6 + personnesTriees.length;
+        const totalNormal = personnesTriees.reduce((somme, personne) => somme + personne.minutesNormales, 0);
+        const totalSupplementaire = personnesTriees.reduce((somme, personne) => somme + personne.minutesSupplementaires, 0);
+        const totalDepartManquant = personnesTriees.reduce((somme, personne) => somme + personne.departsManquants, 0);
+        recapitulatif.mergeCells(`A${ligneTotalRecap}:E${ligneTotalRecap}`);
+        recapitulatif.getCell(`A${ligneTotalRecap}`).value = 'TOTAL GÉNÉRAL';
+        recapitulatif.getCell(`F${ligneTotalRecap}`).value = personnesTriees.reduce((somme, personne) => somme + personne.joursComplets, 0);
+        recapitulatif.getCell(`G${ligneTotalRecap}`).value = totalNormal / 1440;
+        recapitulatif.getCell(`H${ligneTotalRecap}`).value = totalSupplementaire / 1440;
+        recapitulatif.getCell(`I${ligneTotalRecap}`).value = totalDepartManquant;
+        recapitulatif.getCell(`G${ligneTotalRecap}`).numFmt = '[h]:mm';
+        recapitulatif.getCell(`H${ligneTotalRecap}`).numFmt = '[h]:mm';
+        for (let indexColonne = 1; indexColonne <= 9; indexColonne++) {
+            const cellule = recapitulatif.getCell(ligneTotalRecap, indexColonne);
+            cellule.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF1F3C75' } };
+            cellule.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEEF2FF' } };
+            cellule.border = bordure;
+        }
+
+        recapitulatif.autoFilter = {
+            from: { row: 5, column: 1 },
+            to: { row: 5 + personnesTriees.length, column: 9 },
         };
 
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

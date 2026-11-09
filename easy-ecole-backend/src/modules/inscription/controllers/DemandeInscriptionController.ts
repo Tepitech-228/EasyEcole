@@ -1110,22 +1110,19 @@ export default class DemandeInscriptionController {
             try {
               const user = demandeInscription.utilisateur as any
               const apprenant = user.apprenant
-              const etablissementCarte = dossierEtudiant.etablissementId
-                ? await Etablissement.findByPk(dossierEtudiant.etablissementId)
-                : null
               const cartePath = await GenerateurCarteService.generer({
                 nom: user.nom,
                 prenom: user.prenoms,
                 matricule: matriculeFinal,
                 dateNaissance: String(apprenant?.dateNaissance || ''),
-                photo: apprenant?.photo || dossierEtudiant.photo || undefined,
+                photo: apprenant?.photo || dossierEtudiant.photo || user.photoDeProfil || undefined,
                 classe: savedCursus.classe?.libelle || req.body.cursusApprenant?.classeLibelle || '',
                 filiere: parcoursChoisiFinal?.parcours?.titre || '',
                 anneeAcademique: savedCursus.anneeAcademique?.libelle || req.body.cursusApprenant?.anneeAcademiqueLibelle || '',
                 email: demandeInscription.utilisateur.email,
                 utilisateurId: demandeInscription.utilisateurId,
                 periode: apprenant?.periode || null,
-                site: etablissementCarte?.site || etablissementCarte?.nom || '',
+                option: classeMatricule?.option || apprenant?.periode || null,
               })
               await dossierEtudiant.update({ cartePath, carteGeneree: true })
             } catch (cardError) {

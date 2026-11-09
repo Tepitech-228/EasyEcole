@@ -54,7 +54,7 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
         </span>
         <span class="pointage-method-copy">
           <strong>Annonce vocale</strong>
-          <small *ngIf="!voiceError">Annonce le nom et le statut après validation</small>
+          <small *ngIf="!voiceError">Annonce le pointage, les durées à la sortie et le début de permanence à 18 h</small>
           <small *ngIf="voiceError" class="pointage-voice-error" role="status">{{ voiceError }}</small>
         </span>
         <span class="pointage-voice-actions">
@@ -634,55 +634,48 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
             </div>
           </div>
 
-          <div *ngIf="departureConfirmation" class="pointage-state-card pointage-state-card--warning pointage-departure-confirmation" role="alertdialog" aria-live="assertive">
-            <ng-container *ngIf="departureConfirmationStep === 'choix'">
-              <div class="state-icon">
-                <span class="material-symbols-outlined">logout</span>
-              </div>
-              <div class="state-title">Départ détecté</div>
-              <div *ngIf="departureConfirmation.photoUrl" class="pointage-success-person">
-                <img [src]="departureConfirmation.photoUrl"
+          <div *ngIf="departureConfirmation" class="pointage-departure-overlay">
+            <section class="pointage-state-card pointage-state-card--warning pointage-departure-confirmation"
+              role="alertdialog" aria-modal="true" aria-labelledby="pointage-departure-title" aria-describedby="pointage-departure-question">
+            <div class="state-icon">
+              <span class="material-symbols-outlined">logout</span>
+            </div>
+            <div id="pointage-departure-title" class="state-title">Confirmer le départ</div>
+            <div class="pointage-success-person">
+              <div class="pointage-success-photo">
+                <img *ngIf="departureConfirmation.photoUrl"
+                  [src]="departureConfirmation.photoUrl"
                   [alt]="'Photo de ' + departureConfirmation.prenoms + ' ' + departureConfirmation.nom"
                   (error)="departureConfirmation.photoUrl = ''">
+                <span *ngIf="!departureConfirmation.photoUrl" class="material-symbols-outlined" aria-hidden="true">person</span>
+              </div>
+              <div class="pointage-success-details">
+                <span class="pointage-success-eyebrow">Identité vérifiée</span>
                 <strong>{{ departureConfirmation.prenoms }} {{ departureConfirmation.nom }}</strong>
-                <span>{{ departureConfirmation.role }}</span>
+                <span class="pointage-success-role">{{ departureConfirmation.displayRole }}</span>
+                <span *ngIf="departureConfirmation.matricule" class="pointage-success-matricule">
+                  <span class="material-symbols-outlined" aria-hidden="true">badge</span>
+                  <span>Matricule</span>
+                  <strong>{{ departureConfirmation.matricule }}</strong>
+                </span>
               </div>
-              <div class="state-desc">
-                Deuxième pointage du jour : départ prévu à <strong>{{ departureConfirmation.heure }}</strong>.
-                Vérifiez qu’il ne s’agit pas d’un scan accidentel.
-              </div>
-              <div class="pointage-departure-actions">
-                <button (click)="demanderConfirmationDepart()" class="pointage-btn pointage-btn--depart">
-                  <span class="material-symbols-outlined">save</span>
-                  Enregistrer
-                </button>
-                <button (click)="annulerConfirmationDepart()" class="pointage-btn pointage-btn--outline">
-                  <span class="material-symbols-outlined">close</span>
-                  Annuler
-                </button>
-              </div>
-            </ng-container>
-            <ng-container *ngIf="departureConfirmationStep === 'avertissement'">
-              <div class="state-icon">
-                <span class="material-symbols-outlined">warning</span>
-              </div>
-              <div class="state-title">Confirmer le départ</div>
-              <div class="state-desc">
-                Voulez-vous vraiment enregistrer le départ de
-                <strong>{{ departureConfirmation.prenoms }} {{ departureConfirmation.nom }}</strong>
-                à <strong>{{ departureConfirmation.heure }}</strong> ?
-              </div>
-              <div class="pointage-departure-actions">
-                <button (click)="confirmerDepart()" [disabled]="departureConfirmationSaving" class="pointage-btn pointage-btn--success">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  {{ departureConfirmationSaving ? 'Enregistrement…' : 'Oui, enregistrer le départ' }}
-                </button>
-                <button (click)="annulerConfirmationDepart()" [disabled]="departureConfirmationSaving" class="pointage-btn pointage-btn--outline">
-                  <span class="material-symbols-outlined">undo</span>
-                  Non, annuler
-                </button>
-              </div>
-            </ng-container>
+            </div>
+            <div id="pointage-departure-question" class="state-desc">
+              Voulez-vous pointer le départ de
+              <strong>{{ departureConfirmation.prenoms }} {{ departureConfirmation.nom }}</strong>
+              à <strong>{{ departureConfirmation.heure }}</strong> ?
+            </div>
+            <div class="pointage-departure-actions">
+              <button (click)="confirmerDepart()" [disabled]="departureConfirmationSaving" class="pointage-btn pointage-btn--success">
+                <span class="material-symbols-outlined">check_circle</span>
+                {{ departureConfirmationSaving ? 'Enregistrement…' : 'Oui, pointer le départ' }}
+              </button>
+              <button (click)="annulerConfirmationDepart()" [disabled]="departureConfirmationSaving" class="pointage-btn pointage-btn--outline">
+                <span class="material-symbols-outlined">undo</span>
+                Non, annuler
+              </button>
+            </div>
+            </section>
           </div>
 
           <div *ngIf="scanWarning && !scannedUser && !scanSuccess" class="pointage-state-card pointage-state-card--warning" role="status">
@@ -713,12 +706,23 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
             </div>
             <div class="state-title">Pointage effectué</div>
             <div *ngIf="lastAttendanceName" class="pointage-success-person">
-              <img *ngIf="lastAttendancePhotoUrl"
-                [src]="lastAttendancePhotoUrl"
-                [alt]="'Photo de ' + lastAttendanceName"
-                (error)="photoPointageIndisponible()">
-              <strong>{{ lastAttendanceName }}</strong>
-              <span>{{ lastAttendanceRole }}</span>
+              <div class="pointage-success-photo">
+                <img *ngIf="lastAttendancePhotoUrl"
+                  [src]="lastAttendancePhotoUrl"
+                  [alt]="'Photo de ' + lastAttendanceName"
+                  (error)="photoPointageIndisponible()">
+                <span *ngIf="!lastAttendancePhotoUrl" class="material-symbols-outlined" aria-hidden="true">person</span>
+              </div>
+              <div class="pointage-success-details">
+                <span class="pointage-success-eyebrow">Identité vérifiée</span>
+                <strong>{{ lastAttendanceName }}</strong>
+                <span class="pointage-success-role">{{ lastAttendanceRole }}</span>
+                <span *ngIf="lastAttendanceMatricule" class="pointage-success-matricule">
+                  <span class="material-symbols-outlined" aria-hidden="true">badge</span>
+                  <span>Matricule</span>
+                  <strong>{{ lastAttendanceMatricule }}</strong>
+                </span>
+              </div>
             </div>
             <div class="state-desc">{{ scanSuccess }}</div>
             <div *ngIf="scanWarning" class="pointage-message pointage-message--warning" role="status">

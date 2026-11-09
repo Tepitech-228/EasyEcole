@@ -24,20 +24,37 @@ export interface CarteData {
   email: string;
   utilisateurId: number;
   periode?: 'matin' | 'soir' | 'en_ligne' | null;
-  site?: string;
+  option?: string | null;
 }
 
-function getPeriodeLabel(periode: CarteData['periode']): string {
-  switch (periode) {
+function getPeriodeLabel(periode: CarteData['periode'], option?: string | null): string {
+  switch ((option || periode || '').toLowerCase()) {
     case 'matin':
       return 'COURS DU MATIN';
+    case 'jour':
+      return 'COURS DU JOUR';
     case 'soir':
       return 'COURS DU SOIR';
     case 'en_ligne':
+    case 'en ligne':
       return 'COURS EN LIGNE';
     default:
       return 'NON RENSEIGNÉ';
   }
+}
+
+function formatDateNaissance(dateNaissance: string): string {
+  if (!dateNaissance) return 'Non renseignée';
+
+  const dateIso = dateNaissance.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (dateIso) {
+    return `${dateIso[3]}/${dateIso[2]}/${dateIso[1]}`;
+  }
+
+  const date = new Date(dateNaissance);
+  return Number.isNaN(date.getTime())
+    ? dateNaissance
+    : date.toLocaleDateString('fr-FR', { timeZone: 'UTC' });
 }
 
 function resolveLogoPath(): string {
@@ -83,12 +100,13 @@ export class GenerateurCarteService {
     const qrData = QrTokenService.signer(data.utilisateurId);
     const qrBuffer = await QRCode.toBuffer(qrData, { width: 240, margin: 1, errorCorrectionLevel: 'M' });
     const publicRoot = path.resolve('public');
-    const photoCandidates = data.photo
+    const photoFileName = data.photo ? path.basename(data.photo) : '';
+    const photoCandidates = photoFileName
       ? [
-          data.photo,
-          path.join('auth', 'apprenants', 'photos', data.photo),
-          path.join('auth', 'enseignants', 'photos', data.photo),
-          path.join('auth', 'profiles', data.photo),
+          data.photo || photoFileName,
+          path.join('auth', 'apprenants', 'photos', photoFileName),
+          path.join('auth', 'enseignants', 'photos', photoFileName),
+          path.join('auth', 'profiles', photoFileName),
         ]
       : [];
     const resolvedPhoto = photoCandidates
@@ -165,16 +183,15 @@ export class GenerateurCarteService {
       doc.moveTo(contentX, 61).lineTo(contentX + contentWidth, 61).lineWidth(0.5).strokeColor(VERT_CLAIR).stroke();
       drawField('Matricule', data.matricule, 64);
       drawField('Filière', data.filiere, 85);
-      drawField('Classe', data.classe, 101, contentX, 53);
-      drawField('Site', data.site || '', 101, contentX + 58, contentWidth - 58);
+      drawField('Classe', data.classe, 101);
       doc.fillColor(VERT).font('Helvetica-Bold').fontSize(4.5)
         .text('NÉ(E)', contentX, 120);
       doc.fillColor(NOIR).font('Helvetica').fontSize(5)
-        .text(data.dateNaissance || 'Non renseignée', contentX, 127, { width: 49, lineBreak: false });
+        .text(formatDateNaissance(data.dateNaissance), contentX, 127, { width: 49, lineBreak: false });
       doc.fillColor(VERT).font('Helvetica-Bold').fontSize(4.5)
         .text('OPTION', contentX + 55, 120);
       doc.fillColor(NOIR).font('Helvetica-Bold').fontSize(5)
-        .text(getPeriodeLabel(data.periode), contentX + 55, 127, { width: contentWidth - 55, lineBreak: false });
+        .text(getPeriodeLabel(data.periode, data.option), contentX + 55, 127, { width: contentWidth - 55, lineBreak: false });
 
       const qrSize = 42;
       const qrX = width - qrSize - 10;

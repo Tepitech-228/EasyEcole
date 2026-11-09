@@ -134,7 +134,7 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
       role: RolesUtilisateur.APPRENANT, contact: '', siteIds: [],
       // Champs profil
       fonction: '', matricule: '', statut: 'Permanent', directionService: '',
-      cni: '', dateNaissance: '', lieuNaissance: '', sexe: 'M', nationalite: 'Ivoirienne',
+      cni: '', dateNaissance: '', lieuNaissance: '', sexe: 'M', nationalite: '',
       specialite: '', gradeAcademique: '', fonctionAdministrative: '',
       anneeExperience: 0, plusHautDiplome: '',
       statutEtudiant: 'nouveau', periode: 'matin',

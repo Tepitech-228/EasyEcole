@@ -2034,7 +2034,7 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
           apprenant.dateNaissance = dateNaissanceImportee;
           apprenant.lieuNaissance = lieuNaissance;
           apprenant.sexe = (sexe === 'M' || sexe === 'F' || sexe === 'Autre') ? sexe : 'M'; // Must be valid enum
-          apprenant.nationalite = nationalite || 'Ivoirienne';
+          apprenant.nationalite = nationalite || '';
           apprenant.typePieceIdentite = typePieceIdentite || '';
           apprenant.numeroPiece = numeroPiece || '';
           apprenant.statutHandicap = statutHandicap?.toLowerCase() === 'oui' || statutHandicap?.toLowerCase() === 'true';

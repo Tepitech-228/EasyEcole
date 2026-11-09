@@ -197,6 +197,9 @@ export default class ApprenantController {
             for (const f of apprenantFields) {
                 if (req.body[f] != null) apprenantUpdates[f] = req.body[f]
             }
+            if (req.body.identite?.nationalite != null && apprenantUpdates.nationalite == null) {
+                apprenantUpdates.nationalite = req.body.identite.nationalite
+            }
 
             await apprenant.update(apprenantUpdates)
                 .then(async (apprenant) => {
@@ -268,6 +271,9 @@ export default class ApprenantController {
             const apprenantUpdates: any = {}
             for (const f of apprenantFields) {
                 if (req.body[f] != null) apprenantUpdates[f] = req.body[f]
+            }
+            if (req.body.identite?.nationalite != null && apprenantUpdates.nationalite == null) {
+                apprenantUpdates.nationalite = req.body.identite.nationalite
             }
 
             const utilisateur = await Utilisateur.findByPk(req.body.utilisateurId, {
