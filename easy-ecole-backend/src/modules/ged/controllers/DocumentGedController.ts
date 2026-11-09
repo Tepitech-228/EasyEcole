@@ -19,8 +19,13 @@ import { SessionGed } from "../models/SessionGed";
 import GedSignature from "../models/GedSignature";
 import { NotificationGedService } from "../services/NotificationGedService";
 import { NamingConventionService } from "../services/NamingConventionService";
-import { GED_CONFIG } from "../../../core/config/GedConfig";
-import { resolveStoredDocumentPath } from "../../../core/services/DocumentStorageService";
+import {
+    deleteStagedFile,
+    resolveGedPath,
+    saveGedGenerated,
+    saveGedUpload,
+} from "../../../core/services/GedStorageService";
+import { getTmpDir } from "../../../core/services/PdfStorageService";
 
 function parseJsonField(value: any): any {
   if (!value) return null;
@@ -32,20 +37,9 @@ function parseJsonField(value: any): any {
   }
 }
 
-const UPLOAD_DIR = GED_CONFIG.UPLOAD_DIR;
-
 /** Resout un fichier GED stocke (nouveau chemin documents/ ou ancien public/ged/). */
-function resolveGedDocumentPath(storedPath: string): string {
-    return resolveStoredDocumentPath(storedPath, [path.resolve(process.cwd(), UPLOAD_DIR)])
-        || path.resolve(process.cwd(), UPLOAD_DIR, storedPath);
-}
-
-function resolveFolderPath(folderId: unknown): string | null {
-    const value = String(folderId ?? '');
-    if (!/^\d+$/.test(value) || Number(value) <= 0) return null;
-    const root = path.resolve(process.cwd(), UPLOAD_DIR);
-    const folderPath = path.resolve(root, value);
-    return folderPath.startsWith(`${root}${path.sep}`) ? folderPath : null;
+function resolveGedDocumentPath(storedPath: string): string | null {
+    return resolveGedPath(storedPath);
 }
 
 export default class DocumentGedController {
@@ -209,21 +203,7 @@ export default class DocumentGedController {
             }
 
             const folderId = req.body.folderId;
-            let finalFilename = file.filename;
-            if (folderId) {
-                const folderPath = resolveFolderPath(folderId);
-                if (!folderPath) {
-                    fs.unlinkSync(file.path);
-                    return res.status(400).json({ success: false, message: "folderId invalide" });
-                }
-                if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath, { recursive: true });
-                const oldPath = path.resolve(process.cwd(), UPLOAD_DIR, file.filename);
-                const newPath = path.resolve(folderPath, file.filename);
-                fs.renameSync(oldPath, newPath);
-                finalFilename = path.join(String(folderId), file.filename).replace(/\\/g, '/');
-            }
-
-            const fullPath = path.resolve(process.cwd(), UPLOAD_DIR, finalFilename);
+            const fullPath = file.path;
 
             let ocrData: any = { nbPages: undefined, auteur: undefined, dateDocument: undefined, motsCles: [], contenuTexte: undefined };
             try {
@@ -237,9 +217,14 @@ export default class DocumentGedController {
 
             const existingHash = await DocumentGed.findOne({ where: { integrityHash } });
             if (existingHash) {
-                fs.unlinkSync(fullPath);
+                deleteStagedFile(file.path);
                 return res.status(409).json({ success: false, message: "Ce fichier existe déjà", existingDocumentId: existingHash.id });
             }
+
+            const saved = await saveGedUpload(file, {
+                folderId,
+                anneeAcademiqueId: req.body.anneeAcademiqueId ? Number(req.body.anneeAcademiqueId) : null,
+            });
 
             let reference = req.body.reference || null;
             if (!reference && req.body.domainId && req.body.documentTypeId) {
@@ -281,7 +266,7 @@ export default class DocumentGedController {
                 tags: req.body.tags || ocrData.motsCles.join(', '),
                 type: req.body.type || (file.mimetype && file.mimetype.includes('tiff') ? 'TIFF' : 'PDF'),
                 statut: req.body.statut || 'Disponible',
-                fichier: finalFilename,
+                fichier: saved.relativePath,
                 taille: `${(file.size / 1024).toFixed(1)} Ko`,
                 uploaderId: (req as any).utilisateurId,
                 folderId: folderId ? Number(folderId) : undefined,
@@ -370,21 +355,7 @@ export default class DocumentGedController {
             const createdDocs: any[] = [];
 
             for (const file of files) {
-                let finalFilename = file.filename;
-                if (folderId) {
-                    const folderPath = resolveFolderPath(folderId);
-                    if (!folderPath) {
-                        fs.unlinkSync(file.path);
-                        return res.status(400).json({ success: false, message: "folderId invalide" });
-                    }
-                    if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath, { recursive: true });
-                    const oldPath = path.resolve(process.cwd(), UPLOAD_DIR, file.filename);
-                    const newPath = path.resolve(folderPath, file.filename);
-                    fs.renameSync(oldPath, newPath);
-                    finalFilename = path.join(String(folderId), file.filename).replace(/\\/g, '/');
-                }
-
-                const fullPath = path.resolve(process.cwd(), UPLOAD_DIR, finalFilename);
+                const fullPath = file.path;
                 let ocrData: any = { nbPages: undefined, auteur: undefined, dateDocument: undefined, motsCles: [], contenuTexte: undefined };
                 try {
                   ocrData = await OcrService.extraireMetadonnees(fullPath);
@@ -396,10 +367,15 @@ export default class DocumentGedController {
 
                 const existingHash = await DocumentGed.findOne({ where: { integrityHash } });
                 if (existingHash) {
-                    fs.unlinkSync(fullPath);
+                    deleteStagedFile(file.path);
                     createdDocs.push({ skipped: true, reason: 'Doublon', existingDocumentId: existingHash.id, originalName: file.originalname });
                     continue;
                 }
+
+                const saved = await saveGedUpload(file, {
+                    folderId,
+                    anneeAcademiqueId: req.body.anneeAcademiqueId ? Number(req.body.anneeAcademiqueId) : null,
+                });
 
                 let dateDocument = dateDocumentStr || ocrData.dateDocument || null;
                 let duaEndDate: Date | undefined = undefined;
@@ -425,7 +401,7 @@ export default class DocumentGedController {
                     tags: req.body.tags || ocrData.motsCles.join(', '),
                     type: file.mimetype?.includes('tiff') ? 'TIFF' : 'PDF',
                     statut: 'Disponible',
-                    fichier: finalFilename,
+                    fichier: saved.relativePath,
                     taille: `${(file.size / 1024).toFixed(1)} Ko`,
                     uploaderId: (req as any).utilisateurId,
                     folderId: folderId ? Number(folderId) : undefined,
@@ -664,36 +640,32 @@ export default class DocumentGedController {
             }
 
             if (req.file) {
-                const oldFilePath = resolveGedDocumentPath(document.fichier);
-                if (fs.existsSync(oldFilePath)) fs.unlinkSync(oldFilePath);
-
                 const folderId = req.body.folderId || document.folderId;
-                let finalFilename = req.file.filename;
-                if (folderId) {
-                    const folderPath = path.resolve(process.cwd(), UPLOAD_DIR, String(folderId));
-                    if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath, { recursive: true });
-                    const tmpPath = path.resolve(process.cwd(), UPLOAD_DIR, req.file.filename);
-                    const newPath = path.resolve(folderPath, req.file.filename);
-                    fs.renameSync(tmpPath, newPath);
-                    finalFilename = path.join(String(folderId), req.file.filename).replace(/\\/g, '/');
-                }
-                updates.fichier = finalFilename;
-                updates.taille = `${(req.file.size / 1024).toFixed(1)} Ko`;
 
-                const fullPath = path.resolve(process.cwd(), UPLOAD_DIR, finalFilename);
                 let ocrData: any = { nbPages: undefined, auteur: undefined, dateDocument: undefined, contenuTexte: undefined };
                 try {
-                  ocrData = await OcrService.extraireMetadonnees(fullPath);
+                  ocrData = await OcrService.extraireMetadonnees(req.file.path);
                 } catch (ocrErr) {
                   console.error('OCR skipped for', req.file?.filename, ocrErr);
                 }
+
+                const saved = await saveGedUpload(req.file, {
+                    folderId,
+                    anneeAcademiqueId: req.body.anneeAcademiqueId
+                        ? Number(req.body.anneeAcademiqueId)
+                        : document.anneeAcademiqueId,
+                });
+
+                const oldFilePath = resolveGedDocumentPath(document.fichier);
+                if (oldFilePath && fs.existsSync(oldFilePath)) fs.unlinkSync(oldFilePath);
+
+                updates.fichier = saved.relativePath;
+                updates.taille = `${(req.file.size / 1024).toFixed(1)} Ko`;
                 updates.nbPages = ocrData.nbPages || undefined;
                 updates.auteur = ocrData.auteur || undefined;
                 updates.dateDocument = ocrData.dateDocument ? new Date(ocrData.dateDocument) : undefined;
                 updates.contenuTexte = ocrData.contenuTexte || undefined;
-
-                const fileBuffer = fs.readFileSync(fullPath);
-                updates.integrityHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+                updates.integrityHash = saved.sha256;
             }
 
             await document.update(updates);
@@ -714,7 +686,7 @@ export default class DocumentGedController {
             }
 
             const filePath = resolveGedDocumentPath(document.fichier);
-            if (!fs.existsSync(filePath)) {
+            if (!filePath || !fs.existsSync(filePath)) {
                 res.status(404).json({ success: false, message: "Fichier introuvable" });
                 return;
             }
@@ -741,7 +713,8 @@ export default class DocumentGedController {
                 return;
             }
 
-            const outputDir = path.resolve(process.cwd(), UPLOAD_DIR, 'pdf');
+            const outputDir = path.join(getTmpDir(), 'ged');
+            if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
             const filename = await DocumentPDFGenerator.generateGedSummary(document.toJSON(), outputDir);
             const filePath = path.resolve(outputDir, filename);
             if (!fs.existsSync(filePath)) {
@@ -749,10 +722,12 @@ export default class DocumentGedController {
                 return;
             }
 
+            const buffer = fs.readFileSync(filePath);
+            deleteStagedFile(filePath);
+
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename="${document.titre.replace(/\s+/g, '_')}.pdf"`);
-            const stream = fs.createReadStream(filePath);
-            stream.pipe(res);
+            res.send(buffer);
         } catch (error) {
             res.status(500).json({ success: false, error });
         }
@@ -829,17 +804,21 @@ export default class DocumentGedController {
             }
 
             const originalFilePath = resolveGedDocumentPath(original.fichier);
-            if (!fs.existsSync(originalFilePath)) {
+            if (!originalFilePath || !fs.existsSync(originalFilePath)) {
                 return res.status(404).json({ success: false, message: "Fichier original introuvable" });
             }
 
-            const versionsDir = path.resolve(process.cwd(), UPLOAD_DIR, 'versions');
-            if (!fs.existsSync(versionsDir)) fs.mkdirSync(versionsDir, { recursive: true });
-
             const ext = path.extname(original.fichier);
             const versionFilename = `v${original.versionMajor}.${original.versionMinor}_${original.id}${ext}`;
-            const versionFilePath = path.resolve(versionsDir, versionFilename);
-            fs.copyFileSync(originalFilePath, versionFilePath);
+            const savedVersion = await saveGedGenerated(
+                fs.readFileSync(originalFilePath),
+                versionFilename,
+                {
+                    folderId: original.folderId,
+                    anneeAcademiqueId: original.anneeAcademiqueId,
+                    subcategory: 'versions',
+                }
+            );
 
             let newVersionMajor = original.versionMajor;
             let newVersionMinor = original.versionMinor;
@@ -859,7 +838,7 @@ export default class DocumentGedController {
                 tags: original.tags,
                 type: original.type,
                 statut: original.statut,
-                fichier: `versions/${versionFilename}`.replace(/\\/g, '/'),
+                fichier: savedVersion.relativePath,
                 taille: original.taille,
                 uploaderId: (req as any).utilisateurId,
                 folderId: original.folderId,
@@ -1025,7 +1004,7 @@ export default class DocumentGedController {
             }
 
             const filePath = resolveGedDocumentPath(document.fichier);
-            if (fs.existsSync(filePath)) {
+            if (filePath && fs.existsSync(filePath)) {
                 fs.unlinkSync(filePath);
             }
 
@@ -1091,7 +1070,7 @@ export default class DocumentGedController {
 
             // Supprimer le fichier physique
             const filePath = resolveGedDocumentPath(document.fichier);
-            if (fs.existsSync(filePath)) {
+            if (filePath && fs.existsSync(filePath)) {
                 fs.unlinkSync(filePath);
             }
 

@@ -1,6 +1,6 @@
 <div class="flex flex-wrap justify-between items-start gap-x-8 gap-y-4 mb-8">
     <app-header-title title="Emplois du temps" subtitle="Consulter et gérer les emplois du temps"></app-header-title>
-    <div *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" class="flex items-center gap-3">
+    <div *ngIf="peutGererPlanning" class="flex items-center gap-3">
         <button *ngIf="!publierLoading" (click)="publierEmploiDuTemps()"
             class="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors border-0 cursor-pointer">
             Publier l'EDT
@@ -58,7 +58,7 @@
             <app-custom-button (click)="prevDate()" text="Précédent"></app-custom-button>
             <app-custom-button (click)="nextDate()" text="Suivant"></app-custom-button>
         </div>
-        <div *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" class="block col-span-4 flex justify-center items-center gap-4">
+        <div *ngIf="peutGererPlanning" class="block col-span-4 flex justify-center items-center gap-4">
             <select [(ngModel)]="filterEnseignantId" (change)="onFilterChange()"
                 class="block w-full max-w-[200px] rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                 <option value="">Tous les enseignants</option>
@@ -103,7 +103,7 @@
                                     <div>{{ arg.event.extendedProps.salle }}</div>
                                 </div>
                             </div>
-                            <div *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" class="flex justify-between items-center">
+                            <div *ngIf="peutGererPlanning" class="flex justify-between items-center">
                                 <button (click)="openModificationSeanceModal(arg)"
                                     class="p-1 rounded focus:ring-1 focus:ring-gray-300 border-0 bg-transparent cursor-pointer">
                                     <img width="20" src="assets/icons/pencil-blue.svg" alt="edit icon">

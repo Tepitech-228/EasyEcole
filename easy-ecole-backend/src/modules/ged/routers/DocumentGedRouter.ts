@@ -8,13 +8,9 @@ import Authenticate from "../../../core/middlewares/Authenticate";
 import { AuthAdmin } from "../../../core/middlewares/AuthAdmin";
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
 import { AuthConfidentiality } from "../../../core/middlewares/AuthConfidentiality";
-import { GED_CONFIG } from "../../../core/config/GedConfig";
+import { ensureGedStagingDir } from "../../../core/services/GedStorageService";
 
-const UPLOAD_DIR = GED_CONFIG.UPLOAD_DIR;
-const fullPath = path.resolve(process.cwd(), UPLOAD_DIR);
-if (!fs.existsSync(fullPath)) {
-    fs.mkdirSync(fullPath, { recursive: true });
-}
+const fullPath = ensureGedStagingDir();
 
 const storage = multer.diskStorage({
     destination: (_req, _file, cb) => cb(null, fullPath),

@@ -25,4 +25,10 @@ describe('ListeEmploisDuTempsPageComponent', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('allows the general supervisor to manage the schedule', () => {
+    component.rolesValue.isSuperviseurGeneral = true;
+
+    expect(component.peutGererPlanning).toBe(true);
+  });
 });

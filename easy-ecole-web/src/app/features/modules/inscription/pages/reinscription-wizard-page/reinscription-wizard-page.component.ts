@@ -4,7 +4,6 @@ import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { ReinscriptionService } from 'src/app/data/modules/inscription/services/reinscription.service';
 import { DemandeInscriptionService } from 'src/app/data/modules/inscription/services/demande-inscription.service';
 import { ReinscriptionWizardStoreService } from 'src/app/data/modules/inscription/services/reinscription-wizard-store.service';
-import { compresserImage, ImageIndecodableError, ImageTropVolumineuseError } from 'src/app/shared/utils/image-compression.util';
 
 interface DocumentRequis {
   code: string;
@@ -225,11 +224,11 @@ export class ReinscriptionWizardPageComponent extends BaseComponentClass impleme
     return !!this.bordereau
   }
 
-  async surDocument(code: string, event: any): Promise<void> {
+  surDocument(code: string, event: any): void {
     const file: File = event?.target?.files?.[0]
     if (!file) return
 
-    const fichierPrepare = await this.preparerFichier(file, event)
+    const fichierPrepare = this.preparerFichier(file, event)
     if (!fichierPrepare) return
 
     this.errorMessage = ''
@@ -238,11 +237,11 @@ export class ReinscriptionWizardPageComponent extends BaseComponentClass impleme
     this.sauvegarder()
   }
 
-  async surBordereau(event: any): Promise<void> {
+  surBordereau(event: any): void {
     const file: File = event?.target?.files?.[0]
     if (!file) return
 
-    const fichierPrepare = await this.preparerFichier(file, event)
+    const fichierPrepare = this.preparerFichier(file, event)
     if (!fichierPrepare) return
 
     this.errorMessage = ''
@@ -252,10 +251,11 @@ export class ReinscriptionWizardPageComponent extends BaseComponentClass impleme
   }
 
   /**
-   * Normalise une pièce mobile (photo > 20 Mo ou HEIC) en JPEG avant envoi.
-   * Retourne null et affiche un message si le fichier ne peut pas être préparé.
+   * Valide une pièce mobile avant envoi. Le fichier part tel quel : la
+   * conversion HEIC et le redimensionnement sont faits côté serveur
+   * (NormaliserImage), sans décodage canvas qui sature la mémoire du mobile.
    */
-  private async preparerFichier(file: File, event: any): Promise<File | null> {
+  private preparerFichier(file: File, event: any): File | null {
     const extension = `.${file.name.split('.').pop() || ''}`.toLowerCase()
     if (!['.pdf', '.jpg', '.jpeg', '.png', '.heic', '.heif'].includes(extension)) {
       this.errorMessage = 'Formats acceptés : PDF, JPG, JPEG, PNG ou HEIC.'
@@ -267,20 +267,7 @@ export class ReinscriptionWizardPageComponent extends BaseComponentClass impleme
       if (event?.target) { event.target.value = '' }
       return null
     }
-
-    try {
-      return await compresserImage(file, {
-        dimensionMax: 2400,
-        qualite: 0.88,
-        tailleMaxOctets: 20 * 1024 * 1024,
-      })
-    } catch (erreur) {
-      this.errorMessage = erreur instanceof ImageIndecodableError || erreur instanceof ImageTropVolumineuseError
-        ? erreur.message
-        : 'Cette image n’a pas pu être préparée. Choisissez un fichier JPG ou PNG.'
-      if (event?.target) { event.target.value = '' }
-      return null
-    }
+    return file
   }
 
   nomDocument(code: string): string {

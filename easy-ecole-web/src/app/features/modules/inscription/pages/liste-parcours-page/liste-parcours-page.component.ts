@@ -1,18 +1,19 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { Parcours } from 'src/app/data/modules/inscription/models/Parcours.model';
 import { NiveauEtude } from 'src/app/data/modules/inscription/models/NiveauEtude.model';
 import { NiveauEtudeService } from 'src/app/data/modules/inscription/services/niveau-etude.service';
 import { ParcoursService } from 'src/app/data/modules/inscription/services/parcours.service';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-liste-parcours-page',
   templateUrl: './liste-parcours-page.component.html',
   styleUrls: ['./liste-parcours-page.component.scss']
 })
-export class ListeParcoursPageComponent extends BaseComponentClass implements OnInit {
+export class ListeParcoursPageComponent extends BaseComponentClass implements OnInit, OnDestroy {
 
   showEditerParcoursModal: boolean = false
   showSupprimerParcoursModal: boolean = false
@@ -24,7 +25,12 @@ export class ListeParcoursPageComponent extends BaseComponentClass implements On
 
   selectedNiveauEtude: string = 'undefined'
 
-  searchParcours?: string
+  searchParcours: string = ''
+  readonly pageSize: number = 25
+  currentPage: number = 1
+
+  private readonly searchTerms = new Subject<string>()
+  private readonly destroy$ = new Subject<void>()
 
   parcoursForm: FormGroup = new FormGroup({
     titre: new FormControl(null, [Validators.required]),
@@ -33,20 +39,32 @@ export class ListeParcoursPageComponent extends BaseComponentClass implements On
   })
 
   constructor(
-    private router: Router,
     private niveauEtudeService: NiveauEtudeService,
     private parcoursService: ParcoursService,) {
     super()
-    // if (!this.rolesValue.isInstitution) {
-    //   this.router.navigate(['/'])
-    // }
-    // else {
-      this.getNiveauxEtude()
-      this.getParcours()
-    // }
   }
 
   ngOnInit(): void {
+    this.searchTerms
+      .pipe(
+        debounceTime(200),
+        distinctUntilChanged(),
+        takeUntil(this.destroy$),
+      )
+      .subscribe((query) => {
+        this.searchParcours = query
+        this.currentPage = 1
+        this.appliquerFiltres()
+      })
+
+    this.getNiveauxEtude()
+    this.getParcours()
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next()
+    this.destroy$.complete()
+    this.searchTerms.complete()
   }
 
   private getNiveauxEtude(): void {
@@ -69,8 +87,7 @@ export class ListeParcoursPageComponent extends BaseComponentClass implements On
         {
           next: (res) => {
             this.parcours = res
-            this.filtrerParcours()
-            console.log(res)
+            this.appliquerFiltres()
           },
           error: (err) => {
             console.log(err)
@@ -80,27 +97,53 @@ export class ListeParcoursPageComponent extends BaseComponentClass implements On
   }
   
   filtrerParcours(): void {
-    if (this.selectedNiveauEtude == 'undefined') {
-      this._parcours = this.parcours
-    }
+    this.currentPage = 1
+    this.appliquerFiltres()
+  }
 
-    if (this.selectedNiveauEtude != 'undefined') {
-      this._parcours = this.parcours.filter((value: Parcours) => {
-        return value.niveauEtudeId == this.selectedNiveauEtude
-      })
+  rechercherParcours(query: string): void {
+    this.searchTerms.next(query || '')
+  }
+
+  private appliquerFiltres(): void {
+    const niveauSelectionne = this.selectedNiveauEtude
+    const terme = this.searchParcours.trim().toLowerCase()
+
+    this._parcours = this.parcours.filter((parcours) => {
+      const correspondAuNiveau = niveauSelectionne === 'undefined'
+        || String(parcours.niveauEtudeId) === niveauSelectionne
+      const correspondAuTerme = !terme
+        || (parcours.titre || '').toLowerCase().includes(terme)
+
+      return correspondAuNiveau && correspondAuTerme
+    })
+  }
+
+  get parcoursPage(): Parcours[] {
+    const debut = (this.currentPage - 1) * this.pageSize
+    return this._parcours.slice(debut, debut + this.pageSize)
+  }
+
+  get nombrePages(): number {
+    return Math.ceil(this._parcours.length / this.pageSize)
+  }
+
+  get premierResultat(): number {
+    return this._parcours.length ? (this.currentPage - 1) * this.pageSize + 1 : 0
+  }
+
+  get dernierResultat(): number {
+    return Math.min(this.currentPage * this.pageSize, this._parcours.length)
+  }
+
+  changerPage(page: number): void {
+    if (page >= 1 && page <= this.nombrePages) {
+      this.currentPage = page
     }
   }
-  
-  rechercherParcours(): void {
-    if (this.searchParcours == undefined || this.searchParcours == '') {
-      this._parcours = this.parcours
-    }
-    else {
-      this._parcours = this.parcours.filter((value: Parcours) => {
-        console.log(value.titre!.toLowerCase().includes(this.searchParcours!.toLowerCase()))
-        return value.titre!.toLowerCase().includes(this.searchParcours!.toLowerCase())
-      })
-    }
+
+  trackByParcours(index: number, parcours: Parcours): string | number {
+    return parcours.id || index
   }
 
   ajouterParcours(): void {

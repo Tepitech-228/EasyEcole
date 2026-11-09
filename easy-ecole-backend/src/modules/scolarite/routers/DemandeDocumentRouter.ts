@@ -51,6 +51,23 @@ router
     .get('/mes-documents', DemandeDocumentController.getMesDocuments)
     /**
      * @openapi
+     * /scolarite/demandesDocument/paiements-disponibles:
+     *   get:
+     *     tags: [Demandes de documents]
+     *     summary: Liste les reçus de recouvrement non utilisés pour le type demandé
+     *     parameters:
+     *       - in: query
+     *         name: typeDocumentId
+     *         required: true
+     *         schema:
+     *           type: integer
+     *     responses:
+     *       200:
+     *         description: Reçus payés du demandeur encore disponibles
+     */
+    .get('/paiements-disponibles', DemandeDocumentController.getMesPaiementsDisponibles)
+    /**
+     * @openapi
      * /scolarite/demandesDocument:
      *   post:
      *     tags: [Demandes de documents]
@@ -64,6 +81,16 @@ router
      *             properties:
      *               typeDocumentId:
      *                 type: string
+     *               recuCaisseId:
+     *                 type: integer
+     *                 description: Reçu du service de recouvrement à utiliser comme bordereau
+     *               anneeAcademiqueId:
+     *                 type: integer
+     *                 description: Requise pour un relevé de notes
+     *               semestre:
+     *                 type: string
+     *                 enum: [semestre1, semestre2, semestre3, semestre4, semestre5, semestre6]
+     *                 description: Requis pour un relevé de notes
      *     responses:
      *       201:
      *         description: Demande créée
@@ -144,63 +171,16 @@ router
      * @openapi
      * /scolarite/demandesDocument/{id}/bordereau:
      *   post:
+     *     deprecated: true
      *     tags: [Demandes de documents]
-     *     summary: Génère un bordereau de paiement pour la demande de document payante
-     *     parameters:
-     *       - in: path
-     *         name: id
-     *         required: true
-     *         schema:
-     *           type: string
+     *     summary: Ancien paiement après création (désactivé)
      *     responses:
-     *       201:
-     *         description: Bordereau créé
+     *       410:
+     *         description: Le reçu de recouvrement doit précéder la demande
      */
-    .post('/:id/bordereau', DemandeDocumentController.creerBordereauDemandeDocument)
-    /**
-     * @openapi
-     * /scolarite/demandesDocument/{id}/confirmer-paiement:
-     *   put:
-     *     tags: [Demandes de documents]
-     *     summary: Confirme l'encaissement d'une demande payante (institution/caissier)
-     *     parameters:
-     *       - in: path
-     *         name: id
-     *         required: true
-     *         schema:
-     *           type: string
-     *     requestBody:
-     *       required: false
-     *       content:
-     *         application/json:
-     *           schema:
-     *             type: object
-     *             properties:
-     *               paiementId:
-     *                 type: integer
-     *                 description: Référence du paiement/bordereau (facultatif)
-     *     responses:
-     *       200:
-     *         description: Demande marquée comme payée
-     */
-    .put('/:id/confirmer-paiement', DemandeDocumentController.confirmerPaiementDemandeDocument)
-    /**
-     * @openapi
-     * /scolarite/demandesDocument/{id}/confirmer-paiement-auto:
-     *   post:
-     *     tags: [Demandes de documents]
-     *     summary: Confirme un paiement en ligne (crée le paiement et l'écriture comptable automatiquement)
-     *     parameters:
-     *       - in: path
-     *         name: id
-     *         required: true
-     *         schema:
-     *           type: string
-     *     responses:
-     *       200:
-     *         description: Paiement en ligne confirmé et écriture comptable générée
-     */
-     .post('/:id/confirmer-paiement-auto', DemandeDocumentController.confirmerPaiementAutoDemandeDocument)
+    .post('/:id/bordereau', DemandeDocumentController.paiementApresCreationDesactive)
+    .put('/:id/confirmer-paiement', DemandeDocumentController.paiementApresCreationDesactive)
+    .post('/:id/confirmer-paiement-auto', DemandeDocumentController.paiementApresCreationDesactive)
      /**
       * @openapi
       * /scolarite/demandesDocument/{id}/preparer:

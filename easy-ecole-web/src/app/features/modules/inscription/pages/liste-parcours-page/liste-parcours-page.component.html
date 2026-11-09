@@ -14,7 +14,7 @@
         </select>
     </div>
     <div class="flex md:flex-row flex-col gap-4">
-        <input type="text" [(ngModel)]="searchParcours" (keyup)="rechercherParcours()" placeholder="Rechercher..." class="block w-full md:w-auto rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+        <input type="search" [(ngModel)]="searchParcours" (ngModelChange)="rechercherParcours($event)" placeholder="Rechercher..." aria-label="Rechercher une filière" class="block w-full md:w-auto rounded-md border-0 py-1.5 text-gray-700 font-regular shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
     </div>
 </div>
 
@@ -58,13 +58,13 @@
                             <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
                                 colspan="6">Aucune filière</td>
                         </tr>
-                        <tr *ngFor="let parcours of _parcours; index as index"
+                        <tr *ngFor="let parcours of parcoursPage; index as index; trackBy: trackByParcours"
                             class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
                             <td
                                 class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                 <div
                                     class="block gap-x-4 border-0 m-0 px-0 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
-                                    {{ index + 1 }}
+                                    {{ (currentPage - 1) * pageSize + index + 1 }}
                                 </div>
                             </td>
                             <td
@@ -95,6 +95,24 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+    </div>
+    <div *ngIf="nombrePages > 1" class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-2 py-4">
+        <span class="text-sm text-gray-600">
+            Affichage de {{ premierResultat }} à {{ dernierResultat }} sur {{ _parcours.length }} filière(s)
+        </span>
+        <div class="flex items-center gap-2">
+            <button type="button" (click)="changerPage(currentPage - 1)" [disabled]="currentPage === 1"
+                aria-label="Page précédente"
+                class="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                Précédent
+            </button>
+            <span class="text-sm text-gray-600">Page {{ currentPage }} sur {{ nombrePages }}</span>
+            <button type="button" (click)="changerPage(currentPage + 1)" [disabled]="currentPage === nombrePages"
+                aria-label="Page suivante"
+                class="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                Suivant
+            </button>
         </div>
     </div>
 </div>

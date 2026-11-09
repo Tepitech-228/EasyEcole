@@ -4,7 +4,7 @@
   <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
     <div class="flex justify-between items-center flex-wrap gap-3">
       <div class="flex gap-3">
-        <a routerLink="/docgen/generer" class="app-custom-button text-sm bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Générer</a>
+        <a *ngIf="!rolesValue.isSecretaire" routerLink="/docgen/generer" class="app-custom-button text-sm bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Générer</a>
         <select [(ngModel)]="selectedTypeId" (change)="getDocuments()" class="block rounded-md border-0 py-1.5 text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 text-sm">
           <option value="">Tous les types</option>
           <option *ngFor="let t of types" [value]="t.id">{{ t.code }} — {{ t.libelle }}</option>
@@ -69,6 +69,7 @@
             <td class="px-5 py-4 text-sm text-gray-500">{{ d.createdAt | date:'dd/MM/yyyy' }}</td>
             <td class="px-5 py-4 text-right">
               <div class="flex justify-end gap-2">
+                <app-custom-button (click)="imprimer(d)" text="Imprimer" color="indigo" [outlined]="true"></app-custom-button>
                 <app-custom-button (click)="download(d)" text="Télécharger" color="blue" [outlined]="true"></app-custom-button>
               </div>
             </td>

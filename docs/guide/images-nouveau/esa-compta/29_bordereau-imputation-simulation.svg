@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900">
+  <rect width="1440" height="900" fill="#f3f6fb"/>
+  <rect width="1440" height="44" fill="#d97706"/>
+  <text x="720" y="29" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="18" font-weight="700">SIMULATION — DONNÉES FICTIVES — AUCUN PAIEMENT RÉEL</text>
+  <rect y="44" width="1440" height="72" fill="#18335f"/>
+  <text x="34" y="90" fill="#fff" font-family="Arial,sans-serif" font-size="25" font-weight="700">EasyEcole</text>
+  <text x="1240" y="87" fill="#d8e4f6" font-family="Arial,sans-serif" font-size="16">ESA Compta · Démonstration</text>
+  <rect y="116" width="250" height="784" fill="#203d6b"/>
+  <text x="28" y="160" fill="#b9c9e2" font-family="Arial,sans-serif" font-size="15">MENU FINANCIER</text>
+  <rect x="14" y="180" width="222" height="46" rx="8" fill="#31558b"/>
+  <text x="34" y="210" fill="#fff" font-family="Arial,sans-serif" font-size="17">Bordereaux à imputer</text>
+  <text x="34" y="266" fill="#d8e4f6" font-family="Arial,sans-serif" font-size="16">Paiements</text>
+  <text x="34" y="308" fill="#d8e4f6" font-family="Arial,sans-serif" font-size="16">Situation financière</text>
+  <text x="34" y="350" fill="#d8e4f6" font-family="Arial,sans-serif" font-size="16">Journal de caisse</text>
+  <text x="284" y="155" fill="#738198" font-family="Arial,sans-serif" font-size="14">Financier  /  Finance  /  Bordereaux à imputer</text>
+  <text x="284" y="205" fill="#1c2d49" font-family="Arial,sans-serif" font-size="30" font-weight="700">Bordereau — imputation comptable</text>
+  <rect x="284" y="230" width="1120" height="50" rx="8" fill="#fff1d6" stroke="#f1c16d"/>
+  <text x="305" y="261" fill="#8a4b08" font-family="Arial,sans-serif" font-size="16" font-weight="700">EXEMPLE FICTIF — Ne constitue pas une preuve de paiement</text>
+  <rect x="284" y="300" width="1120" height="168" rx="12" fill="#fff" stroke="#d8e0ec"/>
+  <text x="310" y="340" fill="#1c2d49" font-family="Arial,sans-serif" font-size="20" font-weight="700">Dossier étudiant — DEMO-2026-001</text>
+  <text x="310" y="377" fill="#536176" font-family="Arial,sans-serif" font-size="16">Nom : ÉTUDIANT FICTIF</text>
+  <text x="310" y="410" fill="#536176" font-family="Arial,sans-serif" font-size="16">Année académique : 2026–2027</text>
+  <text x="700" y="377" fill="#536176" font-family="Arial,sans-serif" font-size="16">Type d'opération : Scolarité</text>
+  <text x="700" y="410" fill="#536176" font-family="Arial,sans-serif" font-size="16">Référence : REF-DEMO-0001</text>
+  <rect x="1100" y="328" width="270" height="38" rx="19" fill="#e1f3e8"/>
+  <text x="1235" y="353" text-anchor="middle" fill="#1c7b43" font-family="Arial,sans-serif" font-size="15" font-weight="700">AUTHENTIFIÉ · À IMPUTER</text>
+  <rect x="284" y="490" width="510" height="345" rx="12" fill="#fff" stroke="#d8e0ec"/>
+  <text x="310" y="530" fill="#1c2d49" font-family="Arial,sans-serif" font-size="20" font-weight="700">Justificatif bancaire fictif</text>
+  <rect x="310" y="550" width="458" height="250" rx="6" fill="#faf7ef" stroke="#d6cdb9"/>
+  <text x="539" y="588" text-anchor="middle" fill="#675e4d" font-family="Arial,sans-serif" font-size="19" font-weight="700">BORDEREAU DE VERSEMENT</text>
+  <text x="539" y="617" text-anchor="middle" fill="#817967" font-family="Arial,sans-serif" font-size="14">SPÉCIMEN FICTIF — SANS VALEUR</text>
+  <line x1="340" y1="638" x2="738" y2="638" stroke="#d6cdb9"/>
+  <text x="340" y="673" fill="#625b4b" font-family="Arial,sans-serif" font-size="15">Réf. DEMO-0001</text>
+  <text x="340" y="704" fill="#625b4b" font-family="Arial,sans-serif" font-size="15">Montant fictif : 250 000 FCFA</text>
+  <text x="340" y="735" fill="#625b4b" font-family="Arial,sans-serif" font-size="15">Date : 08/11/2026</text>
+  <text x="539" y="778" text-anchor="middle" fill="#b14b3f" opacity=".8" font-family="Arial,sans-serif" font-size="24" font-weight="700" transform="rotate(-8 539 778)">SIMULATION</text>
+  <rect x="814" y="490" width="590" height="345" rx="12" fill="#fff" stroke="#d8e0ec"/>
+  <text x="842" y="530" fill="#1c2d49" font-family="Arial,sans-serif" font-size="20" font-weight="700">Aperçu de l'imputation</text>
+  <text x="842" y="576" fill="#536176" font-family="Arial,sans-serif" font-size="16">Montant à imputer</text>
+  <rect x="842" y="590" width="530" height="48" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="860" y="621" fill="#20314b" font-family="Arial,sans-serif" font-size="17">250 000 FCFA</text>
+  <text x="842" y="672" fill="#536176" font-family="Arial,sans-serif" font-size="16">Affectation proposée (exemple)</text>
+  <rect x="842" y="686" width="530" height="42" rx="6" fill="#eef5ff"/>
+  <text x="858" y="713" fill="#31558b" font-family="Arial,sans-serif" font-size="15">Échéance scolarité — simulation</text>
+  <text x="1350" y="713" text-anchor="end" fill="#31558b" font-family="Arial,sans-serif" font-size="15" font-weight="700">250 000</text>
+  <rect x="842" y="754" width="232" height="48" rx="7" fill="#fff" stroke="#31558b"/>
+  <text x="958" y="784" text-anchor="middle" fill="#31558b" font-family="Arial,sans-serif" font-size="15" font-weight="700">Prévisualiser</text>
+  <rect x="1088" y="754" width="284" height="48" rx="7" fill="#245ba5"/>
+  <text x="1230" y="784" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="15" font-weight="700">Confirmer (simulation uniquement)</text>
+  <text x="1440" y="882" text-anchor="end" fill="#64748b" font-family="Arial,sans-serif" font-size="13">Données fictives · aucun dossier ni paiement réel</text>
+</svg>

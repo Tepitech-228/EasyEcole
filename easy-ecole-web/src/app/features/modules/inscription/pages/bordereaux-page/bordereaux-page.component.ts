@@ -90,7 +90,21 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement
-    this.selectedFile = input?.files?.[0] ?? undefined
+    const fichier = input?.files?.[0] ?? undefined
+    if (!fichier) {
+      this.selectedFile = undefined
+      return
+    }
+    const extension = `.${fichier.name.split('.').pop() || ''}`.toLowerCase()
+    if (!['.pdf', '.jpg', '.jpeg', '.png', '.heic', '.heif'].includes(extension)
+      || fichier.size > 20 * 1024 * 1024) {
+      this.selectedFile = undefined
+      input.value = ''
+      this.error = true
+      setTimeout(() => { this.error = false }, 3000)
+      return
+    }
+    this.selectedFile = fichier
   }
 
   uploadBordereau(): void {

@@ -124,6 +124,67 @@ describe('DataResolverService', () => {
     expect(result.initialesComite).toBe('JD, JD-1, JS')
   })
 
+  it('résout les diplômes, relevés et niveau du parcours pour l’autorisation', async () => {
+    const { Etablissement } = require('../../../modules/etablissement/models/Etablissement')
+    const { DemandeInscription } = require('../../../modules/inscription/models/DemandeInscription')
+    const { ComiteVote } = require('../../../modules/inscription/models/ComiteVote')
+    const { CoursParticipant } = require('../../../modules/inscription/models/CoursParticipant')
+
+    Etablissement.findOne.mockResolvedValue(null)
+    DemandeInscription.findByPk.mockResolvedValue({
+      id: 43,
+      utilisateurId: 13,
+      matricule: 'MAT-13',
+      utilisateur: {
+        nom: 'Doe',
+        prenoms: 'Jane',
+        identifiant: 'MAT-13',
+        apprenant: { serieBac: 'D', anneeObtentionBac: '2020' },
+      },
+      parcoursChoisis: [{
+        parcours: {
+          titre: 'Gestion commerciale',
+          type: 'LICENCE',
+          niveauEtude: { libelle: 'Licence 3' },
+        },
+      }],
+      session: { anneeAcademique: { libelle: '2026-2027' } },
+      dossiersDemande: [
+        {
+          nomFichier: 'releve-licence-1.pdf',
+          correctionDemandee: false,
+          dossierInscription: { titre: 'Relevé de notes Licence 1' },
+        },
+        {
+          nomFichier: 'diplome-bts.pdf',
+          correctionDemandee: false,
+          dossierInscription: { titre: 'Copie du BTS' },
+        },
+      ],
+    })
+    ComiteVote.findAll.mockResolvedValue([])
+    CoursParticipant.findAll.mockResolvedValue([])
+
+    const result = await DataResolverService.resolve('API001', {
+      typeCode: 'API001',
+      sourceId: 43,
+    })
+
+    expect(result.etudiants[0]).toMatchObject({
+      diplomeBac: true,
+      diplomeBts: true,
+      diplomeDtsDut: false,
+      specialiteDiplome: 'D',
+      specialiteParcours: 'Gestion commerciale',
+      relevesSem12: true,
+      relevesSem34: false,
+      parcoursLicence12: false,
+      parcoursLicence34: false,
+      parcoursLicence56: true,
+      parcoursMaster12: false,
+    })
+  })
+
   it('getResolver retourne une fonction pour un code enregistré', () => {
     const resolver = DataResolverService.getResolver('NOT001')
     expect(resolver).toBeDefined()
@@ -143,6 +204,7 @@ describe('DataResolverService', () => {
   it('enregistre les nouveaux formulaires annexes de la maquette', () => {
     expect(DataResolverService.getResolver('API002')).toBeDefined()
     expect(DataResolverService.getResolver('RCH008')).toBeDefined()
+    expect(DataResolverService.getResolver('INS004')).toBeDefined()
   })
 
   it('getResolver trouve DIPLOME par code DIP001', () => {
@@ -186,6 +248,51 @@ describe('DataResolverService', () => {
     expect(result.etudiants).toHaveLength(1)
     expect(result.etudiants[0].nom).toBe('Doe')
     expect(result.etudiants[0].prenom).toBe('John')
+    expect(result.titreDocument).toBe('Attestation de scolarité')
+  })
+
+  it('ne choisit pas de cursus arbitraire pour une attestation sans identifiant', async () => {
+    const { Etablissement } = require('../../../modules/etablissement/models/Etablissement')
+    const { CursusApprenant } = require('../../../modules/inscription/models/CursusApprenant')
+
+    Etablissement.findOne.mockResolvedValue(null)
+
+    const result = await DataResolverService.resolve('SCO001', { typeCode: 'SCO001' })
+
+    expect(CursusApprenant.findOne).not.toHaveBeenCalled()
+    expect(result.etudiants).toEqual([])
+  })
+
+  it('résout l’attestation de préinscription depuis la demande sélectionnée', async () => {
+    const { Etablissement } = require('../../../modules/etablissement/models/Etablissement')
+    const { DemandeInscription } = require('../../../modules/inscription/models/DemandeInscription')
+
+    Etablissement.findOne.mockResolvedValue(null)
+    DemandeInscription.findByPk.mockResolvedValue({
+      matricule: 'PRE-42',
+      utilisateur: {
+        nom: 'Doe',
+        prenoms: 'Jane',
+        apprenant: { dateNaissance: new Date('2002-05-20T12:00:00') },
+      },
+      parcoursChoisis: [{ parcours: { titre: 'Gestion', niveauEtude: { libelle: 'Licence 1' } } }],
+      session: { anneeAcademique: { libelle: '2025-2026' } },
+    })
+
+    const result = await DataResolverService.resolve('PRE001', {
+      typeCode: 'PRE001',
+      sourceId: 42,
+    })
+
+    expect(result.etudiants[0]).toMatchObject({
+      nom: 'Doe',
+      prenom: 'Jane',
+      matricule: 'PRE-42',
+      filiere: 'Gestion',
+      classe: 'Licence 1',
+      anneeAcademique: '2025-2026',
+    })
+    expect(result.etudiants[0].dateNaissance).toBe('20/05/2002')
   })
 
   it('resolve RELEVE_NOTES avec getMention', async () => {
@@ -202,7 +309,12 @@ describe('DataResolverService', () => {
     ])
     CursusApprenant.findAll.mockResolvedValue([{
       id: 1,
-      utilisateur: { nom: 'Test', prenoms: 'User', identifiant: 'MAT001' },
+      utilisateur: {
+        nom: 'Test',
+        prenoms: 'User',
+        identifiant: 'MAT001',
+        apprenant: { dateNaissance: new Date('2002-05-20T12:00:00') },
+      },
       classe: { libelle: 'Classe A' },
       parcours: { titre: 'Informatique' },
       niveauEtude: { libelle: 'Licence 1' },
@@ -228,6 +340,7 @@ describe('DataResolverService', () => {
     })
     expect(result.etudiants).toHaveLength(1)
     expect(result.etudiants[0].mention).toBe('Insuffisant')
+    expect(result.etudiants[0].dateNaissance).toBe('20/05/2002')
     expect(result.etudiants[0].unites[0].categorieUe).toBe('MAJEURE')
     expect(result.etudiants[0].unites[0].categorieUeLibelle).toBe('UE majeure')
     expect(result.etudiants[0].unites[0].semestre).toBe('Semestre 1')
@@ -270,6 +383,7 @@ describe('DataResolverService', () => {
             listeNoteEvaluation: {
               poidsTypeNoteEvaluation: 1,
               coursId: 101,
+              typeNoteEvaluation: { libelle: 'Examen' },
               cours: { id: 101, code: 'ECUE101', intitule: 'Algorithmes', creditEcts: 2, coefficient: 1 },
             },
           },
@@ -301,7 +415,7 @@ describe('DataResolverService', () => {
       creditsObtenus: 6,
     })
     expect(ue.matieres).toEqual(expect.arrayContaining([
-      expect.objectContaining({ code: 'ECUE101', statut: 'Validé', creditsObtenus: 2 }),
+    expect.objectContaining({ code: 'ECUE101', statut: 'Validé', creditsObtenus: 2, evaluations: 'Examen' }),
       expect.objectContaining({ code: 'ECUE102', statut: 'Non validé', creditsObtenus: 0 }),
     ]))
     expect(etudiant.creditsTotal).toBe(6)

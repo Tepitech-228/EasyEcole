@@ -4,6 +4,7 @@ import { DocGenCachet } from '../models/DocGenCachet';
 import { DocGenLogoService } from './DocGenLogoService';
 import { AutorisationProvisoirePdfService } from './AutorisationProvisoirePdfService';
 import { getPuppeteerBrowser } from '../../../core/services/PuppeteerBrowserPool';
+import { resolveStoredDocumentPath } from '../../../core/services/DocumentStorageService';
 
 // Hauteur (et marge) à réserver pour l'en-tête institutionnel répété sur chaque page.
 const HEADER_HEIGHT_MM = 48;
@@ -222,8 +223,10 @@ export class PdfGeneratorService {
     try {
       const cachet = await DocGenCachet.findOne({ where: { isActive: true } });
       if (cachet?.imagePath) {
-        const absPath = path.resolve(process.cwd(), cachet.imagePath);
-        if (fs.existsSync(absPath)) {
+        const absPath = resolveStoredDocumentPath(cachet.imagePath, [
+          path.resolve(process.cwd(), 'public', 'docgen', 'cachets'),
+        ]);
+        if (absPath && fs.existsSync(absPath)) {
           const ext = path.extname(absPath).toLowerCase();
           const mime = ext === '.png' ? 'image/png' : ext === '.svg' ? 'image/svg+xml' : 'image/jpeg';
           const base64 = fs.readFileSync(absPath).toString('base64');

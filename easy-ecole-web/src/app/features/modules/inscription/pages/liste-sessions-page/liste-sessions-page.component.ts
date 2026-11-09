@@ -202,7 +202,7 @@ export class ListeSessionsPageComponent extends BaseComponentClass implements On
   }
 
   readonly canShowSessionAction = (_item: any, action: string): boolean => {
-    if (action === 'edit') return this.canModifySession
+    if (action === 'edit') return this.canModifySession && this.dataLoaded
     if (action === 'delete') return this.canDeleteSession
     return true
   }
@@ -212,8 +212,9 @@ export class ListeSessionsPageComponent extends BaseComponentClass implements On
   }
 
   ajouterSession(): void {
+    if (this.isSavingSession) return
     this.sessionForm.markAllAsTouched()
-    if(this.sessionForm.valid) {
+    if (this.sessionForm.valid) {
       let session: any = {}
       session.dateDebut = this.sessionForm.get('dateDebut')!.value ?? new Date()
       session.dateFin = this.sessionForm.get('dateFin')!.value
@@ -229,19 +230,21 @@ export class ListeSessionsPageComponent extends BaseComponentClass implements On
         }
       }
 
+      this.isSavingSession = true
       this.sessionService.create(session).subscribe({
         next: (res) => {
           this.router.navigate(['/inscription/sessions/' + res.id])
         },
         error: (err) => {
           this.sessionFormError = err.error?.message || 'La session n’a pas pu être créée. Réessayez.'
+          this.isSavingSession = false
         },
       })
     }
   }
 
   modifierSession(): void {
-    if (!this.sessionToEdit) return
+    if (!this.sessionToEdit || this.isSavingSession) return
     this.sessionForm.markAllAsTouched()
     if (!this.sessionForm.valid) return
 
@@ -266,8 +269,6 @@ export class ListeSessionsPageComponent extends BaseComponentClass implements On
   }
 
   private openEditSessionModal(session: Session): void {
-    this.getNiveauxEtude()
-    this.getAnneesAcademiques(session.anneeAcademiqueId)
     this.sessionToEdit = session
     this.sessionFormError = ''
     this.sessionForm.patchValue({
@@ -329,10 +330,17 @@ export class ListeSessionsPageComponent extends BaseComponentClass implements On
     this.nouveauxDossiers.splice(index, 1)
   }
 
+  trackById(index: number, item: { id?: string | number }): string | number {
+    return item.id || index
+  }
+
+  trackByIndex(index: number): number {
+    return index
+  }
+
   // Modals
   openNouvelleSessionModal(): void {
-    this.getNiveauxEtude()
-    this.getAnneesAcademiques()
+    if (!this.dataLoaded) return
     this.sessionToEdit = null
     this.sessionFormError = ''
     this.TODAY_DATE = (new Date()).toISOString().split('T')[0]
@@ -340,7 +348,7 @@ export class ListeSessionsPageComponent extends BaseComponentClass implements On
       dateDebut: this.TODAY_DATE,
       dateFin: null,
       niveauEtude: null,
-      anneeAcademique: null,
+      anneeAcademique: this.annees[0]?.id ?? null,
       description: ''
     })
     this.showNouvelleSessionModal = true
@@ -356,34 +364,6 @@ export class ListeSessionsPageComponent extends BaseComponentClass implements On
     this.nouveauxDossiers = []
     this.fraisScolariteMontant = null
     this.fraisScolariteModalite = '10x'
-  }
-
-  private getNiveauxEtude(): void {
-    this.niveauEtudeService.getAll()
-      .subscribe({
-        next: (res) => {
-          this.niveaux = res
-        },
-        error: (err) => {
-          console.log(err)
-        },
-      })
-  }
-
-  private getAnneesAcademiques(selectedId?: string): void {
-    this.anneeAcademiqueService.getAll()
-    .subscribe({
-      next: (res) => {
-        this.annees = res
-        const selectedYear = selectedId
-          ? this.annees.find(annee => String(annee.id) === String(selectedId))
-          : this.annees[0]
-        if (selectedYear) this.sessionForm.get('anneeAcademique')!.setValue(selectedYear.id)
-      },
-      error: (err) => {
-        console.log(err)
-      },
-    })
   }
 
   private getAnneeLibelle(id: string): string {

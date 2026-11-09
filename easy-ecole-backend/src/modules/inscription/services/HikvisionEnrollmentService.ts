@@ -220,7 +220,6 @@ export default class HikvisionEnrollmentService {
       RolesUtilisateur.SECRETAIRE,
       RolesUtilisateur.RESSOURCES_HUMAINES,
       RolesUtilisateur.CABINET_COMPTABLE,
-      RolesUtilisateur.CAISSIER_BANQUE,
       RolesUtilisateur.ESA_COMPTA,
       RolesUtilisateur.COMITE_ORIENTATION,
       RolesUtilisateur.SUPERVISEUR_GENERAL

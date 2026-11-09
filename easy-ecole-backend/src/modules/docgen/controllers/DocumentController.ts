@@ -7,8 +7,12 @@ import { DataResolverService } from "../services/DataResolverService";
 import { TemplateEngine } from "../services/TemplateEngine";
 import { getDocGenPdfOptions, PdfGeneratorService } from "../services/PdfGeneratorService";
 import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
+import { resolveStoredDocumentPath } from "../../../core/services/DocumentStorageService";
+import { savePdf } from "../../../core/services/PdfStorageService";
 import { EmailSender } from "../../../core/helpers/EmailSender";
+import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { CursusApprenant } from "../../inscription/models/CursusApprenant";
+import { getDocGenSiteId } from "../utils/document-site-scope";
 import path from "path";
 import fs from "fs";
 import crypto from "crypto";
@@ -18,12 +22,29 @@ const DOCGEN_SECRET: string = process.env.DOCGEN_SECRET || '';
 if (!DOCGEN_SECRET) {
   throw new Error('DOCGEN_SECRET environment variable is required');
 }
-const STORAGE_DIR = path.resolve(process.cwd(), 'storage', 'docgen');
+const LEGACY_STORAGE_DIR = path.resolve(process.cwd(), 'storage', 'docgen');
+const DOCUMENT_READER_ROLES = new Set([
+  RolesUtilisateur.ADMIN,
+  RolesUtilisateur.INSTITUTION,
+  RolesUtilisateur.ENSEIGNANT,
+  RolesUtilisateur.SECRETAIRE,
+]);
+
+function canReadDocuments(req: Request): boolean {
+  return req.utilisateurRole !== undefined && DOCUMENT_READER_ROLES.has(req.utilisateurRole);
+}
 
 export default class DocumentController {
   static async getAll(req: Request, res: Response): Promise<Response> {
     try {
-      const where: any = {};
+      if (!canReadDocuments(req)) {
+        return res.status(403).json({ success: false, message: "Accès aux documents non autorisé" });
+      }
+      const siteId = getDocGenSiteId(req);
+      if (siteId === null) {
+        return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+      }
+      const where: any = siteId === undefined ? {} : { etablissementId: siteId };
       if (req.query.typeId) where.typeId = Number(req.query.typeId);
       if (req.query.statut) where.statut = String(req.query.statut);
       if (req.query.sourceType) where.sourceType = String(req.query.sourceType);
@@ -43,7 +64,15 @@ export default class DocumentController {
 
   static async getById(req: Request, res: Response): Promise<Response> {
     try {
-      const document = await DocGenDocument.findByPk(req.params.id, {
+      if (!canReadDocuments(req)) {
+        return res.status(403).json({ success: false, message: "Accès aux documents non autorisé" });
+      }
+      const siteId = getDocGenSiteId(req);
+      if (siteId === null) {
+        return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+      }
+      const document = await DocGenDocument.findOne({
+        where: { id: req.params.id, ...(siteId === undefined ? {} : { etablissementId: siteId }) },
         include: [
           { association: 'type' },
           { association: 'template' }
@@ -58,6 +87,9 @@ export default class DocumentController {
 
   static async generate(req: Request, res: Response): Promise<Response> {
     try {
+      if (req.utilisateurRole === RolesUtilisateur.SECRETAIRE) {
+        return res.status(403).json({ success: false, message: "La génération de documents n'est pas autorisée pour ce rôle" });
+      }
       const { typeCode, sourceType, sourceId, metadata, envoyerMail, ...params } = req.body;
       if (!typeCode || typeof typeCode !== 'string' || !typeCode.trim()) {
         return res.status(400).json({ success: false, message: 'typeCode est requis' });
@@ -68,10 +100,6 @@ export default class DocumentController {
 
       const template = await DocGenTemplate.findOne({ where: { typeId: type.id, isDefault: true } });
       if (!template) return res.status(404).json({ success: false, message: 'Template par défaut non trouvé' });
-
-      if (!fs.existsSync(STORAGE_DIR)) {
-        fs.mkdirSync(STORAGE_DIR, { recursive: true });
-      }
 
       const resolved = await DataResolverService.resolve(typeCode, { ...params, sourceId, sourceType });
       if (!resolved.etudiants || resolved.etudiants.length === 0) {
@@ -116,8 +144,12 @@ export default class DocumentController {
 
         const hash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
         const fileName = `${reference}.pdf`;
-        const filePath = path.join(STORAGE_DIR, fileName);
-        fs.writeFileSync(filePath, pdfBuffer);
+        const saved = savePdf(pdfBuffer, {
+          fileName,
+          type: 'docgen',
+          subcategory: 'documents',
+        });
+        const filePath = saved.relativePath;
 
         const doc = await DocGenDocument.create({
           typeId: type.id,
@@ -130,6 +162,7 @@ export default class DocumentController {
           sourceId: sourceId || undefined,
           metadata: metadata ? JSON.stringify(metadata) : undefined,
           generatedById: (req as any).utilisateurId,
+          etablissementId: req.etablissementId || undefined,
         });
         documents.push(doc);
 
@@ -144,7 +177,7 @@ export default class DocumentController {
                 `${(etudiant as any)?.prenom || ''} ${(etudiant as any)?.nom || ''}`.trim() || 'étudiant(e)',
                 `Easy Ecole: ${type?.libelle || 'Document'} ${reference}`,
                 `<p>Bonjour ${(etudiant as any)?.prenom || ''},</p><p>Veuillez trouver ci-joint votre <b>${type?.libelle || 'document'}</b> (référence ${reference}).</p><p>Cordialement,<br>Easy Ecole</p>`,
-                filePath,
+                saved.absolutePath,
                 fileName
               );
             }
@@ -219,7 +252,18 @@ export default class DocumentController {
 
   static async download(req: Request, res: Response): Promise<void> {
     try {
-      const document = await DocGenDocument.findByPk(req.params.id);
+      if (!canReadDocuments(req)) {
+        res.status(403).json({ success: false, message: "Accès aux documents non autorisé" });
+        return;
+      }
+      const siteId = getDocGenSiteId(req);
+      if (siteId === null) {
+        res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+        return;
+      }
+      const document = await DocGenDocument.findOne({
+        where: { id: req.params.id, ...(siteId === undefined ? {} : { etablissementId: siteId }) },
+      });
       if (!document) {
         res.status(404).json({ success: false, message: 'Document non trouvé' });
         return;
@@ -228,8 +272,8 @@ export default class DocumentController {
         res.status(404).json({ success: false, message: 'Fichier introuvable' });
         return;
       }
-      const filePath = path.resolve(process.cwd(), document.filePath);
-      if (!fs.existsSync(filePath)) {
+      const filePath = resolveStoredDocumentPath(document.filePath, [LEGACY_STORAGE_DIR]);
+      if (!filePath) {
         res.status(404).json({ success: false, message: 'Fichier introuvable sur le disque' });
         return;
       }
@@ -244,11 +288,20 @@ export default class DocumentController {
 
   static async delete(req: Request, res: Response): Promise<Response> {
     try {
-      const document = await DocGenDocument.findByPk(req.params.id);
+      if (req.utilisateurRole === RolesUtilisateur.SECRETAIRE) {
+        return res.status(403).json({ success: false, message: "La suppression de documents n'est pas autorisée pour ce rôle" });
+      }
+      const siteId = getDocGenSiteId(req);
+      if (siteId === null) {
+        return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+      }
+      const document = await DocGenDocument.findOne({
+        where: { id: req.params.id, ...(siteId === undefined ? {} : { etablissementId: siteId }) },
+      });
       if (!document) return res.status(404).json({ success: false, message: 'Document non trouvé' });
       if (document.filePath) {
-        const filePath = path.resolve(process.cwd(), document.filePath);
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        const filePath = resolveStoredDocumentPath(document.filePath, [LEGACY_STORAGE_DIR]);
+        if (filePath && fs.existsSync(filePath)) fs.unlinkSync(filePath);
       }
       await document.destroy();
       return res.status(200).json({ success: true });

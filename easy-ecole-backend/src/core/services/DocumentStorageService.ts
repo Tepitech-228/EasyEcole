@@ -56,6 +56,69 @@ export function getOriginRoot(origin: DocumentOrigin): string {
   return path.join(getDocumentsRoot(), origin);
 }
 
+function readMountPoints(): Set<string> | null {
+  if (process.platform !== 'linux' || !fs.existsSync('/proc/self/mountinfo')) {
+    return null;
+  }
+
+  try {
+    const mountInfo = fs.readFileSync('/proc/self/mountinfo', 'utf8');
+    return new Set(
+      mountInfo
+        .split('\n')
+        .map(line => line.split(' ')[4])
+        .filter((mountPoint): mountPoint is string => Boolean(mountPoint))
+        .map(mountPoint => path.resolve(mountPoint.replace(/\\([0-7]{3})/g, (_, octal: string) =>
+          String.fromCharCode(Number.parseInt(octal, 8)),
+        ))),
+    );
+  } catch (error) {
+    console.error('[STORAGE][MOUNT][ERROR] Impossible de lire /proc/self/mountinfo :', error);
+    return null;
+  }
+}
+
+export function isPathMounted(targetPath: string): boolean | null {
+  const mountPoints = readMountPoints();
+  if (!mountPoints) return null;
+
+  const target = path.resolve(targetPath);
+  return [...mountPoints].some(mountPoint => {
+    if (mountPoint === path.parse(mountPoint).root) return false;
+    const relative = path.relative(mountPoint, target);
+    return relative === '' || (
+      relative !== '..'
+      && !relative.startsWith(`..${path.sep}`)
+      && !path.isAbsolute(relative)
+    );
+  });
+}
+
+export function logStorageMountStatus(): void {
+  const targets = [
+    { name: 'documents', path: getDocumentsRoot() },
+    { name: 'backups', path: path.resolve(process.env.BACKUP_STORAGE_DIR || '/app/backups') },
+  ];
+
+  for (const target of targets) {
+    const mounted = isPathMounted(target.path);
+    const directoryExists = fs.existsSync(target.path);
+    if (mounted === true && directoryExists) {
+      console.log(`[STORAGE][MOUNT][OK] ${target.name} monté : ${target.path}`);
+    } else if (mounted === false) {
+      console.error(
+        `[STORAGE][MOUNT][ABSENT] ${target.name} non monté : ${target.path} `
+        + `(répertoire présent : ${directoryExists ? 'oui' : 'non'})`,
+      );
+    } else {
+      console.warn(
+        `[STORAGE][MOUNT][INCONNU] ${target.name} : vérification indisponible `
+        + `(répertoire présent : ${directoryExists ? 'oui' : 'non'}, chemin : ${target.path})`,
+      );
+    }
+  }
+}
+
 /**
  * Annee academique au format 2025-2026.
  * Sans valeur explicite : annee courante (bascule au 1er septembre).

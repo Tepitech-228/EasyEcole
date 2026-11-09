@@ -9,12 +9,14 @@ import { CursusApprenant } from "../../inscription/models/CursusApprenant";
 import { DossierEtudiant } from "../../inscription/models/DossierEtudiant";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { ArchiveGedService } from "../../../core/services/ArchiveGedService";
-import DemandeDocumentPaiementService from "../services/DemandeDocumentPaiementService";
+import { resolveStoredDocumentPath } from "../../../core/services/DocumentStorageService";
+import { savePdf } from "../../../core/services/PdfStorageService";
 import { SecretariatWorkflowService, ErreurWorkflow } from "../services/SecretariatWorkflowService";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { RecuCaisse } from "../models/RecuCaisse";
 import { DemandeDocumentPiece } from "../models/DemandeDocumentPiece";
 import { DemandeDocumentVote } from "../models/DemandeDocumentVote";
+import { JournalCaisse } from "../models/JournalCaisse";
 import { DemandeDocumentWorkflowService } from "../services/DemandeDocumentWorkflowService";
 import * as fs from "fs";
 import * as path from "path";
@@ -28,12 +30,18 @@ const ROLES_INTERNES_DOCUMENTS: string[] = [
     RolesUtilisateur.INSTITUTION,
     RolesUtilisateur.ADMIN,
     RolesUtilisateur.COMITE_ORIENTATION,
-    RolesUtilisateur.CAISSIER_BANQUE,
+    RolesUtilisateur.ESA_COMPTA,
     RolesUtilisateur.SUPERVISEUR_GENERAL
 ];
+const SEMESTRES_DEMANDE_RELEVE = ['semestre1', 'semestre2', 'semestre3', 'semestre4', 'semestre5', 'semestre6'];
 
 function fichiersCourantsParCle(pieces: DemandeDocumentPiece[]): Map<string, DemandeDocumentPiece> {
     return new Map(pieces.filter(piece => piece.estCourante).map(piece => [piece.cle, piece]));
+}
+
+function estTypeReleve(typeDocument: TypeDocument): boolean {
+    const libelle = typeDocument.libelle.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    return libelle.includes('releve') && libelle.includes('note');
 }
 
 function nomFichierSecurise(nom: string): string {
@@ -128,6 +136,39 @@ export default class DemandeDocumentController {
         }
     }
 
+    static async getFileImpression(req: Request, res: Response): Promise<Response> {
+        const etat = String(req.query.etat || 'a_imprimer');
+        if (!['a_imprimer', 'imprimes'].includes(etat)) {
+            return res.status(400).json({ success: false, message: "État de file invalide" });
+        }
+        const page = Math.max(1, Number(req.query.page) || 1);
+        const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 50));
+        try {
+            const { rows, count } = await DemandeDocument.findAndCountAll({
+                where: {
+                    statut: 'document_pret',
+                    fichierPDF: { [Op.ne]: null },
+                    dateImpression: etat === 'a_imprimer' ? { [Op.is]: null } : { [Op.not]: null }
+                },
+                include: [
+                    { association: DemandeDocument.associations.typeDocument },
+                    { association: DemandeDocument.associations.etudiant }
+                ],
+                order: [['dateGeneration', 'DESC'], ['createdAt', 'DESC']],
+                limit,
+                offset: (page - 1) * limit,
+                distinct: true
+            });
+            return res.status(200).json({
+                data: rows,
+                pagination: { page, limit, total: count, totalPages: Math.ceil(count / limit) }
+            });
+        } catch (error) {
+            console.error('[SECRETARIAT][printQueue]', error);
+            return res.status(500).json({ success: false, message: "Impossible de charger la file d'impression" });
+        }
+    }
+
     static async getAutorisationsProvisoires(req: Request, res: Response): Promise<Response> {
         try {
             const type = await TypeDocument.findOne({ where: { libelle: "Autorisation provisoire d'inscription" } });
@@ -177,8 +218,12 @@ export default class DemandeDocumentController {
             if (!demande || demande.source !== 'automatique' || !demande.fichierPDF) {
                 return res.status(404).json({ success: false, message: "Autorisation provisoire introuvable" });
             }
-            const fichier = path.resolve(demande.fichierPDF);
-            if (!fs.existsSync(fichier)) return res.status(404).json({ success: false, message: "Fichier PDF indisponible" });
+            const fichier = resolveStoredDocumentPath(demande.fichierPDF, [
+                path.resolve(process.cwd(), 'public', 'scolarite', 'documents'),
+                path.resolve(process.cwd(), 'public', 'inscription', 'autorisations'),
+                path.resolve(process.cwd(), 'storage', 'docgen'),
+            ]);
+            if (!fichier) return res.status(404).json({ success: false, message: "Fichier PDF indisponible" });
             return await new Promise<void>((resolve) => {
                 res.download(fichier, `autorisation-provisoire-${demande.numeroDemande || demande.id}.pdf`, (error) => {
                     if (error) {
@@ -217,7 +262,7 @@ export default class DemandeDocumentController {
             const rolesInternes = [
                 RolesUtilisateur.SECRETAIRE, RolesUtilisateur.INSTITUTION,
                 RolesUtilisateur.ADMIN, RolesUtilisateur.COMITE_ORIENTATION,
-                RolesUtilisateur.CAISSIER_BANQUE
+                RolesUtilisateur.ESA_COMPTA
             ];
             if (!proprietaire && !rolesInternes.includes(role)) return res.status(403).json({ success: false });
 
@@ -244,33 +289,182 @@ export default class DemandeDocumentController {
             }
 
             const montant = Number(typeDocument.frais) || 0;
-            const demande = await DemandeDocument.create({
-                etudiantId: (req as any).utilisateurId,
-                typeDocumentId: typeDocument.id,
-                statut: 'brouillon',
-                etapeWizard: 1,
-                source: 'demande_etudiant',
-                montant,
-                fraisPayes: montant <= 0,
-                compteProduit: '704'
-            });
+            const etudiantId = Number((req as any).utilisateurId);
+            const estReleve = estTypeReleve(typeDocument);
+            const selectedYearId = Number(req.body.anneeAcademiqueId);
+            const semestre = String(req.body.semestre || '').trim();
+            let cursus = null;
 
-            const cursus = await CursusApprenant.findOne({
-                where: { utilisateurId: (req as any).utilisateurId },
-                order: [['createdAt', 'DESC']]
-            });
-            if (cursus) {
-                await demande.update({
-                    parcoursId: cursus.parcoursId ? Number(cursus.parcoursId) : null,
-                    niveauEtudeId: cursus.niveauEtudeId ? Number(cursus.niveauEtudeId) : null,
-                    classeId: cursus.classeId ? Number(cursus.classeId) : null,
-                    anneeAcademiqueId: cursus.anneeAcademiqueId ? Number(cursus.anneeAcademiqueId) : null
+            if (estReleve) {
+                if (!Number.isInteger(selectedYearId) || selectedYearId <= 0
+                    || !SEMESTRES_DEMANDE_RELEVE.includes(semestre)) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Pour un relevé de notes, sélectionnez l'année académique et le semestre concernés"
+                    });
+                }
+                cursus = await CursusApprenant.findOne({
+                    where: { utilisateurId: etudiantId, anneeAcademiqueId: selectedYearId },
+                    order: [['createdAt', 'DESC']]
+                });
+                if (!cursus) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Aucun cursus n'est enregistré pour l'année académique sélectionnée"
+                    });
+                }
+            } else {
+                cursus = await CursusApprenant.findOne({
+                    where: { utilisateurId: etudiantId },
+                    order: [['createdAt', 'DESC']]
                 });
             }
-            return res.status(201).send(demande);
+
+            const transaction = await DatabaseConnection.getInstance().sequelize.transaction();
+            let copiedReceiptPath: string | null = null;
+            try {
+                let recu: RecuCaisse | null = null;
+                if (montant > 0) {
+                    const recuCaisseId = Number(req.body.recuCaisseId);
+                    if (!Number.isInteger(recuCaisseId) || recuCaisseId <= 0) {
+                        await transaction.rollback();
+                        return res.status(409).json({
+                            success: false,
+                            code: 'DOCUMENT_PAYMENT_REQUIRED',
+                            message: "Un reçu de paiement valide est requis avant de demander ce document"
+                        });
+                    }
+
+                    recu = await RecuCaisse.findOne({
+                        where: {
+                            id: recuCaisseId,
+                            etudiantId,
+                            typeDocumentId: typeDocument.id,
+                            demandeDocumentId: null,
+                            fichierPDF: { [Op.ne]: null }
+                        },
+                        transaction,
+                        lock: transaction.LOCK.UPDATE
+                    });
+                    if (!recu) {
+                        await transaction.rollback();
+                        return res.status(409).json({
+                            success: false,
+                            code: 'DOCUMENT_PAYMENT_NOT_AVAILABLE',
+                            message: "Ce reçu n'est pas disponible pour votre compte ou a déjà été utilisé"
+                        });
+                    }
+                    const receiptSourcePath = resolveStoredDocumentPath(recu.fichierPDF || '');
+                    if (!receiptSourcePath) {
+                        await transaction.rollback();
+                        return res.status(409).json({
+                            success: false,
+                            code: 'DOCUMENT_RECEIPT_FILE_MISSING',
+                            message: "Le PDF du reçu est indisponible. Contactez le service de recouvrement."
+                        });
+                    }
+                    await fs.promises.mkdir(UPLOAD_DOCUMENTS_DIR, { recursive: true });
+                    copiedReceiptPath = path.join(UPLOAD_DOCUMENTS_DIR, `${crypto.randomBytes(24).toString('hex')}.pdf`);
+                    await fs.promises.copyFile(receiptSourcePath, copiedReceiptPath);
+                }
+
+                const demande = await DemandeDocument.create({
+                    etudiantId,
+                    typeDocumentId: typeDocument.id,
+                    statut: 'brouillon',
+                    etapeWizard: 1,
+                    source: 'demande_etudiant',
+                    montant: recu ? Number(recu.montant) : montant,
+                    fraisPayes: montant <= 0 || !!recu,
+                    paiementId: recu?.id || null,
+                    recuCaisseId: recu?.id || null,
+                    datePaiement: recu?.datePaiement || null,
+                    modePaiement: recu?.modePaiement || null,
+                    numeroRecu: recu?.numero || null,
+                    referencePaiement: recu?.referencePaiement || null,
+                    caissierId: recu?.caissierId || null,
+                    compteProduit: '704',
+                    ...(cursus ? {
+                        parcoursId: cursus.parcoursId ? Number(cursus.parcoursId) : null,
+                        niveauEtudeId: cursus.niveauEtudeId ? Number(cursus.niveauEtudeId) : null,
+                        classeId: cursus.classeId ? Number(cursus.classeId) : null,
+                        anneeAcademiqueId: estReleve ? selectedYearId : (cursus.anneeAcademiqueId ? Number(cursus.anneeAcademiqueId) : null)
+                    } : {}),
+                    ...(estReleve ? { semestre } : {})
+                }, { transaction });
+
+                if (recu && copiedReceiptPath) {
+                    await DemandeDocumentPiece.create({
+                        demandeId: demande.id,
+                        cle: 'bordereau',
+                        libelle: 'Reçu de paiement',
+                        nomOriginal: `RCU-${nomFichierSecurise(recu.numero)}.pdf`,
+                        cheminFichier: copiedReceiptPath,
+                        typeMime: 'application/pdf',
+                        tailleOctets: (await fs.promises.stat(copiedReceiptPath)).size,
+                        version: 1,
+                        estCourante: true,
+                        statutAudit: 'validee',
+                        motifRejet: null
+                    }, { transaction });
+                    await recu.update({ demandeDocumentId: demande.id }, { transaction });
+                    await JournalCaisse.update(
+                        { demandeDocumentId: demande.id },
+                        { where: { recuId: recu.id }, transaction }
+                    );
+                }
+
+                await transaction.commit();
+                return res.status(201).send(demande);
+            } catch (error) {
+                await transaction.rollback().catch(rollbackError =>
+                    console.error('[DEMANDE_DOC][createDraft] rollback failed', rollbackError)
+                );
+                if (copiedReceiptPath) {
+                    await fs.promises.unlink(copiedReceiptPath).catch(unlinkError => {
+                        if ((unlinkError as NodeJS.ErrnoException).code !== 'ENOENT') {
+                            console.error('[DEMANDE_DOC][createDraft] receipt copy cleanup failed', unlinkError);
+                        }
+                    });
+                }
+                throw error;
+            }
         } catch (error) {
             console.error('[DEMANDE_DOC][createDraft]', error);
             return res.status(500).json({ success: false, message: "Impossible de créer le brouillon" });
+        }
+    }
+
+    static async getMesPaiementsDisponibles(req: Request, res: Response): Promise<Response> {
+        if ((req as any).utilisateurRole !== RolesUtilisateur.APPRENANT) {
+            return res.status(403).json({ success: false, message: "Accès réservé aux apprenants" });
+        }
+        const typeDocumentId = Number(req.query.typeDocumentId);
+        if (!Number.isInteger(typeDocumentId) || typeDocumentId <= 0) {
+            return res.status(400).json({ success: false, message: "typeDocumentId invalide" });
+        }
+        try {
+            const typeDocument = await TypeDocument.findOne({
+                where: { id: typeDocumentId, actif: true, frais: { [Op.gt]: 0 } },
+                attributes: ['id', 'frais']
+            });
+            if (!typeDocument) {
+                return res.status(404).json({ success: false, message: "Type de document payant indisponible" });
+            }
+            const recus = await RecuCaisse.findAll({
+                where: {
+                    etudiantId: (req as any).utilisateurId,
+                    typeDocumentId,
+                    demandeDocumentId: null,
+                    fichierPDF: { [Op.ne]: null }
+                },
+                attributes: ['id', 'numero', 'montant', 'datePaiement', 'modePaiement'],
+                order: [['datePaiement', 'DESC']]
+            });
+            return res.status(200).json(recus);
+        } catch (error) {
+            console.error('[DEMANDE_DOC][availableReceipts]', error);
+            return res.status(500).json({ success: false, message: "Impossible de charger vos reçus disponibles" });
         }
     }
 
@@ -386,6 +580,27 @@ export default class DemandeDocumentController {
         }
 
         const piecesCourantes = fichiersCourantsParCle((demande as any).pieces || []);
+        if (Number(demande.montant) > 0) {
+            const recuValide = demande.fraisPayes && demande.recuCaisseId
+                ? await RecuCaisse.findOne({
+                    where: {
+                        id: demande.recuCaisseId,
+                        demandeDocumentId: demande.id,
+                        etudiantId: demande.etudiantId,
+                        typeDocumentId: demande.typeDocumentId,
+                        montant: Number(demande.montant),
+                        fichierPDF: { [Op.ne]: null }
+                    }
+                })
+                : null;
+            if (!recuValide) {
+                return res.status(409).json({
+                    success: false,
+                    code: 'DOCUMENT_PAYMENT_REQUIRED',
+                    message: "Un reçu du service de recouvrement correspondant à cette demande est requis avant la soumission"
+                });
+            }
+        }
         const piecesRequises = (demande.typeDocument?.piecesRequises || [])
             .filter(piece => piece.obligatoire !== false);
         const manquantes = piecesRequises
@@ -413,7 +628,8 @@ export default class DemandeDocumentController {
                 tourComite: demande.statut === 'rejetee' ? demande.tourComite + 1 : demande.tourComite
             });
             await DemandeDocumentWorkflowService.promouvoirAuComiteSiPret(demande.id);
-            return res.status(200).json(demande);
+            const demandeMiseAJour = await DemandeDocument.findByPk(demande.id);
+            return res.status(200).json(demandeMiseAJour || demande);
         } catch (error) {
             console.error(`[DEMANDE_DOC][submitWizard] id=${demande.id}`, error);
             return res.status(500).json({ success: false, message: "Impossible de soumettre cette demande" });
@@ -432,7 +648,7 @@ export default class DemandeDocumentController {
         const rolesInternes = [
             RolesUtilisateur.SECRETAIRE, RolesUtilisateur.INSTITUTION,
             RolesUtilisateur.ADMIN, RolesUtilisateur.COMITE_ORIENTATION,
-            RolesUtilisateur.CAISSIER_BANQUE
+            RolesUtilisateur.ESA_COMPTA
         ];
         if (!estProprietaire && !rolesInternes.includes(role)) return res.status(403).json({ success: false });
 
@@ -448,17 +664,21 @@ export default class DemandeDocumentController {
     static async telechargerDocumentPret(req: Request, res: Response): Promise<Response | void> {
         const demande = await DemandeDocument.findByPk(req.params.id);
         if (!demande) return res.status(404).json({ success: false, message: "Demande non trouvée" });
-        if (demande.statut !== 'document_pret' || !demande.fichierPDF) {
+        const statutsAvecDocumentGenere = ['document_pret', 'remise', 'delivree', 'paye'];
+        if (!statutsAvecDocumentGenere.includes(demande.statut) || !demande.fichierPDF) {
             return res.status(409).json({ success: false, message: "Le document n'est pas encore disponible" });
         }
         const role = (req as any).utilisateurRole;
         const proprietaire = role === RolesUtilisateur.APPRENANT && demande.etudiantId === (req as any).utilisateurId;
-        const rolesInternes = [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN];
+        const rolesInternes = [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN];
         if (!proprietaire && !rolesInternes.includes(role)) return res.status(403).json({ success: false });
 
-        const directory = path.resolve(process.cwd(), 'public', 'scolarite', 'documents');
-        const fichier = path.resolve(directory, path.basename(demande.fichierPDF));
-        if (!fichier.startsWith(`${directory}${path.sep}`) || !fs.existsSync(fichier)) {
+        // Nouveaux PDF : documents/created/... ; anciens PDF : nom de fichier
+        // isolé dans public/scolarite/documents (compatibilité ascendante).
+        const fichier = resolveStoredDocumentPath(demande.fichierPDF, [
+            path.resolve(process.cwd(), 'public', 'scolarite', 'documents'),
+        ]);
+        if (!fichier) {
             return res.status(404).json({ success: false, message: "Fichier PDF indisponible" });
         }
         res.type('application/pdf');
@@ -689,7 +909,7 @@ export default class DemandeDocumentController {
                     });
                 }
                 const documentPret = demandeComplete.statut === 'en_preparation'
-                    ? await SecretariatWorkflowService.genererDocument(demandeComplete, membreId)
+                    ? await SecretariatWorkflowService.genererDocument(demandeComplete, membreId, req)
                     : demandeComplete;
                 return res.status(200).json({
                     success: true,
@@ -765,16 +985,24 @@ export default class DemandeDocumentController {
             const documentExistant = await DocumentDelivre.findOne({ where: { demandeId: demande.id } })
             if (!documentExistant) {
                 const coordonnees = await SecretariatWorkflowService.construireCoordonneesEtudiant(demande);
-                const filename = DocumentPDFGenerator.generateDocument(
+                const tmpDir = path.join(process.cwd(), 'storage', 'tmp', 'scolarite-documents');
+                const filename = await DocumentPDFGenerator.generateDocumentVerifie(
                     demande.id,
                     typeDocument?.libelle || 'Document',
-                    "public/scolarite/documents/",
+                    tmpDir,
                     coordonnees
                 )
+                const tmpPath = path.join(tmpDir, filename);
+                const saved = savePdf(fs.readFileSync(tmpPath), {
+                    fileName: filename,
+                    type: 'scolarite',
+                    subcategory: 'documents',
+                });
+                try { fs.unlinkSync(tmpPath); } catch { /* fichier temporaire déjà absent */ }
 
                 const docDelivre = new DocumentDelivre();
                 docDelivre.demandeId = demande.id
-                docDelivre.fichierPDF = filename
+                docDelivre.fichierPDF = saved.relativePath
                 await docDelivre.save()
 
                 // Archivage avec le service dédié (plus de champs contextuels renseignés)
@@ -810,26 +1038,48 @@ export default class DemandeDocumentController {
     }
 
     static async deleteDemandeDocument(req: Request, res: Response): Promise<Response | null> {
-        const role = (req as any).utilisateurRole
-        if (![RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF,
-              RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN].includes(role)) {
-            return res.status(403).json({ success: false })
+        const role = (req as any).utilisateurRole;
+        const utilisateurId = (req as any).utilisateurId;
+        const estSecretariat = [
+            RolesUtilisateur.SECRETAIRE,
+            RolesUtilisateur.PERSONNEL_ADMINISTRATIF,
+            RolesUtilisateur.INSTITUTION,
+            RolesUtilisateur.ADMIN
+        ].includes(role);
+        const estApprenant = role === RolesUtilisateur.APPRENANT;
+        if (!estSecretariat && !estApprenant) {
+            return res.status(403).json({ success: false });
         }
 
-        let demande: DemandeDocument | null = await DemandeDocument.findOne({ where: { id: req.params.id } });
-        if (demande) {
-            await demande.destroy()
-                .then(() => {
-                    return res.status(200).json({ success: true, message: "Demande supprimée" });
-                })
-                .catch((error) => {
-                    return res.status(500).json({ success: false, error: error });
-                });
-        } else {
+        const demande: DemandeDocument | null = await DemandeDocument.findOne({ where: { id: req.params.id } });
+        if (!demande) {
             return res.status(404).json({ success: false, message: "Demande non trouvée" });
         }
 
-        return null
+        const estProprietaire = estApprenant
+            && Number(demande.etudiantId) === Number(utilisateurId);
+
+        if (!estSecretariat && !estProprietaire) {
+            return res.status(403).json({ success: false });
+        }
+        if (estProprietaire && (
+            demande.source !== 'demande_etudiant'
+            || demande.fraisPayes
+            || demande.recuCaisseId
+            || !['brouillon', 'soumise', 'en_attente_paiement', 'rejetee'].includes(demande.statut)
+        )) {
+            return res.status(409).json({
+                success: false,
+                message: "Seules les demandes non payées et pas encore traitées peuvent être annulées"
+            });
+        }
+
+        try {
+            await demande.destroy();
+            return res.status(200).json({ success: true, message: "Demande supprimée" });
+        } catch (error) {
+            return res.status(500).json({ success: false, error });
+        }
     }
 
     /**
@@ -993,96 +1243,12 @@ export default class DemandeDocumentController {
         }
     }
 
-    static async creerBordereauDemandeDocument(req: Request, res: Response): Promise<Response | null> {
-        const role = (req as any).utilisateurRole
-        const utilisateurId = (req as any).utilisateurId
-
-        const demande: DemandeDocument | null = await DemandeDocument.findByPk(req.params.id)
-        if (demande == null) {
-            return res.status(404).json({ success: false, message: "Demande non trouvée" })
-        }
-
-        const isOwner = role == RolesUtilisateur.APPRENANT && demande.etudiantId == utilisateurId
-        if (!isOwner && role != RolesUtilisateur.INSTITUTION && role != RolesUtilisateur.ADMIN) {
-            return res.status(403).json({ success: false })
-        }
-
-        const montant = Number(demande.montant) || 0
-        if (montant <= 0) {
-            return res.status(400).json({ success: false, message: "Aucun frais à payer pour cette demande" })
-        }
-        if (demande.fraisPayes) {
-            return res.status(400).json({ success: false, message: "Demande déjà payée" })
-        }
-
-        const bordereauExistant = await DemandeDocumentPaiementService.trouverBordereauDemande(demande)
-        if (bordereauExistant) {
-            return res.status(400).json({ success: false, message: "Un bordereau existe déjà pour cette demande" })
-        }
-
-        try {
-            const bordereau = await DemandeDocumentPaiementService.creerBordereauPourDemande(demande, utilisateurId)
-            return res.status(201).send(bordereau)
-        } catch (error) {
-            return res.status(500).json({ success: false, error })
-        }
-    }
-
-    static async confirmerPaiementDemandeDocument(req: Request, res: Response): Promise<Response | null> {
-        const role = (req as any).utilisateurRole
-        if (role != RolesUtilisateur.INSTITUTION && role != RolesUtilisateur.CAISSIER_BANQUE && role != RolesUtilisateur.ADMIN) {
-            return res.status(403).json({ success: false })
-        }
-
-        const demande: DemandeDocument | null = await DemandeDocument.findByPk(req.params.id)
-        if (demande == null) {
-            return res.status(404).json({ success: false, message: "Demande non trouvée" })
-        }
-
-        if (demande.fraisPayes) {
-            return res.status(400).json({ success: false, message: "Demande déjà payée" })
-        }
-
-        try {
-            const demandeMaj = await DemandeDocumentPaiementService.confirmerPaiement(demande, {
-                paiementId: req.body.paiementId
-            })
-            await DemandeDocumentWorkflowService.promouvoirAuComiteSiPret(demandeMaj.id)
-            return res.status(200).send(demandeMaj)
-        } catch (error) {
-            return res.status(500).json({ success: false, error })
-        }
-    }
-
-    static async confirmerPaiementAutoDemandeDocument(req: Request, res: Response): Promise<Response | null> {
-        const role = (req as any).utilisateurRole
-        const utilisateurId = (req as any).utilisateurId
-
-        const demande: DemandeDocument | null = await DemandeDocument.findByPk(req.params.id)
-        if (demande == null) {
-            return res.status(404).json({ success: false, message: "Demande non trouvée" })
-        }
-
-        const isOwner = role == RolesUtilisateur.APPRENANT && demande.etudiantId == utilisateurId
-        if (!isOwner && role != RolesUtilisateur.INSTITUTION && role != RolesUtilisateur.ADMIN) {
-            return res.status(403).json({ success: false })
-        }
-
-        const montant = Number(demande.montant) || 0
-        if (montant <= 0) {
-            return res.status(400).json({ success: false, message: "Aucun frais à payer pour cette demande" })
-        }
-        if (demande.fraisPayes) {
-            return res.status(400).json({ success: false, message: "Demande déjà payée" })
-        }
-
-        try {
-            const demandeMaj = await DemandeDocumentPaiementService.confirmerPaiementAuto(demande, req)
-            await DemandeDocumentWorkflowService.promouvoirAuComiteSiPret(demandeMaj.id)
-            return res.status(200).send(demandeMaj)
-        } catch (error) {
-            return res.status(500).json({ success: false, error })
-        }
+    static async paiementApresCreationDesactive(_req: Request, res: Response): Promise<Response> {
+        return res.status(410).json({
+            success: false,
+            code: 'PAYMENT_MUST_PRECEDE_REQUEST',
+            message: "Le paiement après création est désactivé. L'étudiant doit payer au service de recouvrement avant de créer sa demande."
+        });
     }
 
     static async verifierAccesDemandeDocument(req: Request, res: Response): Promise<Response | null> {
@@ -1095,7 +1261,7 @@ export default class DemandeDocumentController {
         }
 
         const isOwner = role == RolesUtilisateur.APPRENANT && demande.etudiantId == utilisateurId
-        if (!isOwner && role != RolesUtilisateur.INSTITUTION && role != RolesUtilisateur.ADMIN && role != RolesUtilisateur.CAISSIER_BANQUE) {
+        if (!isOwner && role != RolesUtilisateur.INSTITUTION && role != RolesUtilisateur.ADMIN && role != RolesUtilisateur.ESA_COMPTA) {
             return res.status(403).json({ success: false })
         }
 
@@ -1134,7 +1300,7 @@ export default class DemandeDocumentController {
         const role = (req as any).utilisateurRole
         const utilisateurId = (req as any).utilisateurId
 
-        if (role != RolesUtilisateur.SECRETAIRE && role != RolesUtilisateur.ADMIN) {
+        if (role != RolesUtilisateur.SECRETAIRE && role != RolesUtilisateur.PERSONNEL_ADMINISTRATIF && role != RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false, message: "Accès réservé au secrétariat" })
         }
 
@@ -1148,7 +1314,7 @@ export default class DemandeDocumentController {
             if (!demande) {
                 return res.status(404).json({ success: false, code: 'DEMANDE_NOT_FOUND', message: "Demande non trouvée" })
             }
-            const updated = await SecretariatWorkflowService.genererDocument(demande, utilisateurId)
+            const updated = await SecretariatWorkflowService.genererDocument(demande, utilisateurId, req)
             return res.status(200).json(updated)
         } catch (e) {
             if (e instanceof ErreurWorkflow) return res.status(e.httpStatus).json({ success: false, code: e.code, message: e.message })
@@ -1161,7 +1327,7 @@ export default class DemandeDocumentController {
         const role = (req as any).utilisateurRole
         const utilisateurId = (req as any).utilisateurId
 
-        if (role != RolesUtilisateur.SECRETAIRE && role != RolesUtilisateur.ADMIN) {
+        if (role != RolesUtilisateur.SECRETAIRE && role != RolesUtilisateur.PERSONNEL_ADMINISTRATIF && role != RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false, message: "Accès réservé au secrétariat" })
         }
 

@@ -80,6 +80,7 @@ export default class FinanceEcheanceController {
 
             // ── Search : trouver les dossierEtudiantIds ou utilisateurIds correspondants ──
             let whereDossierEtudiantIds: number[] | undefined;
+            let searchUserIds: number[] = [];
             if (req.query.search) {
                 const searchTerm = `%${req.query.search}%`;
                 const whereOrDossier: any = { matricule: { [Op.like]: searchTerm } };
@@ -100,6 +101,8 @@ export default class FinanceEcheanceController {
 
                 const dossierIdsFromSearch = matchingDossiers.map((d: any) => d.id);
                 const userIdsFromSearch = matchingUsers.map((u: any) => u.id);
+                searchUserIds = [...new Set(userIdsFromSearch)];
+
                 const dossierIdsFromUsers = await DossierEtudiant.findAll({
                     attributes: ['id'],
                     where: { utilisateurId: { [Op.in]: userIdsFromSearch }, ...dossierSiteWhere }
@@ -116,7 +119,12 @@ export default class FinanceEcheanceController {
                 }
             }
 
-            // ── Construire l'include complet ──
+            // ── Construire l'include complet sans imbrication trop profonde
+            // On évite de faire le sous-join `utilisateur -> dossiersEtudiants -> echeances`
+            // dans une seule requête Sequelize : c'est la source fréquente des erreurs
+            // SQL/500 sur les gros jeux de données multi-site. On récupère d'abord les
+            // cursus puis les dossiers avec leurs échéances, ce qui garde le même
+            // comportement métier tout en restant stable.
             const includeOptions: FindOptions<InferAttributes<CursusApprenant>>['include'] = [
                 {
                     association: CursusApprenant.associations.parcours as any,
@@ -134,30 +142,16 @@ export default class FinanceEcheanceController {
                 {
                     association: CursusApprenant.associations.utilisateur as any,
                     attributes: ['id', 'nom', 'prenoms', 'identifiant'],
-                    include: [
-                        {
-                            association: (Utilisateur as any).associations.dossiersEtudiants as any,
-                            attributes: ['id', 'matricule'],
-                            where: {
-                                ...dossierSiteWhere,
-                                ...(whereDossierEtudiantIds ? { id: { [Op.in]: whereDossierEtudiantIds } } : {})
-                            },
-                            include: [
-                                {
-                                    association: DossierEtudiant.associations.echeances as any,
-                                    where: echeanceWhere,
-                                    required: true,
-                                    attributes: ['id', 'type', 'numeroEcheance', 'moisConcerne', 'dateLimite', 'montant', 'montantPaye', 'statut'],
-                                    order: [['numeroEcheance', 'ASC']],
-                                }
-                            ]
-                        }
-                    ]
                 }
             ];
 
+            const efectivaCursusWhere = {
+                ...cursusWhere,
+                ...(searchUserIds.length > 0 ? { utilisateurId: { [Op.in]: searchUserIds } } : {})
+            };
+
             const { rows: cursusApprenants, count: total } = await CursusApprenant.findAndCountAll({
-                where: cursusWhere,
+                where: efectivaCursusWhere,
                 include: includeOptions,
                 distinct: true,
                 limit,
@@ -165,10 +159,43 @@ export default class FinanceEcheanceController {
                 order: [[{ model: Utilisateur, as: 'utilisateur' }, 'nom', 'ASC']]
             });
 
+            const userIdsForDossiers = Array.from(new Set(cursusApprenants
+                .map((ca: any) => ca.utilisateurId)
+                .filter((id: any): id is number => Number.isInteger(id) && id > 0)));
+
+            const dossiersParUtilisateur = new Map<number, any>();
+            if (userIdsForDossiers.length > 0) {
+                const dossiersEtudiants = await DossierEtudiant.findAll({
+                    attributes: ['id', 'utilisateurId', 'matricule'],
+                    where: {
+                        utilisateurId: { [Op.in]: userIdsForDossiers },
+                        ...dossierSiteWhere,
+                        ...(whereDossierEtudiantIds ? { id: { [Op.in]: whereDossierEtudiantIds } } : {})
+                    },
+                    include: [
+                        {
+                            association: DossierEtudiant.associations.echeances as any,
+                            where: echeanceWhere,
+                            required: true,
+                            attributes: ['id', 'type', 'numeroEcheance', 'moisConcerne', 'dateLimite', 'montant', 'montantPaye', 'statut'],
+                            order: [['numeroEcheance', 'ASC']],
+                        }
+                    ]
+                });
+
+                dossiersEtudiants.forEach((dossier: any) => {
+                    if (Number.isInteger(dossier.utilisateurId) && dossier.utilisateurId > 0) {
+                        if (!dossiersParUtilisateur.has(dossier.utilisateurId)) {
+                            dossiersParUtilisateur.set(dossier.utilisateurId, dossier);
+                        }
+                    }
+                });
+            }
+
             // ── Transformer les résultats ──
             const data = cursusApprenants.map((ca: any) => {
                 const utilisateur = ca.utilisateur as any;
-                const dossier = utilisateur?.dossiersEtudiants?.[0] as any;
+                const dossier = dossiersParUtilisateur.get(utilisateur?.id ?? ca.utilisateurId) as any;
                 const echeances = dossier?.echeances || [];
 
                 const totalRestant = echeances.reduce(

@@ -43,6 +43,7 @@ interface GenerateParams {
 interface ResolvedData {
   etablissement: Record<string, any>;
   etudiants: Array<Record<string, any>>;
+  titreDocument?: string;
   sujet?: Record<string, any>;
   statistiques?: Record<string, any>;
   classe?: string;
@@ -203,7 +204,7 @@ async function resolveReleveNotes(params: GenerateParams): Promise<ResolvedData>
   const cursusList = await CursusApprenant.findAll({
     where,
     include: [
-      { association: 'utilisateur' },
+      { association: 'utilisateur', include: [{ association: 'apprenant' }] },
       { association: 'classe' },
       { association: 'parcours' },
       { association: 'niveauEtude' },
@@ -212,7 +213,7 @@ async function resolveReleveNotes(params: GenerateParams): Promise<ResolvedData>
         { association: 'cours' },
         { association: 'notesEvaluation', include: [{
           association: 'listeNoteEvaluation',
-          include: [{ association: 'cours' }],
+          include: [{ association: 'cours' }, { association: 'typeNoteEvaluation' }],
         }] }
       ]}
     ]
@@ -289,8 +290,13 @@ async function resolveReleveNotes(params: GenerateParams): Promise<ResolvedData>
             sommeNotesPonderees: 0,
             sommePoids: 0,
             semestre: unite.semestre,
+            evaluations: [],
           };
           unite.matieres.push(matiere);
+        }
+        const typeEvaluation = note.listeNoteEvaluation?.typeNoteEvaluation?.libelle;
+        if (typeEvaluation && !matiere.evaluations.includes(typeEvaluation)) {
+          matiere.evaluations.push(typeEvaluation);
         }
         const noteValeur = Number(note.note);
         const poids = Number(note.listeNoteEvaluation?.poidsTypeNoteEvaluation) || 1;
@@ -315,6 +321,7 @@ async function resolveReleveNotes(params: GenerateParams): Promise<ResolvedData>
           note: note == null ? null : Number(note.toFixed(2)),
           statut: validee ? 'Validé' : 'Non validé',
           semestre: matiere.semestre,
+          evaluations: matiere.evaluations.join(', '),
         };
       });
       const notesPonderees = matieres.reduce(
@@ -360,7 +367,7 @@ async function resolveReleveNotes(params: GenerateParams): Promise<ResolvedData>
       filiere: cursus.parcours?.titre || '',
       niveau: cursus.niveauEtude?.libelle || '',
       classe: cursus.classe?.libelle || '',
-      dateNaissance: '',
+      dateNaissance: formatDate(apprenant?.apprenant?.dateNaissance),
       anneeAcademique: cursus.anneeAcademique?.libelle || '',
       unites,
       uesValidees,
@@ -382,36 +389,109 @@ async function resolveReleveNotes(params: GenerateParams): Promise<ResolvedData>
 
 async function resolveAttestation(params: GenerateParams): Promise<ResolvedData> {
   const etablissement = await getEtablissementInfo();
+  if (params.typeCode === 'PRE001') {
+    const whereDemande: any = {};
+    if (params.sourceId) whereDemande.id = params.sourceId;
+    else if (params.etudiantId) whereDemande.utilisateurId = params.etudiantId;
+
+    const includeDemande = [
+      { association: 'utilisateur', include: [{ association: 'apprenant' }] },
+      { association: 'parcoursChoisis', include: [{ association: 'parcours', include: [{ association: 'niveauEtude' }] }] },
+      { association: 'session', include: [{ association: 'anneeAcademique' }] },
+    ];
+    const demande = Object.keys(whereDemande).length
+      ? params.sourceId
+        ? await DemandeInscription.findByPk(params.sourceId, { include: includeDemande }) as any
+        : await DemandeInscription.findOne({
+          where: whereDemande,
+          order: [['dateDemande', 'DESC']],
+          include: includeDemande,
+        }) as any
+      : null;
+
+    if (demande) {
+      const utilisateur = demande.utilisateur;
+      const parcours = demande.parcoursChoisis?.[0]?.parcours;
+      return {
+        etablissement,
+        etudiants: [{
+          nom: utilisateur?.nom || '',
+          prenom: utilisateur?.prenoms || '',
+          matricule: demande.matriculeEtudiant || demande.matricule || utilisateur?.identifiant || '',
+          dateNaissance: formatDate(utilisateur?.apprenant?.dateNaissance),
+          filiere: parcours?.titre || '',
+          classe: parcours?.niveauEtude?.libelle || '',
+          anneeAcademique: demande.session?.anneeAcademique?.libelle || '',
+        }],
+      };
+    }
+    if (params.sourceId) return { etablissement, etudiants: [] };
+  }
+
   const where: any = {};
   if (params.cursusApprenantId) where.id = params.cursusApprenantId;
+  else if (params.etudiantId) where.utilisateurId = params.etudiantId;
+  else if (params.sourceId) where.id = params.sourceId;
+  if (Object.keys(where).length === 0) return { etablissement, etudiants: [] };
 
   const cursus = await CursusApprenant.findOne({
     where,
     include: [
-      { association: 'utilisateur' },
+      { association: 'utilisateur', include: [{ association: 'apprenant' }] },
       { association: 'classe' },
       { association: 'parcours' },
       { association: 'anneeAcademique' },
     ]
   });
 
+  if (!cursus) return { etablissement, etudiants: [] };
+
   const user = cursus?.utilisateur as any;
+  const apprenant = user?.apprenant;
   const parcours = (cursus as any)?.parcours;
+  let creditsValides = '';
+  let creditsTotaux = '';
+  if (params.typeCode === 'ADM020') {
+    const academicData = await resolveReleveNotes({
+      ...params,
+      cursusApprenantId: Number((cursus as any).id),
+      semestre: undefined,
+    });
+    creditsValides = academicData.etudiants[0]?.creditsValides ?? '';
+    creditsTotaux = academicData.etudiants[0]?.creditsTotal ?? '';
+  }
   const etudiants = [{
     nom: user?.nom || '',
     prenom: user?.prenoms || '',
     matricule: user?.identifiant || '',
+    dateNaissance: formatDate(apprenant?.dateNaissance),
     filiere: parcours?.titre || '',
     typeParcours: parcours?.type || '',
     option: (parcours as any)?.option || '',
     diplomeVise: parcours?.type === 'LICENCE' ? 'Licence' : parcours?.type === 'MASTER' ? 'Master' : parcours?.type || '',
-    creditsValides: '',
-    creditsTotaux: '',
+    creditsValides,
+    creditsTotaux,
     classe: (cursus as any)?.classe?.libelle || '',
     anneeAcademique: (cursus as any)?.anneeAcademique?.libelle || '',
   }];
 
-  return { etablissement, etudiants };
+  const titresAttestation: Record<string, string> = {
+    SCO001: 'Attestation de scolarité',
+    SCO002: 'Attestation de fréquentation',
+    SCO003: 'Dossier étudiant',
+    INS003: "Certificat d'inscription",
+    INS005: "Attestation d'inscription",
+    CER001: 'Certificat',
+    CER002: 'Certificat',
+    CER003: 'Certificat',
+    CER004: 'Certificat',
+    CER005: 'Certificat',
+  };
+  return {
+    etablissement,
+    etudiants,
+    titreDocument: titresAttestation[params.typeCode] || 'Attestation',
+  };
 }
 
 async function resolveDiplome(params: GenerateParams): Promise<ResolvedData> {
@@ -451,6 +531,22 @@ async function resolveDecision(params: GenerateParams): Promise<ResolvedData> {
   return resolveDefault();
 }
 
+function normalizeApiDocumentText(value: unknown): string {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+}
+
+function getApiSemesterGroup(semester: number): string | null {
+  if (semester >= 1 && semester <= 2) return 'relevesSem12'
+  if (semester >= 3 && semester <= 4) return 'relevesSem34'
+  if (semester >= 5 && semester <= 6) return 'relevesSem56'
+  if (semester >= 7 && semester <= 8) return 'relevesSem78'
+  if (semester >= 9 && semester <= 10) return 'relevesSem910'
+  return null
+}
+
 async function resolveAutorisationProvisoire(params: GenerateParams): Promise<ResolvedData> {
   const etablissement = await getEtablissementInfo();
   let demandeId = (params as any).demandeInscriptionId || (params as any).demandeId;
@@ -473,8 +569,12 @@ async function resolveAutorisationProvisoire(params: GenerateParams): Promise<Re
 
   const includeRelations = [
     { association: 'utilisateur', include: [{ association: 'apprenant' }] },
-    { association: 'parcoursChoisis', include: [{ association: 'parcours' }] },
+    { association: 'parcoursChoisis', include: [{
+      association: 'parcours',
+      include: [{ association: 'niveauEtude' }],
+    }] },
     { association: 'session', include: [{ association: 'anneeAcademique' }] },
+    { association: 'dossiersDemande', include: [{ association: 'dossierInscription' }] },
   ];
 
   let demande: any = null;
@@ -518,6 +618,56 @@ async function resolveAutorisationProvisoire(params: GenerateParams): Promise<Re
   const parcoursChoisi = demande.parcoursChoisis?.[0];
   const parcours = parcoursChoisi?.parcours;
   const anneeAcademique = (demande.session as any)?.anneeAcademique;
+  const uploadedDocuments = (demande.dossiersDemande || [])
+    .filter((document: any) => document.nomFichier && !document.correctionDemandee)
+    .map((document: any) => ({
+      text: normalizeApiDocumentText([
+        document.dossierInscription?.titre,
+        document.nomFichier,
+      ].filter(Boolean).join(' ')),
+    }))
+  const transcriptDocuments = uploadedDocuments.filter(({ text }: { text: string }) =>
+    /\b(releve|notes?)\b/.test(text))
+  const hasDiplomaDocument = (pattern: RegExp): boolean =>
+    uploadedDocuments.some(({ text }: { text: string }) =>
+      !/\b(releve|notes?)\b/.test(text) && pattern.test(text))
+  const transcriptSemesters = new Set<string>()
+
+  for (const { text } of transcriptDocuments) {
+    const semesterMatches = [...text.matchAll(/\b(?:sem(?:estre)?|s)\s*(10|[1-9])\b/g)]
+    if (semesterMatches.length > 0) {
+      for (const match of semesterMatches) {
+        const group = getApiSemesterGroup(Number(match[1]))
+        if (group) transcriptSemesters.add(group)
+      }
+      continue
+    }
+
+    const licenceMatch = text.match(/\b(?:licence|lic|l)\s*([1-3])\b/)
+    const masterMatch = text.match(/\b(?:master|mas|m)\s*([1-2])\b/)
+    const level = Number(licenceMatch?.[1] || masterMatch?.[1])
+    const firstSemester = licenceMatch ? (level - 1) * 2 + 1 : level * 2 + 5
+    const firstGroup = getApiSemesterGroup(firstSemester)
+    const secondGroup = getApiSemesterGroup(firstSemester + 1)
+    if (firstGroup) transcriptSemesters.add(firstGroup)
+    if (secondGroup) transcriptSemesters.add(secondGroup)
+  }
+
+  const niveauParcours = normalizeApiDocumentText(parcours?.niveauEtude?.libelle)
+  const niveauLicence = niveauParcours.match(/\b(?:licence|lic|l)\s*([1-3])\b/)
+  const niveauMaster = niveauParcours.match(/\b(?:master|mas|m)\s*([1-2])\b/)
+  const niveau = Number(niveauLicence?.[1] || niveauMaster?.[1])
+  const diplomesConnus = [
+    /\bbac\b|\bbaccalaureat\b/,
+    /\bdts\b|\bdut\b/,
+    /\bbts\b/,
+    /\blicence\b/,
+    /\bmaitrise\b/,
+  ]
+  const hasOtherDiploma = uploadedDocuments.some(({ text }: { text: string }) =>
+    !/\b(releve|notes?)\b/.test(text)
+    && /\b(diplome|certificat)\b/.test(text)
+    && !diplomesConnus.some((pattern) => pattern.test(text)))
 
   // Récupérer les UE prescrites (si l'étudiant a une prescription du comité)
   let uesPrescrites: any[] = [];
@@ -566,6 +716,29 @@ async function resolveAutorisationProvisoire(params: GenerateParams): Promise<Re
     dateNaissance: apprenant?.dateNaissance ? new Date(apprenant.dateNaissance).toLocaleDateString('fr-FR') : '',
     lieuNaissance: apprenant?.lieuNaissance || '',
     nationalite: apprenant?.nationalite || '',
+    diplomeBac: Boolean(
+      apprenant?.serieBac
+      || apprenant?.anneeObtentionBac
+      || hasDiplomaDocument(/\bbac\b|\bbaccalaureat\b/),
+    ),
+    diplomeDtsDut: hasDiplomaDocument(/\bdts\b|\bdut\b/),
+    diplomeBts: hasDiplomaDocument(/\bbts\b/),
+    diplomeLicence: hasDiplomaDocument(/\blicence\b/),
+    diplomeMaitrise: hasDiplomaDocument(/\bmaitrise\b/),
+    diplomeAutres: hasOtherDiploma,
+    specialiteDiplome: apprenant?.serieBac || '',
+    specialiteReleves: '',
+    specialiteParcours: parcours?.titre || '',
+    relevesSem12: transcriptSemesters.has('relevesSem12'),
+    relevesSem34: transcriptSemesters.has('relevesSem34'),
+    relevesSem56: transcriptSemesters.has('relevesSem56'),
+    relevesSem78: transcriptSemesters.has('relevesSem78'),
+    relevesSem910: transcriptSemesters.has('relevesSem910'),
+    parcoursLicence12: Boolean(niveauLicence && niveau === 1),
+    parcoursLicence34: Boolean(niveauLicence && niveau === 2),
+    parcoursLicence56: Boolean(niveauLicence && niveau === 3),
+    parcoursMaster12: Boolean(niveauMaster && niveau === 1),
+    parcoursMaster34: Boolean(niveauMaster && niveau === 2),
     filiere: parcours?.titre || '',
     niveau: parcours?.niveauEtude?.libelle || '',
     diplomeVise: parcours?.type === 'LICENCE' ? 'Licence' : parcours?.type === 'MASTER' ? 'Master' : parcours?.type || '',
@@ -1479,7 +1652,7 @@ async function resolveDocumentRh(params: GenerateParams): Promise<ResolvedData> 
 
 register(['NOT001', 'NOT002', 'NOT003', 'NOT004', 'NOT005', 'NOT006'], resolveReleveNotes);
 register(['BUL001', 'BUL002', 'BUL003'], resolveBulletin);
-register(['SCO001', 'SCO002', 'INS003', 'INS005', 'CER001', 'CER002', 'CER003', 'CER004', 'CER005', 'PRE001', 'ADM020'], resolveAttestation);
+register(['SCO001', 'SCO002', 'INS003', 'INS004', 'INS005', 'CER001', 'CER002', 'CER003', 'CER004', 'CER005', 'PRE001', 'ADM020'], resolveAttestation);
 register(['DIP001', 'DIP002', 'DIP003', 'DIP004'], resolveDiplome);
 register(['DEL001', 'DEL002', 'DEL003', 'DEL004', 'DEL005', 'DEL006', 'DEL007', 'DEL008'], resolvePvDeliberation);
 register(['ADM009', 'ADM014', 'ADM015', 'DSC005', 'DSC006', 'RH005'], resolveDecision);

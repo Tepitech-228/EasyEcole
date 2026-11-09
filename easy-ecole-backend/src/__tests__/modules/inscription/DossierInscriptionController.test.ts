@@ -46,7 +46,7 @@ jest.mock('../../../modules/auth/models/Utilisateur', () => ({
 
 jest.mock('../../../modules/inscription/services/EtudiantUploadStorageService', () => ({
   EtudiantUploadStorageService: {
-    store: jest.fn(() => 'public/dossiers/2026-2027/Site/LICENCE/L1/Informatique/Etudiants/Etudiant_Test_123/Dossiers/INSCRIPTION/DEMANDE_1/PIECES/2_Diplome/Version_01/document.pdf'),
+    store: jest.fn(() => 'storage/documents/uploads/2026-2027/Site/LICENCE/L1/Informatique/Etudiants/Etudiant_Test_123/Dossiers/INSCRIPTION/DEMANDE_1/PIECES/2_Diplome/Version_01/document.pdf'),
     resolveTreeFolders: jest.fn().mockResolvedValue(['2026-2027', 'Site', 'LICENCE', 'L1', 'Informatique']),
     removeTemporaryUpload: jest.fn(),
     removeStoredFile: jest.fn(),
@@ -269,7 +269,7 @@ describe('DossierInscriptionController.uploadDossierInscription', () => {
     await DossierInscriptionController.uploadDossierInscription(req, res)
 
     expect(DemandeInscriptionDossier.create).toHaveBeenCalledWith({
-      nomFichier: expect.stringContaining('public/dossiers/'),
+      nomFichier: expect.stringContaining('documents/uploads/'),
       dossierId: '2',
       demandeId: '1',
       correctionDemandee: false,
@@ -474,7 +474,7 @@ describe('DossierInscriptionController.uploadDossierInscription â€” reprise aprÃ
 
     expect(res.status).toHaveBeenCalledWith(201)
     expect(DemandeInscriptionDossier.create).toHaveBeenCalledWith({
-      nomFichier: expect.stringContaining('public/dossiers/'),
+      nomFichier: expect.stringContaining('documents/uploads/'),
       dossierId: '2',
       demandeId: '1',
       correctionDemandee: false,

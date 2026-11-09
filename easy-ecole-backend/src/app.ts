@@ -36,6 +36,7 @@ import HikvisionPushController from './modules/inscription/controllers/Hikvision
 import PointageRealtimeService from './modules/inscription/services/PointageRealtimeService'
 import HikvisionEnrollmentService from './modules/inscription/services/HikvisionEnrollmentService'
 import HikvisionAlertStreamService from './modules/inscription/services/HikvisionAlertStreamService'
+import { logStorageMountStatus } from './core/services/DocumentStorageService'
 
 // ── Dernière barrière de diagnostic (cf. audit erreurs silencieuses §28) ──
 // Ces handlers ne remplacent PAS la gestion locale des erreurs : ils garantissent
@@ -380,6 +381,7 @@ if (hikvisionCallbackHost && hikvisionCallbackHost !== hostname) {
   })
 }
 
+logStorageMountStatus()
 server.listen(port, hostname)
 server.on("listening", async () => {
     const protocol = server instanceof https.Server ? 'https' : 'http'

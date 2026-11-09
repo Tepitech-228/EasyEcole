@@ -49,7 +49,7 @@ export class TypesDocumentsPageComponent implements OnInit {
     this.editingId = type.id || null;
     this.form = {
       ...type,
-      frais: Number(type.frais) || 0,
+      frais: 0,
       piecesRequises: (type.piecesRequises || []).map(piece => ({ ...piece }))
     };
     this.formOpen = true;
@@ -67,7 +67,6 @@ export class TypesDocumentsPageComponent implements OnInit {
       return;
     }
 
-    this.saving = true;
     this.errorMessage = '';
     this.successMessage = '';
     const pieces = (this.form.piecesRequises || []).map((piece, index) => {
@@ -86,14 +85,18 @@ export class TypesDocumentsPageComponent implements OnInit {
       this.errorMessage = 'Les libellés des pièces doivent être uniques.';
       return;
     }
-    const payload: TypeDocument = {
-      libelle,
-      frais: Number(this.form.frais) || 0,
-      piecesRequises: pieces
-    };
+    this.saving = true;
     const request$ = this.editingId
-      ? this.typeDocumentService.update({ ...payload, id: this.editingId })
-      : this.typeDocumentService.create(payload);
+      ? this.typeDocumentService.update({
+        id: this.editingId,
+        libelle,
+        piecesRequises: pieces
+      })
+      : this.typeDocumentService.create({
+        libelle,
+        frais: 0,
+        piecesRequises: pieces
+      });
 
     request$.subscribe({
       next: () => {
@@ -120,10 +123,6 @@ export class TypesDocumentsPageComponent implements OnInit {
         this.errorMessage = err?.error?.message || 'Suppression impossible.';
       }
     });
-  }
-
-  formatFrais(frais: number | undefined): string {
-    return `${(Number(frais) || 0).toLocaleString('fr-FR')} FCFA`;
   }
 
   ajouterPieceRequise(): void {

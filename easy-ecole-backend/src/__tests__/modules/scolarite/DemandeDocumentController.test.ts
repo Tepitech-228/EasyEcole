@@ -1,4 +1,5 @@
 import { Op } from 'sequelize'
+import * as path from 'path'
 import { mockRequest, mockResponse } from '../../helpers/express-mocks'
 import DemandeDocumentController from '../../../modules/scolarite/controllers/DemandeDocumentController'
 
@@ -39,15 +40,6 @@ jest.mock('../../../core/helpers/DocumentPDFGenerator', () => ({
 jest.mock('../../../core/services/ArchiveGedService', () => ({
   ArchiveGedService: { archiverDocumentScolarite: jest.fn(), archiverDocumentInscription: jest.fn() },
 }))
-jest.mock('../../../modules/scolarite/services/DemandeDocumentPaiementService', () => ({
-  __esModule: true,
-  default: {
-    trouverBordereauDemande: jest.fn(),
-    creerBordereauPourDemande: jest.fn(),
-    confirmerPaiement: jest.fn(),
-    confirmerPaiementAuto: jest.fn(),
-  },
-}))
 jest.mock('../../../modules/scolarite/services/SecretariatWorkflowService', () => ({
   SecretariatWorkflowService: {
     construireCoordonneesEtudiant: jest.fn(),
@@ -74,6 +66,37 @@ const { Utilisateur } = require('../../../modules/auth/models/Utilisateur')
 beforeEach(() => jest.clearAllMocks())
 
 describe('DemandeDocumentController - contrôle d\'accès', () => {
+  it('permet au propriétaire de télécharger un document déjà remis', async () => {
+    DemandeDocument.findByPk.mockResolvedValue({
+      id: 500,
+      etudiantId: 42,
+      statut: 'remise',
+      fichierPDF: path.resolve(__dirname, '../../../../package.json'),
+    })
+    const res = mockResponse() as any
+    res.type = jest.fn().mockReturnValue(res)
+    res.sendFile = jest.fn().mockReturnValue(res)
+
+    await DemandeDocumentController.telechargerDocumentPret(
+      mockRequest({ params: { id: '500' }, utilisateurRole: 'apprenant', utilisateurId: 42 } as any),
+      res
+    )
+
+    expect(res.type).toHaveBeenCalledWith('application/pdf')
+    expect(res.sendFile).toHaveBeenCalledWith(path.resolve(__dirname, '../../../../package.json'))
+  })
+
+  it('désactive les anciens paiements après création', async () => {
+    const res = mockResponse()
+
+    await DemandeDocumentController.paiementApresCreationDesactive(mockRequest(), res)
+
+    expect(res.status).toHaveBeenCalledWith(410)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      code: 'PAYMENT_MUST_PRECEDE_REQUEST'
+    }))
+  })
+
   it('refuse la liste complète des demandes à un parent', async () => {
     const res = mockResponse()
 

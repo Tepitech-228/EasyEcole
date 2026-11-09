@@ -24,6 +24,7 @@ export interface DemandeDocument {
   niveauEtudeId?: string | number;
   classeId?: string | number;
   anneeAcademiqueId?: string | number;
+  semestre?: string;
   etudiant?: any;
   typeDocument?: TypeDocument;
   documentDelivre?: DocumentDelivre;

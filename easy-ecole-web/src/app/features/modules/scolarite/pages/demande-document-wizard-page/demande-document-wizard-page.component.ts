@@ -83,6 +83,10 @@ export class DemandeDocumentWizardPageComponent extends BaseComponentClass imple
     return this.demande?.pieces?.find(piece => piece.cle === cle);
   }
 
+  get estBordereauAutomatique(): boolean {
+    return Number(this.demande?.montant) > 0 && !!this.demande?.recuCaisseId;
+  }
+
   chargerDemande(id: string): void {
     this.loading = true;
     this.errorMessage = '';
@@ -100,6 +104,7 @@ export class DemandeDocumentWizardPageComponent extends BaseComponentClass imple
   }
 
   surSelectionFichier(cle: string, event: Event): void {
+    if (cle === 'bordereau' && this.estBordereauAutomatique) return;
     const input = event.target as HTMLInputElement;
     const fichier = input.files?.[0];
     if (!fichier || !this.id) return;

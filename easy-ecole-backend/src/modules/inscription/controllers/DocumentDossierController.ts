@@ -1,6 +1,7 @@
 import { Request, Response } from "express"
 import path from "path"
 import fs from "fs"
+import { getOriginRoot } from "../../../core/services/DocumentStorageService";
 
 import { DemandeInscriptionDossier } from "../models/DemandeInscriptionDossier"
 import { DemandeInscription } from "../models/DemandeInscription"
@@ -25,9 +26,8 @@ const ROLES_INTERNES_DOSSIERS: string[] = [
  *
  * Le champ nomFichier a contenu, selon l'époque :
  *   - un nom de fichier plat (ex : 2293...pdf) déposé dans public/inscription/dossiers/
- *   - un chemin sous public/dossiers/<année>/<site>/<parcours>/<niveau>/<filière>/Etudiants/<nom_prenoms_matricule>/
- *   - un chemin relatif complet vers la nouvelle arborescence par dossier étudiant
- *     (ex : public/dossiers/2025-2026/MASTER/ECO-M1-A/Master 1/88354938/dossiers/2293...pdf)
+ *   - un chemin sous documents/uploads/<année>/<site>/<parcours>/<niveau>/<filière>/Etudiants/<nom_prenoms_matricule>/
+ *   - un chemin historique sous public/dossiers/ (les originaux sont conservés)
  * Les deux formes sont résolues ici, même logique que BordereauController.downloadBordereau.
  */
 export default class DocumentDossierController {
@@ -64,15 +64,17 @@ export default class DocumentDossierController {
             }
 
             const publicRoot = path.resolve(process.cwd(), 'public')
-            const estDansPublic = (candidat: string): boolean =>
+            const studentUploadsRoot = getOriginRoot('uploads')
+            const estDansRacineAutorisee = (candidat: string): boolean =>
                 candidat.startsWith(`${publicRoot}${path.sep}`)
+                || candidat.startsWith(`${studentUploadsRoot}${path.sep}`)
 
             // 1) chemin relatif complet stocké en base (nouvelle structure), 2) ancien dépôt plat
             let filePath = path.resolve(process.cwd(), doc.nomFichier)
-            if (!estDansPublic(filePath) || !fs.existsSync(filePath)) {
+            if (!estDansRacineAutorisee(filePath) || !fs.existsSync(filePath)) {
                 filePath = path.resolve(process.cwd(), 'public/inscription/dossiers', path.basename(doc.nomFichier))
             }
-            if (!estDansPublic(filePath) || !fs.existsSync(filePath)) {
+            if (!estDansRacineAutorisee(filePath) || !fs.existsSync(filePath)) {
                 res.status(404).json({ success: false, message: "Fichier introuvable sur le serveur" })
                 return
             }

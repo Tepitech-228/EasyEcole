@@ -15,6 +15,7 @@ export class DocGenDocument extends Model<InferAttributes<DocGenDocument>, Infer
   declare metadata: CreationOptional<string>
   declare sourceType: CreationOptional<string>
   declare sourceId: CreationOptional<number>
+  declare etablissementId: CreationOptional<number | null>
   declare generatedById: CreationOptional<number>
   declare version: CreationOptional<number>
   declare mailEnvoye: CreationOptional<boolean>
@@ -64,6 +65,10 @@ DocGenDocument.init({
     allowNull: true
   },
   sourceId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
+  },
+  etablissementId: {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: true
   },

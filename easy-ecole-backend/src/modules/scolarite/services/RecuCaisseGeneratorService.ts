@@ -21,6 +21,15 @@ const STORAGE_DIR = 'storage/recus-caisse';
  * - Design : bordure bleue #2b6cb0, en-tête ESA, tableau de détails, signature comptable
  */
 export class RecuCaisseGeneratorService {
+  private static escapeHtml(value: string): string {
+    return value.replace(/[&<>"']/g, character => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[character] || character));
+  }
 
   /**
    * Génère les deux exemplaires du RCU (original + copie compta).
@@ -38,26 +47,31 @@ export class RecuCaisseGeneratorService {
             { model: Utilisateur, as: 'etudiant' }
           ]
         },
+        { model: TypeDocument, as: 'typeDocument' },
+        { model: Utilisateur, as: 'etudiant' },
         { model: Utilisateur, as: 'caissier' }
       ]
     });
 
-    if (!recuComplet || !recuComplet.demande) {
+    if (!recuComplet) {
       throw new Error(`Reçu ${recu.id} introuvable ou associations manquantes`);
     }
 
-    const demande = recuComplet.demande;
-    const etudiant = demande.etudiant;
-    const typeDocument = demande.typeDocument;
+    const demande = recuComplet.demandeDocument || recuComplet.demande;
+    const etudiant = recuComplet.etudiant || demande?.etudiant;
+    const typeDocument = recuComplet.typeDocument || demande?.typeDocument;
+    if (!etudiant || !typeDocument) {
+      throw new Error(`Les informations de l'étudiant ou du document sont absentes du reçu ${recu.id}`);
+    }
     const caissier = recuComplet.caissier;
 
     const montantLettres = SecretariatService.nombreEnLettres(recuComplet.montant);
 
     // Informations de l'étudiant
     const nomComplet = `${etudiant?.nom || ''} ${etudiant?.prenoms || ''}`.trim() || 'N/A';
-    const matricule = (etudiant as any)?.matricule || 'N/A';
-    const filiere = (demande as any).classeId ? `Classe #${demande.classeId}` : 'N/A';
-    const anneeAcademique = (demande as any).anneeAcademiqueId ? `Année #${demande.anneeAcademiqueId}` : 'N/A';
+    const matricule = (etudiant as any)?.matricule || etudiant.identifiant || 'N/A';
+    const filiere = demande?.classeId ? `Classe #${demande.classeId}` : 'N/A';
+    const anneeAcademique = demande?.anneeAcademiqueId ? `Année #${demande.anneeAcademiqueId}` : 'N/A';
 
     const datePaiement = new Date(recuComplet.datePaiement).toLocaleDateString('fr-FR', {
       day: '2-digit', month: '2-digit', year: 'numeric'
@@ -74,11 +88,11 @@ export class RecuCaisseGeneratorService {
       filiere,
       anneeAcademique,
       modePaiement: modePaiementLibelle,
-      referencePaiement: (demande as any).referencePaiement || '—',
+      referencePaiement: recuComplet.referencePaiement || (demande as any)?.referencePaiement || '—',
       designation: typeDocument?.libelle || 'Document',
       montant: recuComplet.montant,
       montantLettres,
-      caissierNom: caissier ? `${caissier.nom || ''} ${caissier.prenoms || ''}`.trim() : ''
+      caissierNom: caissier ? `${caissier.nom || ''} ${caissier.prenoms || ''}`.trim() : 'Service recouvrement'
     });
 
     // Générer le PDF avec Puppeteer (sans header/footer ESA car le reçu a son propre design)
@@ -92,7 +106,7 @@ export class RecuCaisseGeneratorService {
     // Annee academique du reçu : libelle de la demande si disponible, sinon
     // annee deduite de la date de paiement.
     const academicYear =
-      (demande as any).anneeAcademique?.libelle ||
+      (demande as any)?.anneeAcademique?.libelle ||
       currentAcademicYear(new Date(recuComplet.datePaiement));
 
     // Sauvegarder l'original dans documents/created/<annee>/finances/recus-caisse
@@ -141,13 +155,23 @@ export class RecuCaisseGeneratorService {
     caissierNom: string;
   }): string {
     const montantFormate = data.montant.toLocaleString('fr-FR');
+    const numero = this.escapeHtml(data.numero);
+    const matricule = this.escapeHtml(data.matricule);
+    const nomComplet = this.escapeHtml(data.nomComplet);
+    const filiere = this.escapeHtml(data.filiere);
+    const anneeAcademique = this.escapeHtml(data.anneeAcademique);
+    const modePaiement = this.escapeHtml(data.modePaiement);
+    const referencePaiement = this.escapeHtml(data.referencePaiement);
+    const designation = this.escapeHtml(data.designation);
+    const montantLettres = this.escapeHtml(data.montantLettres);
+    const caissierNom = this.escapeHtml(data.caissierNom);
 
     return `
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Reçu de Caisse Unique (RCU) - ${data.numero}</title>
+    <title>Reçu de Caisse Unique (RCU) - ${numero}</title>
     <style>
         @page {
             size: A4 portrait;
@@ -396,7 +420,7 @@ export class RecuCaisseGeneratorService {
                     <td class="receipt-title-box">
                         <div class="receipt-title">REÇU DE CAISSE</div>
                         <div class="receipt-meta">
-                            N° Reçu : <span class="meta-highlight">${data.numero}</span><br>
+                            N° Reçu : <span class="meta-highlight">${numero}</span><br>
                             Date : <strong>${data.datePaiement}</strong>
                         </div>
                     </td>
@@ -407,21 +431,21 @@ export class RecuCaisseGeneratorService {
         <table class="info-grid">
             <tr>
                 <td class="label">Matricule :</td>
-                <td class="value">${data.matricule}</td>
+                <td class="value">${matricule}</td>
                 <td class="label">Étudiant(e) :</td>
-                <td class="value">${data.nomComplet}</td>
+                <td class="value">${nomComplet}</td>
             </tr>
             <tr>
                 <td class="label">Filière / Niveau :</td>
-                <td class="value">${data.filiere}</td>
+                <td class="value">${filiere}</td>
                 <td class="label">Année Acad. :</td>
-                <td class="value">${data.anneeAcademique}</td>
+                <td class="value">${anneeAcademique}</td>
             </tr>
             <tr>
                 <td class="label">Mode de Paiement :</td>
-                <td class="value">${data.modePaiement}</td>
+                <td class="value">${modePaiement}</td>
                 <td class="label">N° Pièce / Réf :</td>
-                <td class="value">${data.referencePaiement}</td>
+                <td class="value">${referencePaiement}</td>
             </tr>
         </table>
 
@@ -436,7 +460,7 @@ export class RecuCaisseGeneratorService {
             <tbody>
                 <tr>
                     <td>DOC-01</td>
-                    <td>${data.designation}</td>
+                    <td>${designation}</td>
                     <td class="amount">${montantFormate}</td>
                 </tr>
                 <tr class="total-row">
@@ -448,7 +472,7 @@ export class RecuCaisseGeneratorService {
 
         <div class="amount-in-words">
             <span class="label">Arrêté la présente somme à la hauteur de :</span>
-            <span class="text">${data.montantLettres} Francs CFA.</span>
+            <span class="text">${montantLettres} Francs CFA.</span>
         </div>
 
         <div class="signatures-area">
@@ -457,8 +481,8 @@ export class RecuCaisseGeneratorService {
                     <td style="width: 55%;"></td>
                     <td>
                         <div class="signature-box-single">
-                            <div class="signature-title">Le Comptable / La Caisse</div>
-                            <div class="signature-sub">${data.caissierNom || '(Nom, Cachet et Signature)'}</div>
+                            <div class="signature-title">Agent du Service Recouvrement</div>
+                            <div class="signature-sub">${caissierNom || '(Nom, Cachet et Signature)'}</div>
                         </div>
                     </td>
                 </tr>

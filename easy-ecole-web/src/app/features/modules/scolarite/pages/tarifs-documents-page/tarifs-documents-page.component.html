@@ -1,0 +1,58 @@
+<div class="page-container">
+  <app-header-title
+    title="Tarifs des documents"
+    subtitle="Définissez le montant à encaisser pour chaque type de document">
+  </app-header-title>
+
+  <app-custom-alert *ngIf="errorMessage" [show]="true" [title]="errorMessage" type="danger" [inline]="true"></app-custom-alert>
+  <app-custom-alert *ngIf="successMessage" [show]="true" [title]="successMessage" type="success" [inline]="true"></app-custom-alert>
+
+  <section class="card p-5">
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h2 class="text-lg font-semibold">Montants à encaisser</h2>
+        <p class="text-sm text-gray-500">Cette page ne modifie que les tarifs. Les demandes déjà payées conservent le montant de leur reçu.</p>
+      </div>
+      <a routerLink="/scolarite/secretariat/encaissement-documents" class="secondary-action">
+        Retour à l'encaissement
+      </a>
+    </div>
+
+    <div *ngIf="loading" class="py-8 text-center text-gray-500">Chargement des tarifs...</div>
+    <div *ngIf="!loading && tarifs.length === 0" class="py-8 text-center text-gray-500">Aucun type de document disponible.</div>
+    <div *ngIf="!loading && tarifs.length > 0" class="overflow-x-auto">
+      <table class="w-full min-w-[32rem] text-left">
+        <thead>
+          <tr class="border-b text-sm text-gray-500">
+            <th class="px-3 py-3 font-medium">Type de document</th>
+            <th class="px-3 py-3 font-medium">Tarif (FCFA)</th>
+            <th class="px-3 py-3 text-right font-medium">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let tarif of tarifs" class="border-b last:border-0">
+            <td class="px-3 py-4 font-medium text-gray-800">{{ tarif.libelle }}</td>
+            <td class="px-3 py-4">
+              <input
+                type="number"
+                min="0"
+                step="1"
+                [(ngModel)]="tarif.frais"
+                [attr.aria-label]="'Tarif pour ' + tarif.libelle"
+                class="form-input w-48">
+            </td>
+            <td class="px-3 py-4 text-right">
+              <button
+                type="button"
+                class="primary-action"
+                [disabled]="savingIds.has(tarif.id)"
+                (click)="enregistrer(tarif)">
+                {{ savingIds.has(tarif.id) ? 'Enregistrement...' : 'Enregistrer' }}
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

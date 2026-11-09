@@ -186,13 +186,13 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
     {
         label: 'Financier',
         icon: 'paid',
-        allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.APPRENANT, RolesUtilisateur.CAISSIER_BANQUE, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN, RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ESA_COMPTA],
+        allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.APPRENANT, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN, RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ESA_COMPTA],
         groups: [
             {
                 label: 'Finance',
                 icon: 'account_balance',
                 items: [
-                    { label: 'Paiements', route: '/inscription/paiements', icon: 'paid', permissionKey: 'menu.finances.paiements', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.APPRENANT, RolesUtilisateur.CAISSIER_BANQUE, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN] },
+                    { label: 'Paiements', route: '/inscription/paiements', icon: 'paid', permissionKey: 'menu.finances.paiements', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.APPRENANT, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN, RolesUtilisateur.ESA_COMPTA] },
                      { label: 'Echeances', route: '/inscription/echeances', icon: 'event', permissionKey: 'menu.finances.echeances', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.APPRENANT, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN] },
                       { label: 'Situation irrégulière', route: '/inscription/finance/irreguliers', icon: 'warning', permissionKey: 'menu.finances.impayes', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN, RolesUtilisateur.ESA_COMPTA] },
                      { label: 'Valid. bordereaux', route: '/inscription/validation-bordereaux', icon: 'task_alt', permissionKey: 'menu.finances.validation-bordereaux', allowedRoles: [RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN] },
@@ -219,7 +219,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
             {
                 label: 'Banque',
                 icon: 'account_balance',
-                allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN, RolesUtilisateur.CAISSIER_BANQUE, RolesUtilisateur.CABINET_COMPTABLE],
+                allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN, RolesUtilisateur.CABINET_COMPTABLE],
                 items: [
                     { label: 'Comptes bancaires', route: '/comptabilite/comptes-bancaires', icon: 'account_balance', permissionKey: 'menu.finances.comptes-bancaires' },
                     { label: 'Relevés bancaires', route: '/comptabilite/releves-bancaires', icon: 'receipt_long', permissionKey: 'menu.finances.releves-bancaires' },
@@ -243,7 +243,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
             {
                 label: 'Stocks',
                 icon: 'inventory_2',
-                allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN, RolesUtilisateur.CAISSIER_BANQUE],
+                allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN],
                 items: [
                     { label: 'Articles', route: '/stocks/articles', icon: 'inventory_2', permissionKey: 'menu.stocks.articles' },
                     { label: 'Catégories', route: '/stocks/categories', icon: 'category', permissionKey: 'menu.stocks.categories', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
@@ -335,7 +335,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
     {
         label: 'Communication & Collaboration',
         icon: 'campaign',
-        allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN, RolesUtilisateur.COMITE_ORIENTATION, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.CAISSIER_BANQUE, RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.SUPERVISEUR_GENERAL],
+        allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN, RolesUtilisateur.COMITE_ORIENTATION, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.SUPERVISEUR_GENERAL],
         groups: [
             {
                 label: 'Communication',
@@ -477,8 +477,8 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                 label: 'Parametres',
                 icon: 'settings',
                 items: [
-                    { label: 'Mon profil', route: '/parametres/profil', icon: 'badge', permissionKey: 'menu.parametres.mon-profil', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN, RolesUtilisateur.COMITE_ORIENTATION, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.CAISSIER_BANQUE, RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.PARENT] },
-                    { label: 'Mon compte', route: '/parametres/compte', icon: 'account_circle', permissionKey: 'menu.parametres.mon-compte', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN, RolesUtilisateur.COMITE_ORIENTATION, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.CAISSIER_BANQUE, RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.PARENT] },
+                    { label: 'Mon profil', route: '/parametres/profil', icon: 'badge', permissionKey: 'menu.parametres.mon-profil', allowedRoles: Object.values(RolesUtilisateur), roleRestricted: true },
+                    { label: 'Mon compte', route: '/parametres/compte', icon: 'account_circle', permissionKey: 'menu.parametres.mon-compte', allowedRoles: Object.values(RolesUtilisateur), roleRestricted: true },
                     { label: 'Ecole', route: '/parametres/ecole', icon: 'school', permissionKey: 'menu.parametres.configuration.ecole', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Annee scol.', route: '/parametres/annees-scolaires', icon: 'calendar_today', permissionKey: 'menu.parametres.configuration.annees-scolaires', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Frais', route: '/parametres/frais', icon: 'payments', permissionKey: 'menu.parametres.configuration.frais', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
@@ -491,7 +491,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
     {
         label: 'Gestion documentaire',
         icon: 'description',
-        allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN, RolesUtilisateur.ENSEIGNANT],
+        allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.SECRETAIRE],
         groups: [
             {
                 label: 'Configuration',
@@ -507,7 +507,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                 label: 'Documents',
                 icon: 'description',
                 items: [
-                    { label: 'Tous les documents', route: '/docgen/documents', icon: 'description', permissionKey: 'menu.docgen.documents', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
+                    { label: 'Tous les documents', route: '/docgen/documents', icon: 'description', permissionKey: 'menu.docgen.documents', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN, RolesUtilisateur.SECRETAIRE] },
                     { label: 'Générer', route: '/docgen/generer', icon: 'add_circle', permissionKey: 'menu.docgen.generer', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Diplomes', route: '/scolarite/diplomes', icon: 'workspace_premium', permissionKey: 'menu.scolarite.diplomes', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                 ]
@@ -556,9 +556,6 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                 icon: 'dashboard',
                 items: [
                     { label: 'Tableau de bord', route: '/scolarite/secretariat/dashboard', icon: 'dashboard', permissionKey: 'menu.secretariat.dashboard', allowedRoles: [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
-                    { label: 'Encaissement', route: '/scolarite/secretariat/encaissement', icon: 'payments', permissionKey: 'menu.secretariat.encaissement', allowedRoles: [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
-                    { label: 'Caisse', route: '/scolarite/secretariat/caisse', icon: 'payments', permissionKey: 'menu.secretariat.caisse', allowedRoles: [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
-                    { label: 'Cloture caisse', route: '/scolarite/secretariat/cloture-caisse', icon: 'security', permissionKey: 'menu.secretariat.cloture', allowedRoles: [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                 ]
             },
             {
@@ -566,15 +563,28 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                 icon: 'description',
                 items: [
                     { label: 'Demandes', route: '/scolarite/secretariat/demandes', icon: 'receipt_long', permissionKey: 'menu.secretariat.demandes', allowedRoles: [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'File d’impression', route: '/scolarite/secretariat/file-impression', icon: 'print', allowedRoles: [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.ADMIN] },
                     { label: 'Autorisations provisoires', route: '/scolarite/secretariat/autorisations-provisoires', icon: 'verified', permissionKey: 'menu.secretariat.autorisations-provisoires', allowedRoles: [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Types de documents', route: '/scolarite/secretariat/types-documents', icon: 'category', permissionKey: 'menu.secretariat.types-documents', allowedRoles: [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                 ]
             },
+        ]
+    },
+    {
+        label: 'Recouvrement',
+        icon: 'payments',
+        allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN],
+        groups: [
             {
-                label: 'Rapports',
-                icon: 'assessment',
+                label: 'Caisse',
+                icon: 'payments',
                 items: [
-                    { label: 'Journal caisse', route: '/scolarite/secretariat/journal-caisse', icon: 'book', permissionKey: 'menu.secretariat.journal', allowedRoles: [RolesUtilisateur.SECRETAIRE, RolesUtilisateur.PERSONNEL_ADMINISTRATIF, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Encaissement documents', route: '/scolarite/secretariat/encaissement-documents', icon: 'receipt_long', permissionKey: 'menu.recouvrement.encaissement-documents', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN], roleRestricted: true },
+                    { label: 'Caisse', route: '/scolarite/secretariat/caisse', icon: 'payments', permissionKey: 'menu.recouvrement.caisse', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN], roleRestricted: true },
+                    { label: 'Clôture caisse', route: '/scolarite/secretariat/cloture-caisse', icon: 'security', permissionKey: 'menu.recouvrement.cloture', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN], roleRestricted: true },
+                    { label: 'Tarifs des documents', route: '/scolarite/secretariat/tarifs-documents', icon: 'price_change', permissionKey: 'menu.recouvrement.tarifs-documents', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN], roleRestricted: true },
+                    { label: 'Journal caisse', route: '/scolarite/secretariat/journal-caisse', icon: 'book', permissionKey: 'menu.recouvrement.journal', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN], roleRestricted: true },
+                    { label: 'Paiements rattrapage', route: '/inscription/rattrapage/paiements', icon: 'fact_check', permissionKey: 'menu.recouvrement.caisse', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN], roleRestricted: true },
                 ]
             },
         ]

@@ -31,6 +31,7 @@ export const REF_ROLES: RefRole[] = [
   // jamais une page d'accueil correspondant à son métier.
   { nom: 'Comité', description: 'Comité d\'orientation : préinscriptions, validation et bourses' },
   { nom: 'Superviseur Général', description: 'Pilotage pédagogique transversal de l’établissement' },
+  { nom: 'Secrétaire', description: 'Consultation et impression des documents de son établissement' },
 ]
 
 export const REF_PERMISSIONS: RefPermission[] = [
@@ -742,4 +743,5 @@ export const REF_ROLE_PERMISSIONS: RefRolePermission[] = [
   { roleNom: 'Superviseur Général', permissionKey: 'action.evaluation.deliberation.charger-resultats' },
   { roleNom: 'Superviseur Général', permissionKey: 'action.evaluation.rattrapage.assigner' },
   { roleNom: 'Superviseur Général', permissionKey: 'action.evaluation.rattrapage.notifier' },
+  { roleNom: 'Secrétaire', permissionKey: 'menu.docgen.documents' },
 ]

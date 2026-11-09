@@ -14,8 +14,9 @@
 #   /mnt/easyecole-storage -> /app/backups
 #     mysql/  ged/  files/  tmp/                        sauvegardes et archives
 #
+#   Les nouveaux documents étudiants sont classes sous uploads/<annee>/<site>/...
 #   Les anciens chemins (public/, uploads/pv, storage/) restent montes sous
-#   documents/{uploads,created}/_legacy/ pendant la migration du code.
+#   documents/{uploads,created}/_legacy/ pour compatibilite et migration.
 #
 # INITIALISATION AUTOMATIQUE DU STOCKAGE :
 #   le service one-shot `init-storage` execute scripts/init-document-storage.sh
@@ -169,7 +170,8 @@ services:
       # Sauvegardes : dumps MySQL, archives de fichiers, sauvegardes GED.
       - ${BACKUP_STORAGE_HOST_PATH:-/mnt/easyecole-storage}:/app/backups
       # --- Compatibilite avec les chemins historiques du code -------------
-      # public/ (multer, GED, dossiers, bordereaux...)
+      # Compatibilite : anciens fichiers et uploads temporaires. Les nouveaux
+      # dossiers étudiants sont stockes sous /app/documents/uploads.
       - ${PUBLIC_HOST_PATH:-/mnt/easyecole-documents/uploads/_legacy/public}:/app/public
       # PV de deliberation (GenerateurPVService)
       - ${UPLOADS_HOST_PATH:-/mnt/easyecole-documents/created/_legacy/pv}:/app/uploads

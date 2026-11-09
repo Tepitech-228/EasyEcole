@@ -119,6 +119,7 @@ export class DocGenGeneratorService {
       sourceId: typeof sourceId === 'number' ? sourceId : undefined,
       metadata: metadata ? JSON.stringify(metadata) : undefined,
       generatedById: utilisateurId || req?.utilisateurId || 1,
+      etablissementId: req?.etablissementId || undefined,
     });
 
     try {

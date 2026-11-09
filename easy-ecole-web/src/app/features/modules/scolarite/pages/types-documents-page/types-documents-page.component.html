@@ -1,5 +1,5 @@
 <div class="page-container types-documents-page">
-  <app-header-title title="Types de documents" subtitle="Configurez les documents proposés aux étudiants et leurs frais"></app-header-title>
+  <app-header-title title="Types de documents" subtitle="Configurez les documents proposés aux étudiants et les pièces requises"></app-header-title>
 
   <div *ngIf="errorMessage" class="notice notice-error">{{ errorMessage }}</div>
   <div *ngIf="successMessage" class="notice notice-success">{{ successMessage }}</div>
@@ -28,7 +28,6 @@
         <thead>
           <tr>
             <th>Document</th>
-            <th>Frais</th>
             <th class="actions-heading">Actions</th>
           </tr>
         </thead>
@@ -40,7 +39,6 @@
                 <span>{{ type.libelle }}</span>
               </div>
             </td>
-            <td><span class="fee-badge">{{ formatFrais(type.frais) }}</span></td>
             <td>
               <div class="row-actions">
                 <button type="button" class="icon-action edit-action" (click)="openEdit(type)" title="Modifier" aria-label="Modifier">
@@ -70,13 +68,11 @@
       </div>
       <label class="field-label" for="document-label">Libellé du document</label>
       <input id="document-label" class="field-input" [(ngModel)]="form.libelle" placeholder="Ex. Attestation de scolarité">
-      <label class="field-label" for="document-fee">Frais en FCFA</label>
-      <input id="document-fee" class="field-input" type="number" min="0" [(ngModel)]="form.frais" placeholder="0 pour un document gratuit">
       <div class="mt-5">
         <div class="flex items-center justify-between">
           <div>
             <label class="field-label mb-0">Pièces justificatives requises</label>
-            <p class="muted text-xs">Le bordereau de paiement sera demandé automatiquement si le document est payant.</p>
+            <p class="muted text-xs">Les tarifs des documents payants sont gérés par le service de recouvrement.</p>
           </div>
           <button type="button" class="secondary-action" (click)="ajouterPieceRequise()">Ajouter une pièce</button>
         </div>

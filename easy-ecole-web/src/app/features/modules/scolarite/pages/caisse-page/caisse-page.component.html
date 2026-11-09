@@ -49,11 +49,10 @@
     <div class="card-body">
       <div class="flex items-center gap-4">
         <div class="flex-1">
-          <input type="text" [(ngModel)]="searchQuery" (keyup)="filtrer()"
-            placeholder="Rechercher par étudiant, matricule, numéro de demande..."
-            class="search-input">
+          <input type="text" placeholder="Consultez les reçus de paiement des documents"
+            class="search-input" disabled>
         </div>
-        <app-custom-button (click)="loadDemandes()" text="Actualiser" color="gray" [outlined]="true"></app-custom-button>
+        <app-custom-button (click)="loadRecus()" text="Actualiser" color="gray" [outlined]="true"></app-custom-button>
       </div>
     </div>
   </div>
@@ -81,8 +80,8 @@
           <tbody class="divide-y divide-gray-100">
             <tr *ngFor="let r of recus" class="hover:bg-gray-50">
               <td class="px-4 py-2.5 font-medium text-gray-900">{{ r.numero }}</td>
-              <td class="px-4 py-2.5 text-gray-600">{{ r.demande?.etudiant?.nom }} {{ r.demande?.etudiant?.prenoms }}</td>
-              <td class="px-4 py-2.5 text-gray-600">{{ r.demande?.typeDocument?.libelle || '—' }}</td>
+              <td class="px-4 py-2.5 text-gray-600">{{ r.etudiant?.nom || r.demandeDocument?.etudiant?.nom }} {{ r.etudiant?.prenoms || r.demandeDocument?.etudiant?.prenoms }}</td>
+              <td class="px-4 py-2.5 text-gray-600">{{ r.typeDocument?.libelle || r.demandeDocument?.typeDocument?.libelle || '—' }}</td>
               <td class="px-4 py-2.5 text-right text-gray-900">{{ r.montant | number:'1.0-0' }} FCFA</td>
               <td class="px-4 py-2.5 text-gray-600">{{ formatModePaiement(r.modePaiement) }}</td>
               <td class="px-4 py-2.5 text-gray-600">{{ r.datePaiement | date:'dd/MM/yyyy' }}</td>

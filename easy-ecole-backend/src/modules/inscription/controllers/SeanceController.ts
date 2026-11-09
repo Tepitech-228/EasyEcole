@@ -807,12 +807,21 @@ export default class SeanceController {
     }
 
     static async publierEmploiDuTemps(req: Request, res: Response): Promise<Response> {
-        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN && (req as any).utilisateurRole !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
+        const role = (req as any).utilisateurRole;
+        if (role !== RolesUtilisateur.INSTITUTION && role !== RolesUtilisateur.ADMIN && role !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
             return res.status(403).json({ success: false, message: "Réservé à l'institution" });
         }
 
         try {
+            const coursSiteIds = role === RolesUtilisateur.SUPERVISEUR_GENERAL
+                ? await SeanceController.coursDuSiteActif(req)
+                : null;
+            if (role === RolesUtilisateur.SUPERVISEUR_GENERAL && coursSiteIds === null) {
+                return res.status(403).json({ success: false, message: "Sélectionnez un site actif autorisé pour publier l'emploi du temps." });
+            }
+
             const seances = await Seance.findAll({
+                ...(coursSiteIds !== null && { where: { coursId: { [Op.in]: coursSiteIds } } }),
                 include: [
                     { association: Seance.associations.cours },
                     { association: Seance.associations.enseignant, include: [Enseignant.associations.utilisateur] }

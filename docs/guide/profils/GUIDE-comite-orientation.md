@@ -4,9 +4,9 @@
 
 **Profil :** Comité d'orientation  
 **Nombre d'écrans :** 9  
-**Généré le :** 02/11/2026
+**Mise à jour :** 08/11/2026
 
-Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. Chaque section contient une capture, l'objectif de l'écran et les actions principales.
+Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. L'exemple supplémentaire de demande validée est une simulation, sans dossier réel ni décision effective.
 
 ## Sommaire
 
@@ -80,6 +80,8 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 
 ![Validation comité](../images-nouveau/comite-orientation/05_validation-comite.png)
 
+![Exemple fictif d'une demande d'inscription validée par le comité, marqué comme simulation](../images-nouveau/comite-orientation/10_demande-inscription-validee-simulation.png)
+
 **Objectif :** Séance de validation collégiale : chaque membre examine, vote et signe la décision.
 
 **Actions principales :**
@@ -146,4 +148,4 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 
 ---
 
-*Guide généré par `scripts/guide/generer-guides.cjs`. Les captures valides les plus récentes sont utilisées, avec repli sur les captures historiques.*
+*Guide Comité d'orientation — mis à jour le 08/11/2026. La demande illustrée est fictive ; aucune demande réelle n'a été créée ou validée.*

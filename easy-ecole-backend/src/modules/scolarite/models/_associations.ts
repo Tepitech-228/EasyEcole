@@ -108,6 +108,8 @@ RegistreAcademique.belongsTo(CursusApprenant, { foreignKey: 'cursusApprenantId',
 // ── Module Secrétariat ──
 DemandeDocument.hasMany(RecuCaisse, { foreignKey: 'demandeDocumentId', as: 'recus' })
 RecuCaisse.belongsTo(DemandeDocument, { foreignKey: 'demandeDocumentId', as: 'demandeDocument' })
+RecuCaisse.belongsTo(Utilisateur, { foreignKey: 'etudiantId', as: 'etudiant' })
+RecuCaisse.belongsTo(TypeDocument, { foreignKey: 'typeDocumentId', as: 'typeDocument' })
 DemandeDocument.belongsTo(RecuCaisse, { foreignKey: 'recuCaisseId', as: 'recuCaisse' })
 DemandeDocument.belongsTo(Utilisateur, { foreignKey: 'caissierId', as: 'caissier' })
 Utilisateur.hasMany(RecuCaisse, { foreignKey: 'caissierId', as: 'recusEncaisses' })

@@ -21,12 +21,14 @@ import { DashboardSecretariatPageComponent } from './pages/dashboard-secretariat
 import { CaissePageComponent } from './pages/caisse-page/caisse-page.component';
 import { ClotureCaissePageComponent } from './pages/cloture-caisse-page/cloture-caisse-page.component';
 import { FicheDemandePageComponent } from './pages/fiche-demande-page/fiche-demande-page.component';
-import { EncaissementDemandePageComponent } from './pages/encaissement-demande-page/encaissement-demande-page.component';
 import { MesDocumentsPageComponent } from './pages/mes-documents-page/mes-documents-page.component';
 import { TypesDocumentsPageComponent } from './pages/types-documents-page/types-documents-page.component';
 import { AutorisationsProvisoiresPageComponent } from './pages/autorisations-provisoires-page/autorisations-provisoires-page.component';
 import { DemandeDocumentWizardPageComponent } from './pages/demande-document-wizard-page/demande-document-wizard-page.component';
 import { ComiteDemandesDocumentsPageComponent } from './pages/comite-demandes-documents-page/comite-demandes-documents-page.component';
+import { PaiementDocumentsWizardPageComponent } from './pages/paiement-documents-wizard-page/paiement-documents-wizard-page.component';
+import { FileImpressionDocumentsPageComponent } from './pages/file-impression-documents-page/file-impression-documents-page.component';
+import { TarifsDocumentsPageComponent } from './pages/tarifs-documents-page/tarifs-documents-page.component';
 
 const routes: Routes = [
   {
@@ -120,6 +122,21 @@ const routes: Routes = [
     pathMatch: 'full'
   },
   {
+    path: 'secretariat/encaissement-documents',
+    component: PaiementDocumentsWizardPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'secretariat/file-impression',
+    component: FileImpressionDocumentsPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'secretariat/tarifs-documents',
+    component: TarifsDocumentsPageComponent,
+    pathMatch: 'full'
+  },
+  {
     path: 'secretariat/dashboard',
     component: DashboardSecretariatPageComponent,
     pathMatch: 'full'
@@ -131,7 +148,7 @@ const routes: Routes = [
   },
   {
     path: 'secretariat/encaissement',
-    component: EncaissementDemandePageComponent,
+    redirectTo: 'secretariat/encaissement-documents',
     pathMatch: 'full'
   },
   {

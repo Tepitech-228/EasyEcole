@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1220" viewBox="0 0 1600 1220" role="img" aria-labelledby="title description">
+  <title id="title">Simulations EasyEcole du pointage étudiant selon la situation financière</title>
+  <desc id="description">Quatre aperçus du tableau EasyEcole : retard de paiement refusé, paiement partiel autorisé avec avertissement, paiement total autorisé et échéances courantes à jour malgré un solde futur.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f2f6ff"/>
+      <stop offset="1" stop-color="#edf5f2"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#243b53" flood-opacity=".12"/>
+    </filter>
+    <style>
+      text { font-family: "Segoe UI", Arial, sans-serif; fill: #172b4d; }
+      .muted { fill: #65758b; }
+      .tiny { font-size: 13px; letter-spacing: .08em; font-weight: 700; }
+      .small { font-size: 16px; }
+      .body { font-size: 18px; }
+      .strong { font-size: 20px; font-weight: 700; }
+      .cardtitle { font-size: 24px; font-weight: 700; }
+      .money { font-size: 22px; font-weight: 700; }
+    </style>
+  </defs>
+  <rect width="1600" height="1220" fill="url(#background)"/>
+
+  <text x="64" y="58" class="tiny" fill="#4263eb">EASYECOLE · PRÉSENCE · CONTRÔLE D’ACCÈS</text>
+  <text x="64" y="108" font-size="38" font-weight="750">Pointage étudiant — aperçu des résultats</text>
+  <text x="64" y="143" class="body muted">Écrans simulés à partir des états et messages réellement gérés par l’application.</text>
+  <rect x="1285" y="54" width="250" height="48" rx="24" fill="#e0e7ff"/>
+  <circle cx="1312" cy="78" r="7" fill="#4f46e5"/>
+  <text x="1330" y="84" class="tiny" fill="#3730a3">SIMULATION LOCALE</text>
+
+  <!-- Case 1: payment overdue -->
+  <g transform="translate(64 190)" filter="url(#shadow)">
+    <rect width="720" height="440" rx="22" fill="#fff"/>
+    <rect width="720" height="64" rx="22" fill="#fff"/>
+    <path d="M0 42v22h720V42" fill="#fff"/>
+    <circle cx="31" cy="32" r="8" fill="#ef4444"/>
+    <text x="52" y="39" class="tiny" fill="#b42318">CAS 1 · ÉCHÉANCE EN RETARD</text>
+    <rect x="566" y="18" width="126" height="28" rx="14" fill="#fee4e2"/>
+    <text x="588" y="37" font-size="12" font-weight="700" fill="#b42318">ACCÈS REFUSÉ</text>
+    <line x1="24" y1="64" x2="696" y2="64" stroke="#edf0f5"/>
+    <circle cx="70" cy="119" r="31" fill="#fff0ef"/>
+    <path d="M59 118h22M70 107v22" stroke="#d92d20" stroke-width="4" stroke-linecap="round"/>
+    <text x="119" y="114" class="strong">ÉTUDIANT DE TEST</text>
+    <text x="119" y="139" class="small muted">Apprenant · Site 1</text>
+    <rect x="24" y="169" width="672" height="54" rx="12" fill="#fff1f0"/>
+    <text x="44" y="202" class="body" font-weight="650" fill="#b42318">Échéance mois 1 impayée — pointage non enregistré</text>
+    <text x="28" y="259" class="tiny muted">SITUATION FINANCIÈRE</text>
+    <rect x="24" y="276" width="210" height="76" rx="12" fill="#f7f8fa"/>
+    <rect x="255" y="276" width="210" height="76" rx="12" fill="#f0fdf4"/>
+    <rect x="486" y="276" width="210" height="76" rx="12" fill="#fff5f5"/>
+    <text x="42" y="302" class="small muted">Total</text><text x="42" y="335" class="money">300 000 F</text>
+    <text x="273" y="302" class="small muted">Payé</text><text x="273" y="335" class="money" fill="#16803c">50 000 F</text>
+    <text x="504" y="302" class="small muted">Reste à payer</text><text x="504" y="335" class="money" fill="#b42318">250 000 F</text>
+    <text x="28" y="397" class="small muted">Résultat attendu : accès refusé, aucune nouvelle ligne de pointage.</text>
+  </g>
+
+  <!-- Case 2: partial payment without overdue -->
+  <g transform="translate(816 190)" filter="url(#shadow)">
+    <rect width="720" height="440" rx="22" fill="#fff"/>
+    <circle cx="31" cy="32" r="8" fill="#f59e0b"/>
+    <text x="52" y="39" class="tiny" fill="#a15c07">CAS 2 · PAIEMENT PARTIEL</text>
+    <rect x="566" y="18" width="126" height="28" rx="14" fill="#dcfae6"/>
+    <text x="590" y="37" font-size="12" font-weight="700" fill="#087443">AUTORISÉ</text>
+    <line x1="24" y1="64" x2="696" y2="64" stroke="#edf0f5"/>
+    <circle cx="70" cy="119" r="31" fill="#ecfdf3"/>
+    <path d="M57 119l9 9 18-21" fill="none" stroke="#16803c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="119" y="114" class="strong">ÉTUDIANT DE TEST</text>
+    <text x="119" y="139" class="small muted">Apprenant · Site 1</text>
+    <rect x="24" y="169" width="672" height="54" rx="12" fill="#fffaeb"/>
+    <text x="44" y="202" class="body" font-weight="650" fill="#a15c07">Passage enregistré · Échéance partiellement payée</text>
+    <text x="28" y="259" class="tiny muted">SITUATION FINANCIÈRE</text>
+    <rect x="24" y="276" width="210" height="76" rx="12" fill="#f7f8fa"/>
+    <rect x="255" y="276" width="210" height="76" rx="12" fill="#f0fdf4"/>
+    <rect x="486" y="276" width="210" height="76" rx="12" fill="#fffaf0"/>
+    <text x="42" y="302" class="small muted">Total</text><text x="42" y="335" class="money">300 000 F</text>
+    <text x="273" y="302" class="small muted">Payé</text><text x="273" y="335" class="money" fill="#16803c">150 000 F</text>
+    <text x="504" y="302" class="small muted">Reste à payer</text><text x="504" y="335" class="money" fill="#a15c07">150 000 F</text>
+    <text x="28" y="397" class="small muted">Si aucune échéance n’est échue : passage enregistré avec avertissement.</text>
+  </g>
+
+  <!-- Case 3: fully paid -->
+  <g transform="translate(64 660)" filter="url(#shadow)">
+    <rect width="720" height="440" rx="22" fill="#fff"/>
+    <circle cx="31" cy="32" r="8" fill="#22a06b"/>
+    <text x="52" y="39" class="tiny" fill="#087443">CAS 3 · SOLDE TOTAL RÉGLÉ</text>
+    <rect x="566" y="18" width="126" height="28" rx="14" fill="#dcfae6"/>
+    <text x="590" y="37" font-size="12" font-weight="700" fill="#087443">AUTORISÉ</text>
+    <line x1="24" y1="64" x2="696" y2="64" stroke="#edf0f5"/>
+    <circle cx="70" cy="119" r="31" fill="#ecfdf3"/>
+    <path d="M57 119l9 9 18-21" fill="none" stroke="#16803c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="119" y="114" class="strong">ÉTUDIANT DE TEST</text>
+    <text x="119" y="139" class="small muted">Apprenant · Site 1</text>
+    <rect x="24" y="169" width="672" height="54" rx="12" fill="#ecfdf3"/>
+    <text x="44" y="202" class="body" font-weight="650" fill="#087443">Passage enregistré · Situation financière à jour</text>
+    <text x="28" y="259" class="tiny muted">SITUATION FINANCIÈRE</text>
+    <rect x="24" y="276" width="210" height="76" rx="12" fill="#f7f8fa"/>
+    <rect x="255" y="276" width="210" height="76" rx="12" fill="#f0fdf4"/>
+    <rect x="486" y="276" width="210" height="76" rx="12" fill="#f0fdf4"/>
+    <text x="42" y="302" class="small muted">Total</text><text x="42" y="335" class="money">300 000 F</text>
+    <text x="273" y="302" class="small muted">Payé</text><text x="273" y="335" class="money" fill="#16803c">300 000 F</text>
+    <text x="504" y="302" class="small muted">Reste à payer</text><text x="504" y="335" class="money" fill="#16803c">0 F</text>
+    <text x="28" y="397" class="small muted">Résultat attendu : passage enregistré, aucun avertissement financier.</text>
+  </g>
+
+  <!-- Case 4: current installments paid, future balance remains -->
+  <g transform="translate(816 660)" filter="url(#shadow)">
+    <rect width="720" height="440" rx="22" fill="#fff"/>
+    <circle cx="31" cy="32" r="8" fill="#4263eb"/>
+    <text x="52" y="39" class="tiny" fill="#3730a3">CAS 4 · À JOUR, MAIS SOLDE FUTUR</text>
+    <rect x="566" y="18" width="126" height="28" rx="14" fill="#dcfae6"/>
+    <text x="590" y="37" font-size="12" font-weight="700" fill="#087443">AUTORISÉ</text>
+    <line x1="24" y1="64" x2="696" y2="64" stroke="#edf0f5"/>
+    <circle cx="70" cy="119" r="31" fill="#ecfdf3"/>
+    <path d="M57 119l9 9 18-21" fill="none" stroke="#16803c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="119" y="114" class="strong">ÉTUDIANT DE TEST</text>
+    <text x="119" y="139" class="small muted">Apprenant · Site 1</text>
+    <rect x="24" y="169" width="672" height="54" rx="12" fill="#ecfdf3"/>
+    <text x="44" y="202" class="body" font-weight="650" fill="#087443">Passage enregistré · Échéances dues réglées</text>
+    <text x="28" y="259" class="tiny muted">SITUATION FINANCIÈRE</text>
+    <rect x="24" y="276" width="210" height="76" rx="12" fill="#f7f8fa"/>
+    <rect x="255" y="276" width="210" height="76" rx="12" fill="#f0fdf4"/>
+    <rect x="486" y="276" width="210" height="76" rx="12" fill="#fffaf0"/>
+    <text x="42" y="302" class="small muted">Total</text><text x="42" y="335" class="money">300 000 F</text>
+    <text x="273" y="302" class="small muted">Payé à ce jour</text><text x="273" y="335" class="money" fill="#16803c">100 000 F</text>
+    <text x="504" y="302" class="small muted">Solde futur</text><text x="504" y="335" class="money" fill="#a15c07">200 000 F</text>
+    <text x="28" y="397" class="small muted">La règle actuelle autorise tant qu’aucune échéance due n’est en retard.</text>
+  </g>
+
+  <text x="64" y="1164" class="small muted">Important : ceci illustre l’écran opérateur EasyEcole, pas l’écran physique Hikvision. Les textes/montants sont fictifs.</text>
+</svg>

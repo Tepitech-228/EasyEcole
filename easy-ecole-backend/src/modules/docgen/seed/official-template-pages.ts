@@ -32,9 +32,9 @@ export const OFFICIAL_TEMPLATE_TYPE_CODES = new Set<string>(PAGE_TYPES.map(({ ty
 const STUDENT_FIELDS: Record<number, string[]> = {
   1: [
     "{{etudiant.nom}} {{etudiant.prenom}}",
-    "",
-    "",
-    "",
+    "{{etudiant.dateNaissance}}",
+    "{{etudiant.lieuNaissance}}",
+    "{{etudiant.nationalite}}",
     "{{etudiant.nom}} {{etudiant.prenom}}",
     "{{anneeAcademique}}",
     "{{etudiant.nom}} {{etudiant.prenom}}",
@@ -125,6 +125,48 @@ export function extractOfficialTemplatePages(source: string): OfficialTemplatePa
         <tr><td class="center">{{index}}</td><td>{{code}}</td><td>{{intitule}}</td><td>{{etudiant.niveau}} / {{semestre}}</td><td>{{credit}}</td></tr>
         {{/each}}`);
     }
+    if (pageNumber === 1) {
+      const diplomaTable = page.find(".data-table").eq(0);
+      const transcriptTable = page.find(".data-table").eq(1);
+      const pathwayTable = page.find(".data-table").eq(2);
+      const diplomaRows = [
+        "diplomeBac",
+        "diplomeDtsDut",
+        "diplomeBts",
+        "diplomeLicence",
+        "diplomeMaitrise",
+        "diplomeAutres",
+      ];
+      const transcriptRows = [
+        "relevesSem12",
+        "relevesSem34",
+        "relevesSem56",
+        "relevesSem78",
+        "relevesSem910",
+      ];
+      const pathwayRows = [
+        "parcoursLicence12",
+        "parcoursLicence34",
+        "parcoursLicence56",
+        "parcoursMaster12",
+        "parcoursMaster34",
+      ];
+
+      for (const [table, checks, speciality] of [
+        [diplomaTable, diplomaRows, "{{etudiant.specialiteDiplome}}"],
+        [transcriptTable, transcriptRows, "{{etudiant.specialiteReleves}}"],
+        [pathwayTable, pathwayRows, "{{etudiant.specialiteParcours}}"],
+      ] as const) {
+        const row = table.find("tr").eq(1);
+        row.find("td").first().append(` ${speciality}`);
+        row.find(".check-box").each((index, element) => {
+          const field = checks[index];
+          if (field) {
+            $(element).text(`{{#if etudiant.${field}}}√{{/if}}`);
+          }
+        });
+      }
+    }
     if (pageNumber === 16) {
       const theme = page.find("strong")
         .filter((_index, element) => $(element).text().trim().startsWith("Thème du Mémoire"))
@@ -136,7 +178,7 @@ export function extractOfficialTemplatePages(source: string): OfficialTemplatePa
       }
       theme.text("{{etudiant.sujet}}");
     }
-    let contenu = `<!DOCTYPE html>
+    const contenu = `<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="utf-8">
@@ -146,13 +188,6 @@ export function extractOfficialTemplatePages(source: string): OfficialTemplatePa
 ${$.html(page)}
 </body>
 </html>`;
-    if (pageNumber === 17) {
-      contenu = contenu
-        .replace(/ADKPELI Nes\.\.\. Françoise/g, "{{etudiant.nom}} {{etudiant.prenom}}")
-        .replace(/ADKPELI/g, "{{etudiant.nom}}")
-        .replace(/Assistant de Gestion PMI-PME/g, "{{etudiant.option}}")
-        .replace(/22 septembre 2026/g, "{{dateEdition}}");
-    }
 
     return { pageNumber, libelle, typeCode, contenu };
   });

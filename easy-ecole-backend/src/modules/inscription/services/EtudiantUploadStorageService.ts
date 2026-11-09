@@ -7,6 +7,7 @@ import { NiveauEtude } from "../models/NiveauEtude";
 import { ParcoursChoisi } from "../models/ParcoursChoisi";
 import { Session } from "../models/Session";
 import { AnneeAcademique } from "../models/AnneeAcademique";
+import { getOriginRoot } from "../../../core/services/DocumentStorageService";
 
 export interface EtudiantUploadIdentity {
     id: number;
@@ -25,7 +26,7 @@ export interface StudentUploadTreeOptions {
 }
 
 export class EtudiantUploadStorageService {
-    private static readonly studentRoot = path.resolve(process.cwd(), "public", "dossiers");
+    private static readonly studentRoot = getOriginRoot("uploads");
 
     private static safeSegment(value: string, maxLength = 100): string {
         const segment = value
@@ -257,17 +258,19 @@ export class EtudiantUploadStorageService {
     static removeStoredFile(reference: string, legacyDirectory?: string): void {
         const publicRoot = path.resolve(process.cwd(), "public");
         const storedPath = path.resolve(process.cwd(), reference);
-        const isInsidePublic = (candidate: string): boolean =>
-            candidate.startsWith(`${publicRoot}${path.sep}`);
+        const isWithin = (candidate: string, root: string): boolean =>
+            candidate.startsWith(`${root}${path.sep}`);
+        const isAllowedStoredPath = (candidate: string): boolean =>
+            isWithin(candidate, publicRoot) || isWithin(candidate, this.studentRoot);
         const candidates = [
-            isInsidePublic(storedPath) ? storedPath : null,
+            isAllowedStoredPath(storedPath) ? storedPath : null,
             legacyDirectory
                 ? path.resolve(process.cwd(), legacyDirectory, path.basename(reference))
                 : null,
         ].filter((candidate): candidate is string => candidate !== null);
 
         for (const candidate of candidates) {
-            if (isInsidePublic(candidate) && fs.existsSync(candidate)) {
+            if (isAllowedStoredPath(candidate) && fs.existsSync(candidate)) {
                 fs.unlinkSync(candidate);
                 return;
             }

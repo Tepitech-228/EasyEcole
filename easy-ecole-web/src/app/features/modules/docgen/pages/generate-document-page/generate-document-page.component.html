@@ -134,9 +134,8 @@
     <div class="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-6 text-sm text-amber-800 flex items-center gap-3">
       <span>💡</span>
       <p>
-        Documents demandés par les étudiants (attestations, admissibilité…). Les frais de chaque
-        document sont paramétrés dans l'onglet « Paramétrage des frais ». L'école encaisse en
-        caisse : confirmez le paiement <strong>avant</strong> de délivrer le document.
+        Les documents payants sont encaissés par le service de recouvrement avant le dépôt de la demande.
+        Le comité valide ensuite le dossier et le secrétariat imprime les documents depuis sa file dédiée.
       </p>
     </div>
 
@@ -193,19 +192,12 @@
               </td>
               <td class="px-4 py-3">
                 <div class="flex justify-end gap-2 flex-wrap">
-                  <app-custom-button
-                    *ngIf="montantDemande(demande) > 0 && !demande.fraisPayes"
-                    (click)="confirmerPaiement(demande)"
-                    [disabled]="paiementLoadingId === demande.id"
-                    [text]="paiementLoadingId === demande.id ? 'Encaissement...' : 'Encaisser (caisse)'"
-                    color="green"
-                    [outlined]="true"></app-custom-button>
-                  <app-custom-button
+                  <a
                     *ngIf="demande.statut !== 'delivree'"
-                    (click)="delivrerDocument(demande)"
-                    [disabled]="delivranceLoadingId === demande.id"
-                    [text]="delivranceLoadingId === demande.id ? 'Délivrance...' : 'Générer le document'"
-                    color="indigo"></app-custom-button>
+                    routerLink="/scolarite/secretariat/file-impression"
+                    class="self-center text-xs text-indigo-700 hover:underline">
+                    Traitement par le comité et le secrétariat
+                  </a>
                   <ng-container *ngIf="demande.statut === 'delivree'">
                     <span class="text-xs text-emerald-600 self-center">PDF généré ✓</span>
                   </ng-container>

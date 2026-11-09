@@ -1,13 +1,20 @@
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import { EtudiantUploadStorageService } from "../../../modules/inscription/services/EtudiantUploadStorageService";
 
 describe("EtudiantUploadStorageService", () => {
+    const previousDocumentsRoot = process.env.DOCUMENTS_STORAGE_DIR;
+    const testDocumentsRoot = fs.mkdtempSync(path.join(os.tmpdir(), "easyecole-document-root-"));
+    process.env.DOCUMENTS_STORAGE_DIR = testDocumentsRoot;
+    const { EtudiantUploadStorageService } = require(
+        "../../../modules/inscription/services/EtudiantUploadStorageService",
+    ) as typeof import("../../../modules/inscription/services/EtudiantUploadStorageService");
+    const { getOriginRoot } = require(
+        "../../../core/services/DocumentStorageService",
+    ) as typeof import("../../../core/services/DocumentStorageService");
     const temporaryDirectories: string[] = [];
     const studentRoot = path.resolve(
-        process.cwd(),
-        "public", "dossiers",
+        getOriginRoot("uploads"),
         "2026-2027", "Site", "LICENCE", "L1", "Informatique", "Etudiants",
         "Diallo_Aminata_ESA-123",
     );
@@ -20,6 +27,15 @@ describe("EtudiantUploadStorageService", () => {
         for (const directory of temporaryDirectories.splice(0)) {
             fs.rmSync(directory, { recursive: true, force: true });
         }
+    });
+
+    afterAll(() => {
+        if (previousDocumentsRoot === undefined) {
+            delete process.env.DOCUMENTS_STORAGE_DIR;
+        } else {
+            process.env.DOCUMENTS_STORAGE_DIR = previousDocumentsRoot;
+        }
+        fs.rmSync(testDocumentsRoot, { recursive: true, force: true });
     });
 
     it("stores an uploaded file under the student folder with its original filename", () => {
@@ -46,6 +62,7 @@ describe("EtudiantUploadStorageService", () => {
         );
 
         expect(reference).toContain("Diallo_Aminata_ESA-123");
+        expect(reference.replace(/\\/g, "/")).toContain("uploads/2026-2027/Site/LICENCE/L1/Informatique/");
         expect(reference).toContain("/Version_01/Relevé de notes.pdf");
         expect(reference).toContain("/Etudiants/Diallo_Aminata_ESA-123/Dossiers/");
         expect(fs.existsSync(path.join(studentRoot, "Dossier-info-personelles"))).toBe(true);
@@ -123,6 +140,18 @@ describe("EtudiantUploadStorageService", () => {
         expect(secondReference).toBe(firstReference);
         expect(fs.existsSync(sourcePath)).toBe(true);
         expect(fs.readFileSync(path.resolve(process.cwd(), firstReference), "utf8")).toBe("document historique");
+    });
+
+    it("removes a stored student document from the shared uploads root", () => {
+        const storedPath = path.join(studentRoot, "Dossiers", "document.pdf");
+        fs.mkdirSync(path.dirname(storedPath), { recursive: true });
+        fs.writeFileSync(storedPath, "document");
+
+        EtudiantUploadStorageService.removeStoredFile(
+            path.relative(process.cwd(), storedPath),
+        );
+
+        expect(fs.existsSync(storedPath)).toBe(false);
     });
 
     it("uses only the basename when an uploaded filename contains path components", () => {

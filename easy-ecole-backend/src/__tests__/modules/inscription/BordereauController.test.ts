@@ -31,7 +31,7 @@ jest.mock('../../../modules/auth/models/Utilisateur', () => ({
 
 jest.mock('../../../modules/inscription/services/EtudiantUploadStorageService', () => ({
   EtudiantUploadStorageService: {
-    store: jest.fn(() => 'public/dossiers/2026-2027/Site/LICENCE/L1/Informatique/Etudiants/Etudiant_Test_123/Bordereaux/INSCRIPTION/DEMANDE_42/Version_01/bordereau.pdf'),
+    store: jest.fn(() => 'storage/documents/uploads/2026-2027/Site/LICENCE/L1/Informatique/Etudiants/Etudiant_Test_123/Bordereaux/INSCRIPTION/DEMANDE_42/Version_01/bordereau.pdf'),
     resolveTreeFolders: jest.fn().mockResolvedValue(['2026-2027', 'Site', 'LICENCE', 'L1', 'Informatique']),
     removeTemporaryUpload: jest.fn(),
     removeStoredFile: jest.fn(),

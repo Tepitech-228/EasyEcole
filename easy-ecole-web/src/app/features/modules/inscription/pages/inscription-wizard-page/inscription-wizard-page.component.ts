@@ -16,7 +16,6 @@ import { InscriptionWizardStoreService, FichierMeta } from 'src/app/data/modules
 import { WizardItemType } from 'src/app/data/types/WizardItemType';
 import { AuthService, SiteUtilisateur } from 'src/app/data/modules/auth/services/auth.service';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
-import { compresserImage, ImageIndecodableError, ImageTropVolumineuseError } from 'src/app/shared/utils/image-compression.util';
 import { environment } from 'src/environments/environment';
 
 interface FiliereSelection {
@@ -698,7 +697,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.sauvegarder()
   }
 
-  async surDocument(cle: string, event: any): Promise<void> {
+  surDocument(cle: string, event: any): void {
     const file: File = event?.target?.files?.[0]
     if (file) {
       // Contrôle miroir du filtre serveur (DossierInscriptionRouter) : sans cela,
@@ -721,31 +720,16 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
         return
       }
 
-      // Sur mobile, une photo de document pèse souvent plus que la limite
-      // serveur et le HEIC (iPhone) n'est pas reconnu par le backend : on
-      // normalise l'image en JPEG avant l'envoi.
-      let fichierPrepare = file
-      try {
-        fichierPrepare = await compresserImage(file, {
-          dimensionMax: 2400,
-          qualite: 0.88,
-          tailleMaxOctets: 20 * 1024 * 1024,
-        })
-      } catch (erreur) {
-        const message = erreur instanceof ImageIndecodableError || erreur instanceof ImageTropVolumineuseError
-          ? erreur.message
-          : 'Cette image n’a pas pu être préparée. Choisissez un fichier JPG ou PNG.'
-        this.toastService.error(`${message} (${file.name})`)
-        if (event?.target) { event.target.value = '' }
-        return
-      }
-
-      this.documents[cle] = fichierPrepare
+      // Le fichier est envoyé tel quel : le backend accepte nativement le HEIC
+      // et redimensionne/convertit les images (NormaliserImage). On évite tout
+      // décodage canvas côté navigateur : sur mobile, une photo 48 Mpx y
+      // provoque l'erreur « mémoire insuffisante ».
+      this.documents[cle] = file
       // La pièce est de nouveau disponible : on retire l'alerte de re-sélection.
       delete this.documentsAReposer[cle]
       const requis = this.documentsRequis.find((d) => d.id === cle)
       if (requis && this.estBordereau(requis)) {
-        this.bordereau = fichierPrepare
+        this.bordereau = file
         this.bordereauAReposer = null
       }
       this.sauvegarder()
@@ -836,49 +820,35 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     )
   }
 
-  async surSelectionPhoto(event: Event): Promise<void> {
+  surSelectionPhoto(event: Event): void {
     const input = event.target as HTMLInputElement
     const photo = input.files?.[0]
     if (!photo) return
 
-    // Une photo prise au téléphone peut dépasser 5 Mo et/ou être un HEIC :
-    // on la redimensionne et on la convertit en JPEG avant l'envoi.
-    let photoPreparee = photo
-    try {
-      photoPreparee = await compresserImage(photo, {
-        dimensionMax: 1200,
-        qualite: 0.86,
-        tailleMaxOctets: 5 * 1024 * 1024,
-      })
-    } catch (erreur) {
+    // Le backend accepte jusqu'à 20 Mo et convertit le HEIC en JPEG
+    // (NormaliserImage). Aucun décodage canvas côté navigateur : c'est lui
+    // qui déclenchait « mémoire insuffisante » sur les photos de téléphone.
+    const extension = `.${photo.name.split('.').pop() || ''}`.toLowerCase()
+    const extensionsAutorisees = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif']
+    if (!extensionsAutorisees.includes(extension) || photo.size > 20 * 1024 * 1024) {
       this.photoSelectionnee = null
-      this.photoErreur = erreur instanceof ImageIndecodableError || erreur instanceof ImageTropVolumineuseError
-        ? erreur.message
-        : 'Cette image n’a pas pu être préparée. Choisissez une photo JPG ou PNG.'
+      this.photoErreur = 'Choisissez une photo JPG, PNG, GIF, WEBP ou HEIC de 20 Mo maximum.'
       input.value = ''
       return
     }
 
-    const typesAutorises = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-    if (!typesAutorises.includes(photoPreparee.type) || photoPreparee.size > 5 * 1024 * 1024) {
-      this.photoSelectionnee = null
-      this.photoErreur = 'Choisissez une image JPG, PNG, GIF ou WEBP de 5 Mo maximum.'
-      input.value = ''
-      return
-    }
-
-    this.photoSelectionnee = photoPreparee
+    this.photoSelectionnee = photo
     this.photoErreur = ''
     this.showPhotoRequiredModal = false
     input.value = ''
     if (this.photoApercuObjectUrl) {
       URL.revokeObjectURL(this.photoApercuObjectUrl)
     }
-    this.photoApercuObjectUrl = URL.createObjectURL(photoPreparee)
+    this.photoApercuObjectUrl = URL.createObjectURL(photo)
     this.photoApercu = this.photoApercuObjectUrl
     this.photoUploadEnCours = true
 
-    this.apprenantService.updatePhoto(photoPreparee).subscribe({
+    this.apprenantService.updatePhoto(photo).subscribe({
       next: (resultat: any) => {
         this.photoUploadEnCours = false
         this.photoSelectionnee = null

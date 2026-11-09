@@ -8,7 +8,11 @@ import { JournalCaisse } from "../models/JournalCaisse";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { RecuCaisseGeneratorService } from "../services/RecuCaisseGeneratorService";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
+import { ROLES_RECOUVREMENT } from "../../../core/middlewares/AuthRecouvrement";
 import { DemandeDocumentWorkflowService } from "../services/DemandeDocumentWorkflowService";
+import { Op } from "sequelize";
+import { DossierEtudiant } from "../../inscription/models/DossierEtudiant";
+import { randomBytes } from "crypto";
 
 export default class RecuCaisseController {
 
@@ -25,7 +29,9 @@ export default class RecuCaisseController {
       const { rows, count } = await RecuCaisse.findAndCountAll({
         where,
         include: [
-          { association: RecuCaisse.associations.demandeDocument, include: [{ association: DemandeDocument.associations.typeDocument }] },
+          { association: RecuCaisse.associations.demandeDocument, include: [{ association: DemandeDocument.associations.typeDocument }, { association: DemandeDocument.associations.etudiant }] },
+          { association: RecuCaisse.associations.etudiant },
+          { association: RecuCaisse.associations.typeDocument },
           { association: RecuCaisse.associations.caissier }
         ],
         order: [['datePaiement', 'DESC']],
@@ -47,7 +53,9 @@ export default class RecuCaisseController {
     try {
       const recu = await RecuCaisse.findByPk(req.params.id, {
         include: [
-          { association: RecuCaisse.associations.demandeDocument, include: [{ association: DemandeDocument.associations.typeDocument }] },
+          { association: RecuCaisse.associations.demandeDocument, include: [{ association: DemandeDocument.associations.typeDocument }, { association: DemandeDocument.associations.etudiant }] },
+          { association: RecuCaisse.associations.etudiant },
+          { association: RecuCaisse.associations.typeDocument },
           { association: RecuCaisse.associations.caissier }
         ]
       });
@@ -63,13 +71,18 @@ export default class RecuCaisseController {
     try {
       const recu = await RecuCaisse.findByPk(req.params.id, {
         include: [
-          { association: RecuCaisse.associations.demandeDocument, include: [{ association: DemandeDocument.associations.typeDocument }] },
+          { association: RecuCaisse.associations.demandeDocument, include: [{ association: DemandeDocument.associations.typeDocument }, { association: DemandeDocument.associations.etudiant }] },
+          { association: RecuCaisse.associations.etudiant },
+          { association: RecuCaisse.associations.typeDocument },
           { association: RecuCaisse.associations.caissier }
         ]
       });
       if (!recu) return res.status(404).json({ success: false, message: "Reçu non trouvé" });
 
       const montantLettres = SecretariatService.nombreEnLettres(recu.montant);
+      const demande = recu.demandeDocument || recu.demande;
+      const etudiant = recu.etudiant || demande?.etudiant;
+      const typeDocument = recu.typeDocument || demande?.typeDocument;
       const html = `
         <html>
         <head><title>Reçu de caisse</title></head>
@@ -77,8 +90,8 @@ export default class RecuCaisseController {
           <h2 style="text-align:center;">REÇU DE CAISSE</h2>
           <p><strong>N° Reçu :</strong> ${recu.numero}</p>
           <p><strong>Date :</strong> ${new Date(recu.datePaiement).toLocaleDateString('fr-FR')}</p>
-          <p><strong>Étudiant :</strong> ${recu.demande?.etudiant?.nom || ''} ${recu.demande?.etudiant?.prenoms || ''}</p>
-          <p><strong>Document :</strong> ${recu.demande?.typeDocument?.libelle || ''}</p>
+          <p><strong>Étudiant :</strong> ${etudiant?.nom || ''} ${etudiant?.prenoms || ''}</p>
+          <p><strong>Document :</strong> ${typeDocument?.libelle || ''}</p>
           <p><strong>Montant :</strong> ${recu.montant.toLocaleString('fr-FR')} FCFA</p>
           <p><strong>En toutes lettres :</strong> ${montantLettres}</p>
           <p><strong>Mode de paiement :</strong> ${recu.modePaiement}</p>
@@ -101,12 +114,29 @@ export default class RecuCaisseController {
    */
   static async download(req: Request, res: Response): Promise<Response> {
     try {
-      const recu = await RecuCaisse.findByPk(req.params.id);
-      if (!recu) return res.status(404).json({ success: false, message: "Reçu non trouvé" });
+      const role = (req as any).utilisateurRole;
+      const utilisateurId = Number((req as any).utilisateurId);
+      const estApprenant = role === RolesUtilisateur.APPRENANT;
+      if (!estApprenant && !ROLES_RECOUVREMENT.includes(role)) {
+        return res.status(403).json({ success: false, message: "Accès réservé au service de recouvrement" });
+      }
 
-      const filePath = RecuCaisseGeneratorService.telechargerRecu(recu);
+      let recu = await RecuCaisse.findByPk(req.params.id, estApprenant ? {
+        include: [{ association: RecuCaisse.associations.demandeDocument, attributes: ['etudiantId'] }]
+      } : undefined);
+      if (!recu) return res.status(404).json({ success: false, message: "Reçu non trouvé" });
+      if (estApprenant
+        && Number(recu.etudiantId || recu.demandeDocument?.etudiantId) !== utilisateurId) {
+        return res.status(403).json({ success: false, message: "Ce reçu ne vous appartient pas" });
+      }
+
+      let filePath = RecuCaisseGeneratorService.telechargerRecu(recu);
       if (!filePath) {
-        return res.status(404).json({ success: false, message: "PDF non disponible. Le fichier est en cours de génération." });
+        await RecuCaisseGeneratorService.genererRecu(recu);
+        recu = await RecuCaisse.findByPk(recu.id);
+        if (!recu) return res.status(404).json({ success: false, message: "Reçu non trouvé" });
+        filePath = RecuCaisseGeneratorService.telechargerRecu(recu);
+        if (!filePath) return res.status(404).json({ success: false, message: "PDF du reçu indisponible après génération." });
       }
 
       res.download(filePath, `RCU-${recu.numero}.pdf`);
@@ -116,6 +146,186 @@ export default class RecuCaisseController {
       return res.status(500).json({ success: false, code: 'INTERNAL_ERROR', message: "Erreur lors du téléchargement" });
     }
   }
+
+    static async getEtudiantsPourPaiement(req: Request, res: Response): Promise<Response> {
+      if (!ROLES_RECOUVREMENT.includes((req as any).utilisateurRole)) {
+        return res.status(403).json({ success: false, message: "Accès réservé au service de recouvrement" });
+      }
+
+      const search = String(req.query.search || '').trim();
+      if (search.length < 2 || search.length > 100) {
+        return res.status(400).json({ success: false, message: "Saisissez au moins 2 caractères pour rechercher un étudiant" });
+      }
+
+      try {
+        const like = `%${search}%`;
+        const [utilisateursDirects, dossiers] = await Promise.all([
+          Utilisateur.findAll({
+            where: {
+              role: RolesUtilisateur.APPRENANT,
+              [Op.or]: [
+                { nom: { [Op.like]: like } },
+                { prenoms: { [Op.like]: like } },
+                { identifiant: { [Op.like]: like } }
+              ]
+            },
+            attributes: ['id', 'nom', 'prenoms', 'identifiant'],
+            limit: 30,
+            order: [['nom', 'ASC'], ['prenoms', 'ASC']]
+          }),
+          DossierEtudiant.findAll({
+            where: { matricule: { [Op.like]: like } },
+            attributes: ['utilisateurId', 'matricule'],
+            limit: 30,
+            raw: true
+          })
+        ]);
+
+        const matricules = new Map<number, string>();
+        dossiers.forEach((dossier: any) => {
+          if (dossier.utilisateurId) matricules.set(Number(dossier.utilisateurId), String(dossier.matricule || ''));
+        });
+        const ids = new Set<number>([
+          ...utilisateursDirects.map((utilisateur: any) => Number(utilisateur.id)),
+          ...matricules.keys()
+        ]);
+        const utilisateurs = ids.size === utilisateursDirects.length
+          ? utilisateursDirects
+          : await Utilisateur.findAll({
+            where: { id: { [Op.in]: [...ids] }, role: RolesUtilisateur.APPRENANT },
+            attributes: ['id', 'nom', 'prenoms', 'identifiant'],
+            limit: 30,
+            order: [['nom', 'ASC'], ['prenoms', 'ASC']]
+          });
+
+        return res.status(200).json({
+          data: utilisateurs.map((utilisateur: any) => ({
+            id: utilisateur.id,
+            nom: utilisateur.nom,
+            prenoms: utilisateur.prenoms,
+            matricule: matricules.get(Number(utilisateur.id)) || utilisateur.identifiant || ''
+          }))
+        });
+      } catch (error) {
+        console.error('[RECOUVREMENT][searchStudents]', error);
+        return res.status(500).json({ success: false, message: "Impossible de rechercher les étudiants" });
+      }
+    }
+
+    static async getTypesDocumentsPayants(req: Request, res: Response): Promise<Response> {
+      if (!ROLES_RECOUVREMENT.includes((req as any).utilisateurRole)) {
+        return res.status(403).json({ success: false, message: "Accès réservé au service de recouvrement" });
+      }
+      try {
+        const types = await TypeDocument.findAll({
+          where: { actif: true, frais: { [Op.gt]: 0 } },
+          attributes: ['id', 'libelle', 'frais'],
+          order: [['libelle', 'ASC']]
+        });
+        return res.status(200).json(types);
+      } catch (error) {
+        console.error('[RECOUVREMENT][documentTypes]', error);
+        return res.status(500).json({ success: false, message: "Impossible de charger les tarifs des documents" });
+      }
+    }
+
+    static async collecterPaiementDemandeDocument(req: Request, res: Response): Promise<Response> {
+      const utilisateurId = Number((req as any).utilisateurId);
+      if (!ROLES_RECOUVREMENT.includes((req as any).utilisateurRole)) {
+        return res.status(403).json({ success: false, message: "Accès réservé au service de recouvrement" });
+      }
+
+      const etudiantId = Number(req.body.etudiantId);
+      const typeDocumentId = Number(req.body.typeDocumentId);
+      const modePaiement = req.body.modePaiement;
+      const referencePaiement = String(req.body.referencePaiement || '').trim();
+      const modesValides = ['especes', 'mobile_money', 'autre'];
+      if (!Number.isInteger(etudiantId) || etudiantId <= 0 || !Number.isInteger(typeDocumentId) || typeDocumentId <= 0) {
+        return res.status(400).json({ success: false, message: "Étudiant et type de document requis" });
+      }
+      if (!modesValides.includes(modePaiement)) {
+        return res.status(400).json({ success: false, message: `Mode de paiement invalide. Valeurs acceptées : ${modesValides.join(', ')}` });
+      }
+      if (referencePaiement.length > 100) {
+        return res.status(400).json({ success: false, message: "La référence de paiement ne peut pas dépasser 100 caractères" });
+      }
+
+      try {
+        const [etudiant, typeDocument] = await Promise.all([
+          Utilisateur.findOne({
+            where: { id: etudiantId, role: RolesUtilisateur.APPRENANT },
+            attributes: ['id', 'nom', 'prenoms', 'identifiant']
+          }),
+          TypeDocument.findOne({ where: { id: typeDocumentId, actif: true } })
+        ]);
+        if (!etudiant) return res.status(404).json({ success: false, message: "Étudiant introuvable" });
+        if (!typeDocument) return res.status(404).json({ success: false, message: "Type de document indisponible" });
+        const montant = Number(typeDocument.frais) || 0;
+        if (montant <= 0) {
+          return res.status(400).json({ success: false, message: "Ce document ne nécessite pas de paiement" });
+        }
+
+        const numero = `RCU-DOC-${Date.now()}-${randomBytes(3).toString('hex').toUpperCase()}`;
+        const transaction = await DatabaseConnection.getInstance().sequelize.transaction();
+        let recu: RecuCaisse;
+        try {
+          recu = await RecuCaisse.create({
+            numero,
+            demandeDocumentId: null,
+            etudiantId,
+            typeDocumentId,
+            montant,
+            modePaiement,
+            referencePaiement: referencePaiement || null,
+            caissierId: utilisateurId,
+            datePaiement: new Date()
+          }, { transaction });
+          await JournalCaisse.create({
+            clotureId: null,
+            demandeDocumentId: null,
+            recuId: recu.id,
+            modePaiement,
+            montant
+          }, { transaction });
+          await transaction.commit();
+        } catch (error) {
+          await transaction.rollback();
+          throw error;
+        }
+
+        await SecretariatService.logAction(
+          'PAIEMENT_DEMANDE_DOCUMENT',
+          utilisateurId,
+          null,
+          `Reçu ${numero} — ${etudiant.nom || ''} ${etudiant.prenoms || ''} — ${typeDocument.libelle} — ${montant} FCFA`
+        );
+
+        try {
+          await RecuCaisseGeneratorService.genererRecu(recu);
+        } catch (error) {
+          console.error(`[RECOUVREMENT][receiptPdf] recu=${recu.id}`, error);
+          return res.status(500).json({
+            success: false,
+            code: 'RECEIPT_PDF_FAILED',
+            message: `Paiement enregistré sous le reçu ${numero}, mais le PDF n'a pas pu être généré. Réessayez le téléchargement du reçu.`,
+            recuId: recu.id,
+            numero
+          });
+        }
+
+        const recuComplet = await RecuCaisse.findByPk(recu.id, {
+          include: [
+            { association: RecuCaisse.associations.etudiant },
+            { association: RecuCaisse.associations.typeDocument },
+            { association: RecuCaisse.associations.caissier }
+          ]
+        });
+        return res.status(201).json(recuComplet || recu);
+      } catch (error) {
+        console.error(`[RECOUVREMENT][collectDocumentPayment] user=${utilisateurId} student=${etudiantId} type=${typeDocumentId}`, error);
+        return res.status(500).json({ success: false, code: 'PAYMENT_DATABASE_ERROR', message: "Impossible d'enregistrer le paiement du document" });
+      }
+    }
 
   static async getJournalCaisse(req: Request, res: Response): Promise<Response> {
     try {
@@ -153,115 +363,11 @@ export default class RecuCaisseController {
     }
   }
 
-  static async collecterPaiement(req: Request, res: Response): Promise<Response> {
-    const utilisateurId = (req as any).utilisateurId;
-    const { demandeId, modePaiement, montant, referencePaiement } = req.body;
-
-    // ── Validation des entrées ──
-    if (!demandeId || !modePaiement || montant === undefined || montant === null) {
-      return res.status(400).json({ success: false, code: 'VALIDATION_ERROR', message: "demandeId, modePaiement et montant requis" });
-    }
-    const modesValides = ['especes', 'mobile_money', 'autre'];
-    if (!modesValides.includes(modePaiement)) {
-      return res.status(400).json({ success: false, code: 'MODE_PAIEMENT_INVALIDE', message: `modePaiement doit être : ${modesValides.join(', ')}` });
-    }
-    const montantNum = Number(montant);
-    if (!Number.isFinite(montantNum) || montantNum <= 0) {
-      return res.status(400).json({ success: false, code: 'MONTANT_INVALIDE', message: "Le montant doit être strictement positif" });
-    }
-
-    try {
-      const demande: DemandeDocument | null = await DemandeDocument.findByPk(demandeId, {
-        include: [
-          { model: TypeDocument, as: 'typeDocument' },
-          { model: Utilisateur, as: 'etudiant' }
-        ]
-      });
-      if (!demande) {
-        return res.status(404).json({ success: false, code: 'DEMANDE_NOT_FOUND', message: "Demande non trouvée" });
-      }
-
-      // Erreur métier : double encaissement interdit
-      if (demande.fraisPayes) {
-        return res.status(409).json({ success: false, code: 'PAYMENT_ALREADY_REGISTERED', message: "Cette demande a déjà été payée" });
-      }
-      const attendu = Number(demande.montant) || 0;
-      if (attendu > 0 && montantNum !== attendu) {
-        return res.status(400).json({ success: false, code: 'MONTANT_INCOHERENT', message: `Montant incohérent : ${attendu} FCFA attendus` });
-      }
-
-      const numeroRecu = `RECU-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-
-      // Transaction : reçu + mise à jour demande + journal de caisse doivent être atomiques.
-      const transaction = await DatabaseConnection.getInstance().sequelize.transaction();
-      try {
-        const recu = await RecuCaisse.create({
-          numero: numeroRecu,
-          demandeDocumentId: demande.id,
-          montant: montantNum,
-          modePaiement,
-          caissierId: utilisateurId,
-          datePaiement: new Date()
-        }, { transaction });
-
-        await demande.update({
-          fraisPayes: true,
-          datePaiement: new Date(),
-          modePaiement,
-          numeroRecu,
-          statut: 'paye',
-          recuCaisseId: recu.id,
-          caissierId: utilisateurId,
-          referencePaiement: referencePaiement || null
-        }, { transaction });
-
-        await JournalCaisse.create({
-          clotureId: null,
-          demandeDocumentId: demande.id,
-          recuId: recu.id,
-          modePaiement,
-          montant: montantNum
-        }, { transaction });
-
-        await transaction.commit();
-
-        if (demande.source === 'demande_etudiant') {
-          try {
-            await DemandeDocumentWorkflowService.promouvoirAuComiteSiPret(demande.id);
-          } catch (workflowError) {
-            console.error(`[SECRETARIAT][collecterPaiement] progression workflow demande=${demande.id}`, workflowError);
-            return res.status(500).json({
-              success: false,
-              code: 'PAYMENT_RECORDED_WORKFLOW_ADVANCE_FAILED',
-              message: "Paiement enregistré, mais impossible de mettre à jour l'étape suivante du dossier"
-            });
-          }
-        }
-
-        // Journal d'audit hors transaction (évite le deadlock sur le verrou X)
-        await SecretariatService.logAction('PAIEMENT_ENCAISSE', utilisateurId, demande.id, `Reçu ${numeroRecu} — ${montantNum} FCFA`);
-
-        // Génération asynchrone du PDF du reçu (non bloquante)
-        RecuCaisseGeneratorService.genererRecu(recu).catch(err => {
-          console.error('[SECRETARIAT][collecterPaiement] Erreur génération PDF RCU:', err);
-        });
-
-        // Recharger avec associations pour la réponse
-        const recuComplet = await RecuCaisse.findByPk(recu.id, {
-          include: [
-            { association: RecuCaisse.associations.demandeDocument, include: [{ association: DemandeDocument.associations.typeDocument }] },
-            { association: RecuCaisse.associations.caissier }
-          ]
-        });
-
-        return res.status(201).json(recuComplet || recu);
-      } catch (error) {
-        await transaction.rollback().catch(rbErr => console.error('[SECRETARIAT][collecterPaiement] rollback échoué:', rbErr));
-        throw error;
-      }
-    } catch (error) {
-      console.error(`[SECRETARIAT][collecterPaiement] user=${utilisateurId} demande=${demandeId}`, error);
-      return res.status(500).json({ success: false, code: 'PAYMENT_DATABASE_ERROR', message: "Erreur lors de l'enregistrement du paiement" });
-    }
+  static async paiementApresCreationDesactive(_req: Request, res: Response): Promise<Response> {
+    return res.status(410).json({
+      success: false,
+      code: 'PAYMENT_MUST_PRECEDE_REQUEST',
+      message: "Le paiement après création est désactivé. L'étudiant doit payer au service de recouvrement avant de créer sa demande."
+    });
   }
 }

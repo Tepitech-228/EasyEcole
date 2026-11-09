@@ -651,12 +651,52 @@ const ECRANS = {
   'cahiers-de-texte': {
     titre: 'Cahiers de texte',
     description: "Contenu des séances : objectifs, activités, devoirs et ressources.",
-    workflow: ['Choisir la classe et la séance', 'Renseigner le contenu', 'Publier pour les étudiants'],
+    workflow: ['Rechercher un cours existant', 'Ouvrir ou créer son cahier', 'Ajouter les blocs des séances réellement dispensées'],
+  },
+  'cahier-texte-exemple': {
+    titre: 'Cahiers de texte — exemple fictif',
+    description: "Illustration de la liste des cahiers associés à des cours existants. Les noms, classes et codes affichés sont fictifs.",
+    workflow: ['Filtrer par niveau, classe ou parcours', 'Rechercher le cours déjà attribué', 'Ouvrir le cahier concerné'],
+  },
+  'cahier-texte-nouveau-exemple': {
+    titre: 'Nouveau cahier de texte — formulaire fictif',
+    description: "Illustration du formulaire qui rattache un cahier à un cours déjà existant, avec l’enseignant et une description facultative.",
+    workflow: ['Choisir parmi les cours', 'Sélectionner le cours attribué', 'Vérifier l’enseignant avant d’enregistrer'],
+  },
+  'cahier-texte-detail-exemple': {
+    titre: 'Cahier de texte — séances fictives',
+    description: "Illustration de blocs de cours comportant un horaire et un contenu pédagogique d’exemple, sans enregistrement.",
+    workflow: ['Vérifier le cours et la classe', 'Relire la date et les horaires du bloc', 'Vérifier que le contenu décrit la séance réellement dispensée'],
+  },
+  'cahier-texte-nouveau-bloc-exemple': {
+    titre: 'Cahier de texte — formulaire de séance',
+    description: "Exemple du formulaire de création d’un bloc : date, heure de début, heure de fin et contenu sont obligatoires.",
+    workflow: ['Renseigner la date et les deux horaires', 'Décrire le contenu effectivement traité', 'Enregistrer uniquement après vérification'],
   },
   'cahier-de-presence': {
     titre: 'Cahier de présence',
-    description: "Appel et suivi des présences par séance, avec motif d’absence.",
-    workflow: ['Ouvrir la séance', 'Marquer les présents et absents', 'Enregistrer'],
+    description: "Listes et feuilles de présence par séance. Les actions disponibles dépendent du rôle : l’enseignant renseigne les états lors de la création d’une séance, tandis que le Surveillant peut modifier l’état d’une feuille existante dans son périmètre autorisé.",
+    workflow: ['Ouvrir une liste autorisée', 'Vérifier la séance et les participants', 'Saisir les états selon les droits du rôle et contrôler le résultat'],
+  },
+  'presence-liste-exemple': {
+    titre: 'Listes de présence — exemple fictif',
+    description: "Illustration de la liste de présence d’un cours existant. Les personnes et le cours affichés sont fictifs.",
+    workflow: ['Filtrer ou rechercher une liste', 'Ouvrir la liste correspondant au cours', 'Créer une liste seulement si elle n’existe pas'],
+  },
+  'presence-nouvelle-liste-exemple': {
+    titre: 'Nouvelle liste de présence — formulaire fictif',
+    description: "Illustration du formulaire de création d’une liste rattachée à un cours existant.",
+    workflow: ['Choisir un cours existant', 'Vérifier l’enseignant', 'Enregistrer la liste après contrôle'],
+  },
+  'presence-feuille-exemple': {
+    titre: 'Feuille de présence — exemple fictif',
+    description: "Exemple de feuille avec les états Présent, Absent et Absence justifiée. Aucun état n’a été enregistré.",
+    workflow: ['Vérifier le cours, la date et les horaires', 'Contrôler chaque état de présence', 'Signer uniquement après vérification si cette action est disponible'],
+  },
+  'presence-nouvelle-seance-exemple': {
+    titre: 'Nouvelle séance de présence — exemple fictif',
+    description: "Illustration du formulaire qui associe une date et des horaires aux participants et à leur état de présence.",
+    workflow: ['Renseigner la date et les horaires', 'Vérifier la liste des participants', 'Renseigner les états puis enregistrer'],
   },
   notes: {
     titre: 'Notes',
@@ -730,8 +770,23 @@ const ECRANS = {
   },
   'emplois-du-temps': {
     titre: 'Emplois du temps',
-    description: "Planning des cours par classe, enseignant et salle.",
-    workflow: ['Choisir la classe ou l’enseignant', 'Consulter le planning', 'Détecter les conflits'],
+    description: "Planning des cours par classe, enseignant et salle. Les profils Institution, Administrateur et Superviseur général peuvent gérer et publier le planning dans leur périmètre autorisé ; les autres profils le consultent.",
+    workflow: ['Vérifier le site actif autorisé', 'Consulter ou gérer les séances selon le rôle', 'Vérifier les conflits puis publier le planning si le rôle le permet'],
+  },
+  'emploi-du-temps-exemple-superviseur': {
+    titre: 'Emploi du temps — exemple fictif',
+    description: "Simulation visuelle d’un planning avec des cours, dates, enseignants et salles fictifs. Elle ne modifie ni n’enregistre aucune séance.",
+    workflow: ['Vérifier le site actif autorisé', 'Contrôler les cours, horaires, enseignants et salles', 'Ne publier qu’après vérification du planning réel'],
+  },
+  'nouvelle-seance-emploi-du-temps-exemple': {
+    titre: 'Nouvelle séance — formulaire fictif',
+    description: "Simulation du formulaire de planification avec des cours, une salle, un enseignant et des dates fictifs. Aucun enregistrement n’est effectué.",
+    workflow: ['Choisir un cours existant', 'Compléter les dates et horaires', 'Contrôler le site et les conflits avant d’enregistrer'],
+  },
+  'publication-emploi-du-temps-exemple': {
+    titre: 'Publication du planning — exemple fictif',
+    description: "Simulation du message de confirmation et des nombres de destinataires. Aucune notification n’est envoyée.",
+    workflow: ['Vérifier le planning réel', 'Publier depuis le site actif autorisé', 'Contrôler la confirmation et les destinataires'],
   },
   shifts: {
     titre: 'Shifts',
@@ -906,4 +961,680 @@ const ECRANS = {
   },
 };
 
-module.exports = { ECRANS };
+const ECRANS_PAR_PROFIL = {
+  recouvrement: {
+    'valid-bordereaux': {
+      titre: 'Validation des bordereaux',
+      description: "Cette capture montre l’écran d’authentification du Cabinet comptable. Le Recouvrement intervient après cette étape et traite les bordereaux authentifiés depuis « Bordereaux à imputer ».",
+      workflow: [
+        'Ne pas valider ni rejeter le bordereau depuis cet écran',
+        'Orienter toute anomalie de justificatif vers le Cabinet comptable',
+        'Traiter le dossier depuis « Bordereaux à imputer » après authentification',
+      ],
+    },
+  },
+  etudiants: {
+    parcours: {
+      titre: 'Parcours',
+      description: "Catalogue en consultation des formations publiées. L’étudiant ne crée ni ne modifie les filières, les UE ou les cours ; cette gestion relève de l’administration.",
+      workflow: ['Parcourir les filières publiées', 'Ouvrir une fiche pour consulter le niveau et les conditions d’accès', 'Contacter le secrétariat si une information manque'],
+    },
+    demandes: {
+      titre: 'Demandes d’inscription',
+      description: "Espace personnel pour démarrer ou reprendre une demande d’inscription, puis suivre son traitement par les services de l’établissement.",
+      workflow: ['Cliquer sur Nouvelle demande si une session est ouverte', 'Compléter les étapes Filière, Documents, Informations et Récapitulatif', 'Soumettre le dossier puis suivre son statut'],
+    },
+    'demandes-orientation': {
+      titre: "Demandes d'orientation",
+      description: "Création et suivi d’une demande d’orientation à partir des filières proposées par l’établissement.",
+      workflow: ['Ouvrir le catalogue des parcours existants', 'Ajouter les choix souhaités au panier', 'Soumettre la demande et consulter la réponse de l’administration'],
+    },
+    'parcours-orientation': {
+      titre: "Parcours d'orientation",
+      description: "Catalogue en consultation des parcours proposés pour préparer une demande d’orientation. La création et la publication des parcours sont réservées à l’administration.",
+      workflow: ['Filtrer les parcours publiés', 'Consulter les prérequis et débouchés', 'Ajouter un parcours au panier de demande d’orientation'],
+    },
+    'mes-bordereaux': {
+      titre: 'Mes bordereaux',
+      description: "Dépôt et suivi des justificatifs de paiement de l’étudiant. Le contrôle et l’imputation sont réalisés par les services de recouvrement et de comptabilité.",
+      workflow: ['Déposer un justificatif lisible', 'Suivre son statut et le motif en cas de rejet', 'Télécharger le reçu lorsqu’il est disponible'],
+    },
+    'mon-dossier': {
+      titre: 'Mon dossier',
+      description: "Consultation du dossier personnel, de ses pièces et de l’avancement des démarches.",
+      workflow: ['Vérifier les informations personnelles', 'Remplacer uniquement les pièces signalées en correction', 'Suivre la validation par les services compétents'],
+    },
+    reorientation: {
+      titre: 'Réorientation',
+      description: "Soumission et suivi d’une demande de changement de parcours. La décision appartient à l’administration.",
+      workflow: ['Choisir le parcours cible parmi ceux proposés', 'Expliquer le motif et joindre les pièces demandées', 'Soumettre la demande et suivre la décision'],
+    },
+    reclamations: {
+      titre: 'Réclamations',
+      description: "Dépôt et suivi des réclamations personnelles concernant notamment les notes, la scolarité ou un paiement.",
+      workflow: ['Choisir le sujet de la réclamation', 'Décrire les faits et joindre les justificatifs utiles', 'Soumettre puis consulter la réponse'],
+    },
+    calendrier: {
+      titre: 'Calendrier',
+      description: "Consultation des dates et événements publiés par l’établissement.",
+      workflow: ['Choisir la période à consulter', 'Ouvrir un événement pour lire ses détails', 'Contacter le service concerné en cas de question'],
+    },
+    bibliotheque: {
+      titre: 'Bibliothèque',
+      description: "Consultation des ressources et informations de bibliothèque mises à disposition de l’étudiant.",
+      workflow: ['Rechercher une ressource disponible', 'Ouvrir sa fiche', 'Suivre les consignes affichées pour la consulter ou l’emprunter'],
+    },
+    annonces: {
+      titre: 'Annonces',
+      description: "Lecture des annonces publiées à destination des étudiants. La création et la publication sont réservées aux profils habilités.",
+      workflow: ['Parcourir les annonces publiées', 'Ouvrir une annonce pour lire son contenu', 'Suivre les consignes et dates qui y figurent'],
+    },
+    'vie-estudiantine': {
+      titre: 'Vie estudiantine',
+      description: "Consultation des informations et activités étudiantes publiées par l’établissement.",
+      workflow: ['Parcourir les actualités disponibles', 'Ouvrir une publication', 'Suivre les modalités de participation indiquées'],
+    },
+    suggestions: {
+      titre: 'Suggestions',
+      description: "Envoi d’une proposition d’amélioration à l’administration et suivi de son traitement.",
+      workflow: ['Rédiger une suggestion', 'La soumettre', 'Consulter son état de traitement'],
+    },
+    paiements: {
+      titre: 'Paiements',
+      description: "Consultation des échéances et des informations de paiement de son propre dossier. Le recouvrement confirme les règlements et traite la caisse.",
+      workflow: ['Consulter le montant et l’état des échéances', 'Suivre les instructions de paiement communiquées par l’établissement', 'Déposer ou suivre le justificatif dans Mes bordereaux'],
+    },
+    echeances: {
+      titre: 'Échéances',
+      description: "Consultation des montants dus, dates limites et états de règlement. L’étudiant ne valide pas lui-même un paiement.",
+      workflow: ['Filtrer les échéances par période ou statut', 'Lire le montant et la date limite', 'Contacter le recouvrement si le statut ne correspond pas au paiement effectué'],
+    },
+    discussions: {
+      titre: 'Discussions',
+      description: "Messagerie interne pour échanger avec les personnes et services accessibles selon les droits du compte.",
+      workflow: ['Ouvrir une conversation', 'Rédiger et envoyer un message', 'Joindre un fichier si l’écran le permet'],
+    },
+    'mon-profil': {
+      titre: 'Mon profil',
+      description: "Consultation et mise à jour des champs personnels que l’application autorise à modifier.",
+      workflow: ['Vérifier son identité et ses coordonnées', 'Corriger les champs modifiables', 'Enregistrer et vérifier le résultat'],
+    },
+    'mon-compte': {
+      titre: 'Mon compte',
+      description: "Gestion des paramètres de sécurité du compte étudiant.",
+      workflow: ['Changer son mot de passe', 'Configurer la double authentification si elle est activée', 'Se déconnecter après usage sur un appareil partagé'],
+    },
+    diplomes: {
+      titre: 'Diplômes',
+      description: "Consultation des informations et documents de diplôme qui concernent l’étudiant. La création et la modification des diplômes sont réservées à l’administration.",
+      workflow: ['Consulter les informations disponibles sur son diplôme', 'Vérifier son identité et les données affichées', 'Télécharger le document si cette option est proposée'],
+    },
+    'demandes-docs': {
+      titre: 'Demandes de documents',
+      description: "Création et suivi d’une demande personnelle de document. La vérification, la préparation et la délivrance sont réalisées par les services compétents.",
+      workflow: ['Choisir le type de document et renseigner les informations demandées', 'Joindre les pièces ou sélectionner le reçu requis', 'Vérifier le récapitulatif, soumettre puis suivre la demande'],
+    },
+    'mes-documents': {
+      titre: 'Mes documents',
+      description: "Suivi des demandes de documents et téléchargement des documents personnels lorsqu’ils sont prêts.",
+      workflow: ['Consulter l’état de ses demandes', 'Ouvrir le détail pour connaître l’action attendue', 'Télécharger le document disponible'],
+    },
+    'demandes-vae': {
+      titre: 'Demandes VAE',
+      description: "Soumission et suivi d’une demande personnelle de VAE, VAP ou équivalence. L’instruction et la décision sont réservées à l’administration.",
+      workflow: ['Choisir le type de demande', 'Compléter les informations et déposer les justificatifs demandés', 'Soumettre le dossier et suivre son instruction'],
+    },
+    'inscription-wizard-filiere': {
+      titre: 'Wizard d’inscription — Filière',
+      description: "Capture de démonstration de la première étape. L’étudiant choisit un mode et une filière déjà publiée ; il ne crée pas d’UE.",
+      workflow: ['Choisir Présentiel ou En ligne', 'En Présentiel, sélectionner une filière publiée', 'Cliquer sur Continuer'],
+    },
+    'inscription-wizard-documents': {
+      titre: 'Wizard d’inscription — Documents',
+      description: "Capture de démonstration avec des pièces fictives : la liste réelle dépend des exigences publiées pour la session choisie.",
+      workflow: ['Choisir une session disponible', 'Téléverser les pièces affichées et le bordereau demandé', 'Cliquer sur Soumettre les pièces'],
+    },
+    'inscription-wizard-informations': {
+      titre: 'Wizard d’inscription — Informations',
+      description: "Capture de démonstration de l’étape où l’étudiant vérifie ses données personnelles, son site et sa photo.",
+      workflow: ['Compléter les champs personnels obligatoires', 'Choisir le site correspondant à la session', 'Ajouter la photo puis cliquer sur Valider et continuer'],
+    },
+    'inscription-wizard-recapitulatif': {
+      titre: 'Wizard d’inscription — Récapitulatif',
+      description: "Capture de démonstration avec des données et pièces fictives ; le récapitulatif précède la demande d’autorisation provisoire.",
+      workflow: ['Relire le mode, la filière et la session', 'Vérifier les pièces et les informations personnelles', 'Cliquer sur Soumettre la demande d’autorisation provisoire'],
+    },
+    'inscription-wizard-statut': {
+      titre: 'Wizard d’inscription — Statut',
+      description: "Capture illustrative de l’écran de suivi après soumission. Cette image ne représente pas une demande réelle.",
+      workflow: ['Lire le statut affiché', 'Ouvrir Demandes ou Mon dossier pour le détail', 'Suivre une correction si elle est demandée'],
+    },
+    'demande-document-wizard-pieces': {
+      titre: 'Wizard document — Pièces',
+      description: "Capture de démonstration de la première étape : joindre les pièces demandées au document choisi.",
+      workflow: ['Vérifier la liste des justificatifs', 'Téléverser un fichier lisible au format accepté', 'Cliquer sur Suivant'],
+    },
+    'demande-document-wizard-verification': {
+      titre: 'Wizard document — Vérification',
+      description: "Capture de démonstration de l’étape de contrôle des pièces avant transmission.",
+      workflow: ['Vérifier chaque pièce et son nom', 'Compléter les pièces obligatoires manquantes', 'Cliquer sur Suivant'],
+    },
+    'demande-document-wizard-soumission': {
+      titre: 'Wizard document — Soumission',
+      description: "Capture de démonstration de l’étape finale de transmission d’une demande de document.",
+      workflow: ['Relire le type de document et les frais', 'Vérifier que toutes les pièces obligatoires sont présentes', 'Cliquer sur Soumettre la demande'],
+    },
+  },
+};
+
+const PROCEDURES_PAR_PROFIL = {
+  recouvrement: [
+    {
+      titre: 'Encaisser un règlement et remettre le reçu',
+      introduction: "Utilisez le parcours correspondant à la nature du règlement : « Encaissement documents » pour une demande de document payante, ou « Paiements » pour les autres encaissements. Saisissez uniquement un règlement effectivement reçu. Les captures sont illustratives et ne créent aucune opération.",
+      captures: ['paiements'],
+      sections: [
+        {
+          titre: 'Avant d’enregistrer le paiement',
+          etapes: [
+            {
+              action: 'Rechercher l’étudiant avec son matricule ou ses informations d’identification, puis vérifier le dossier ou la demande concernée.',
+              pourquoi: 'Cela évite de rattacher le règlement à la mauvaise personne ou à la mauvaise opération.',
+              responsable: 'ESA Compta / Recouvrement',
+            },
+            {
+              action: 'Vérifier le montant attendu, la nature du paiement et l’échéance ou le document concerné.',
+              pourquoi: 'Le montant reçu doit correspondre à une somme due et être affecté à la bonne opération.',
+              responsable: 'ESA Compta / Recouvrement',
+            },
+          ],
+        },
+        {
+          titre: 'Enregistrer et remettre le reçu',
+          etapes: [
+            {
+              action: 'Choisir le moyen de paiement proposé et enregistrer le montant réellement reçu, avec les références demandées.',
+              pourquoi: 'La saisie doit refléter l’encaissement effectif ; ne marquez pas comme payé un montant seulement annoncé ou justifié par un bordereau non contrôlé.',
+              responsable: 'ESA Compta / Recouvrement',
+            },
+            {
+              action: 'Après confirmation de l’enregistrement, vérifier le numéro, la date, le montant et le mode sur le reçu.',
+              pourquoi: 'Le reçu est la preuve remise à l’étudiant et permet de retrouver l’opération.',
+              responsable: 'ESA Compta / Recouvrement',
+            },
+            {
+              action: 'Imprimer ou remettre le reçu, puis vérifier l’opération dans le journal de caisse ou l’historique des paiements.',
+              pourquoi: 'Le contrôle final confirme que le paiement est visible et correctement rattaché.',
+              responsable: 'ESA Compta / Recouvrement',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      titre: 'Saisir et imputer un bordereau authentifié',
+      introduction: "Le Cabinet comptable contrôle le justificatif et authentifie le bordereau. ESA Compta effectue ensuite la saisie et l’imputation. N’utilisez pas le circuit d’imputation pour remplacer ou contourner le contrôle du Cabinet.",
+      captures: ['bordereaux-a-imputer', 'bordereau-imputation-simulation', 'bordereaux-traites'],
+      sections: [
+        {
+          titre: 'Contrôler le dossier avant saisie',
+          etapes: [
+            {
+              action: 'Ouvrir « Bordereaux à imputer », puis filtrer par année, niveau, parcours ou type d’opération si nécessaire.',
+              pourquoi: 'Les filtres aident à retrouver le bordereau dans la file des dossiers authentifiés.',
+              responsable: 'ESA Compta / Recouvrement',
+            },
+            {
+              action: 'Vérifier le statut, l’étudiant, le type d’opération, le montant et les références du bordereau.',
+              pourquoi: 'L’imputation doit correspondre au justificatif contrôlé par le Cabinet et au dossier financier de l’étudiant.',
+              responsable: 'ESA Compta / Recouvrement',
+            },
+            {
+              action: 'En cas de bordereau absent, rejeté ou incohérent, suspendre le traitement et contacter le Cabinet comptable ou le service concerné.',
+              pourquoi: 'Le Recouvrement ne modifie pas la décision d’authentification et ne doit pas imputer un dossier non contrôlé.',
+              responsable: 'ESA Compta / Recouvrement',
+            },
+          ],
+        },
+        {
+          titre: 'Saisir, prévisualiser et confirmer',
+          etapes: [
+            {
+              action: 'Ouvrir le traitement et vérifier ou compléter le montant, la référence bancaire, le numéro de bordereau, le moyen de paiement, la banque, le type d’opération et la date.',
+              pourquoi: 'Ces champs servent à enregistrer le paiement et à le rattacher aux échéances correctes.',
+              responsable: 'ESA Compta / Recouvrement',
+            },
+            {
+              action: 'Si le type d’opération est MIXTE, relire la composition calculée automatiquement par l’application avant de continuer.',
+              pourquoi: 'La ventilation entre inscription et scolarité est calculée par le système ; elle ne doit pas être remplacée par une estimation manuelle.',
+              responsable: 'ESA Compta / Recouvrement',
+            },
+            {
+              action: 'Lancer l’aperçu du traitement, contrôler la répartition proposée et les avertissements, puis confirmer la saisie uniquement si les données sont exactes.',
+              pourquoi: 'L’aperçu permet de repérer une incohérence avant l’imputation comptable.',
+              responsable: 'ESA Compta / Recouvrement',
+            },
+            {
+              action: 'Retrouver le bordereau dans « Bordereaux traités » et consulter son état d’imputation.',
+              pourquoi: 'Cette vérification confirme le résultat enregistré et facilite le suivi ultérieur.',
+              responsable: 'ESA Compta / Recouvrement',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      titre: 'Suivre les impayés et vérifier une situation financière',
+      introduction: 'Utilisez les écrans de situation pour répondre à une question sur un solde ou repérer une échéance en retard. Une échéance affichée impayée ne prouve pas à elle seule qu’aucun règlement n’a été remis : vérifiez les paiements et les justificatifs avant de répondre.',
+      captures: ['situation-irreguliere', 'situation-financiere'],
+      sections: [
+        {
+          titre: 'Vérifier le dossier',
+          etapes: [
+            {
+              action: 'Rechercher l’étudiant par matricule et sélectionner la bonne année académique.',
+              pourquoi: 'Un même étudiant peut avoir plusieurs dossiers ou périodes de paiement.',
+              responsable: 'ESA Compta / Recouvrement',
+            },
+            {
+              action: 'Comparer les sommes dues, les paiements enregistrés, les échéances et leurs dates limites.',
+              pourquoi: 'Cette comparaison distingue un retard réel d’un paiement déjà reçu mais pas encore rapproché.',
+              responsable: 'ESA Compta / Recouvrement',
+            },
+            {
+              action: 'Si un reçu existe mais que la situation ne reflète pas le paiement, vérifier l’historique et les références avant toute nouvelle saisie.',
+              pourquoi: 'Éviter une double saisie ou une relance injustifiée.',
+              responsable: 'ESA Compta / Recouvrement',
+            },
+            {
+              action: 'Communiquer uniquement le solde confirmé et orienter l’étudiant vers le service compétent lorsqu’une pièce ou une décision manque.',
+              pourquoi: 'Les informations communiquées doivent correspondre à l’état vérifié du dossier.',
+              responsable: 'ESA Compta / Recouvrement',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      titre: 'Clôturer et contrôler la caisse',
+      introduction: 'La clôture compare le montant théorique calculé par l’application au montant réellement compté. Une différence doit être signalée et expliquée ; ne modifiez pas le montant réel pour faire disparaître un écart.',
+      sections: [
+        {
+          titre: 'Clôture de fin de journée',
+          etapes: [
+            {
+              action: 'Dans « Clôture caisse », vérifier la date, le caissier, le montant théorique et le statut de la clôture.',
+              pourquoi: 'Vous devez clôturer la bonne session et confirmer les opérations qui lui sont rattachées.',
+              responsable: 'ESA Compta / Recouvrement',
+            },
+            {
+              action: 'Compter les fonds réellement présents et rapprocher ce total des reçus et opérations de caisse.',
+              pourquoi: 'Le montant réel doit provenir du comptage, et non être recopié automatiquement depuis le montant théorique.',
+              responsable: 'ESA Compta / Recouvrement',
+            },
+            {
+              action: 'Si la clôture n’est pas encore ouverte, cliquer sur « Ouvrir une clôture » ; sélectionner ensuite la ligne ouverte à clôturer.',
+              pourquoi: 'L’application rattache la clôture au caissier et aux encaissements de la session.',
+              responsable: 'ESA Compta / Recouvrement',
+            },
+            {
+              action: 'Saisir le montant réellement compté, vérifier l’écart affiché et cliquer sur « Valider la clôture » seulement après le rapprochement.',
+              pourquoi: 'La clôture conserve les montants théorique et réel ainsi que l’écart constaté.',
+              responsable: 'ESA Compta / Recouvrement',
+            },
+            {
+              action: 'En cas d’écart ou d’opération manquante, conserver les références des reçus et prévenir le responsable avant de finaliser.',
+              pourquoi: 'Une clôture ne remplace pas l’analyse ni la déclaration d’une anomalie de caisse.',
+              responsable: 'ESA Compta / Recouvrement',
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  etudiants: [
+    {
+      titre: "Inscription — de la demande à la décision du comité",
+      introduction: "L’étudiant choisit parmi les formations publiées et transmet son dossier. Il ne crée ni filière, ni UE, ni cours. Les captures suivantes illustrent l’interface avec des données de démonstration ; aucune demande n’a été créée ni transmise.",
+      sections: [
+        {
+          titre: 'Dans votre espace étudiant',
+          etapes: [
+            {
+              action: 'Dans Demandes, cliquer sur Nouvelle demande et choisir une session ouverte.',
+              pourquoi: 'La session détermine la période d’inscription et les pièces exigées.',
+              responsable: 'Étudiant',
+            },
+            {
+              action: 'À l’étape Filière, choisir le mode proposé et une filière déjà publiée.',
+              pourquoi: 'Vous exprimez votre choix parmi l’offre existante ; la création des formations et des UE est réservée à l’administration.',
+              responsable: 'Étudiant',
+            },
+            {
+              action: 'À l’étape Documents, téléverser les pièces demandées et le bordereau de paiement si l’écran le demande.',
+              pourquoi: 'Les pièces permettent le contrôle du dossier et le bordereau justifie le paiement.',
+              responsable: 'Étudiant',
+            },
+            {
+              action: 'À l’étape Informations, vérifier les renseignements personnels et ajouter la photo demandée.',
+              pourquoi: 'Les données doivent correspondre à la personne inscrite et aux documents fournis.',
+              responsable: 'Étudiant',
+            },
+            {
+              action: 'À l’étape Récapitulatif, relire le dossier, cliquer sur Soumettre la demande d’autorisation provisoire, puis confirmer avec Oui, valider.',
+              pourquoi: 'La vérification finale évite de transmettre un dossier incomplet ou erroné.',
+              responsable: 'Étudiant',
+            },
+          ],
+        },
+        {
+          titre: 'Contrôles internes et suivi',
+          etapes: [
+            {
+              action: 'Le Cabinet comptable contrôle le bordereau et le valide ou le rejette avec un motif.',
+              pourquoi: 'Le justificatif doit être authentifié avant que le paiement soit imputé.',
+              responsable: 'Cabinet comptable',
+            },
+            {
+              action: 'Après le contrôle, ESA Compta (Recouvrement) effectue la saisie ou l’imputation comptable.',
+              pourquoi: 'Cette étape rattache le paiement au dossier et met à jour la situation financière.',
+              responsable: 'ESA Compta / Recouvrement',
+            },
+            {
+              action: 'Le Comité d’orientation examine le dossier transmis et enregistre sa décision.',
+              pourquoi: 'La décision d’admission relève du comité, pas de l’étudiant ni du secrétariat.',
+              responsable: 'Comité d’orientation',
+            },
+            {
+              action: 'Dans Demandes ou Mon dossier, consulter le statut et le motif. En cas de correction demandée, ne modifier que les éléments signalés.',
+              pourquoi: 'Le suivi indique l’action attendue et évite de renvoyer inutilement tout le dossier.',
+              responsable: 'Étudiant',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      titre: 'Demande de document administratif',
+      introduction: 'Le wizard étudiant comporte trois étapes : Pièces, Vérification et Soumission. Les captures utilisent une demande fictive, non transmise. Le secrétariat prépare les documents ; le Recouvrement traite les paiements requis.',
+      sections: [
+        {
+          titre: 'Avant d’ouvrir le wizard',
+          etapes: [
+            {
+              action: 'Dans Demandes de documents, choisir le type de document. Pour un relevé de notes, choisir aussi l’année académique et le semestre.',
+              pourquoi: 'Ces informations déterminent le document et la période à préparer.',
+              responsable: 'Étudiant',
+            },
+            {
+              action: 'Pour un document payant, sélectionner un reçu valide, puis cliquer sur Continuer vers le wizard.',
+              pourquoi: 'Le reçu permet de rattacher le paiement à la demande ; sans reçu, suivre les instructions du service de recouvrement.',
+              responsable: 'Étudiant / Recouvrement',
+            },
+          ],
+        },
+        {
+          titre: 'Dans le wizard et après la soumission',
+          etapes: [
+            {
+              action: 'Pièces : joindre les justificatifs demandés et vérifier que chaque fichier est lisible.',
+              pourquoi: 'Une pièce manquante ou illisible peut bloquer le traitement.',
+              responsable: 'Étudiant',
+            },
+            {
+              action: 'Vérification : relire le type de document, la période, le reçu et les pièces avant de continuer.',
+              pourquoi: 'La vérification permet de corriger les erreurs avant transmission.',
+              responsable: 'Étudiant',
+            },
+            {
+              action: 'Soumission : cliquer sur Soumettre la demande, puis suivre son statut dans Demandes de documents et Mes documents.',
+              pourquoi: 'La demande est alors transmise au service chargé de la préparer et de la valider.',
+              responsable: 'Étudiant',
+            },
+            {
+              action: 'Si un paiement est en attente, contacter le Recouvrement. Pour la préparation ou l’impression, suivre le statut affiché et les consignes du Secrétariat.',
+              pourquoi: 'Le Secrétariat prépare et imprime les documents ; il ne réalise pas les opérations de caisse.',
+              responsable: 'Recouvrement / Secrétariat',
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  enseignant: [
+    {
+      titre: 'Cahier de texte — vérifier le planning, créer le cahier et saisir une séance',
+      introduction: "Les captures ci-dessous sont des illustrations statiques avec des données entièrement fictives. Elles ne créent aucun cours, cahier ou bloc. Un cahier doit être rattaché à un cours déjà attribué à l’enseignant ; si le cours n’existe pas ou n’apparaît pas, demander son affectation au service chargé de la planification.",
+      captures: [
+        'cahier-texte-exemple',
+        'cahier-texte-nouveau-exemple',
+        'cahier-texte-detail-exemple',
+        'cahier-texte-nouveau-bloc-exemple',
+      ],
+      sections: [
+        {
+          titre: 'Vérifier que le cours est programmé',
+          etapes: [
+            {
+              action: 'Ouvrir Emplois du temps et sélectionner la date, la classe ou l’enseignant pour consulter le planning.',
+              pourquoi: 'Le cahier et ses blocs doivent correspondre à un cours et à une séance réellement programmés.',
+              responsable: 'Enseignant',
+            },
+            {
+              action: 'Si le cours ou le site n’apparaît pas, ne pas créer ni publier un emploi du temps depuis ce compte ; transmettre l’anomalie à l’administration ou au responsable de planification.',
+              pourquoi: 'La création et la publication de l’emploi du temps sont réservées aux profils Institution, Administrateur et Superviseur général.',
+              responsable: 'Enseignant, puis Institution / Administrateur',
+            },
+          ],
+        },
+        {
+          titre: 'Créer le cahier à partir d’un cours existant',
+          etapes: [
+            {
+              action: 'Ouvrir Cours > Cahiers de texte, puis filtrer par niveau, classe ou parcours et rechercher le cours.',
+              pourquoi: 'Les filtres évitent d’ouvrir un cahier appartenant à une autre classe.',
+              responsable: 'Enseignant',
+            },
+            {
+              action: 'Si aucun cahier n’existe, cliquer sur Nouveau cahier de texte, activer Choisir parmi les cours et sélectionner le cours déjà attribué.',
+              pourquoi: 'L’enseignant rattache le cahier à l’offre de cours existante ; il ne crée ni UE ni cours depuis ce formulaire.',
+              responsable: 'Enseignant',
+            },
+            {
+              action: 'Vérifier l’enseignant associé, ajouter une description si utile, puis cliquer sur Enregistrer.',
+              pourquoi: 'L’enregistrement crée le cahier dans l’application ; la capture de démonstration, elle, ne sauvegarde rien.',
+              responsable: 'Enseignant',
+            },
+          ],
+        },
+        {
+          titre: 'Ajouter le contenu d’une séance',
+          etapes: [
+            {
+              action: 'Ouvrir le cahier du cours et cliquer sur Nouveau bloc.',
+              pourquoi: 'Chaque bloc décrit une séance dans le cahier sélectionné.',
+              responsable: 'Enseignant',
+            },
+            {
+              action: 'Renseigner la date, l’heure de début, l’heure de fin et le contenu réellement traité.',
+              pourquoi: 'Ces champs sont requis et permettent de rapprocher le cahier de la séance planifiée.',
+              responsable: 'Enseignant',
+            },
+            {
+              action: 'Relire le contenu puis cliquer sur Enregistrer ; vérifier ensuite que le bloc apparaît dans le tableau.',
+              pourquoi: 'L’enregistrement est une opération persistante ; contrôler le résultat évite les doublons ou les erreurs de date.',
+              responsable: 'Enseignant',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      titre: 'Présences — créer une liste et enregistrer les états d’une séance',
+      introduction: "Les captures de cette procédure présentent des apprenants et des états entièrement fictifs. Elles ne créent ni liste ni présence. Les droits et contrôles varient selon le rôle connecté et le site autorisé.",
+      captures: [
+        'presence-liste-exemple',
+        'presence-nouvelle-liste-exemple',
+        'presence-feuille-exemple',
+        'presence-nouvelle-seance-exemple',
+      ],
+      sections: [
+        {
+          titre: 'Ouvrir ou créer la liste du cours',
+          etapes: [
+            {
+              action: 'Ouvrir Cours > Présences, puis filtrer ou rechercher la liste liée au cours et à la classe concernés.',
+              pourquoi: 'Réutiliser la bonne liste conserve l’historique des séances et évite les doublons.',
+              responsable: 'Enseignant',
+            },
+            {
+              action: 'Ouvrir la liste existante. Si elle n’existe pas, cliquer sur Nouvelle liste, choisir le cours existant, vérifier l’enseignant et enregistrer.',
+              pourquoi: 'Une liste de présence est rattachée au cours ; les sélecteurs ne donnent pas le droit de créer un cours.',
+              responsable: 'Enseignant',
+            },
+          ],
+        },
+        {
+          titre: 'Renseigner une séance et les participants',
+          etapes: [
+            {
+              action: 'Dans la liste, cliquer sur Nouvelle présence, puis renseigner la date, l’heure de début et l’heure de fin.',
+              pourquoi: 'La feuille doit correspondre à la séance réellement tenue.',
+              responsable: 'Enseignant',
+            },
+            {
+              action: 'Contrôler les participants affichés et attribuer à chacun l’état exact : Présent, Absent, Absence justifiée ou Non renseigné.',
+              pourquoi: 'Les états saisis dans le formulaire sont enregistrés avec la séance.',
+              responsable: 'Enseignant',
+            },
+            {
+              action: 'Relire les horaires et les états, puis cliquer sur Enregistrer. Vérifier la feuille après le retour à la liste.',
+              pourquoi: 'L’enregistrement crée la séance et ses états ; toute correction ultérieure doit respecter les droits du rôle.',
+              responsable: 'Enseignant',
+            },
+            {
+              action: 'Signer la feuille seulement après contrôle si le bouton Signer la feuille est proposé.',
+              pourquoi: 'La signature est une action engageante et n’est disponible que dans les conditions prévues par le rôle et la feuille.',
+              responsable: 'Enseignant',
+            },
+          ],
+        },
+        {
+          titre: 'Cas du Surveillant',
+          etapes: [
+            {
+              action: 'Accéder uniquement aux listes et sites autorisés par le compte ; si l’écran indique qu’aucun site actif n’est autorisé, demander l’affectation au responsable.',
+              pourquoi: 'La simulation ne doit pas contourner les restrictions de site.',
+              responsable: 'Surveillant / Administrateur',
+            },
+            {
+              action: 'Sur une feuille existante, choisir l’état dans le sélecteur affiché puis vérifier le résultat.',
+              pourquoi: 'Pour le rôle Surveillant, le changement de sélection enregistre immédiatement l’état ; il n’y a pas de bouton Enregistrer distinct sur cette cellule.',
+              responsable: 'Surveillant',
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  'superviseur-general': [
+    {
+      titre: 'Emploi du temps — planifier, contrôler les conflits et publier',
+      introduction: "Le Superviseur général peut créer, modifier, supprimer et publier les séances du site actif autorisé. La capture réelle montre « Aucun site actif sélectionné » ; les suivantes sont des simulations avec des données entièrement fictives. Il faut d’abord sélectionner un site auquel le compte est affecté. La publication envoie les notifications uniquement pour les cours de ce site.",
+      captures: ['emplois-du-temps', 'emploi-du-temps-exemple-superviseur', 'nouvelle-seance-emploi-du-temps-exemple', 'publication-emploi-du-temps-exemple'],
+      sections: [
+        {
+          titre: 'Préparer les séances du planning',
+          etapes: [
+            {
+              action: 'Sélectionner un site actif auquel le compte est autorisé, puis ouvrir Emplois du temps.',
+              pourquoi: 'La création, la modification et la publication sont limitées au site actif du Superviseur général.',
+              responsable: 'Superviseur général / Administrateur',
+            },
+            {
+              action: 'Choisir la semaine et, si nécessaire, filtrer par enseignant ou classe. Cliquer sur une plage libre du calendrier pour ouvrir Nouvelle séance.',
+              pourquoi: 'Le clic sur la grille préremplit la date, l’heure et le jour de la semaine.',
+              responsable: 'Superviseur général',
+            },
+            {
+              action: 'Cocher Choisir parmi les cours et sélectionner le cours existant ; renseigner la salle, les dates de début et de fin, les horaires, l’enseignant et la description utile.',
+              pourquoi: 'La séance doit être rattachée à un cours du site actif et à un enseignant affecté à ce site.',
+              responsable: 'Superviseur général',
+            },
+            {
+              action: 'Cliquer sur Enregistrer. Lire les conflits retournés et corriger les chevauchements avant de forcer une sauvegarde.',
+              pourquoi: 'Le contrôle signale les collisions d’horaires ; ne forcer l’enregistrement qu’après validation explicite.',
+              responsable: 'Superviseur général',
+            },
+            {
+              action: 'Pour corriger une séance, cliquer sur son bloc puis Enregistrer après vérification ; utiliser Supprimer uniquement après confirmation.',
+              pourquoi: 'La modification et la suppression sont des opérations persistantes sur le planning.',
+              responsable: 'Superviseur général',
+            },
+          ],
+        },
+        {
+          titre: 'Contrôler et publier',
+          etapes: [
+            {
+              action: 'Parcourir les séances de la semaine et vérifier cours, enseignant, salle, dates, horaires et absence de conflit.',
+              pourquoi: 'La publication informe les personnes concernées par les séances du site.',
+              responsable: 'Superviseur général',
+            },
+            {
+              action: 'Cliquer sur Publier l’EDT, puis attendre le message de confirmation et contrôler les nombres d’enseignants et d’étudiants notifiés.',
+              pourquoi: 'La publication déclenche les notifications aux enseignants, étudiants et parents concernés par le planning du site actif.',
+              responsable: 'Superviseur général',
+            },
+            {
+              action: 'Si aucun site actif n’est disponible, arrêter la procédure et demander l’affectation du compte ; ne pas tenter de publier sans périmètre.',
+              pourquoi: 'Le serveur refuse la publication sans site actif autorisé.',
+              responsable: 'Superviseur général / Administrateur',
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  surveillant: [
+    {
+      titre: 'Présences — accès limité au site autorisé',
+      introduction: "La capture de démonstration affiche « Aucun site actif autorisé pour ce surveillant ». Elle illustre un refus d’accès réel du compte de démonstration, et non une feuille de présence opérationnelle. Ne pas contourner cette restriction pour obtenir une capture.",
+      captures: ['cahier-de-presence'],
+      sections: [
+        {
+          titre: 'Avant de traiter une présence',
+          etapes: [
+            {
+              action: 'Vérifier que le site actif est affecté au compte. En cas de refus, demander l’affectation ou la correction des habilitations à l’Administrateur.',
+              pourquoi: 'Les listes et présences sont limitées au périmètre autorisé.',
+              responsable: 'Surveillant / Administrateur',
+            },
+            {
+              action: 'Après autorisation, ouvrir la liste de présence de la séance concernée et vérifier le cours, la date et les participants.',
+              pourquoi: 'Le contrôle du contexte évite de modifier la feuille d’une autre classe ou séance.',
+              responsable: 'Surveillant',
+            },
+          ],
+        },
+        {
+          titre: 'Corriger un état sur une feuille existante',
+          etapes: [
+            {
+              action: 'Choisir le statut exact dans le sélecteur de la cellule de présence, puis relire l’état affiché.',
+              pourquoi: 'Dans l’interface Surveillant, le changement de sélection enregistre immédiatement l’état ; aucun bouton Enregistrer distinct n’est affiché.',
+              responsable: 'Surveillant',
+            },
+            {
+              action: 'Pour une séance ou une liste absente, ne pas inventer le cours ni changer de site ; demander l’intervention du service habilité.',
+              pourquoi: 'Le rôle et le périmètre de site déterminent les listes disponibles.',
+              responsable: 'Surveillant / Administration',
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+module.exports = { ECRANS, ECRANS_PAR_PROFIL, PROCEDURES_PAR_PROFIL };

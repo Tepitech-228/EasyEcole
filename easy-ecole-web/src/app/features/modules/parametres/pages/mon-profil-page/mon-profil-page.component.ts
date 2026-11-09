@@ -10,11 +10,13 @@ import { CaissierBanque } from 'src/app/data/modules/auth/models/CaissierBanque.
 import { Enseignant } from 'src/app/data/modules/auth/models/Enseignant.model';
 import { Institution } from 'src/app/data/modules/auth/models/Institution.model';
 import { PersonnelAdministratif } from 'src/app/data/modules/auth/models/PersonnelAdministratif.model';
+import { Utilisateur } from 'src/app/data/modules/auth/models/Utilisateur.model';
 import { ApprenantService } from 'src/app/data/modules/auth/services/apprenant.service';
 import { CaissierBanqueService } from 'src/app/data/modules/auth/services/caissier-banque.service';
 import { EnseignantService } from 'src/app/data/modules/auth/services/enseignant.service';
 import { InstitutionService } from 'src/app/data/modules/auth/services/institution.service';
 import { PersonnelAdministratifService } from 'src/app/data/modules/auth/services/personnel-administratif.service';
+import { UtilisateurService } from 'src/app/data/modules/auth/services/utilisateur.service';
 import { environment } from 'src/environments/environment';
 
 @Component({
@@ -49,6 +51,7 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
   enseignant?: Enseignant
   caissier?: CaissierBanque
   personnelAdministratif?: PersonnelAdministratif
+  profilUtilisateur?: Utilisateur
   profilForm!: FormGroup
 
   situationsMatrimoniales = SituationsMatrimoniales
@@ -228,6 +231,7 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
     private enseignantService: EnseignantService,
     private caissierBanqueService: CaissierBanqueService,
     private personnelAdministratifService: PersonnelAdministratifService,
+    private utilisateurService: UtilisateurService,
     private router: Router,
     private activatedRoute: ActivatedRoute) {
     super()
@@ -251,6 +255,9 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
     }
     else if(this.rolesValue.isPersonnelAdministratif) {
       this.getPersonnelAdministratif()
+    }
+    else {
+      this.getProfilUtilisateur()
     }
   }
 
@@ -324,11 +331,52 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
       }
     })
   }
+
+  private getProfilUtilisateur(): void {
+    this.utilisateurService.get().subscribe({
+      next: (value) => {
+        this.profilUtilisateur = value
+        this.profilForm = new FormGroup({
+          nom: new FormControl(value.nom ?? '', [Validators.required]),
+          prenoms: new FormControl(value.prenoms ?? '', [Validators.required]),
+          contact: new FormControl(value.contact ?? ''),
+        })
+      },
+      error: () => {
+        this.updateError = true
+        setTimeout(() => { this.updateError = false }, 2000)
+      }
+    })
+  }
+
+  validerProfilUtilisateur(): void {
+    this.profilForm.markAllAsTouched()
+    if (this.profilForm.invalid) return
+
+    const formValue = this.profilForm.value
+    const utilisateur: Utilisateur = {
+      nom: formValue.nom,
+      prenoms: formValue.prenoms,
+      contact: formValue.contact,
+    }
+
+    this.utilisateurService.update(utilisateur).subscribe({
+      next: () => {
+        this.profilUtilisateur = { ...this.profilUtilisateur, ...utilisateur }
+        this.updateSuccess = true
+        setTimeout(() => { this.updateSuccess = false }, 2000)
+      },
+      error: () => {
+        this.updateError = true
+        setTimeout(() => { this.updateError = false }, 2000)
+      }
+    })
+  }
   
   choisirFichier(): void {
     const input: HTMLInputElement = document.createElement('input');
     input.type = 'file';
-    input.accept = 'image/jpeg,image/png,image/gif,image/webp'
+    input.accept = 'image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif'
 
     input.onchange = () => {
       const file = input.files?.[0]
@@ -346,21 +394,24 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
   }
 
   private selectionnerPhoto(photo: File): void {
-    const typesAutorises = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-    if (!typesAutorises.includes(photo.type) || photo.size > 5 * 1024 * 1024) {
+    // Le backend accepte le HEIC et redimensionne la photo (NormaliserImage).
+    // On ne lit jamais le fichier entier en mémoire : sur mobile, FileReader
+    // sur une photo 48 Mpx peut provoquer « mémoire insuffisante ».
+    const extension = `.${photo.name.split('.').pop() || ''}`.toLowerCase()
+    const extensionsAutorisees = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif']
+    if (!extensionsAutorisees.includes(extension) || photo.size > 20 * 1024 * 1024) {
       this.file = undefined
-      this.photoErreur = 'Choisissez une image JPG, PNG, GIF ou WEBP de 5 Mo maximum.'
+      this.photoErreur = 'Choisissez une image JPG, PNG, GIF, WEBP ou HEIC de 20 Mo maximum.'
       return
     }
 
     this.file = photo
     this.photoErreur = ''
     this.showPhotoRequiredModal = false
-    const reader = new FileReader()
-    reader.onload = () => {
-      this.imageURL = reader.result as string
+    if (this.imageURL) {
+      URL.revokeObjectURL(this.imageURL)
     }
-    reader.readAsDataURL(photo)
+    this.imageURL = URL.createObjectURL(photo)
 
     if (this.exigerMatriculeEtudiant) {
       this.modifierPhotoProfil()
@@ -369,6 +420,9 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
 
   supprimerFichier(): void {
     this.file = undefined
+    if (this.imageURL) {
+      URL.revokeObjectURL(this.imageURL)
+    }
     this.imageURL = undefined
   }
 

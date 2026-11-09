@@ -23,6 +23,7 @@ export class DemandeDocument extends Model<InferAttributes<DemandeDocument>, Inf
   declare niveauEtudeId: CreationOptional<number | null>
   declare classeId: CreationOptional<number | null>
   declare anneeAcademiqueId: CreationOptional<number | null>
+  declare semestre: CreationOptional<string | null>
   declare numeroDemande: CreationOptional<string | null>
   declare datePaiement: CreationOptional<Date | null>
   declare modePaiement: CreationOptional<'especes' | 'mobile_money' | 'autre' | null>
@@ -121,6 +122,10 @@ DemandeDocument.init({
   },
   anneeAcademiqueId: {
     type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
+  },
+  semestre: {
+    type: DataTypes.STRING(30),
     allowNull: true
   },
   numeroDemande: {

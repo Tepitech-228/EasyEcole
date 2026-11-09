@@ -3,7 +3,6 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DossierInscriptionService } from 'src/app/data/modules/inscription/services/dossier-inscription.service';
 import { DemandeInscriptionService } from 'src/app/data/modules/inscription/services/demande-inscription.service';
-import { compresserImage, ImageIndecodableError, ImageTropVolumineuseError } from 'src/app/shared/utils/image-compression.util';
 
 interface PieceAReposer {
   dossierId: number | string;
@@ -64,7 +63,7 @@ export class InscriptionCorrectionDocumentsPageComponent implements OnInit {
     return piece.dossierInscription?.titre || piece.nomFichier || 'Pièce à remplacer';
   }
 
-  async onFileSelected(event: Event, piece: PieceAReposer): Promise<void> {
+  onFileSelected(event: Event, piece: PieceAReposer): void {
     const input = event.target as HTMLInputElement;
     const fichier = input.files?.[0];
     if (!fichier) return;
@@ -81,24 +80,10 @@ export class InscriptionCorrectionDocumentsPageComponent implements OnInit {
       return;
     }
 
-    // Même normalisation que dans le wizard : photo mobile > 20 Mo ou HEIC.
-    let fichierPrepare = fichier;
-    try {
-      fichierPrepare = await compresserImage(fichier, {
-        dimensionMax: 2400,
-        qualite: 0.88,
-        tailleMaxOctets: 20 * 1024 * 1024,
-      });
-    } catch (erreur) {
-      this.errorMessage = erreur instanceof ImageIndecodableError || erreur instanceof ImageTropVolumineuseError
-        ? erreur.message
-        : 'Cette image n’a pas pu être préparée. Choisissez un fichier JPG ou PNG.';
-      input.value = '';
-      return;
-    }
-
+    // Le fichier part tel quel : conversion HEIC et redimensionnement sont
+    // faits côté serveur (NormaliserImage), sans décodage canvas sur mobile.
     this.errorMessage = '';
-    this.fichiers[String(piece.dossierId)] = fichierPrepare;
+    this.fichiers[String(piece.dossierId)] = fichier;
     input.value = '';
   }
 

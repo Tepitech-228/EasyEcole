@@ -1,374 +1,548 @@
-# Guide d'utilisation — Comptabilité (Cabinet comptable)
+# Guide d'utilisation — Cabinet comptable
 
-> Contrôle des paiements et échéances, validation des bordereaux, comptabilité générale, immobilisations et reportings du cabinet comptable.
+> Contrôle des encaissements, validation des bordereaux, suivi des immobilisations et production des rapports financiers.
 
-**Profil :** Comptabilité (Cabinet comptable)  
-**Nombre d'écrans :** 24  
-**Généré le :** 02/11/2026
+**Profil :** Cabinet comptable (rôle RBAC « Comptable »)  
+**Écrans retenus :** 18 (sur 24 captures)  
+**Version :** 08/11/2026 — contenu vérifié sur l'application
 
-Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. Chaque section contient une capture, l'objectif de l'écran et les actions principales.
+> **Périmètre de ce guide.** Le compte « cabinet comptable » est rattaché au rôle RBAC **Comptable**. Il contrôle les encaissements et les bordereaux, consulte la situation financière des étudiants, tient le registre des immobilisations et produit les rapports financiers. Certains écrans visibles dans le menu peuvent afficher un message d'accès refusé : ils sont recensés en fin de guide pour éviter toute confusion.
 
 ## Sommaire
 
-1. [Paiements](#1-paiements)
-2. [Échéances](#2-echeances)
-3. [Situation irrégulière](#3-situation-irreguliere)
-4. [Situation financière](#4-situation-financiere)
-5. [Validation des bordereaux](#5-validation-des-bordereaux)
-6. [Comptabilité](#6-comptabilite)
-7. [Mon profil](#7-mon-profil)
-8. [Mon compte](#8-mon-compte)
-9. [Mes bordereaux](#9-mes-bordereaux)
-10. [Configurations](#10-configurations)
-11. [Attributions](#11-attributions)
-12. [Mon tableau de bord](#12-mon-tableau-de-bord)
-13. [Immobilisations](#13-immobilisations)
-14. [Sites](#14-sites)
-15. [Catégories](#15-categories)
-16. [Affectations](#16-affectations)
-17. [Assurances](#17-assurances)
-18. [Sorties provisoires](#18-sorties-provisoires)
-19. [Cessions](#19-cessions)
-20. [Rebuts](#20-rebuts)
-21. [Maintenance](#21-maintenance)
-22. [Inventaires](#22-inventaires)
-23. [Reportings](#23-reportings)
-24. [Paiements — vue 2](#24-paiements-vue-2)
+**Votre rôle au quotidien**
 
-## 1. Paiements
+**Avant de commencer**
+
+**Votre parcours conseillé**
+
+**Comprendre les statuts**
+
+### Partie 1 — Contrôler les encaissements
+
+1. [Paiements](#1-paiements)
+2. [Validation des bordereaux](#2-validation-des-bordereaux)
+3. [Mes bordereaux](#3-mes-bordereaux)
+4. [Situation financière](#4-situation-financière)
+
+### Partie 2 — Suivre les immobilisations
+
+5. [Immobilisations](#5-immobilisations)
+6. [Sites](#6-sites)
+7. [Catégories](#7-catégories)
+8. [Affectations](#8-affectations)
+9. [Assurances](#9-assurances)
+10. [Sorties provisoires](#10-sorties-provisoires)
+11. [Cessions](#11-cessions)
+12. [Rebuts](#12-rebuts)
+13. [Maintenance](#13-maintenance)
+14. [Inventaires](#14-inventaires)
+
+### Partie 3 — Produire les rapports
+
+15. [Reporting immobilisations](#15-reporting-immobilisations)
+16. [Rapport Paiements et Factures](#16-rapport-paiements-et-factures)
+
+### Partie 4 — Votre compte
+
+17. [Mon profil](#17-mon-profil)
+18. [Mon compte](#18-mon-compte)
+
+**Écrans à accès restreint ou hors périmètre**
+
+**Index des écrans**
+
+**En cas de problème**
+
+**Votre sécurité**
+
+**Glossaire**
+
+**Note sur les captures**
+
+---
+
+## Votre rôle au quotidien
+
+Le cabinet comptable est le **contrôleur financier** de l'établissement. Votre mission se résume en quatre temps :
+
+- **Authentifier** les bordereaux déposés par les étudiants : vérifier le PDF, la référence bancaire, le montant et la date.
+- **Contrôler** les paiements et la situation financière des étudiants (inscription et scolarité).
+- **Tenir le registre des immobilisations** : acquisition, affectation, assurance, maintenance, sortie, cession ou rebut.
+- **Produire les rapports** destinés au pilotage et aux partenaires.
+
+Vous ne saisissez ni les notes, ni les inscriptions, ni la comptabilité générale : ces opérations relèvent d'autres profils (secrétariat, service recouvrement ESA, direction).
+
+## Avant de commencer
+
+- **Connectez-vous** avec l'identifiant ou l'adresse e-mail du cabinet, puis validez le code à usage unique (OTP) reçu.
+- **Vérifiez le site actif** en haut de l'écran : les listes et les rapports sont filtrés par site.
+- **Préparez vos justificatifs** : PDF, JPG, JPEG, PNG, HEIC ou HEIF, dans la limite de 20 Mo par fichier.
+- **Actualisez la page** après une validation : les compteurs et les statuts se mettent à jour au chargement.
+- **Utilisez un navigateur récent** et évitez plusieurs onglets ouverts sur le même formulaire.
+
+## Votre parcours conseillé
+
+| Étape | Écran | Objectif |
+|---|---|---|
+| 1 | Validation des bordereaux | Contrôler et authentifier les paiements déposés |
+| 2 | Paiements | Retrouver un encaissement et vérifier son reçu |
+| 3 | Situation financière | Analyser le solde d'un étudiant (inscription + scolarité) |
+| 4 | Immobilisations | Mettre à jour le registre des biens |
+| 5 | Reporting immobilisations / Rapport Paiements & Factures | Produire les états de synthèse |
+
+## Comprendre les statuts
+
+### Bordereau
+
+| Statut | Signification | Action attendue |
+|---|---|---|
+| **En attente** | Bordereau déposé, non encore contrôlé | Ouvrir le PDF et vérifier les informations |
+| **Validé** | Bordereau authentifié par le cabinet | Part en saisie comptable côté ESA |
+| **Rejeté** | Bordereau non conforme, avec motif | L'étudiant doit déposer un nouveau justificatif |
+| **En saisie comptable** | Imputation en cours par le service recouvrement | Aucune action du cabinet |
+| **Traité** | Paiement imputé et échéance soldée | Consultation seule |
+
+### Paiement et échéance
+
+| Élément | Valeurs | Remarque |
+|---|---|---|
+| Statut de paiement | **pending**, **saisi**, **finalise** | `finalise` = encaissement clôturé |
+| Mode de paiement | **Espèces**, **Mobile money**, **Autre** | Repris dans le reçu et le journal de caisse |
+| Échéance | **Payée**, **En retard**, **Impayée** | Calculée à partir de la date limite |
+| Reçu | Numéro unique, date, montant, PDF | À conserver comme preuve d'encaissement |
+
+### Immobilisations et opérations liées
+
+| Élément | Valeurs |
+|---|---|
+| État du bien | **neuf**, **bon**, **moyen**, **mauvais**, **réformé** |
+| Assurance | **active**, **expirée**, **résiliée** |
+| Sortie provisoire | **en_cours**, **retourne** |
+| Inventaire | **en_cours**, **clôturé** |
+| Maintenance | **préventive**, **corrective** |
+| Cession / rebut | Approuvée par un responsable, avec date d'approbation |
+
+---
+
+## Partie 1 — Contrôler les encaissements
+
+### 1. Paiements
 
 ![Paiements](../images-nouveau/cabinet-comptable/01_paiements.png)
 
-**Objectif :** Paiements des étudiants : saisie, recherche, historique et rattachement aux échéances.
+**Où le trouver :** menu **Financier > Finance > Paiements**.
 
-**Actions principales :**
+**À quoi sert :** parcourir les paiements par année, dossier et transaction, retrouver un encaissement et consulter son reçu.
 
-1. Rechercher un étudiant ou un paiement
-2. Vérifier le montant et la référence
-3. Enregistrer ou consulter le reçu
+**À faire :**
 
----
+1. Saisissez un matricule, un numéro de reçu, un nom ou une référence dans la recherche rapide.
+2. Filtrez par année académique si nécessaire.
+3. Dépliez l'arborescence **année > étudiant > paiement**.
+4. Ouvrez le détail pour vérifier le montant, la date, le mode et le reçu.
 
-## 2. Échéances
-
-![Échéances](../images-nouveau/cabinet-comptable/02_echeances.png)
-
-**Objectif :** Échéancier des frais par étudiant : montants dus, dates limites et statuts.
-
-**Actions principales :**
-
-1. Choisir un étudiant ou une période
-2. Contrôler les échéances
-3. Marquer un paiement ou une relance
+**Bon à savoir :** la recherche accepte plusieurs types d'identifiants ; un paiement annulé reste visible dans l'historique avec son statut. Utilisez le bouton **Effacer** pour réinitialiser les filtres.
 
 ---
 
-## 3. Situation irrégulière
-
-![Situation irrégulière](../images-nouveau/cabinet-comptable/03_situation-irreguliere.png)
-
-**Objectif :** Étudiants en retard ou en défaut de paiement, avec motif et ancienneté de la dette.
-
-**Actions principales :**
-
-1. Filtrer les impayés
-2. Analyser l’historique
-3. Lancer une relance ou une régularisation
-
----
-
-## 4. Situation financière
-
-![Situation financière](../images-nouveau/cabinet-comptable/04_situation-financiere.png)
-
-**Objectif :** Situation détaillée d’un étudiant : total dû, total payé, reste à payer et échéances.
-
-**Actions principales :**
-
-1. Rechercher l’étudiant
-2. Lire le solde et l’historique
-3. Exporter la situation
-
----
-
-## 5. Validation des bordereaux
+### 2. Validation des bordereaux
 
 ![Validation des bordereaux](../images-nouveau/cabinet-comptable/05_valid-bordereaux.png)
 
-**Objectif :** Authentification des bordereaux déposés : contrôle du justificatif et saisie des références bancaires.
+**Où le trouver :** menu **Financier > Finance > Valid. bordereaux**.
 
-**Actions principales :**
+**À quoi sert :** contrôler, authentifier et orienter les paiements soumis par les étudiants. Les onglets **Tous**, **Inscription** et **Scolarité** séparent les dossiers.
 
-1. Ouvrir le bordereau
-2. Vérifier le PDF et les références
-3. Valider ou rejeter avec motif
+**À faire :**
 
----
+1. Filtrez par année académique, niveau d'étude et filière.
+2. Ouvrez un bordereau et contrôlez le PDF joint.
+3. Vérifiez la référence bancaire, le numéro et la date de paiement.
+4. **Validez** si tout est conforme : le bordereau part en saisie comptable ESA.
+5. **Rejetez** avec un motif clair si le justificatif est incomplet ou incohérent.
 
-## 6. Comptabilité
-
-![Comptabilité](../images-nouveau/cabinet-comptable/06_comptabilite.png)
-
-**Objectif :** Comptabilité générale : journaux, écritures, balance et grand livre.
-
-**Actions principales :**
-
-1. Choisir le journal
-2. Consulter ou saisir une écriture
-3. Contrôler la balance
+**Bon à savoir :** un bordereau validé n'est pas encore imputé ; c'est le service recouvrement qui finalise l'écriture. Ne validez jamais un bordereau sans avoir ouvert le PDF.
 
 ---
 
-## 7. Mon profil
-
-![Mon profil](../images-nouveau/cabinet-comptable/07_mon-profil.png)
-
-**Objectif :** Informations personnelles et professionnelles du compte connecté : identité, contacts et rattachements.
-
-**Actions principales :**
-
-1. Vérifier ses informations
-2. Mettre à jour les champs modifiables
-3. Enregistrer
-
----
-
-## 8. Mon compte
-
-![Mon compte](../images-nouveau/cabinet-comptable/08_mon-compte.png)
-
-**Objectif :** Paramètres de sécurité du compte : mot de passe, double authentification et sessions.
-
-**Actions principales :**
-
-1. Changer le mot de passe
-2. Activer ou vérifier le 2FA
-3. Contrôler les sessions ouvertes
-
----
-
-## 9. Mes bordereaux
+### 3. Mes bordereaux
 
 ![Mes bordereaux](../images-nouveau/cabinet-comptable/09_mes-bordereaux.png)
 
-**Objectif :** Bordereaux déposés par l’étudiant (ou suivis par le profil) avec leur état d’authentification et d’imputation.
+**Où le trouver :** menu **Pédagogique > Admission & Inscription > Mes bordereaux** (vue partagée avec l'espace étudiant).
 
-**Actions principales :**
+**À quoi sert :** déposer un bordereau et suivre son état : référence bancaire, fichier PDF, statut, montant et date.
 
-1. Déposer ou consulter un bordereau
-2. Suivre son statut
-3. Télécharger le reçu
+**À faire :**
 
----
+1. Recherchez un bordereau par type, référence, statut ou fichier.
+2. Filtrez par statut (**Tous**, **Validé**, **En attente**, **Rejeté**).
+3. Ouvrez **Voir le PDF** pour consulter le justificatif.
+4. Utilisez **Détails** pour l'historique du dossier.
 
-## 10. Configurations
-
-![Configurations](../images-nouveau/cabinet-comptable/10_configurations.png)
-
-**Objectif :** Paramétrage du module : règles, barèmes et options appliquées aux dossiers.
-
-**Actions principales :**
-
-1. Choisir la configuration
-2. Modifier les paramètres
-3. Enregistrer et tester
+**Bon à savoir :** cette vue est celle du déposant. Pour contrôler et authentifier un bordereau, utilisez l'écran **Validation des bordereaux**.
 
 ---
 
-## 11. Attributions
+### 4. Situation financière
 
-![Attributions](../images-nouveau/cabinet-comptable/11_attributions.png)
+![Situation financière](../images-nouveau/cabinet-comptable/04_situation-financiere.png)
 
-**Objectif :** Attribution des droits, responsabilités ou avantages aux personnes concernées.
+**Où le trouver :** adresse directe `/inscription/finance/situation-financiere` (aucune entrée de menu dédiée).
 
-**Actions principales :**
+**À quoi sert :** suivre globalement les frais d'inscription et de scolarité, par année, niveau, parcours, classe et option de cours.
 
-1. Rechercher la personne
-2. Choisir l’attribution
-3. Valider la période
+**À faire :**
 
----
+1. Filtrez par année académique, niveau, parcours, classe ou option.
+2. Recherchez un étudiant par nom, prénom ou matricule.
+3. Dépliez l'arborescence **année > niveau > parcours > classe > étudiant**.
+4. Lisez le solde et l'historique des échéances.
 
-## 12. Mon tableau de bord
-
-![Mon tableau de bord](../images-nouveau/cabinet-comptable/12_mon-tableau-de-bord.png)
-
-**Objectif :** Page d'accueil du profil : indicateurs personnels, alertes et raccourcis vers les tâches les plus fréquentes.
-
-**Actions principales :**
-
-1. Lire les indicateurs et alertes
-2. Ouvrir un raccourci
-3. Traiter les éléments en attente
+**Bon à savoir :** le compteur **Étudiants affichés** se met à jour à chaque filtre. Une situation détaillée s'ouvre par étudiant pour analyser les échéances non soldées.
 
 ---
 
-## 13. Immobilisations
+## Partie 2 — Suivre les immobilisations
+
+### 5. Immobilisations
 
 ![Immobilisations](../images-nouveau/cabinet-comptable/13_immobilisations.png)
 
-**Objectif :** Registre des immobilisations : acquisition, amortissement et valeur nette.
+**Où le trouver :** menu **Financier > Immobilisations > Immobilisations**.
 
-**Actions principales :**
+**À quoi sert :** tenir le registre des biens : nom, référence, catégorie, site, localisation, état, date de mise en service et valeur d'acquisition.
 
-1. Créer une immobilisation
-2. Paramétrer l’amortissement
-3. Suivre la valeur nette
+**À faire :**
+
+1. Recherchez un bien par nom, référence ou catégorie.
+2. Créez une immobilisation avec sa référence, sa catégorie et sa valeur.
+3. Renseignez la date de mise en service et l'état.
+4. Consultez la fiche et le QR code pour l'inventaire physique.
+
+**Bon à savoir :** l'état du bien alimente les indicateurs de reporting. Ne supprimez pas une immobilisation rattachée à une affectation, une assurance ou une maintenance.
 
 ---
 
-## 14. Sites
+### 6. Sites
 
 ![Sites](../images-nouveau/cabinet-comptable/14_sites.png)
 
-**Objectif :** Sites et établissements rattachés, avec leur adresse et leur responsable.
+**Où le trouver :** menu **Financier > Immobilisations > Sites**.
 
-**Actions principales :**
+**À quoi sert :** gérer les sites et établissements rattachés, avec leur adresse et leur responsable.
 
-1. Créer un site
-2. Renseigner l’adresse
-3. Activer
+**À faire :**
+
+1. Recherchez un site existant.
+2. Créez un site et renseignez son adresse.
+3. Activez-le pour le rendre disponible dans les affectations.
+
+**Bon à savoir :** un site est nécessaire pour affecter un bien et pour filtrer les rapports par implantation.
 
 ---
 
-## 15. Catégories
+### 7. Catégories
 
 ![Catégories](../images-nouveau/cabinet-comptable/15_categories.png)
 
-**Objectif :** Catégories d’articles, de documents ou d’immobilisations utilisées dans les référentiels.
+**Où le trouver :** menu **Financier > Immobilisations > Categories**.
 
-**Actions principales :**
+**À quoi sert :** consulter et gérer les catégories d'immobilisations utilisées dans les référentiels.
 
-1. Créer une catégorie
-2. Définir les règles associées
-3. Enregistrer
+**À faire :**
+
+1. Recherchez une catégorie.
+2. Consultez les règles associées (durée et taux d'amortissement).
+3. Créez ou modifiez une catégorie uniquement si votre habilitation le permet.
+
+**Bon à savoir :** une catégorie mal paramétrée fausse les amortissements. Vérifiez les règles avant de créer une immobilisation et ne supprimez pas une catégorie déjà utilisée.
 
 ---
 
-## 16. Affectations
+### 8. Affectations
 
 ![Affectations](../images-nouveau/cabinet-comptable/16_affectations.png)
 
-**Objectif :** Affectation des biens, salles ou moyens aux personnes et services.
+**Où le trouver :** menu **Financier > Immobilisations > Affectations**.
 
-**Actions principales :**
+**À quoi sert :** affecter un bien à un site, un département, une localisation ou un responsable.
 
-1. Choisir le bien
-2. Sélectionner le bénéficiaire
-3. Valider l’affectation
+**À faire :**
+
+1. Sélectionnez le bien concerné.
+2. Choisissez le bénéficiaire (site, département, localisation, responsable).
+3. Renseignez la date d'affectation et le motif.
+4. Enregistrez le retour lorsque le bien est restitué.
+
+**Bon à savoir :** une affectation en cours apparaît dans le reporting. Clôturez-la dès le retour pour éviter de fausser les indicateurs.
 
 ---
 
-## 17. Assurances
+### 9. Assurances
 
 ![Assurances](../images-nouveau/cabinet-comptable/17_assurances.png)
 
-**Objectif :** Contrats d’assurance des biens : police, échéances et sinistres.
+**Où le trouver :** menu **Financier > Immobilisations > Assurances**.
 
-**Actions principales :**
+**À quoi sert :** suivre les contrats d'assurance des biens : police, assureur, couverture, prime annuelle, période et statut.
 
-1. Créer un contrat
-2. Renseigner les échéances
-3. Suivre les sinistres
+**À faire :**
+
+1. Recherchez un contrat par police ou assureur.
+2. Consultez la période de couverture et les échéances.
+3. Créez ou renouvelez un contrat avant sa date de fin.
+4. Suivez les sinistres déclarés.
+
+**Bon à savoir :** le statut passe de **active** à **expirée** à la date de fin. Un bien non couvert doit être signalé à la direction.
 
 ---
 
-## 18. Sorties provisoires
+### 10. Sorties provisoires
 
 ![Sorties provisoires](../images-nouveau/cabinet-comptable/18_sorties-provisoires.png)
 
-**Objectif :** Biens sortis temporairement avec date de retour et responsable.
+**Où le trouver :** menu **Financier > Immobilisations > Sorties provisoires**.
 
-**Actions principales :**
+**À quoi sert :** enregistrer les biens sortis temporairement : date de sortie, date de retour prévue, motif, prestataire et description.
 
-1. Enregistrer une sortie
-2. Fixer la date de retour
-3. Contrôler le retour
+**À faire :**
+
+1. Enregistrez une sortie pour le bien concerné.
+2. Fixez la date de retour prévue.
+3. Contrôlez le retour effectif et clôturez la sortie.
+
+**Bon à savoir :** le statut passe de **en_cours** à **retourne**. Une sortie non clôturée fausse la disponibilité et les inventaires.
 
 ---
 
-## 19. Cessions
+### 11. Cessions
 
 ![Cessions](../images-nouveau/cabinet-comptable/19_cessions.png)
 
-**Objectif :** Cessions de biens : motif, valorisation et validation.
+**Où le trouver :** menu **Financier > Immobilisations > Cessions**.
 
-**Actions principales :**
+**À quoi sert :** enregistrer la cession d'un bien : date, motif, type d'opération, prix, destinataire et approbation.
 
-1. Sélectionner le bien
-2. Renseigner la cession
-3. Valider
+**À faire :**
+
+1. Sélectionnez le bien à céder.
+2. Renseignez le motif, le prix et le destinataire.
+3. Faites approuver l'opération par le responsable habilité.
+4. Conservez la preuve d'approbation dans le dossier du bien.
+
+**Bon à savoir :** une cession est un acte définitif. Vérifiez qu'aucune affectation ni assurance n'est encore active sur le bien.
 
 ---
 
-## 20. Rebuts
+### 12. Rebuts
 
 ![Rebuts](../images-nouveau/cabinet-comptable/20_rebuts.png)
 
-**Objectif :** Biens mis au rebut avec motif, procès-verbal et sortie d’inventaire.
+**Où le trouver :** menu **Financier > Immobilisations > Rebuts**.
 
-**Actions principales :**
+**À quoi sert :** consigner la mise au rebut d'un bien : motif, montant, approbation et date.
 
-1. Sélectionner les biens
-2. Renseigner le motif
-3. Valider la mise au rebut
+**À faire :**
+
+1. Sélectionnez les biens concernés.
+2. Renseignez le motif et le montant.
+3. Faites approuver la mise au rebut.
+4. Vérifiez la sortie du bien de l'inventaire.
+
+**Bon à savoir :** le rebut retire définitivement le bien du registre actif. Assurez-vous qu'il n'est ni affecté ni assuré.
 
 ---
 
-## 21. Maintenance
+### 13. Maintenance
 
 ![Maintenance](../images-nouveau/cabinet-comptable/21_maintenance.png)
 
-**Objectif :** Interventions de maintenance préventive et curative sur les biens.
+**Où le trouver :** menu **Financier > Immobilisations > Maintenance**.
 
-**Actions principales :**
+**À quoi sert :** suivre les interventions préventives et curatives : date, type, description, coût et prestataire.
 
-1. Créer une demande
-2. Planifier l’intervention
-3. Clôturer avec le rapport
+**À faire :**
+
+1. Créez une demande de maintenance pour le bien.
+2. Précisez le type (**préventive** ou **corrective**) et le prestataire.
+3. Planifiez l'intervention.
+4. Clôturez avec le rapport et le coût réel.
+
+**Bon à savoir :** les coûts de maintenance alimentent le reporting immobilisations. Une intervention non clôturée reste visible dans les indicateurs.
 
 ---
 
-## 22. Inventaires
+### 14. Inventaires
 
 ![Inventaires](../images-nouveau/cabinet-comptable/22_inventaires.png)
 
-**Objectif :** Campagnes d’inventaire physique et rapprochement avec le registre comptable.
+**Où le trouver :** menu **Financier > Immobilisations > Inventaires**.
 
-**Actions principales :**
+**À quoi sert :** organiser les campagnes d'inventaire physique et rapprocher les constats du registre comptable.
 
-1. Lancer une campagne
-2. Saisir les constats
-3. Générer les écarts
+**À faire :**
 
----
+1. Lancez une campagne pour l'année fiscale.
+2. Saisissez les constats de présence et d'état.
+3. Générez les écarts entre le registre et le terrain.
+4. Clôturez la campagne.
 
-## 23. Reportings
-
-![Reportings](../images-nouveau/cabinet-comptable/23_reportings.png)
-
-**Objectif :** Tableaux de bord et rapports financiers consolidés.
-
-**Actions principales :**
-
-1. Choisir le rapport
-2. Filtrer la période
-3. Exporter
+**Bon à savoir :** une campagne **clôturée** n'est plus modifiable. Traitez les écarts avant la clôture.
 
 ---
 
-## 24. Paiements — vue 2
+## Partie 3 — Produire les rapports
 
-![Paiements — vue 2](../images-nouveau/cabinet-comptable/24_paiements.png)
+### 15. Reporting immobilisations
 
-**Objectif :** Paiements des étudiants : saisie, recherche, historique et rattachement aux échéances.
+![Reporting immobilisations](../images-nouveau/cabinet-comptable/23_reportings.png)
 
-**Actions principales :**
+**Où le trouver :** menu **Financier > Immobilisations > Reportings**.
 
-1. Rechercher un étudiant ou un paiement
-2. Vérifier le montant et la référence
-3. Enregistrer ou consulter le reçu
+**À quoi sert :** visualiser les indicateurs clés des immobilisations : total, valeur totale, assurances actives, affectations en cours, biens en service, en maintenance et hors service.
+
+**À faire :**
+
+1. Consultez les indicateurs de la période.
+2. Vérifiez les écarts entre le registre et les opérations en cours.
+3. Exportez le rapport pour le comité de direction ou le cabinet.
+
+**Bon à savoir :** les indicateurs se recalculent à partir des opérations enregistrées. Actualisez la page après une affectation, une maintenance ou un rebut.
 
 ---
 
-*Guide généré par `scripts/guide/generer-guides.cjs`. Les captures valides les plus récentes sont utilisées, avec repli sur les captures historiques.*
+### 16. Rapport Paiements et Factures
+
+![Rapport Paiements & Factures](../images-nouveau/cabinet-comptable/24_paiements.png)
+
+**Où le trouver :** menu **Communication & Collaboration > Reporting > Paiements**.
+
+**À quoi sert :** synthétiser l'activité financière : total des transactions, montant total, évolution des paiements, détail des paiements et des factures.
+
+**À faire :**
+
+1. Choisissez la période d'analyse.
+2. Lisez le total des transactions et le montant total.
+3. Consultez l'évolution des paiements et les tables de détail.
+4. Exportez le rapport en PDF.
+
+**Bon à savoir :** les montants sont exprimés en FCFA. L'export PDF reprend les mêmes chiffres que l'écran ; vérifiez la période avant de diffuser.
+
+---
+
+## Partie 4 — Votre compte
+
+### 17. Mon profil
+
+![Mon profil](../images-nouveau/cabinet-comptable/07_mon-profil.png)
+
+**Où le trouver :** menu **Administration & Systeme > Parametres > Mon profil**.
+
+**À quoi sert :** consulter et mettre à jour vos informations personnelles et professionnelles : identité, contacts et rattachements.
+
+**À faire :**
+
+1. Vérifiez vos informations.
+2. Mettez à jour les champs modifiables.
+3. Enregistrez.
+
+**Bon à savoir :** certains champs (rôle, identifiant) ne sont modifiables que par l'administrateur.
+
+---
+
+### 18. Mon compte
+
+![Mon compte](../images-nouveau/cabinet-comptable/08_mon-compte.png)
+
+**Où le trouver :** menu **Administration & Systeme > Parametres > Mon compte**.
+
+**À quoi sert :** gérer la sécurité de votre compte : mot de passe, double authentification et sessions ouvertes.
+
+**À faire :**
+
+1. Changez votre mot de passe si nécessaire.
+2. Activez ou vérifiez la double authentification.
+3. Fermez les sessions que vous ne reconnaissez pas.
+
+**Bon à savoir :** ne partagez jamais votre code OTP. En cas de doute, changez immédiatement votre mot de passe et signalez l'incident.
+
+---
+
+## Écrans à accès restreint ou hors périmètre
+
+Certaines captures du profil ouvrent un message d'accès refusé ou ne relèvent pas de la mission du cabinet. Elles ne sont pas détaillées dans ce guide.
+
+| Écran | Message / situation | Conduite à tenir |
+|---|---|---|
+| **Échéances** | « Accès réservé à l'institution » | Utilisez **Paiements** ou **Situation financière** |
+| **Situation irrégulière** | Page accessible, mais capture en erreur serveur | Réessayez ultérieurement ; signalez l'erreur avec la date et l'heure |
+| **Comptabilité** | « Accès réservé à la comptabilité ESA » | La comptabilité générale est tenue par le service recouvrement ESA |
+| **Tableau de bord enseignant** | « Accès réservé aux enseignants » | Sans objet pour le profil comptable |
+| **Configurations de bourses** | Module bourses, hors périmètre Comptable | Accessible uniquement si une habilitation étendue a été attribuée |
+| **Attributions de bourses** | Module bourses, hors périmètre Comptable | Accessible uniquement si une habilitation étendue a été attribuée |
+
+## Index des écrans
+
+| N° | Écran | Chemin de menu | Famille |
+|---|---|---|---|
+| 1 | Paiements | Financier > Finance > Paiements | Encaissements |
+| 2 | Validation des bordereaux | Financier > Finance > Valid. bordereaux | Encaissements |
+| 3 | Mes bordereaux | Pédagogique > Admission & Inscription > Mes bordereaux | Encaissements |
+| 4 | Situation financière | Adresse directe `/inscription/finance/situation-financiere` | Encaissements |
+| 5 | Immobilisations | Financier > Immobilisations > Immobilisations | Immobilisations |
+| 6 | Sites | Financier > Immobilisations > Sites | Immobilisations |
+| 7 | Catégories | Financier > Immobilisations > Categories | Immobilisations |
+| 8 | Affectations | Financier > Immobilisations > Affectations | Immobilisations |
+| 9 | Assurances | Financier > Immobilisations > Assurances | Immobilisations |
+| 10 | Sorties provisoires | Financier > Immobilisations > Sorties provisoires | Immobilisations |
+| 11 | Cessions | Financier > Immobilisations > Cessions | Immobilisations |
+| 12 | Rebuts | Financier > Immobilisations > Rebuts | Immobilisations |
+| 13 | Maintenance | Financier > Immobilisations > Maintenance | Immobilisations |
+| 14 | Inventaires | Financier > Immobilisations > Inventaires | Immobilisations |
+| 15 | Reporting immobilisations | Financier > Immobilisations > Reportings | Reporting |
+| 16 | Rapport Paiements & Factures | Communication & Collaboration > Reporting > Paiements | Reporting |
+| 17 | Mon profil | Administration & Systeme > Parametres > Mon profil | Compte |
+| 18 | Mon compte | Administration & Systeme > Parametres > Mon compte | Compte |
+
+## En cas de problème
+
+| Symptôme | Cause probable | Solution |
+|---|---|---|
+| « Accès refusé » | Le rôle ou l'habilitation ne couvre pas l'écran | Vérifiez votre périmètre ; contactez l'administrateur |
+| Bordereau introuvable | Filtre d'année ou de statut trop restrictif | Réinitialisez les filtres et vérifiez l'onglet actif |
+| PDF illisible | Format ou taille non accepté | Utilisez un PDF/JPG/PNG/HEIC de moins de 20 Mo |
+| Montant incohérent | Justificatif ou référence erronée | Ne validez pas ; rejetez avec un motif précis |
+| Erreur serveur | Incident temporaire | Réessayez plus tard et signalez la date, l'heure et l'écran |
+
+## Votre sécurité
+
+- Ne communiquez jamais votre mot de passe ni votre code OTP.
+- Activez la double authentification dès que possible.
+- Verrouillez votre session lorsque vous quittez votre poste.
+- Signalez toute anomalie (paiement inattendu, accès inhabituel) à la direction.
+
+## Glossaire
+
+- **Bordereau** : justificatif de paiement déposé par l'étudiant (PDF + référence bancaire).
+- **Authentification** : contrôle du bordereau par le cabinet avant imputation.
+- **Imputation** : enregistrement comptable du paiement par le service recouvrement.
+- **Échéance** : montant attendu à une date donnée (inscription ou scolarité).
+- **Immobilisation** : bien durable inscrit au registre (matériel, mobilier, véhicule…).
+- **Amortissement** : répartition de la valeur du bien sur sa durée d'utilisation.
+- **Affectation** : attribution d'un bien à un site, un service ou un responsable.
+- **Cession** : transfert définitif d'un bien à un tiers.
+- **Rebut** : mise au rebut d'un bien devenu inutilisable.
+- **Inventaire** : vérification physique des biens et rapprochement avec le registre.
+- **KPI** : indicateur clé de performance affiché dans les reportings.
+
+## Note sur les captures
+
+- **24 captures** ont été réalisées le 02/11/2026 avec le compte `cabinet_comptable`.
+- **18 écrans** sont retenus dans ce guide.
+- **6 captures écartées** : Échéances (accès refusé), Situation irrégulière (erreur serveur), Comptabilité (accès refusé ESA), Tableau de bord enseignant (accès refusé), Configurations de bourses et Attributions de bourses (hors périmètre Comptable).
+
+---
+
+*Guide rédigé manuellement pour le profil Cabinet comptable — EasyEcole, version du 08/11/2026.*

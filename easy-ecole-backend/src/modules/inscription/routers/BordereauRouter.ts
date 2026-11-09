@@ -7,6 +7,7 @@ import BordereauController from "../controllers/BordereauController"
 import { AuthCabinetComptable } from "../../../core/middlewares/AuthCabinetComptable";
 import CheckPermission from "../../../core/middlewares/CheckPermission";
 import { Bordereau } from "../models/Bordereau";
+import { normaliserImages } from "../../../core/helpers/NormaliserImage";
 
 const storage = multer.diskStorage({
     destination: "public/inscription/bordereaux/",
@@ -16,7 +17,21 @@ const storage = multer.diskStorage({
         cb(null, name)
     }
 })
-const upload = multer({ storage });
+const upload = multer({
+    storage,
+    fileFilter: (_req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase()
+        if (['.pdf', '.jpg', '.jpeg', '.png', '.heic', '.heif'].includes(ext)) {
+            cb(null, true)
+        } else {
+            cb(new multer.MulterError(
+                'LIMIT_UNEXPECTED_FILE',
+                'Formats acceptés : PDF, JPG, JPEG, PNG ou HEIC (20 Mo maximum).'
+            ))
+        }
+    },
+    limits: { fileSize: 20 * 1024 * 1024 },
+});
 const router = express.Router()
 
 router
@@ -148,7 +163,10 @@ router
      *       201:
      *         description: Bordereau créé
      */
-    .post('/', [upload.fields([{name: 'fichier', maxCount: 1}])], BordereauController.createBordereau)
+    .post('/', [
+        upload.fields([{name: 'fichier', maxCount: 1}]),
+        normaliserImages({ dimensionMax: 2400, qualite: 88 }),
+    ], BordereauController.createBordereau)
      /**
       * @openapi
       * /inscription/bordereaux/{id}/valider:

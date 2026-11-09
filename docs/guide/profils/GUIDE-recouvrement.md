@@ -1,14 +1,25 @@
 # Guide d'utilisation — Recouvrement (ESA Compta)
 
-> Suivi des impayés, authentification des bordereaux, imputation comptable et situation financière des étudiants. C'est le profil opérationnel du service recouvrement.
+> Encaissements, reçus, suivi de caisse et des impayés, et imputation des bordereaux après leur authentification par le Cabinet comptable.
 
 **Profil :** Recouvrement (ESA Compta)  
-**Nombre d'écrans :** 28  
-**Généré le :** 02/11/2026
+**Nombre d'écrans :** 28 + 1 illustration fictive  
+**Mise à jour :** 08/11/2026
 
-Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. Chaque section contient une capture, l'objectif de l'écran et les actions principales.
+> **Périmètre du profil.** ESA Compta enregistre les paiements, édite les reçus, suit la caisse et impute les bordereaux déjà authentifiés. Le contrôle du justificatif et la décision de validation ou de rejet appartiennent au Cabinet comptable. Le secrétariat oriente l'étudiant et ne réalise pas d'encaissement.
+
+Les captures sont des illustrations de l'application ; elles ne correspondent pas à des opérations réelles. L'image du bordereau est un spécimen visuel fictif, sans valeur de paiement. Utilisez les procédures ci-dessous pour les tâches quotidiennes, puis les fiches d'écran pour retrouver une fonction.
 
 ## Sommaire
+
+### Procédures pas à pas
+
+- [Encaisser un règlement et remettre le reçu](#encaisser-un-reglement-et-remettre-le-recu)
+- [Saisir et imputer un bordereau authentifié](#saisir-et-imputer-un-bordereau-authentifie)
+- [Suivre les impayés et vérifier une situation financière](#suivre-les-impayes-et-verifier-une-situation-financiere)
+- [Clôturer et contrôler la caisse](#cloturer-et-controler-la-caisse)
+
+### Écrans du profil
 
 1. [Situation irrégulière](#1-situation-irreguliere)
 2. [Situation financière](#2-situation-financiere)
@@ -39,6 +50,116 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 27. [Mon profil](#27-mon-profil)
 28. [Mon compte](#28-mon-compte)
 
+## Encaisser un règlement et remettre le reçu
+
+**Où le trouver :** **Recouvrement > Caisse > Encaissement documents** pour une demande de document payante, ou **Financier > Finance > Paiements** pour les autres encaissements. Saisissez uniquement un règlement effectivement reçu.
+
+![Paiements](../images-nouveau/esa-compta/12_paiements.png)
+
+### Avant d'enregistrer le paiement
+
+1. **Rechercher l'étudiant avec son matricule ou ses informations d'identification, puis vérifier le dossier ou la demande concernée.**
+   - Pourquoi : cela évite de rattacher le règlement à la mauvaise personne ou à la mauvaise opération.
+   - Responsable : ESA Compta / Recouvrement
+2. **Vérifier le montant attendu, la nature du paiement et l'échéance ou le document concerné.**
+   - Pourquoi : le montant reçu doit correspondre à une somme due et être affecté à la bonne opération.
+   - Responsable : ESA Compta / Recouvrement
+
+### Enregistrer et remettre le reçu
+
+1. **Choisir le moyen de paiement proposé et enregistrer le montant réellement reçu, avec les références demandées.**
+   - Pourquoi : la saisie doit refléter l'encaissement effectif ; ne marquez pas comme payé un montant seulement annoncé ou justifié par un bordereau non contrôlé.
+   - Responsable : ESA Compta / Recouvrement
+2. **Après confirmation de l'enregistrement, vérifier le numéro, la date, le montant et le mode sur le reçu.**
+   - Pourquoi : le reçu est la preuve remise à l'étudiant et permet de retrouver l'opération.
+   - Responsable : ESA Compta / Recouvrement
+3. **Imprimer ou remettre le reçu, puis vérifier l'opération dans le journal de caisse ou l'historique des paiements.**
+   - Pourquoi : le contrôle final confirme que le paiement est visible et correctement rattaché.
+   - Responsable : ESA Compta / Recouvrement
+
+## Saisir et imputer un bordereau authentifié
+
+**Où le trouver :** **Financier > Finance > Bordereaux à imputer**. Le Cabinet comptable contrôle le justificatif et authentifie le bordereau ; ESA Compta effectue ensuite la saisie et l'imputation. N'utilisez pas le circuit d'imputation pour remplacer ou contourner le contrôle du Cabinet.
+
+![Bordereaux à imputer](../images-nouveau/esa-compta/03_bordereaux-a-imputer.png)
+
+![Exemple fictif d'un bordereau en cours d'imputation, marqué comme simulation](../images-nouveau/esa-compta/29_bordereau-imputation-simulation.png)
+
+### Contrôler le dossier avant saisie
+
+1. **Ouvrir « Bordereaux à imputer », puis filtrer par année, niveau, parcours ou type d'opération si nécessaire.**
+   - Pourquoi : les filtres aident à retrouver le bordereau dans la file des dossiers authentifiés.
+   - Responsable : ESA Compta / Recouvrement
+2. **Vérifier le statut, l'étudiant, le type d'opération, le montant et les références du bordereau.**
+   - Pourquoi : l'imputation doit correspondre au justificatif contrôlé par le Cabinet et au dossier financier de l'étudiant.
+   - Responsable : ESA Compta / Recouvrement
+3. **En cas de bordereau absent, rejeté ou incohérent, suspendre le traitement et contacter le Cabinet comptable ou le service concerné.**
+   - Pourquoi : le Recouvrement ne modifie pas la décision d'authentification et ne doit pas imputer un dossier non contrôlé.
+   - Responsable : ESA Compta / Recouvrement
+
+### Saisir, prévisualiser et confirmer
+
+1. **Ouvrir le traitement et vérifier ou compléter le montant, la référence bancaire, le numéro de bordereau, le moyen de paiement, la banque, le type d'opération et la date.**
+   - Pourquoi : ces champs servent à enregistrer le paiement et à le rattacher aux échéances correctes.
+   - Responsable : ESA Compta / Recouvrement
+2. **Si le type d'opération est MIXTE, relire la composition calculée automatiquement par l'application avant de continuer.**
+   - Pourquoi : la ventilation entre inscription et scolarité est calculée par le système ; elle ne doit pas être remplacée par une estimation manuelle.
+   - Responsable : ESA Compta / Recouvrement
+3. **Lancer l'aperçu du traitement, contrôler la répartition proposée et les avertissements, puis confirmer la saisie uniquement si les données sont exactes.**
+   - Pourquoi : l'aperçu permet de repérer une incohérence avant l'imputation comptable.
+   - Responsable : ESA Compta / Recouvrement
+4. **Retrouver le bordereau dans « Bordereaux traités » et consulter son état d'imputation.**
+   - Pourquoi : cette vérification confirme le résultat enregistré et facilite le suivi ultérieur.
+   - Responsable : ESA Compta / Recouvrement
+
+![Bordereaux traités](../images-nouveau/esa-compta/05_bordereaux-traites.png)
+
+## Suivre les impayés et vérifier une situation financière
+
+**Où le trouver :** **Financier > Finance > Situation irrégulière** et **Situation financière**. Utilisez ces écrans pour répondre à une question sur un solde ou repérer une échéance en retard. Une échéance affichée impayée ne prouve pas à elle seule qu'aucun règlement n'a été remis : vérifiez les paiements et les justificatifs avant de répondre.
+
+![Situation irrégulière](../images-nouveau/esa-compta/01_situation-irreguliere.png)
+![Situation financière](../images-nouveau/esa-compta/02_situation-financiere.png)
+
+### Vérifier le dossier
+
+1. **Rechercher l'étudiant par matricule et sélectionner la bonne année académique.**
+   - Pourquoi : un même étudiant peut avoir plusieurs dossiers ou périodes de paiement.
+   - Responsable : ESA Compta / Recouvrement
+2. **Comparer les sommes dues, les paiements enregistrés, les échéances et leurs dates limites.**
+   - Pourquoi : cette comparaison distingue un retard réel d'un paiement déjà reçu mais pas encore rapproché.
+   - Responsable : ESA Compta / Recouvrement
+3. **Si un reçu existe mais que la situation ne reflète pas le paiement, vérifier l'historique et les références avant toute nouvelle saisie.**
+   - Pourquoi : éviter une double saisie ou une relance injustifiée.
+   - Responsable : ESA Compta / Recouvrement
+4. **Communiquer uniquement le solde confirmé et orienter l'étudiant vers le service compétent lorsqu'une pièce ou une décision manque.**
+   - Pourquoi : les informations communiquées doivent correspondre à l'état vérifié du dossier.
+   - Responsable : ESA Compta / Recouvrement
+
+## Clôturer et contrôler la caisse
+
+**Où le trouver :** **Recouvrement > Caisse > Clôture caisse**. La clôture compare le montant théorique calculé par l'application au montant réellement compté. Une différence doit être signalée et expliquée ; ne modifiez pas le montant réel pour faire disparaître un écart.
+
+### Clôture de fin de journée
+
+1. **Dans « Clôture caisse », vérifier la date, le caissier, le montant théorique et le statut de la clôture.**
+   - Pourquoi : vous devez travailler sur la bonne session et confirmer les opérations qui lui sont rattachées.
+   - Responsable : ESA Compta / Recouvrement
+2. **Au début de la session, si aucune clôture n'est ouverte, cliquer sur « Ouvrir une clôture » et vérifier que la ligne apparaît au bon nom de caissier.**
+   - Pourquoi : l'application rattache la clôture au caissier et aux encaissements de la session.
+   - Responsable : ESA Compta / Recouvrement
+3. **En fin de session, compter les fonds réellement présents et rapprocher ce total des reçus et opérations de caisse.**
+   - Pourquoi : le montant réel doit provenir du comptage, et non être recopié automatiquement depuis le montant théorique.
+   - Responsable : ESA Compta / Recouvrement
+4. **Saisir le montant réellement compté, vérifier l'écart affiché et cliquer sur « Valider la clôture » seulement après le rapprochement.**
+   - Pourquoi : la clôture conserve les montants théorique et réel ainsi que l'écart constaté.
+   - Responsable : ESA Compta / Recouvrement
+5. **En cas d'écart ou d'opération manquante, conserver les références des reçus et prévenir le responsable avant de finaliser.**
+   - Pourquoi : une clôture ne remplace pas l'analyse ni la déclaration d'une anomalie de caisse.
+   - Responsable : ESA Compta / Recouvrement
+
+---
+
 ## 1. Situation irrégulière
 
 ![Situation irrégulière](../images-nouveau/esa-compta/01_situation-irreguliere.png)
@@ -47,9 +168,9 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 
 **Actions principales :**
 
-1. Filtrer les impayés
-2. Analyser l’historique
-3. Lancer une relance ou une régularisation
+1. Filtrer les impayés par année et retrouver le dossier de l'étudiant
+2. Vérifier les échéances et rapprocher avec les paiements ou reçus enregistrés
+3. Communiquer le solde confirmé ou transmettre l'anomalie au service compétent
 
 ---
 
@@ -71,13 +192,15 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 
 ![Bordereaux à imputer](../images-nouveau/esa-compta/03_bordereaux-a-imputer.png)
 
+![Exemple fictif d'un bordereau en cours d'imputation, marqué comme simulation](../images-nouveau/esa-compta/29_bordereau-imputation-simulation.png)
+
 **Objectif :** Bordereaux authentifiés en attente d’imputation comptable sur les échéances.
 
 **Actions principales :**
 
-1. Ouvrir un bordereau validé
-2. Saisir le montant constaté
-3. Imputer et transmettre
+1. Ouvrir un bordereau déjà authentifié par le Cabinet comptable
+2. Vérifier l'étudiant, le type d'opération, le montant et les références
+3. Prévisualiser l'imputation, compléter les champs requis, puis confirmer si tout concorde
 
 ---
 
@@ -89,9 +212,9 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 
 **Actions principales :**
 
-1. Identifier le motif d’attente
-2. Compléter ou relancer
-3. Réorienter le dossier
+1. Vérifier le motif et les éléments manquants
+2. Contacter le Cabinet comptable ou le service concerné pour le complément requis
+3. Ne pas imputer tant que le bordereau n'est pas authentifié
 
 ---
 
@@ -103,9 +226,9 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 
 **Actions principales :**
 
-1. Filtrer par période
-2. Contrôler l’imputation
-3. Exporter le journal
+1. Filtrer les bordereaux par période ou par étudiant
+2. Ouvrir l'état d'imputation et rapprocher les montants avec la situation financière
+3. Conserver les références du bordereau et du paiement pour le suivi
 
 ---
 
@@ -216,8 +339,10 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 **Actions principales :**
 
 1. Ouvrir le bordereau
-2. Vérifier le PDF et les références
-3. Valider ou rejeter avec motif
+2. Vérifier le statut et le motif de rejet ou d'attente
+3. Orienter vers le Cabinet comptable pour le contrôle du justificatif
+
+> **Périmètre :** l'authentification et le rejet d'un justificatif relèvent du Cabinet comptable. Si cet écran apparaît dans votre menu, ne l'utilisez pas pour valider un bordereau ; le Recouvrement traite les dossiers authentifiés depuis **Bordereaux à imputer**.
 
 ---
 
@@ -431,4 +556,4 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 
 ---
 
-*Guide généré par `scripts/guide/generer-guides.cjs`. Les captures valides les plus récentes sont utilisées, avec repli sur les captures historiques.*
+*Guide EasyEcole — Recouvrement (ESA Compta), mis à jour le 08/11/2026. Les captures sont illustratives ; les habilitations de votre compte déterminent les écrans réellement accessibles.*

@@ -67,6 +67,20 @@ if [ "$(id -u)" = "0" ]; then
     mkdir -p "$d" 2>/dev/null || true
   done
 
+  log_bind_mount() {
+    mount_target="$(findmnt -rn -T "$1" -o TARGET 2>/dev/null || true)"
+    mount_source="$(findmnt -rn -T "$1" -o SOURCE 2>/dev/null || true)"
+    if [ "$mount_target" = "$1" ]; then
+      echo "[entrypoint][MOUNT][OK] $2 monté : cible=$1 source=${mount_source:-inconnue}"
+    elif command -v findmnt >/dev/null 2>&1; then
+      echo "[entrypoint][MOUNT][ABSENT] $2 non monté : cible=$1 montage_detecte=${mount_target:-aucun}"
+    else
+      echo "[entrypoint][MOUNT][INCONNU] findmnt indisponible : cible=$1"
+    fi
+  }
+  log_bind_mount "${DOCUMENTS_STORAGE_DIR:-/app/documents}" "documents"
+  log_bind_mount "${BACKUP_STORAGE_DIR:-/app/backups}" "backups"
+
   # Garde-fou stockage : en production (REQUIRE_DOCUMENTS_MOUNT=true),
   # refuser de demarrer si /mnt/easyecole-documents ou /mnt/easyecole-storage
   # n'est pas monte. Les marqueurs sont crees automatiquement par le service
@@ -384,16 +398,14 @@ else
   echo "[entrypoint] → les appliquer à la demande : npm run db:migrate"
 fi
 
-# Copie initiale des fichiers d'inscription vers l'arborescence par étudiant.
-# Elle ne s'exécute qu'après les migrations SQL et se marque terminée en base
-# lorsqu'il ne reste aucune erreur. Les sources sont conservées; un échec est
-# visible dans les logs mais ne bloque pas le démarrage de l'API.
+# Copie les fichiers étudiants historiques vers documents/uploads et met à
+# jour les références en base. Les originaux restent en place.
 if [ "${MIGRATIONS_ON_BOOT:-true}" = "true" ] && [ "${STUDENT_UPLOAD_LAYOUT_MIGRATION_ON_BOOT:-true}" = "true" ]; then
-  echo "[entrypoint] Organisation automatique des fichiers étudiants..."
+  echo "[entrypoint] Migration non destructive des fichiers étudiants..."
   node /app/lib/modules/inscription/scripts/migrate-student-upload-layout.js --apply \
-    || echo "[entrypoint] ⚠ Organisation incomplète; les erreurs sont listées ci-dessus et seront retentées au prochain démarrage."
+    || echo "[entrypoint] ⚠ Migration incomplète; les erreurs sont listées ci-dessus et seront retentées au prochain démarrage."
 elif [ "${STUDENT_UPLOAD_LAYOUT_MIGRATION_ON_BOOT:-true}" != "true" ]; then
-  echo "[entrypoint] Organisation automatique des fichiers étudiants désactivée."
+  echo "[entrypoint] Migration automatique des fichiers étudiants désactivée."
 fi
 
 # `|| echo` neutralise volontairement `set -e` sur ces lignes : les seeds

@@ -5,6 +5,7 @@
  * - `dossier`  : dossier d'images sous docs/guide/images/<dossier>/.
  * - `sources`  : sélection explicite de fichiers (plusieurs dossiers possibles).
  * - `fichiers` : si absent, toutes les images du dossier sont reprises.
+ * - `exclure`  : noms de fichiers à ignorer dans une source de dossier.
  *
  * Pour ajouter un profil : créer le dossier d'images correspondant puis
  * ajouter une entrée ici. Le catalogue de descriptions est dans ecrans.cjs.
@@ -13,7 +14,7 @@ const PROFILS = [
   {
     cle: 'audit',
     titre: 'Audit & contrôle',
-    resume: "Traçabilité des actions, contrôle des notes et des caisses, vérification des comptes et des habilitations. Ce guide rassemble les écrans d'audit du profil administrateur et les vues de contrôle du superviseur général.",
+    resume: "Contrôle des traces, notes et mouvements de caisse. Aucun rôle distinct « Audit » n'a été identifié dans les profils observés : les écrans de ce guide sont des vues d'administration et de supervision, et leur accès dépend des habilitations réellement attribuées.",
     sources: [
       {
         dossier: 'admin',
@@ -21,6 +22,7 @@ const PROFILS = [
           '195_audits.png',
           '39_audit-notes.png',
           '103_journal-audit.png',
+          '198_journal-audit-simulation.png',
           '137_journal-caisse.png',
           '101_utilisateurs.png',
           '106_profils-dacces.png',
@@ -37,7 +39,7 @@ const PROFILS = [
     cle: 'recouvrement',
     dossier: 'esa-compta',
     titre: 'Recouvrement (ESA Compta)',
-    resume: "Suivi des impayés, authentification des bordereaux, imputation comptable et situation financière des étudiants. C'est le profil opérationnel du service recouvrement.",
+    resume: "Encaissements, reçus, tarifs et suivi de caisse, suivi des impayés et imputation des bordereaux après leur contrôle par le Cabinet comptable.",
   },
   {
     cle: 'comptable',
@@ -61,13 +63,13 @@ const PROFILS = [
     cle: 'superviseur-general',
     dossier: 'superviseur-general',
     titre: 'Superviseur général',
-    resume: "Pilotage pédagogique transversal : salles, emplois du temps, sessions d'examens, notes et délibérations, présence des enseignants et indicateurs de supervision.",
+    resume: "Pilotage pédagogique transversal : consultation, création, modification et publication des emplois du temps du site actif autorisé, suivi des cours, évaluations et présences.",
   },
   {
     cle: 'secretaire',
     dossier: 'secretaire',
     titre: 'Secrétaire',
-    resume: "Accueil et traitement des dossiers : encaissements et caisse, demandes de documents, inscriptions, scolarité, notes, bulletins et appui administratif.",
+    resume: "Accueil et traitement administratif des demandes, préparation et impression des documents, suivi des dossiers de scolarité. Le secrétariat ne réalise pas d'encaissement.",
   },
   {
     cle: 'institution',
@@ -83,27 +85,26 @@ const PROFILS = [
   },
   {
     cle: 'enseignant',
-    dossier: 'enseignant',
+    sources: [
+      {
+        dossier: 'enseignant',
+        exclure: ['09_cahiers-de-texte.png', '10_cahier-de-presence.png'],
+      },
+    ],
     titre: 'Enseignant',
-    resume: "Enseignement et évaluation : cahiers de texte, présences, notes, bulletins, conseils de classe, ressources et e-learning.",
+    resume: "Enseignement et évaluation : consultation du planning attribué, cahiers de texte, présences, notes, bulletins, ressources et e-learning. La création et la publication des emplois du temps ne sont pas proposées au rôle Enseignant dans l'application actuelle.",
   },
   {
     cle: 'personnel-administratif',
     dossier: 'personnel-administratif',
     titre: 'Personnel administratif',
-    resume: "Appui administratif : inscriptions, scolarité, caisse, documents, notes et finances selon les habilitations attribuées.",
+    resume: "Appui administratif : inscriptions, scolarité et documents selon les habilitations attribuées. Les opérations de caisse relèvent du Recouvrement (ESA Compta).",
   },
   {
     cle: 'ressources-humaines',
     dossier: 'ressources-humaines',
     titre: 'Ressources humaines',
     resume: "Gestion du personnel : employés, contrats, paie, congés, heures supplémentaires, prestataires et reportings RH.",
-  },
-  {
-    cle: 'caissier-banque',
-    dossier: 'caissier-banque',
-    titre: 'Caissier banque',
-    resume: "Opérations de caisse et de banque : encaissements, paiements, situations financières, bordereaux et comptabilité.",
   },
   {
     cle: 'parent',
@@ -115,7 +116,7 @@ const PROFILS = [
     cle: 'surveillant',
     dossier: 'surveillant',
     titre: 'Surveillant',
-    resume: "Surveillance et discipline : emploi du temps, cahier de présence, absences et pointage.",
+    resume: "Consultation des emplois du temps et suivi des présences et absences, dans la limite des sites autorisés au compte. Le guide ne contourne pas l'accès refusé lorsqu'aucun site n'est affecté.",
   },
 ];
 

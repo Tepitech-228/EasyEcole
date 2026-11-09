@@ -185,14 +185,18 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
         'menu.bourses.campagne', 'menu.parametres.mon-profil', 'menu.parametres.mon-compte',
     ],
     'ESA Compta': [
-        'menu.tableau-de-bord', 'menu.finances', 'menu.finances.bordereaux-a-traiter',
+        'menu.tableau-de-bord', 'menu.inscription', 'menu.inscription.paiements',
+        'menu.finances', 'menu.finances.paiements', 'menu.finances.bordereaux-a-traiter',
         'menu.finances.types-bordereaux', 'menu.finances.situation-financiere', 'menu.finances.impayes',
+        'menu.recouvrement', 'menu.recouvrement.encaissement-documents', 'menu.recouvrement.caisse',
+        'menu.recouvrement.cloture', 'menu.recouvrement.tarifs-documents', 'menu.recouvrement.journal',
         'menu.parametres.mon-profil', 'menu.parametres.mon-compte',
         'action.finance.bordereau.voir', 'action.finance.bordereau.saisir', 'action.finance.bordereau.imputer',
+        'action.finances.paiement.enregistrer',
     ],
     'Personnel administratif': [
         'menu.tableau-de-bord', 'menu.secretariat.dashboard', 'menu.secretariat.demandes',
-        'menu.secretariat.encaissement', 'menu.secretariat.caisse', 'menu.secretariat.types-documents',
+        'menu.secretariat.types-documents',
         'menu.parametres.mon-profil', 'menu.parametres.mon-compte',
     ],
     'Ressources Humaines': [
@@ -202,9 +206,8 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     ],
     'Secrétaire': [
         'menu.tableau-de-bord', 'menu.secretariat.dashboard', 'menu.secretariat.demandes',
-        'menu.secretariat.encaissement', 'menu.secretariat.caisse', 'menu.secretariat.cloture',
         'menu.secretariat.autorisations-provisoires', 'menu.secretariat.types-documents',
-        'menu.secretariat.journal', 'menu.parametres.mon-profil', 'menu.parametres.mon-compte',
+        'menu.parametres.mon-profil', 'menu.parametres.mon-compte',
     ],
     'Superviseur Général': [
         'menu.tableau-de-bord',
@@ -244,7 +247,12 @@ export class RoleSeed {
                 const existingPermissionCount = created
                     ? 0
                     : await RolePermission.count({ where: { roleId: role.id } });
-                if (existingPermissionCount > 0 && roleData.nom !== 'Surveillant') continue;
+                const synchroniserPermissionsRecouvrement = roleData.nom === 'ESA Compta' && existingPermissionCount > 0;
+                if (
+                    existingPermissionCount > 0
+                    && roleData.nom !== 'Surveillant'
+                    && !synchroniserPermissionsRecouvrement
+                ) continue;
 
                 const permissionKeys = roleData.nom === 'Surveillant' && existingPermissionCount > 0
                     ? [

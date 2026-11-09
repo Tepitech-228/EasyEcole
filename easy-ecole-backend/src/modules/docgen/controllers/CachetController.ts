@@ -3,25 +3,19 @@ import { DocGenCachet } from "../models/DocGenCachet";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import {
+  resolveStoredDocumentPath,
+  saveDocument,
+} from "../../../core/services/DocumentStorageService";
 
 const CACHET_DIR = "public/docgen/cachets";
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    const dir = path.resolve(process.cwd(), CACHET_DIR);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `cachet_${Date.now()}${ext}`);
-  }
-});
+const storage = multer.memoryStorage();
 
 export const upload = multer({
   storage,
   fileFilter: (_req, file, cb) => {
-    const allowed = ['.png', '.jpg', '.jpeg', '.gif', '.webp'];
+    const allowed = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'];
     const ext = path.extname(file.originalname).toLowerCase();
     if (allowed.includes(ext)) return cb(null, true);
     cb(new Error('Format non supporté'));
@@ -53,9 +47,16 @@ export default class CachetController {
     try {
       const file = req.file;
       if (!file) return res.status(400).json({ success: false, message: 'Aucun fichier fourni' });
+      const ext = path.extname(file.originalname).toLowerCase();
+      const saved = saveDocument(file.buffer, {
+        origin: 'created',
+        category: 'docgen',
+        subcategory: 'cachets',
+        fileName: `cachet_${Date.now()}${ext}`,
+      });
       const cachet = await DocGenCachet.create({
         libelle: req.body.libelle || file.originalname,
-        imagePath: path.join(CACHET_DIR, file.filename).replace(/\\/g, '/')
+        imagePath: saved.relativePath,
       });
       return res.status(201).json(cachet);
     } catch (error) {
@@ -90,8 +91,10 @@ export default class CachetController {
     try {
       const cachet = await DocGenCachet.findByPk(req.params.id);
       if (!cachet) return res.status(404).json({ success: false, message: 'Cachet non trouvé' });
-      const filePath = path.resolve(process.cwd(), cachet.imagePath);
-      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      const filePath = resolveStoredDocumentPath(cachet.imagePath, [
+        path.resolve(process.cwd(), CACHET_DIR),
+      ]);
+      if (filePath && fs.existsSync(filePath)) fs.unlinkSync(filePath);
       await cachet.destroy();
       return res.status(200).json({ success: true });
     } catch (error) {

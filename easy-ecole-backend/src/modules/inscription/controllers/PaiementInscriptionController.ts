@@ -7,8 +7,6 @@ import { PaiementInscription } from "../models/PaiementInscription";
 import { TypesPaiement } from "../../../core/enums/TypesPaiement";
 import { IDGenerator } from "../../../core/helpers/IDGenerator";
 import { DemandeInscription } from "../models/DemandeInscription";
-import { Banque } from "../../auth/models/Banque";
-import { CaissierBanque } from "../../auth/models/CaissierBanque";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { Etablissement } from "../../etablissement/models/Etablissement";
 import { creerEcritureComptable, lettrerEcritures411 } from "../../comptabilite/helpers/ComptabiliteHelper";
@@ -37,14 +35,7 @@ export default class PaiementInscriptionController {
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
             options = { include: [{ association: PaiementInscription.associations.demandeInscription, where: { utilisateurId: (req as any).utilisateurId } }] }
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.CAISSIER_BANQUE) {
-            let banque: Banque | null = await Banque.findOne({
-                include: [{ association: Banque.associations.caissiers, where: { utilisateurId: (req as any).utilisateurId } }]
-            })
-
-            if (banque == null) {
-                return res.status(500).json({ success: false });
-            }
+        else if ((req as any).utilisateurRole == RolesUtilisateur.ESA_COMPTA) {
             options = {}
         }
 
@@ -68,7 +59,11 @@ export default class PaiementInscriptionController {
                 ]
             }
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
+        else if (
+            (req as any).utilisateurRole == RolesUtilisateur.INSTITUTION
+            || (req as any).utilisateurRole == RolesUtilisateur.ADMIN
+            || (req as any).utilisateurRole == RolesUtilisateur.ESA_COMPTA
+        ) {
             options = { where: { id: req.params.id } }
         }
 
@@ -92,7 +87,7 @@ export default class PaiementInscriptionController {
             options = { where: { matricule: req.body.matriculeInscription } }
             req.body.type = TypesPaiement.ESPECE
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.CAISSIER_BANQUE) {
+        else if ((req as any).utilisateurRole == RolesUtilisateur.ESA_COMPTA) {
             options = { where: { matricule: req.body.matriculeInscription } }
             req.body.type = TypesPaiement.EN_LIGNE
         }
@@ -184,7 +179,7 @@ export default class PaiementInscriptionController {
                         orientation: 'landscape',
                         margins: { top: '5mm', right: '5mm', bottom: '5mm', left: '5mm' },
                     },
-                });
+                }, req);
 
                 const receiptFilename = `${receiptDoc.reference}.pdf`;
                 const baseUrl = `${req.protocol}://${req.get('host')}`;
@@ -334,7 +329,7 @@ export default class PaiementInscriptionController {
         else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
             options = { where: { id: req.params.id } }
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.CAISSIER_BANQUE) {
+        else if ((req as any).utilisateurRole == RolesUtilisateur.ESA_COMPTA) {
             options = { where: { id: req.params.id } }
         }
 
@@ -372,7 +367,7 @@ export default class PaiementInscriptionController {
         if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
             options = { where: { id: req.params.id } }
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.CAISSIER_BANQUE) {
+        else if ((req as any).utilisateurRole == RolesUtilisateur.ESA_COMPTA) {
             options = { where: { id: req.params.id } }
         }
         else {
@@ -552,7 +547,7 @@ export default class PaiementInscriptionController {
                                 orientation: 'landscape',
                                 margins: { top: '5mm', right: '5mm', bottom: '5mm', left: '5mm' },
                             },
-                        })
+                        }, req)
 
                         const receiptFilename = `${receiptDoc.reference}.pdf`;
                         const baseUrl = `${req.protocol}://${req.get('host')}`;

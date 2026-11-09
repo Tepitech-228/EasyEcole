@@ -49,37 +49,17 @@ export class SecretariatService {
     const [demandesCount]: any[] = await sequelize.query(
       `SELECT COUNT(*) AS total FROM scol_demandes_document WHERE deletedAt IS NULL`
     );
-    const [enAttentePaiement]: any[] = await sequelize.query(
-      `SELECT COUNT(*) AS total FROM scol_demandes_document WHERE statut = 'en_attente_paiement' AND deletedAt IS NULL`
-    );
-    const [payesCount]: any[] = await sequelize.query(
-      `SELECT COUNT(*) AS total FROM scol_demandes_document WHERE statut = 'paye' AND deletedAt IS NULL`
-    );
-    const [aPreparerCount]: any[] = await sequelize.query(
-      `SELECT COUNT(*) AS total FROM scol_demandes_document WHERE statut IN ('paye','en_preparation') AND deletedAt IS NULL`
-    );
     const [pretsCount]: any[] = await sequelize.query(
       `SELECT COUNT(*) AS total FROM scol_demandes_document WHERE statut = 'document_pret' AND deletedAt IS NULL`
     );
     const [remisCount]: any[] = await sequelize.query(
       `SELECT COUNT(*) AS total FROM scol_demandes_document WHERE statut = 'remise' AND deletedAt IS NULL`
     );
-    const [recusCount]: any[] = await sequelize.query(
-      `SELECT COUNT(*) AS total FROM scol_recus_caisse WHERE deletedAt IS NULL`
-    );
-    const [recusMontant]: any[] = await sequelize.query(
-      `SELECT COALESCE(SUM(montant),0) AS total FROM scol_recus_caisse WHERE deletedAt IS NULL`
-    );
 
     return {
       demandes: Number(demandesCount[0]?.total || 0),
-      enAttentePaiement: Number(enAttentePaiement[0]?.total || 0),
-      payes: Number(payesCount[0]?.total || 0),
-      aPreparer: Number(aPreparerCount[0]?.total || 0),
       prets: Number(pretsCount[0]?.total || 0),
       remis: Number(remisCount[0]?.total || 0),
-      recus: Number(recusCount[0]?.total || 0),
-      montantEncaisse: Number(recusMontant[0]?.total || 0),
     };
   }
 
@@ -89,6 +69,7 @@ export class SecretariatService {
       `SELECT j.id, j.action, j.details, j.createdAt, u.nom, u.prenoms, u.email
        FROM scol_journal_secretariat j
        LEFT JOIN aut_utilisateurs u ON u.id = j.utilisateurId
+       WHERE j.action <> 'PAIEMENT_DEMANDE_DOCUMENT'
        ORDER BY j.createdAt DESC
        LIMIT :limit`,
       { replacements: { limit } }

@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documents Académiques Officiels - Formulaire Seul</title>
+    <style>
+        /* ==========================================================
+           CONFIGURATIONS GÉNÉRALES & IMPRESSION A4
+           ========================================================== */
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #1a1a1a;
+            font-size: 10pt;
+            line-height: 1.45;
+            background-color: #f5f5f5;
+        }
+
+        .doc-page {
+            background-color: #ffffff;
+            width: 210mm;
+            min-height: 297mm;
+            height: auto;
+            /* Marge haute / droite / basse / gauche */
+            /* Padding left plus généreux */
+            padding: 45mm 10mm 15mm 35mm;
+            margin: 15px auto;
+            page-break-after: always;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            overflow: visible;
+        }
+
+        .doc-page:last-child {
+            page-break-after: avoid;
+        }
+
+        .doc-page.quitus-page {
+            min-height: 0;
+            height: auto;
+            padding: 22mm 10mm 12mm 35mm;
+        }
+
+        .authorization-page {
+            min-height: 297mm;
+            height: 297mm;
+            padding: 22mm 10mm 10mm 35mm;
+        }
+
+        .authorization-page .content-body {
+            margin: 4px 0;
+            line-height: 1.25;
+        }
+
+        .authorization-page .content-body p {
+            margin: 4px 0;
+        }
+
+        .authorization-page .data-table {
+            margin: 4px 0;
+            font-size: 8pt;
+        }
+
+        .authorization-page .data-table th,
+        .authorization-page .data-table td {
+            padding: 3px 4px;
+        }
+
+        .authorization-page .notice-box {
+            padding: 5px;
+            margin: 5px 0;
+            font-size: 8pt;
+        }
+
+        .authorization-page .sign-title {
+            margin-bottom: 24px;
+        }
+
+        .prescribed-ue-page {
+            min-height: 297mm;
+            padding: 25mm 10mm 12mm 35mm;
+        }
+
+        .prescribed-ue-page .content-body {
+            margin: 5px 0;
+            line-height: 1.3;
+        }
+
+        .prescribed-ue-page .content-body p {
+            margin: 5px 0;
+        }
+
+        .prescribed-ue-page .info-box {
+            padding: 6px 8px;
+            margin: 6px 0;
+            font-size: 9pt;
+        }
+
+        .prescribed-ue-table {
+            font-size: 8pt;
+        }
+
+        .prescribed-ue-table th,
+        .prescribed-ue-table td {
+            padding: 4px;
+        }
+
+        .prescribed-ue-table tbody td {
+            height: 10mm;
+        }
+
+        .prescribed-ue-page .sign-title {
+            margin-bottom: 18px;
+        }
+
+        .content-wrapper {
+            width: 100%;
+        }
+
+        /* ==========================================================
+           TITRES & SOUS-TITRES
+           ========================================================== */
+        .doc-title {
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .doc-title h1 {
+            font-size: 13pt;
+            color: #002147;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin: 0;
+            padding-bottom: 4px;
+            border-bottom: 2px solid #D4AF37;
+            display: inline-block;
+        }
+
+        .doc-subtitle {
+            text-align: center;
+            font-size: 10.5pt;
+            font-weight: bold;
+            color: #002147;
+            margin-top: 4px;
+            text-transform: uppercase;
+        }
+
+        .ref-number {
+            text-align: center;
+            font-size: 9pt;
+            font-weight: bold;
+            color: #002147;
+            margin-bottom: 10px;
+        }
+
+        /* ==========================================================
+           TABLEAUX & FORMULAIRES
+           ========================================================== */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 8px 0;
+            font-size: 9pt;
+        }
+
+        .data-table th, .data-table td {
+            border: 1px solid #002147;
+            padding: 5px 6px;
+            text-align: left;
+        }
+
+        .data-table th {
+            background-color: #002147 !important;
+            color: #ffffff !important;
+            font-weight: bold;
+            text-align: center;
+            font-size: 8.5pt;
+            text-transform: uppercase;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .data-table td.center {
+            text-align: center;
+        }
+
+        .info-box {
+            background-color: #f8f9fa;
+            border-left: 3px solid #002147;
+            padding: 8px 10px;
+            margin: 8px 0;
+            font-size: 10pt;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .dotted-line {
+            border-bottom: 1px dotted #333;
+            display: inline-block;
+            min-width: 80px;
+        }
+
+        .checklist {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 2px;
+            text-align: left;
+            width: 100%;
+        }
+
+        .checkline {
+            display: inline-flex;
+            align-items: center;
+            white-space: nowrap;
+            font-size: 8pt;
+        }
+
+        .check-box {
+            display: inline-block;
+            width: 9px;
+            height: 9px;
+            border: 1px solid #002147;
+            background: #fff;
+            margin-right: 5px;
+            vertical-align: middle;
+            flex-shrink: 0;
+        }
+
+        .content-body {
+            margin: 8px 0;
+            text-align: justify;
+        }
+
+        .notice-box {
+            background-color: #f0f4f8;
+            border: 1px solid #b8cace;
+            padding: 8px;
+            margin: 8px 0;
+            font-size: 8.5pt;
+            border-radius: 4px;
+        }
+
+        /* ==========================================================
+           SIGNATURES ET BAS DE PAGE
+           ========================================================== */
+        .footer-table {
+            width: 100%;
+            margin-top: auto;
+            border-collapse: collapse;
+        }
+
+        .footer-table td {
+            vertical-align: top;
+        }
+
+        .date-cell {
+            font-style: italic;
+            font-size: 9pt;
+            text-align: right;
+            padding-right: 15mm;
+        }
+
+        .sign-cell {
+            text-align: center;
+        }
+
+        .sign-title {
+            font-weight: bold;
+            font-size: 9pt;
+            color: #002147;
+            margin-bottom: 40px;
+        }
+
+        .sign-sub {
+            font-size: 8.5pt;
+            color: #444;
+            line-height: 1.2;
+        }
+
+        @media print {
+            body {
+                background-color: #ffffff;
+            }
+            .doc-page {
+                box-shadow: none;
+                margin: 0;
+                width: 100%;
+                min-height: 297mm;
+                height: auto;
+                padding: 45mm 10mm 15mm 35mm;
+            }
+            .doc-page.quitus-page {
+                min-height: 0;
+                height: auto;
+                padding: 22mm 10mm 12mm 35mm;
+            }
+            .data-table th {
+                background-color: #002147 !important;
+                color: #ffffff !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== 1. AUTORISATION PROVISOIRE D'INSCRIPTION ==================== -->
+    <div class="doc-page authorization-page">
+        <div class="content-wrapper">
+            <div class="doc-title">
+                <h1>AUTORISATION PROVISOIRE D’INSCRIPTION</h1>
+            </div>
+
+            <div class="content-body">
+                <p>Je soussigné <strong>Dr Charles BIRREGAH</strong>, Fondateur-Président Directeur Général de l’Ecole Supérieure des Affaires (ESA),</p>
+                <p>Vu la demande d’inscription introduite par :<br>
+                <strong>M./Mlle/Mme :</strong> <span class="dotted-line" style="width: 55%;"></span> <strong>né(e) le :</strong> <span class="dotted-line" style="width: 12%;"></span> <strong>à :</strong> <span class="dotted-line" style="width: 12%;"></span> <strong>PAYS :</strong> <span class="dotted-line" style="width: 12%;"></span></p>
+
+                <p style="margin-bottom: 3px;">Vu les copies légalisées des diplômes (ci-dessous) dont l’authentification a été demandée avec accusé de réception :</p>
+                <table class="data-table">
+                    <tr>
+                        <th>DIPLÔME</th>
+                        <th class="center">BAC</th>
+                        <th class="center">DTS/DUT</th>
+                        <th class="center">BTS</th>
+                        <th class="center">LICENCE</th>
+                        <th class="center">MAÎTRISE</th>
+                        <th class="center">AUTRES</th>
+                    </tr>
+                    <tr>
+                        <td><strong>SPÉCIALITÉ</strong></td>
+                        <td><span class="check-box"></span></td>
+                        <td><span class="check-box"></span></td>
+                        <td><span class="check-box"></span></td>
+                        <td><span class="check-box"></span></td>
+                        <td><span class="check-box"></span></td>
+                        <td><span class="check-box"></span></td>
+                    </tr>
+                </table>
+
+                <p style="margin-bottom: 3px;">Vu les copies des relevés de notes (ci-dessous) dont l’authentification a été demandée avec accusé de réception :</p>
+                <table class="data-table">
+                    <tr>
+                        <th>RELEVÉ DE NOTES</th>
+                        <th class="center">SEM 1-2</th>
+                        <th class="center">SEM 3-4</th>
+                        <th class="center">SEM 5-6</th>
+                        <th class="center">SEM 7-8</th>
+                        <th class="center">SEM 9-10</th>
+                    </tr>
+                    <tr>
+                        <td><strong>SPÉCIALITÉ</strong></td>
+                        <td><span class="check-box"></span></td>
+                        <td><span class="check-box"></span></td>
+                        <td><span class="check-box"></span></td>
+                        <td><span class="check-box"></span></td>
+                        <td><span class="check-box"></span></td>
+                    </tr>
+                </table>
+
+                <p><strong>Autorise</strong> M./Mlle/Mme : <span class="dotted-line" style="width: 70%;"></span><br>
+                à s’inscrire pour l’année académique <span class="dotted-line" style="width: 20%;"></span> en :</p>
+
+                <table class="data-table">
+                    <tr>
+                        <th>PARCOURS</th>
+                        <th class="center">LIC 1-2</th>
+                        <th class="center">LIC 3-4</th>
+                        <th class="center">LIC 5-6</th>
+                        <th class="center">MAS 1-2</th>
+                        <th class="center">MAS 3-4</th>
+                    </tr>
+                    <tr>
+                        <td><strong>SPÉCIALITÉ</strong></td>
+                        <td><span class="check-box"></span></td>
+                        <td><span class="check-box"></span></td>
+                        <td><span class="check-box"></span></td>
+                        <td><span class="check-box"></span></td>
+                        <td><span class="check-box"></span></td>
+                    </tr>
+                </table>
+
+                <p style="font-size: 8pt; margin: 4px 0;"><strong>Légende :</strong> √ : Pièce présentée / Inscription validée &nbsp;&nbsp;|&nbsp;&nbsp; × : Pièce Non Présentée / Inscription non validée</p>
+
+                <p>Le cas échéant, M./Mlle/Mme <span class="dotted-line" style="width: 35%;"></span> devra valider les UE prescrites sur la fiche annexe (page suivante).<br>
+                <strong>Filière :</strong> <span class="dotted-line" style="width: 80%;"></span></p>
+
+                <div class="notice-box">
+                    <strong>NB :</strong><br>
+                    a- L’Ecole Supérieure des Affaires - ESA, se réserve le droit de procéder à l’authentification des diplômes et attestations de diplômes avant la délivrance d’une inscription definitiva.<br>
+                    b- Toute production de faux document est passible de sanction disciplinaire et/ou de poursuite judiciaire.
+                </div>
+            </div>
+        </div>
+
+        <table class="footer-table">
+            <tr>
+                <td class="sign-cell" style="width: 70%;">
+                    <div class="sign-title">Pour le Comité d’Orientation ,d’Equivalence et d’Etude de Dossiers</div>
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="text-align: center;">
+                                <strong>Steve BARRIGAH-B.</strong><br>
+                                <span class="sign-sub">Secrétaire Général / ESA</span>
+                            </td>
+                            <td style="text-align: center;">
+                                <strong>GNOHOE-KPADE Jeannot</strong><br>
+                                <span class="sign-sub">Chargé de la communication</span>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+                <td class="date-cell">Lomé, le ....................................</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ==================== 2. ANNEXE : FICHE DES UE PRESCRITES ==================== -->
+    <div class="doc-page prescribed-ue-page">
+        <div class="content-wrapper">
+            <div class="doc-title">
+                <h1>FICHE DES UNITÉS D’ENSEIGNEMENT PRESCRITES</h1>
+                <div class="doc-subtitle">ANNEXE À L’AUTORISATION PROVISOIRE D’INSCRIPTION</div>
+            </div>
+
+            <div class="content-body">
+                <p>À compléter lorsqu’un membre du Comité d’Orientation, d’Équivalence et d’Étude des Dossiers prescrit des unités d’enseignement à l’étudiant.</p>
+
+                <div class="info-box">
+                    <strong>Nom et prénoms de l’étudiant :</strong> <span class="dotted-line" style="width: 58%;"></span><br>
+                    <strong>Année académique :</strong> <span class="dotted-line" style="width: 28%;"></span>
+                    <strong>Niveau :</strong> <span class="dotted-line" style="width: 18%;"></span><br>
+                    <strong>Filière / spécialité :</strong> <span class="dotted-line" style="width: 68%;"></span>
+                </div>
+
+                <p><strong>Membre du comité prescripteur :</strong> <span class="dotted-line" style="width: 62%;"></span></p>
+
+                <table class="data-table prescribed-ue-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 7%;">N°</th>
+                            <th style="width: 16%;">CODE UE</th>
+                            <th style="width: 43%;">INTITULÉ DE L’UE PRESCRITE</th>
+                            <th style="width: 22%;">NIVEAU / SEMESTRE</th>
+                            <th style="width: 12%;">CRÉDITS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="center">1</td><td></td><td></td><td></td><td></td></tr>
+                        <tr><td class="center">2</td><td></td><td></td><td></td><td></td></tr>
+                        <tr><td class="center">3</td><td></td><td></td><td></td><td></td></tr>
+                        <tr><td class="center">4</td><td></td><td></td><td></td><td></td></tr>
+                        <tr><td class="center">5</td><td></td><td></td><td></td><td></td></tr>
+                        <tr><td class="center">6</td><td></td><td></td><td></td><td></td></tr>
+                        <tr><td class="center">7</td><td></td><td></td><td></td><td></td></tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box">
+                    <strong>Observations ou modalités particulières de validation :</strong><br>
+                    <span class="dotted-line" style="width: 100%;"></span><br>
+                    <span class="dotted-line" style="width: 100%;"></span>
+                </div>
+            </div>
+        </div>
+
+        <table class="footer-table">
+            <tr>
+                <td colspan="2" class="date-cell">Fait à Lomé, le ....................................</td>
+            </tr>
+            <tr>
+                <td class="sign-cell" style="width: 50%;">
+                    <div class="sign-title">Membre du comité prescripteur</div>
+                    <span class="sign-sub">Nom, qualité et signature</span>
+                </td>
+                <td class="sign-cell" style="width: 50%;">
+                    <div class="sign-title">L’étudiant</div>
+                    <span class="sign-sub">Lu et pris connaissance</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ==================== 3. PIÈCES DEMANDE D'AUTORISATION D'INSCRIPTION ==================== -->
+    <div class="doc-page">
+        <div class="content-wrapper">
+            <div class="doc-title">
+                <h1>PIÈCES À FOURNIR POUR AUTORISATION D’INSCRIPTION</h1>
+            </div>
+
+            <div class="content-body">
+                <p>La demande d’autorisation d’inscription est adressée à la Direction Académique et Scientifique de l’ESA en vue de vérifier les éléments constitutifs du dossier qui retracent le profil de l’étudiant comme indiqué dans le tableau ci-dessous.</p>
+
+                <div class="info-box">
+                    <strong>Nom :</strong> <span class="dotted-line" style="width: 35%;"></span> &nbsp;&nbsp; <strong>Prénom :</strong> <span class="dotted-line" style="width: 40%;"></span><br>
+                    <strong>Parcours :</strong> <span class="dotted-line" style="width: 30%;"></span> &nbsp;&nbsp; <strong>Filière :</strong> <span class="dotted-line" style="width: 45%;"></span>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 8%;">N°</th>
+                            <th style="width: 72%;">DÉSIGNATION</th>
+                            <th style="width: 10%;" class="center">OUI</th>
+                            <th style="width: 10%;" class="center">NON</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="center">1</td><td>Fiche de demande (à retirer à ESA)</td><td></td><td></td></tr>
+                        <tr><td class="center">2</td><td>Copie légalisée de l’attestation du BAC ou du duplicata</td><td></td><td></td></tr>
+                        <tr><td class="center">3</td><td>Copie légalisée de l’acte de naissance</td><td></td><td></td></tr>
+                        <tr><td class="center">4</td><td>Copie légalisée de la Nationalité (Duplicata)</td><td></td><td></td></tr>
+                        <tr><td class="center">5</td><td>Photocopie simple de la carte d’identité nationale ou du passeport</td><td></td><td></td></tr>
+                        <tr><td class="center">6</td><td>Copie du Bordereau d’inscription (à retirer à la banque) / Être à jour des frais de scolarité.</td><td></td><td></td></tr>
+                        <tr><td class="center">7</td><td>Fiche d’engagement duly signée (à retirer à ESA)</td><td></td><td></td></tr>
+                        <tr><td class="center">8</td><td>Reçu des frais de dossier (2000 F CFA) payable à la comptabilité</td><td></td><td></td></tr>
+                        <tr><td class="center">9</td><td>Photocopie légalisée des Relevés de notes des semestres 1, 2, 3, 4, 5 et 6 du parcours de Licence</td><td></td><td></td></tr>
+                        <tr><td class="center">10</td><td>Photocopie légalisée de l’attestation de Licence (inscription en Master)</td><td></td><td></td></tr>
+                    </tbody>
+                </table>
+
+                <div class="notice-box">
+                    <strong>NB :</strong> Possibilité de payer à l’international via carte Visa prépayée et Paypal.
+                </div>
+            </div>
+        </div>
+
+        <table class="footer-table">
+            <tr>
+                <td class="sign-cell" style="width: 50%;">
+                    <div class="sign-title">Réceptionné par</div>
+                    <p style="margin: 0;">NOM & PRÉNOM : .............................................<br>SIGNATURE :</p>
+                </td>
+                <td class="date-cell">Fait à Lomé, le .................... 20....</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ==================== 3. ADMISSIBILITÉ LICENCE ==================== -->
+    <div class="doc-page">
+        <div class="content-wrapper">
+            <div class="doc-title">
+                <h1>PIÈCES À FOURNIR POUR LA DEMANDE D’ADMISSIBILITÉ</h1>
+                <div class="doc-subtitle">NIVEAU : LICENCE (BAC+3)</div>
+            </div>
+
+            <div class="content-body">
+                <p>La demande d’admissibilité est adressée à la Direction Générale de l’ESA en vue de vérifier les éléments constitutifs du dossier qui retracent le profil de l’étudiant comme indiqué dans le tableau ci-dessous.</p>
+
+                <div class="info-box">
+                    <strong>Nom & Prénom :</strong> <span class="dotted-line" style="width: 70%;"></span><br>
+                    <strong>Parcours :</strong> <span class="dotted-line" style="width: 30%;"></span> &nbsp;&nbsp; <strong>Filière :</strong> <span class="dotted-line" style="width: 45%;"></span>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 8%;">N°</th>
+                            <th style="width: 72%;">DÉSIGNATION</th>
+                            <th style="width: 10%;" class="center">OUI</th>
+                            <th style="width: 10%;" class="center">NON</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="center">1</td><td>Fiche de demande (à retirer à ESA)</td><td></td><td></td></tr>
+                        <tr><td class="center">2</td><td>Copie de l’Autorisation provisoire d’inscription</td><td></td><td></td></tr>
+                        <tr><td class="center">3</td><td>Copie légalisée des relevés de notes de semestres 1, 2, 3, 4, 5 et 6</td><td></td><td></td></tr>
+                        <tr><td class="center">4</td><td>Copie légalisée de l’attestation du BAC , ou le duplicata du BAC pour les nouveaux (ou tout autre diplôme équivalent)</td><td></td><td></td></tr>
+                        <tr><td class="center">5</td><td>Copie légalisée de la carte nationale d’identité/ du passeport en cours de validité</td><td></td><td></td></tr>
+                        <tr><td class="center">6</td><td>Originaux des Bordereaux et quitus définitif des frais de scolarité et d’inscription de Licence 1, Licence 2, Licence 3</td><td></td><td></td></tr>
+                        <tr><td class="center">7</td><td>Reçu de payement pour la délivrance de l’admissibilité (1000 f CFA)</td><td></td><td></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <table class="footer-table">
+            <tr>
+                <td class="sign-cell" style="width: 50%;">
+                    <div class="sign-title">Réceptionné par</div>
+                    <p style="margin: 0;">NOM & PRÉNOM : .............................................<br>SIGNATURE :</p>
+                </td>
+                <td class="date-cell">Fait à Lomé, le .................... 20....</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ==================== 4. ADMISSIBILITÉ MASTER ==================== -->
+    <div class="doc-page">
+        <div class="content-wrapper">
+            <div class="doc-title">
+                <h1>PIÈCES À FOURNIR POUR LA DEMANDE D’ADMISSIBILITÉ</h1>
+                <div class="doc-subtitle">NIVEAU : MASTER (BAC+5)</div>
+            </div>
+
+            <div class="content-body">
+                <p>La demande d’admissibilité est adressée à la Direction Générale de l’ESA en vue de vérifier les éléments constitutifs du dossier qui retracent le profil de l’étudiant comme indiqué dans le tableau ci-dessous.</p>
+
+                <div class="info-box">
+                    <strong>Nom & Prénom :</strong> <span class="dotted-line" style="width: 70%;"></span><br>
+                    <strong>Parcours :</strong> <span class="dotted-line" style="width: 30%;"></span> &nbsp;&nbsp; <strong>Filière :</strong> <span class="dotted-line" style="width: 45%;"></span>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 8%;">N°</th>
+                            <th style="width: 72%;">DÉSIGNATION</th>
+                            <th style="width: 10%;" class="center">OUI</th>
+                            <th style="width: 10%;" class="center">NON</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="center">1</td><td>Fiche de demande (à retirer à ESA)</td><td></td><td></td></tr>
+                        <tr><td class="center">2</td><td>Copie de l’Autorisation provisoire d’inscription en Master</td><td></td><td></td></tr>
+                        <tr><td class="center">3</td><td>Copie légalisée du diplôme de licence ou de tout autre diplôme équivalent</td><td></td><td></td></tr>
+                        <tr><td class="center">4</td><td>Copie légalisée des relevés de notes des semestres 1, 2, 3, 4, 5 et 6 du parcours de Licence</td><td></td><td></td></tr>
+                        <tr><td class="center">5</td><td>Copie légalisée des relevés de notes des semestres 1, 2, 3 et 4 du parcours de Master</td><td></td><td></td></tr>
+                        <tr><td class="center">6</td><td>Copie légalisée de l’attestation du diplôme de BAC II ou le duplicata pour les nouveaux (ou tout autre diplôme équivalent)</td><td></td><td></td></tr>
+                        <tr><td class="center">7</td><td>Copie légalisée de la carte nationale d’identité ou du passeport en cours de validité</td><td></td><td></td></tr>
+                        <tr><td class="center">8</td><td>Originaux des Bordereaux et quitus définitif des frais de scolarité et d’inscription en Master 1 et 2</td><td></td><td></td></tr>
+                        <tr><td class="center">9</td><td>Reçu de payement pour la délivrance de l’admissibilité (1000 F CFA)</td><td></td><td></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <table class="footer-table">
+            <tr>
+                <td class="sign-cell" style="width: 50%;">
+                    <div class="sign-title">Réceptionné par</div>
+                    <p style="margin: 0;">NOM & PRÉNOM : .............................................<br>SIGNATURE :</p>
+                </td>
+                <td class="date-cell">Fait à Lomé, le .................... 20....</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ==================== 5. ATTESTATION D'ADMISSIBILITÉ ==================== -->
+    <div class="doc-page">
+        <div class="content-wrapper">
+            <div class="doc-title">
+                <h1>ATTESTATION D’ADMISSIBILITÉ</h1>
+            </div>
+            <div class="ref-number">Réf : ADLIC04101120-KPOG-AGOE</div>
+
+            <div class="content-body" style="line-height: 1.6;">
+                <p>Vu la demande formulée et les éléments constitutifs du dossier de l’étudiant(e),<br>
+                <strong>M/Mlle :</strong> <span class="dotted-line" style="width: 75%;"></span></p>
+
+                <p>Vu le rapport de vérification de la Direction Académique et Scientifique,</p>
+
+                <p>Nous soussignés, <strong>Dr Charles BIRREGAH</strong>, Fondateur-Président Directeur Général de l’Ecole Supérieure des Affaires (ESA), attestons par la présente que l’étudiant(e) :</p>
+
+                <div class="info-box">
+                    <p style="margin: 4px 0;"><strong>M/Mlle :</strong> <span class="dotted-line" style="width: 80%;"></span></p>
+                    <p style="margin: 4px 0;">est régulièrement inscrit(e) à l’Ecole Supérieure des Affaires (ESA).</p>
+                    <p style="margin: 4px 0;"><strong>Parcours :</strong> <span class="dotted-line" style="width: 35%;"></span> &nbsp;&nbsp;&nbsp;&nbsp; <strong>Option :</strong> <span class="dotted-line" style="width: 35%;"></span></p>
+                    <p style="margin: 4px 0;">a validé <span class="dotted-line" style="width: 15%;"></span> sur <span class="dotted-line" style="width: 15%;"></span> crédits.</p>
+                </div>
+
+                <p>Par conséquent, il (elle) est autorisé (e) à présenter son mémoire en vue de l’obtention de son diplôme de <span class="dotted-line" style="width: 35%;"></span> Professionnelle.</p>
+
+                <p>En foi de quoi, la présente attestation lui est délivrée pour servir et valoir ce que de droit.</p>
+            </div>
+        </div>
+
+        <table class="footer-table">
+            <tr>
+                <td class="sign-cell">
+                    <div class="sign-title">Dr Charles BIRREGAH</div>
+                    <div class="sign-sub">
+                        Fondateur-Président Directeur Général/ ESA<br>
+                        Gérant Associé du cabinet /AEC Sarl<br>
+                        Docteur en Sciences de Gestion (Finances)<br>
+                        Expert-Comptable inscrit au tableau de l’ONECCA – Togo<br>
+                        Commissaire aux comptes de sociétés<br>
+                        Expert agréé près les cours et tribunaux du Togo<br>
+                        Expert agréé par le Conseil Régional de l’UEMOA
+                    </div>
+                </td>
+                <td class="date-cell">Lomé, le ....................................</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ==================== 6. SOUTENANCE LICENCE ==================== -->
+    <div class="doc-page">
+        <div class="content-wrapper">
+            <div class="doc-title">
+                <h1>PIÈCES À FOURNIR POUR LA DEMANDE D’AUTORISATION DE SOUTENANCE</h1>
+                <div class="doc-subtitle">NIVEAU : LICENCE (BAC + 3)</div>
+            </div>
+
+            <div class="content-body">
+                <p>La demande d’autorisation de soutenir est adressée à la Direction Académique et Scientifique de l’ESA en vue de vérifier les éléments constitutifs du dossier qui retracent le profil de l’étudiant comme indiqué dans le tableau ci-dessous.</p>
+
+                <div class="info-box">
+                    <strong>Nom :</strong> <span class="dotted-line" style="width: 35%;"></span> &nbsp;&nbsp; <strong>Prénom :</strong> <span class="dotted-line" style="width: 40%;"></span><br>
+                    <strong>Parcours :</strong> <span class="dotted-line" style="width: 30%;"></span> &nbsp;&nbsp; <strong>Filière :</strong> <span class="dotted-line" style="width: 45%;"></span>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 8%;">N°</th>
+                            <th style="width: 72%;">DÉSIGNATION</th>
+                            <th style="width: 10%;" class="center">OUI</th>
+                            <th style="width: 10%;" class="center">NON</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="center">1</td><td>Fiche de demande (à retirer à ESA)</td><td></td><td></td></tr>
+                        <tr><td class="center">2</td><td>Copie de l’autorisation provisoire d’inscription</td><td></td><td></td></tr>
+                        <tr><td class="center">3</td><td>Copie de l’Attribution du Directeur de Mémoire</td><td></td><td></td></tr>
+                        <tr><td class="center">4</td><td>Copie de l’attestation d’admissibilité (170 crédits)</td><td></td><td></td></tr>
+                        <tr><td class="center">5</td><td>Copie de l’attestation de stage ou de travail</td><td></td><td></td></tr>
+                        <tr><td class="center">6</td><td>Originaux des Bordereaux et Quitus définitif de payements des frais de la scolarité (Licence 1, Licence 2, Licence 3)</td><td></td><td></td></tr>
+                        <tr><td class="center">7</td><td>Le bordereau de payement des frais de soutenance</td><td></td><td></td></tr>
+                        <tr><td class="center">8</td><td>Quitus du Directeur de mémoire attestant que le mémoire est prêt</td><td></td><td></td></tr>
+                        <tr><td class="center">9</td><td>Deux (02) exemplaires du mémoire</td><td></td><td></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <table class="footer-table">
+            <tr>
+                <td class="sign-cell" style="width: 50%;">
+                    <div class="sign-title">Réceptionné par</div>
+                    <p style="margin: 0;">NOM & PRÉNOM : .............................................<br>SIGNATURE :</p>
+                </td>
+                <td class="date-cell">Fait à Lomé, le .................... 20____</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ==================== 7. SOUTENANCE MASTER ==================== -->
+    <div class="doc-page">
+        <div class="content-wrapper">
+            <div class="doc-title">
+                <h1>PIÈCES À FOURNIR POUR LA DEMANDE D’AUTORISATION DE SOUTENANCE</h1>
+                <div class="doc-subtitle">NIVEAU : MASTER (BAC+5)</div>
+            </div>
+
+            <div class="content-body">
+                <p>La demande d’autorisation de soutenir est adressée à la Direction Académique et Scientifique de l’ESA en vue de vérifier les éléments constitutifs du dossier qui retracent le profil de l’étudiant comme indiqué dans le tableau ci-dessous.</p>
+
+                <div class="info-box">
+                    <strong>Nom :</strong> <span class="dotted-line" style="width: 35%;"></span> &nbsp;&nbsp; <strong>Prénom :</strong> <span class="dotted-line" style="width: 40%;"></span><br>
+                    <strong>Parcours :</strong> <span class="dotted-line" style="width: 30%;"></span> &nbsp;&nbsp; <strong>Filière :</strong> <span class="dotted-line" style="width: 45%;"></span>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 8%;">N°</th>
+                            <th style="width: 72%;">DÉSIGNATION</th>
+                            <th style="width: 10%;" class="center">OUI</th>
+                            <th style="width: 10%;" class="center">NON</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="center">1</td><td>Fiche de demande (à retirer à ESA)</td><td></td><td></td></tr>
+                        <tr><td class="center">2</td><td>Copie de l’autorisation provisoire d’inscription</td><td></td><td></td></tr>
+                        <tr><td class="center">3</td><td>Copie de l’Attribution du Directeur de Mémoire</td><td></td><td></td></tr>
+                        <tr><td class="center">4</td><td>Copie de l’Attestation d’admissibilité</td><td></td><td></td></tr>
+                        <tr><td class="center">5</td><td>Copie de l’attestation de stage ou de travail</td><td></td><td></td></tr>
+                        <tr><td class="center">6</td><td>Originaux des Bordereaux et Quitus définitif de payements des frais de la scolarité (Master 1, Master 2)</td><td></td><td></td></tr>
+                        <tr><td class="center">7</td><td>Original du bordereau de payement des frais de soutenance</td><td></td><td></td></tr>
+                        <tr><td class="center">8</td><td>Quitus du Directeur de mémoire attestant que le mémoire est prêt pour soutenance</td><td></td><td></td></tr>
+                        <tr><td class="center">9</td><td>Deux (02) exemplaires du mémoire</td><td></td><td></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <table class="footer-table">
+            <tr>
+                <td class="sign-cell" style="width: 50%;">
+                    <div class="sign-title">Réceptionné par</div>
+                    <p style="margin: 0;">NOM & PRÉNOM : .............................................<br>SIGNATURE :</p>
+                </td>
+                <td class="date-cell">Fait à Lomé, le .................... 20____</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ==================== 8. AUTORISATION DE SOUTENANCE ==================== -->
+    <div class="doc-page">
+        <div class="content-wrapper">
+            <div class="doc-title">
+                <h1>AUTORISATION DE SOUTENANCE</h1>
+            </div>
+
+            <div class="content-body" style="line-height: 1.6;">
+                <p>Vu la liste des pièces fournies pour la demande de soutenance,</p>
+                <p>Vu la demande de soutenance introduite par le (la) candidat (e) <strong>M/Mlle/Mme :</strong> <span class="dotted-line" style="width: 50%;"></span><br>
+                inscrit (e) au parcours <span class="dotted-line" style="width: 25%;"></span> de la filière <span class="dotted-line" style="width: 25%;"></span> promotion 20....- 20....</p>
+
+                <p>Vu l’attestation d’admissibilité de : &nbsp;&nbsp; [ &nbsp; ] LICENCE &nbsp;&nbsp;&nbsp;&nbsp; [ &nbsp; ] MASTER</p>
+                <p>Vu l’attestation de stage,</p>
+                <p>Vu le quitus du directeur de mémoire ;</p>
+
+                <p style="margin-top: 20px;">La Direction Générale de l’Ecole Supérieure des Affaires (ESA), autorise la soutenance du mémoire de fin de parcours <strong>[ &nbsp; ] LICENCE &nbsp;&nbsp; [ &nbsp; ] MASTER</strong></p>
+
+                <p>à <strong>M/Mlle/Mme :</strong> <span class="dotted-line" style="width: 80%;"></span></p>
+            </div>
+        </div>
+
+        <table class="footer-table">
+            <tr>
+                <td class="sign-cell" style="width: 70%;">
+                    <div class="sign-title">Pour le Comité d’Orientation et d’Equivalence et d’Etude de Dossiers</div>
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="text-align: center;">
+                                <strong>Steve BARRIGAH-B.</strong><br>
+                                <span class="sign-sub">Secrétaire Général / ESA</span>
+                            </td>
+                            <td style="text-align: center;">
+                                <strong>GNOHOE-KPADE Jeannot</strong><br>
+                                <span class="sign-sub">Chargé de la communication</span>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+                <td class="date-cell">Lomé, le .............................. 20....</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ==================== 9. DÉLIVRANCE DIPLÔME LICENCE ==================== -->
+    <div class="doc-page">
+        <div class="content-wrapper">
+            <div class="doc-title">
+                <h1>PIÈCES À FOURNIR POUR LA DEMANDE DE DÉLIVRANCE DE DIPLÔME</h1>
+                <div class="doc-subtitle">NIVEAU : LICENCE (BAC+3)</div>
+            </div>
+
+            <div class="content-body">
+                <p>La demande de délivrance de diplôme est adressée à la Direction Académique et Scientifique de l’ESA en vue de vérifier les éléments constitutifs du dossier qui retracent le profil de l’étudiant comme indiqué dans le tableau ci-dessous.</p>
+
+                <div class="info-box">
+                    <strong>Nom & Prénom :</strong> <span class="dotted-line" style="width: 70%;"></span><br>
+                    <strong>Parcours :</strong> <span class="dotted-line" style="width: 30%;"></span> &nbsp;&nbsp; <strong>Filière :</strong> <span class="dotted-line" style="width: 45%;"></span>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 6%;">N°</th>
+                            <th style="width: 74%;">DÉSIGNATION</th>
+                            <th style="width: 10%;" class="center">OUI</th>
+                            <th style="width: 10%;" class="center">NON</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="center">1</td><td>Fiche de demande (à retirer à ESA)</td><td></td><td></td></tr>
+                        <tr><td class="center">2</td><td>Copie de l’Autorisation Provisoire d’inscription</td><td></td><td></td></tr>
+                        <tr><td class="center">3</td><td>Fiche d’engagement duly signée</td><td></td><td></td></tr>
+                        <tr><td class="center">4</td><td>Copie de la lettre d’authentification du diplôme ou coupon réponse d’authentification (Réserver à l’Administration ESA)</td><td></td><td></td></tr>
+                        <tr><td class="center">5</td><td>Copie de la lettre d’authentification des relevés (Réserver à l’Administration ESA)</td><td></td><td></td></tr>
+                        <tr><td class="center">6</td><td>L’original du Relevé de notes de 1ère Année</td><td></td><td></td></tr>
+                        <tr><td class="center">7</td><td>L’original du Relevé de notes de 2ème Année</td><td></td><td></td></tr>
+                        <tr><td class="center">8</td><td>L’original du Relevé de notes de 3ème Année après soutenance</td><td></td><td></td></tr>
+                        <tr><td class="center">9</td><td>L’original de l’Attestation de BAC 2 ou Duplicata</td><td></td><td></td></tr>
+                        <tr><td class="center">10</td><td>L’original de l’Attestation d’admissibilité</td><td></td><td></td></tr>
+                        <tr><td class="center">11</td><td>Attestation de délivrance de diplôme (Réserver à l’Administration ESA)</td><td></td><td></td></tr>
+                        <tr><td class="center">12</td><td>Procès Verbale de Soutenance du Mémoire de Licence (Réserver à l’Administration ESA)</td><td></td><td></td></tr>
+                        <tr><td class="center">13</td><td>Quitus définitif des membres de jury</td><td></td><td></td></tr>
+                        <tr><td class="center">14</td><td>Originaux des Bordereaux de payement des frais de soutenance et du diplôme</td><td></td><td></td></tr>
+                        <tr><td class="center">15</td><td>Originaux des Bordereaux et quitus définitif de payement des frais de scolarité de licence 3</td><td></td><td></td></tr>
+                        <tr><td class="center">16</td><td>Originaux des Bordereaux et quitus définitif de payement des frais de scolarité de licence 2 pour les étudiants ayant fait la deuxième Année à ESA</td><td></td><td></td></tr>
+                        <tr><td class="center">17</td><td>Originaux des Bordereaux et quitus définitif de payement des frais de scolarité de licence 1 pour les étudiants ayant fait la première Année à ESA</td><td></td><td></td></tr>
+                        <tr><td class="center">18</td><td>Une photo d’identité</td><td></td><td></td></tr>
+                        <tr><td class="center">19</td><td>Copie légalisée de la carte d’identité nationale</td><td></td><td></td></tr>
+                        <tr><td class="center">20</td><td>Un exemplaire définitif du mémoire corrigé après la soutenance</td><td></td><td></td></tr>
+                        <tr><td class="center">21</td><td>Fiche de dépôt de mémoire définitif en vue de la demande de diplôme (version PDF du mémoire définitif sur clé USB)</td><td></td><td></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <table class="footer-table">
+            <tr>
+                <td class="sign-cell" style="width: 50%;">
+                    <div class="sign-title">Réceptionné par</div>
+                    <p style="margin: 0;">NOM & PRÉNOM : .............................................<br>SIGNATURE :</p>
+                </td>
+                <td class="date-cell">Fait à Lomé, le .................... 20____</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ==================== 10. DÉLIVRANCE DIPLÔME MASTER ==================== -->
+    <div class="doc-page">
+        <div class="content-wrapper">
+            <div class="doc-title">
+                <h1>PIÈCES À FOURNIR POUR LA DEMANDE DE DÉLIVRANCE DE DIPLÔME</h1>
+                <div class="doc-subtitle">NIVEAU : MASTER (BAC+5)</div>
+            </div>
+
+            <div class="content-body">
+                <p>La demande de délivrance de diplôme est adressée à la Direction Académique et Scientifique de l’ESA en vue de vérifier les éléments constitutifs du dossier qui retracent le profil de l’étudiant comme indiqué dans le tableau ci-dessous.</p>
+
+                <div class="info-box">
+                    <strong>Nom & Prénom :</strong> <span class="dotted-line" style="width: 70%;"></span><br>
+                    <strong>Parcours :</strong> <span class="dotted-line" style="width: 30%;"></span> &nbsp;&nbsp; <strong>Filière :</strong> <span class="dotted-line" style="width: 45%;"></span>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 6%;">N°</th>
+                            <th style="width: 74%;">DÉSIGNATION</th>
+                            <th style="width: 10%;" class="center">OUI</th>
+                            <th style="width: 10%;" class="center">NON</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="center">1</td><td>Fiche de demande (à retirer à ESA)</td><td></td><td></td></tr>
+                        <tr><td class="center">2</td><td>Copie de l’autorisation Provisoire d’inscription</td><td></td><td></td></tr>
+                        <tr><td class="center">3</td><td>Fiche d’engagement duly signée</td><td></td><td></td></tr>
+                        <tr><td class="center">4</td><td>Copie de la lettre d’authentification du diplômes ou coupon réponse d’authentification (Réserver à l’Administration ESA)</td><td></td><td></td></tr>
+                        <tr><td class="center">5</td><td>Copie de la lettre d’authentification des relevés ou coupon réponse d’authentification (Réserver à l’Administration ESA)</td><td></td><td></td></tr>
+                        <tr><td class="center">6</td><td>L’original de relevé de notes de Master Semestre 1 et 2</td><td></td><td></td></tr>
+                        <tr><td class="center">7</td><td>L’original de relevé de notes de Master Semestre 3 et 4 après soutenance</td><td></td><td></td></tr>
+                        <tr><td class="center">8</td><td>L’original de l’attestation du diplôme ou diplôme de licence</td><td></td><td></td></tr>
+                        <tr><td class="center">9</td><td>Les relevés de notes de semestres 1, 2, 3, 4, 5 et 6 de Licence</td><td></td><td></td></tr>
+                        <tr><td class="center">10</td><td>L’original de l’attestation de BAC 2</td><td></td><td></td></tr>
+                        <tr><td class="center">11</td><td>L’original de l’Attestation d’admissibilité</td><td></td><td></td></tr>
+                        <tr><td class="center">12</td><td>Attestation de délivrance de diplôme (Réserver à l’Administration ESA)</td><td></td><td></td></tr>
+                        <tr><td class="center">13</td><td>Procès-Verbal de Soutenance du Mémoire de Master (Réserver à l’Administration ESA)</td><td></td><td></td></tr>
+                        <tr><td class="center">14</td><td>Quitus définitif des membres de jury</td><td></td><td></td></tr>
+                        <tr><td class="center">15</td><td>Originaux des Bordereaux de payement des frais de soutenance et du diplôme</td><td></td><td></td></tr>
+                        <tr><td class="center">16</td><td>Originaux des Bordereaux et quitus définitif de payement des frais de scolarité de Master Semestre 1 et 2</td><td></td><td></td></tr>
+                        <tr><td class="center">17</td><td>Originaux des Bordereaux et quitus de payement des frais de scolarité de Master Semestre 3 et 4</td><td></td><td></td></tr>
+                        <tr><td class="center">18</td><td>Une photo d’identité</td><td></td><td></td></tr>
+                        <tr><td class="center">19</td><td>Copie légalisée de la carte d’identité nationale</td><td></td><td></td></tr>
+                        <tr><td class="center">20</td><td>Un exemplaire définitif du mémoire corrigé après la soutenance</td><td></td><td></td></tr>
+                        <tr><td class="center">21</td><td>Fiche de dépôt de mémoire définitif en vue de la demande de diplôme (version PDF du mémoire définitif sur clé USB)</td><td></td><td></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <table class="footer-table">
+            <tr>
+                <td class="sign-cell" style="width: 50%;">
+                    <div class="sign-title">Réceptionné par</div>
+                    <p style="margin: 0;">NOM & PRÉNOM : .............................................<br>SIGNATURE :</p>
+                </td>
+                <td class="date-cell">Fait à Lomé, le .................... 20____</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ==================== 11. ATTESTATION D'AUTORISATION DE DÉLIVRANCE DU DIPLÔME DE LICENCE ==================== -->
+    <div class="doc-page">
+        <div class="content-wrapper">
+            <div class="doc-title">
+                <h1>ATTESTATION D’AUTORISATION DE DÉLIVRANCE DU DIPLÔME DE LICENCE</h1>
+            </div>
+
+            <div class="content-body" style="line-height: 1.6;">
+                <p>Vu la liste des pièces fournies pour la demande de diplôme,</p>
+                <p>Vu la demande de délivrance de diplôme introduite par <strong>M./Mlle/Mme :</strong> <span class="dotted-line" style="width: 55%;"></span><br>
+                inscrit (e) au parcours Licence de la filière <span class="dotted-line" style="width: 35%;"></span> promotion 20____- 20______</p>
+
+                <p>Vu le nombre de crédits validés et mentionnés sur les relevés de notes de :<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;• [ &nbsp; ] Licence (1-2)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• [ &nbsp; ] Licence (3-4)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• [ &nbsp; ] Licence (5-6)<br>
+                Soit <span class="dotted-line" style="width: 150px;"></span> crédits.</p>
+
+                <p>Vu l’attestation d’admissibilité de Licence,</p>
+                <p>Vu le procès-verbal de soutenance et le quitus du président du Jury ;</p>
+                <p>Après vérification de toutes les pièces demandées par la direction académique et scientifique de l’ESA,</p>
+
+                <p style="margin-top: 20px;">La Direction Générale de l’Ecole Supérieure des Affaires (ESA) autorise la délivrance du diplôme de <span class="dotted-line" style="width: 30%;"></span> de la filière <span class="dotted-line" style="width: 30%;"></span></p>
+                <p>à <strong>M./Mlle/Mme :</strong> <span class="dotted-line" style="width: 75%;"></span></p>
+            </div>
+        </div>
+
+        <table class="footer-table">
+            <tr>
+                <td class="sign-cell" style="width: 70%;">
+                    <div class="sign-title">Pour le Comité d’Orientation et d’Equivalence et d’Etude de Dossiers</div>
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="text-align: center;">
+                                <strong>Steve BARRIGAH-B.</strong><br>
+                                <span class="sign-sub">Secrétaire Général / ESA</span>
+                            </td>
+                            <td style="text-align: center;">
+                                <strong>GNOHOE-KPADE Jeannot</strong><br>
+                                <span class="sign-sub">Chargé de la communication</span>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+                <td class="date-cell">Lomé, le ....................................</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ==================== 12. ATTESTATION D'AUTORISATION DE DÉLIVRANCE DU DIPLÔME DE MASTER ==================== -->
+    <div class="doc-page">
+        <div class="content-wrapper">
+            <div class="doc-title">
+                <h1>ATTESTATION D’AUTORISATION DE DÉLIVRANCE DU DIPLÔME DE MASTER</h1>
+            </div>
+
+            <div class="content-body" style="line-height: 1.6;">
+                <p>Vu la liste des pièces fournies pour la demande de diplôme,</p>
+                <p>Vu la demande de délivrance de diplôme introduite par <strong>M./Mlle/Mme :</strong> <span class="dotted-line" style="width: 55%;"></span><br>
+                inscrit (e) au parcours Master de la filière <span class="dotted-line" style="width: 35%;"></span> promotion 20____- 20______</p>
+
+                <p>Vu le nombre de crédits validés et mentionnés sur les relevés de notes de :<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;• [ &nbsp; ] Master 1 (Semestre 1 & 2)<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;• [ &nbsp; ] Master 2 (Semestre 3 & 4)<br>
+                Soit <span class="dotted-line" style="width: 150px;"></span> crédits.</p>
+
+                <p>Vu l’attestation d’admissibilité de Master,</p>
+                <p>Vu le procès-verbal de soutenance et le quitus du président du Jury ;</p>
+                <p>Après vérification de toutes les pièces demandées par la direction académique et scientifique de l’ESA,</p>
+
+                <p style="margin-top: 20px;">La Direction Générale de l’Ecole Supérieure des Affaires (ESA) autorise la délivrance du diplôme de <span class="dotted-line" style="width: 30%;"></span> de la filière <span class="dotted-line" style="width: 30%;"></span></p>
+                <p>à <strong>M./Mlle/Mme :</strong> <span class="dotted-line" style="width: 75%;"></span></p>
+            </div>
+        </div>
+
+        <table class="footer-table">
+            <tr>
+                <td class="sign-cell" style="width: 70%;">
+                    <div class="sign-title">Pour le Comité d’Orientation et d’Equivalence et d’Etude de Dossiers</div>
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="text-align: center;">
+                                <strong>Steve BARRIGAH-B.</strong><br>
+                                <span class="sign-sub">Secrétaire Général / ESA</span>
+                            </td>
+                            <td style="text-align: center;">
+                                <strong>GNOHOE-KPADE Jeannot</strong><br>
+                                <span class="sign-sub">Chargé de la communication</span>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+                <td class="date-cell">Lomé, le ....................................</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ==================== 13. FICHE D'ENGAGEMENT BTS / LICENCE ==================== -->
+    <div class="doc-page">
+        <div class="content-wrapper">
+            <div class="doc-title">
+                <h1>FICHE D’ENGAGEMENT</h1>
+            </div>
+            <div class="ref-number">(portant inscription en 2ème Année de BTS sous réserve de régulariser le parcours avant inscription en Licence Semestre 5 & 6)</div>
+
+            <div class="content-body" style="line-height: 1.6; text-align: justify;">
+                <p>Je soussigné (e) <strong>M/ Mlle/Mme :</strong> <span class="dotted-line" style="width: 65%;"></span>,<br>
+                désireux(se) de m’inscrire en Deuxième Année de la Filière <span class="dotted-line" style="width: 40%;"></span> Promotion 20..../20...., m’engage devant la Direction Générale et le Comité d’Orientation et d’Équivalence de l’Ecole Supérieure des Affaires (ESA) ;</p>
+
+                <p>• qu’en cas d’échec à l’examen du BTS, de régulariser mon parcours de formation par la reprise des unités d’enseignements prescrites en Licence 1/ BTS 1, Semestre 1 & 2 de la Filière <span class="dotted-line" style="width: 35%;"></span> à l’Ecole Supérieure des Affaires (ESA) ;</p>
+
+                <p>• qu’en cas de réussite à l’examen du BTS, de régulariser mon parcours de formation par la reprise des Unités d’enseignement de Licence 1 / BTS 1, Semestre 1 & 2 non validés avant toute poursuite de la formation en Licence 3, Semestre 5 & 6 à l’ESA ;</p>
+
+                <p>• qu’à ne présenter mon dossier devant la commission de reconnaissance et d’homologation de diplômes qu’après avoir validé les 180 crédits du parcours Licence.</p>
+
+                <div class="notice-box" style="margin-top: 25px;">
+                    <strong>AVERTISSEMENT :</strong><br>
+                    En cas de réussite à l’examen du BTS, la poursuite de la formation à l’Ecole Supérieure des Affaires (ESA) est conditionnée par une autorisation d’inscription délivrée par le Comité d’Orientation et d’Equivalence.<br>
+                    La Direction Générale de l’Ecole Supérieure des Affaires (ESA), décline toute responsabilité en cas de non-respect de cet engagement.
+                </div>
+            </div>
+        </div>
+
+        <table class="footer-table">
+            <tr>
+                <td class="sign-cell" style="width: 60%;">
+                    <div class="sign-title">Signature précédée de la mention « lu et approuvé »</div>
+                </td>
+                <td class="date-cell">Fait à Lomé, le ..............................</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ==================== 14. RAPPORT DE VALIDATION DU MÉMOIRE ==================== -->
+    <div class="doc-page">
+        <div class="content-wrapper">
+            <div class="doc-title">
+                <h1>RAPPORT DE VALIDATION DU MÉMOIRE D’ADMINISTRATION DES SOUTENANCES</h1>
+            </div>
+
+            <div class="content-body">
+                <div class="info-box">
+                    <strong>NOM ET PRENOM DU CANDIDAT :</strong> <span class="dotted-line" style="width: 60%;"></span><br>
+                    <strong>TITRE DU MEMOIRE :</strong> <span class="dotted-line" style="width: 70%;"></span><br>
+                    <strong>Spécialité/ Filière :</strong> <span class="dotted-line" style="width: 65%;"></span><br>
+                    <strong>NIVEAU :</strong> [ &nbsp; ] LICENCE &nbsp;&nbsp;&nbsp;&nbsp; [ &nbsp; ] MASTER &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>PROMOTION :</strong> 20.... / 20....<br>
+                    <strong>INSTRUCTEUR :</strong> <span class="dotted-line" style="width: 35%;"></span> &nbsp;&nbsp; <strong>CONTACT :</strong> <span class="dotted-line" style="width: 15%;"></span> &nbsp;&nbsp; <strong>DATE :</strong> ____/____/20____
+                </div>
+
+                <p style="margin: 6px 0;"><strong>Veuillez donner votre appréciation sur le mémoire :</strong></p>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 20%;">CRITÈRES</th>
+                            <th style="width: 35%;">ÉLÉMENTS</th>
+                            <th style="width: 45%;">APPRÉCIATIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td rowspan="3"><strong>FORME</strong></td>
+                            <td>Présentation</td>
+                            <td class="center">
+                                <div class="checklist">
+                                    <div class="checkline"><span class="check-box"></span>Très bon</div>
+                                    <div class="checkline"><span class="check-box"></span>Bon</div>
+                                    <div class="checkline"><span class="check-box"></span>Passable</div>
+                                    <div class="checkline"><span class="check-box"></span>Médiocre</div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Fautes d’orthographes/grammaire</td>
+                            <td class="center">
+                                <div class="checklist">
+                                    <div class="checkline"><span class="check-box"></span>Très bon</div>
+                                    <div class="checkline"><span class="check-box"></span>Bon</div>
+                                    <div class="checkline"><span class="check-box"></span>Passable</div>
+                                    <div class="checkline"><span class="check-box"></span>Médiocre</div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Respect du canevas</td>
+                            <td class="center">
+                                <div class="checklist">
+                                    <div class="checkline"><span class="check-box"></span>Très bon</div>
+                                    <div class="checkline"><span class="check-box"></span>Bon</div>
+                                    <div class="checkline"><span class="check-box"></span>Passable</div>
+                                    <div class="checkline"><span class="check-box"></span>Médiocre</div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td rowspan="4"><strong>FOND</strong></td>
+                            <td>Originalité du thème</td>
+                            <td class="center">
+                                <div class="checklist">
+                                    <div class="checkline"><span class="check-box"></span>Très bon</div>
+                                    <div class="checkline"><span class="check-box"></span>Bon</div>
+                                    <div class="checkline"><span class="check-box"></span>Passable</div>
+                                    <div class="checkline"><span class="check-box"></span>Médiocre</div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Pertinence de la problématique</td>
+                            <td class="center">
+                                <div class="checklist">
+                                    <div class="checkline"><span class="check-box"></span>Très bon</div>
+                                    <div class="checkline"><span class="check-box"></span>Bon</div>
+                                    <div class="checkline"><span class="check-box"></span>Passable</div>
+                                    <div class="checkline"><span class="check-box"></span>Médiocre</div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Méthodologie</td>
+                            <td class="center">
+                                <div class="checklist">
+                                    <div class="checkline"><span class="check-box"></span>Très bon</div>
+                                    <div class="checkline"><span class="check-box"></span>Bon</div>
+                                    <div class="checkline"><span class="check-box"></span>Passable</div>
+                                    <div class="checkline"><span class="check-box"></span>Médiocre</div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Analyse des résultats</td>
+                            <td class="center">
+                                <div class="checklist">
+                                    <div class="checkline"><span class="check-box"></span>Très bon</div>
+                                    <div class="checkline"><span class="check-box"></span>Bon</div>
+                                    <div class="checkline"><span class="check-box"></span>Passable</div>
+                                    <div class="checkline"><span class="check-box"></span>Médiocre</div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p style="margin-top: 10px;"><strong>AVIS GÉNÉRAL DE L’INSTRUCTEUR :</strong></p>
+                <p style="margin: 4px 0;">1- CE MEMOIRE EST-IL A VOTRE AVIS DIGNE D’ETRE SOUTENU ? &nbsp;&nbsp;&nbsp;&nbsp; <strong>[ &nbsp; ] OUI &nbsp;&nbsp;&nbsp;&nbsp; [ &nbsp; ] NON</strong></p>
+                <p style="margin: 4px 0;">2- SINON EVOQUER LES RAISONS EN MENTIONNANT LES ASPECTS SUR LESQUELS LE CANDIDAT DOIT APPORTER LES CORRECTIONS :</p>
+                <div style="border: 1px dashed #002147; min-height: 50px; padding: 4px; margin-top: 4px;"></div>
+
+                <p style="font-size: 8pt; margin-top: 6px;"><strong>NB :</strong> Merci de rendre le rapport de pré évaluation au plus tard le ____/____/20___</p>
+            </div>
+        </div>
+
+        <table class="footer-table">
+            <tr>
+                <td class="sign-cell" style="width: 50%;">
+                    <div class="sign-title">Signature de l’instructeur</div>
+                </td>
+                <td class="sign-cell" style="width: 50%;">
+                    <div class="sign-title">Visa de la Direction Générale</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ==================== 15. FICHE DE DÉPÔT DE MÉMOIRE DÉFINITIF ==================== -->
+    <div class="doc-page">
+        <div class="content-wrapper">
+            <div class="doc-title">
+                <h1>FICHE DE DÊPOT DE MEMOIRE DEFINITIF EN VUE DE LA DEMANDE DE DIPLÔME</h1>
+            </div>
+
+            <div class="content-body">
+                <p style="text-align: center; font-weight: bold; background-color: #f0f4f8; padding: 6px; border: 1px solid #002147; margin-bottom: 15px;">
+                    Les mémoires sont reçus sous format numérique en version unique PDF.
+                </p>
+
+                <div class="info-box" style="line-height: 2;">
+                    <strong>Nom & Prénom (étudiant) :</strong> <span class="dotted-line" style="width: 65%;"></span><br>
+                    <strong>Parcours :</strong> [ &nbsp; ] LICENCE &nbsp;&nbsp;&nbsp;&nbsp; [ &nbsp; ] MASTER &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>Filière :</strong> <span class="dotted-line" style="width: 35%;"></span><br>
+                    <strong>Documents requis :</strong><br>
+                    [ &nbsp; ] Attestation de stage (ou preuve de fonction)<br>
+                    [ &nbsp; ] Quitus du directeur de mémoire<br>
+                    <strong>Thème du Mémoire :</strong><br>
+                    <div style="border-bottom: 1px dotted #333; height: 25px;"></div>
+                    <div style="border-bottom: 1px dotted #333; height: 25px;"></div>
+                    <strong>Code Fichier PDF :</strong> <span class="dotted-line" style="width: 50%;"></span>
+                </div>
+            </div>
+        </div>
+
+        <table class="footer-table">
+            <tr>
+                <td class="sign-cell" style="width: 50%;">
+                    <div class="sign-title">Réceptionné par : ...........................................</div>
+                    <p style="margin-top: 25px;"><strong>SIGNATURE :</strong></p>
+                </td>
+                <td class="date-cell">Fait à Lomé, le .................... 20____</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ==================== 17. LETTRE DE RECOMMANDATION POUR STAGE ==================== -->
+    <div class="doc-page">
+        <div class="content-wrapper">
+            <div class="doc-title">
+                <h1>LETTRE DE RECOMMANDATION POUR STAGE</h1>
+            </div>
+
+            <div class="content-body">
+                <div style="text-align: right; font-weight: bold; margin-top: 6px; margin-bottom: 18px;">
+                    Lomé, le 22 septembre 2026
+                </div>
+
+                <div style="margin-bottom: 12px; font-weight: bold;">
+                    <strong>OBJET :</strong> Lettre de recommandation officielle pour stage académique et de mémoire
+                </div>
+
+                <div style="margin: 12px 0 18px 0; font-weight: bold;">
+                    À l’attention de la Direction des Ressources Humaines / Du Responsable de Recrutement
+                </div>
+
+                <p style="text-align: justify; margin: 8px 0;">
+                    Madame, Monsieur,
+                </p>
+
+                <p style="text-align: justify; margin-top: 12px;">
+                    C’est avec un grand plaisir et une réelle conviction que je m’adresse à vous aujourd’hui pour vous recommander chaleureusement
+                    la candidature de <strong>Mademoiselle ADKPELI Nes... Françoise</strong>, étudiante en Deuxième Année de Licence (Semestres 3 et 4)
+                    au sein de notre établissement, dans la filière <strong>Assistant de Gestion PMI-PME</strong>.
+                </p>
+
+                <p style="text-align: justify;">
+                    Au cours de sa formation à l’École Supérieure des Affaires (ESA), Mademoiselle ADKPELI s’est distinguée par son engagement constant,
+                    sa rigueur intellectuelle et une assiduité exemplaire. Ses résultats académiques ainsi que son comportement au quotidien témoignent
+                    de son sérieux, de sa maturité et de sa détermination à réussir dans le domaine de la gestion d’entreprise.
+                </p>
+
+                <p style="text-align: justify;">
+                    Sur le plan individuel et relationnel, elle démontre :
+                </p>
+
+                <ul style="margin: 6px 0 10px 22px; text-align: justify; padding-left: 16px;">
+                    <li><strong>Des compétences organisationnelles solides :</strong> une excellente capacité à structurer son travail, à gérer les priorités et à respecter les délais impartis.</li>
+                    <li><strong>Un esprit d’analyse et de synthèse :</strong> indispensable pour appréhender les problématiques de gestion propres aux Petites et Moyennes Industries/Entreprises (PMI-PME).</li>
+                    <li><strong>De fortes qualités relationnelles :</strong> une grande aisance d’adaptation, un sens élevé de la communication et une réelle aptitude au travail collaboratif en équipe.</li>
+                </ul>
+
+                <p style="text-align: justify;">
+                    Dans le cadre de la finalisation de son parcours et de la préparation de son mémoire de fin de cycle, un stage pratique en entreprise
+                    représente une étape fondamentale. Je suis pleinement convaincu(e) que son dynamisme, sa curiosité intellectuelle et sa volonté d’apprendre
+                    constitueront un atout précieux pour vos équipes et que sa contribution sera à la hauteur de vos attentes.
+                </p>
+
+                <p style="text-align: justify;">
+                    C’est pourquoi je vous la recommande très favorablement et sans la moindre réserve pour l’accueil en stage au sein de votre structure.
+                </p>
+
+                <p style="text-align: justify;">
+                    Restant à votre entière disposition pour tout renseignement complémentaire, je vous remercie par avance de l’attention particulière
+                    que vous porterez à sa demande et vous prie d’agréer, Madame, Monsieur, l’expression de ma considération distinguée.
+                </p>
+
+            </div>
+        </div>
+
+        <table class="footer-table">
+            <tr>
+                <td class="sign-cell" style="width: 100%;">
+                    <div class="sign-title">Le Directeur Général</div>
+                    <p style="margin: 0; font-weight: bold;">Dr Charles BIRREGAH</p>
+                    <p style="margin: 0; font-size: 8pt; color: #444;">
+                        Fondateur-Président Directeur Général / ESA<br>
+                        Gérant Associé du Cabinet / AEC Sarl<br>
+                        Docteur en Sciences de Gestion (Finances)<br>
+                        Expert-Comptable inscrit au tableau de l’ONECCA – Togo<br>
+                        Commissaire aux comptes de sociétés<br>
+                        Expert agréé près les cours et tribunaux du Togo<br>
+                        Expert agréé par le Conseil Régional de l’UEMOA
+                    </p>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ==================== 18. QUITUS - ÉCOLE SUPÉRIEURE DES AFFAIRES ==================== -->
+    <div class="doc-page quitus-page">
+        <div class="content-wrapper">
+            <div class="doc-title">
+                <h1>QUITUS</h1>
+            </div>
+
+            <div class="content-body">
+                <div class="info-box" style="line-height: 1.5;">
+                    <strong>Type de document :</strong> Quitus<br>
+                    <strong>Établissement :</strong> École Supérieure des Affaires (ESA)<br>
+                    <strong>Nom & Prénom de l’étudiant :</strong> WILIFI Mèdéalè<br>
+                    <strong>Niveau / Filière :</strong> Première année de BTS, filière COMMUNICATION DES ENTREPRISES<br>
+                    <strong>Année académique :</strong> 2019-2020<br>
+                    <strong>Objet :</strong> Attestation de régularité avec la comptabilité de l’école (libération de tout engagement comptable)<br>
+                    <strong>Date de délivrance :</strong> 24 août 2020
+                </div>
+
+                <p style="text-align: justify; margin-top: 12px;">
+                    Je soussigné, <strong>Dr Charles B. BIRREGAH</strong>, Directeur Général de l’École Supérieure des Affaires (ESA),
+                    atteste que l’étudiant <strong>WILIFI Mèdéalè</strong> est en règle avec la comptabilité de l’établissement et
+                    qu’il a réglé tous ses engagements financiers liés à son inscription pour l’année académique 2019-2020.
+                    En conséquence, il est libéré de tout engagement comptable au sein de l’école.
+                </p>
+
+                <p style="margin-top: 14px; font-weight: bold; text-align: center;">
+                    Fait à Lomé, le 24 août 2020.
+                </p>
+            </div>
+        </div>
+
+        <table class="footer-table">
+            <tr>
+                <td class="sign-cell" style="width: 100%;">
+                    <div class="sign-title">Le Directeur Général</div>
+                    <p style="margin: 0; font-weight: bold;">Dr Charles B. BIRREGAH</p>
+                    <p style="margin: 0; font-size: 8pt; color: #444;">École Supérieure des Affaires (ESA)</p>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+</body>
+</html>

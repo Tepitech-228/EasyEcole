@@ -43,8 +43,6 @@ export class GenerateDocumentPageComponent extends BaseComponentClass implements
   // ---- Onglet 2 : attestations & documents payants ----
   demandesLoading = false;
   demandes: DemandeDocument[] = [];
-  paiementLoadingId: string | null = null;
-  delivranceLoadingId: string | null = null;
 
   // ---- Onglet 3 : paramétrage des frais ----
   typesDocLoading = false;
@@ -193,52 +191,6 @@ export class GenerateDocumentPageComponent extends BaseComponentClass implements
       },
       error: () => {
         this.demandesLoading = false;
-      }
-    });
-  }
-
-  /** Confirme l'encaissement (caisse en espèces) d'une demande de document payante. */
-  confirmerPaiement(demande: DemandeDocument): void {
-    if (!demande.id) return;
-    if (demande.fraisPayes) {
-      this.errorMessage = 'Cette demande est déjà réglée.';
-      return;
-    }
-    this.paiementLoadingId = demande.id;
-    this.errorMessage = '';
-    this.successMessage = '';
-    this.demandeDocumentService.confirmerPaiement(demande.id).subscribe({
-      next: () => {
-        this.paiementLoadingId = null;
-        this.successMessage = 'Paiement encaissé avec succès.';
-        this.loadDemandes();
-      },
-      error: (err) => {
-        this.paiementLoadingId = null;
-        this.errorMessage = err?.error?.message || 'Erreur lors de la confirmation du paiement';
-      }
-    });
-  }
-
-  /** Délivre le document (génère le PDF côté serveur) une fois le paiement acquitté. */
-  delivrerDocument(demande: DemandeDocument): void {
-    if (!demande.id) return;
-    if (Number(demande.montant) > 0 && !demande.fraisPayes) {
-      this.errorMessage = 'Paiement requis avant délivrance du document (caisse).';
-      return;
-    }
-    this.delivranceLoadingId = demande.id;
-    this.errorMessage = '';
-    this.successMessage = '';
-    this.demandeDocumentService.updateStatus(demande.id, 'delivree').subscribe({
-      next: () => {
-        this.delivranceLoadingId = null;
-        this.successMessage = 'Document délivré avec succès.';
-        this.loadDemandes();
-      },
-      error: (err) => {
-        this.delivranceLoadingId = null;
-        this.errorMessage = err?.error?.message || 'Erreur lors de la délivrance du document';
       }
     });
   }

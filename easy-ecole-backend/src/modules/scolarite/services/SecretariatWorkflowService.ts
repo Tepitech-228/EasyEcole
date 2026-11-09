@@ -1,9 +1,14 @@
+import * as fs from "fs";
+import * as path from "path";
 import { Transaction } from "sequelize";
 import { DemandeDocument } from "../models/DemandeDocument";
 import { JournalSecretariat } from "../models/JournalSecretariat";
 import { DocumentPDFGenerator, CoordonneesEtudiant } from "../../../core/helpers/DocumentPDFGenerator";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { EmailSender } from "../../../core/helpers/EmailSender";
+import { savePdf } from "../../../core/services/PdfStorageService";
+import { DocGenGeneratorService } from "../../docgen/services/DocGenGeneratorService";
+import { Request } from "express";
 import { CursusApprenant } from "../../inscription/models/CursusApprenant";
 import { Parcours } from "../../inscription/models/Parcours";
 import { NiveauEtude } from "../../inscription/models/NiveauEtude";
@@ -95,7 +100,7 @@ export class SecretariatWorkflowService {
         }
     }
 
-    static async genererDocument(demande: DemandeDocument, utilisateurId: number | null): Promise<DemandeDocument> {
+    static async genererDocument(demande: DemandeDocument, utilisateurId: number | null, req?: Request): Promise<DemandeDocument> {
         if (demande.statut !== 'en_preparation') {
             throw new ErreurWorkflow('STATUT_INVALIDE', "La demande doit être en préparation avant génération");
         }
@@ -105,16 +110,52 @@ export class SecretariatWorkflowService {
 
         // Génération PDF — le succès n'est acquis qu'après vérification du fichier sur disque.
         // En cas d'échec : aucun changement de statut (pas de faux « document prêt »).
+        // Le PDF est d'abord écrit dans un répertoire temporaire, puis rangé dans
+        // le stockage documentaire unifié (documents/created/...) : la base ne
+        // contient plus qu'un chemin relatif, jamais un nom de fichier isolé.
         const typeDocument = demande.typeDocument;
-        let filename: string;
+        let fichierPDF: string;
         try {
-            const coordonnees = await this.construireCoordonneesEtudiant(demande);
-            filename = await DocumentPDFGenerator.generateDocumentVerifie(
-                demande.id,
-                typeDocument?.libelle || 'Document',
-                "public/scolarite/documents/",
-                coordonnees
-            );
+            const libelleNormalise = (typeDocument?.libelle || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            if (libelleNormalise.includes('releve') && libelleNormalise.includes('note')) {
+                if (!demande.anneeAcademiqueId || !demande.semestre) {
+                    throw new Error("L'année académique et le semestre du relevé sont absents");
+                }
+                const releve = await DocGenGeneratorService.generer({
+                    typeCode: 'NOT002',
+                    sourceType: 'demande_document',
+                    sourceId: demande.id,
+                    utilisateurId: utilisateurId || undefined,
+                    params: {
+                        etudiantId: demande.etudiantId,
+                        anneeAcademiqueId: Number(demande.anneeAcademiqueId),
+                        semestre: demande.semestre
+                    }
+                }, req);
+                const saved = savePdf(fs.readFileSync(releve.filePath), {
+                    fileName: path.basename(releve.filePath),
+                    type: 'scolarite',
+                    subcategory: 'documents',
+                });
+                fichierPDF = saved.relativePath;
+            } else {
+                const coordonnees = await this.construireCoordonneesEtudiant(demande);
+                const tmpDir = path.join(process.cwd(), 'storage', 'tmp', 'scolarite-documents');
+                const filename = await DocumentPDFGenerator.generateDocumentVerifie(
+                    demande.id,
+                    typeDocument?.libelle || 'Document',
+                    tmpDir,
+                    coordonnees
+                );
+                const tmpPath = path.join(tmpDir, filename);
+                const saved = savePdf(fs.readFileSync(tmpPath), {
+                    fileName: filename,
+                    type: 'scolarite',
+                    subcategory: 'documents',
+                });
+                try { fs.unlinkSync(tmpPath); } catch { /* fichier temporaire déjà absent */ }
+                fichierPDF = saved.relativePath;
+            }
         } catch (e: any) {
             console.error('[WORKFLOW][GENERATION_PDF] demande:', demande.id, 'erreur:', e?.message || e);
             throw new ErreurWorkflow('PDF_GENERATION_FAILED', "La génération du fichier PDF a échoué", 500);
@@ -125,10 +166,10 @@ export class SecretariatWorkflowService {
             const updated = await demande.update({
                 statut: 'document_pret',
                 dateGeneration: new Date(),
-                fichierPDF: filename
+                fichierPDF
             }, { transaction });
 
-            await this.journaliser('DOCUMENT_GENERE', utilisateurId, demande.id, `Document généré: ${filename}`, transaction);
+            await this.journaliser('DOCUMENT_GENERE', utilisateurId, demande.id, `Document généré: ${fichierPDF}`, transaction);
 
             // Notification email secondaire : ne bloque PAS l'opération métier,
             // mais tout échec est tracé dans le journal (identifiable + retentable).

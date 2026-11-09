@@ -3,7 +3,14 @@ import path from "path"
 import { NextFunction, Request, Response } from "express"
 import multer from "multer"
 import sharp from "sharp"
-import convert from "heic-convert"
+
+type HeicConvert = (options: {
+    buffer: Buffer | ArrayBuffer | Uint8Array
+    format: "JPEG" | "PNG"
+    quality?: number
+}) => Promise<Buffer | Uint8Array>
+
+const convert = require("heic-convert") as HeicConvert
 
 const EXTENSIONS_HEIC = new Set([".heic", ".heif"])
 const MIME_HEIC = new Set([

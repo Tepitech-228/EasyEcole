@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900">
+  <rect width="1440" height="900" fill="#f3f6fb"/>
+  <rect width="1440" height="44" fill="#d97706"/>
+  <text x="720" y="29" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="18" font-weight="700">SIMULATION — JOURNAL FICTIF — AUCUNE TRACE RÉELLE</text>
+  <rect y="44" width="1440" height="72" fill="#18335f"/>
+  <text x="34" y="90" fill="#fff" font-family="Arial,sans-serif" font-size="25" font-weight="700">EasyEcole</text>
+  <text x="1220" y="87" fill="#d8e4f6" font-family="Arial,sans-serif" font-size="16">Audit &amp; contrôle · Démonstration</text>
+  <rect y="116" width="250" height="784" fill="#203d6b"/>
+  <text x="28" y="160" fill="#b9c9e2" font-family="Arial,sans-serif" font-size="15">ADMINISTRATION</text>
+  <rect x="14" y="180" width="222" height="46" rx="8" fill="#31558b"/>
+  <text x="34" y="210" fill="#fff" font-family="Arial,sans-serif" font-size="17">Journal d'audit</text>
+  <text x="34" y="266" fill="#d8e4f6" font-family="Arial,sans-serif" font-size="16">Audits</text>
+  <text x="34" y="308" fill="#d8e4f6" font-family="Arial,sans-serif" font-size="16">Journal de caisse</text>
+  <text x="284" y="155" fill="#738198" font-family="Arial,sans-serif" font-size="14">Administration  /  Audit  /  Journal d'audit</text>
+  <text x="284" y="205" fill="#1c2d49" font-family="Arial,sans-serif" font-size="30" font-weight="700">Journal d'audit — opérations financières</text>
+  <rect x="284" y="230" width="1120" height="50" rx="8" fill="#fff1d6" stroke="#f1c16d"/>
+  <text x="305" y="261" fill="#8a4b08" font-family="Arial,sans-serif" font-size="16" font-weight="700">DONNÉES DE DÉMONSTRATION — ne constitue pas un journal réel</text>
+  <rect x="284" y="300" width="1120" height="104" rx="10" fill="#fff" stroke="#d8e0ec"/>
+  <text x="310" y="337" fill="#536176" font-family="Arial,sans-serif" font-size="15">Période</text>
+  <rect x="310" y="350" width="265" height="38" rx="5" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="325" y="375" fill="#20314b" font-family="Arial,sans-serif" font-size="14">01/11/2026 — 08/11/2026</text>
+  <text x="600" y="337" fill="#536176" font-family="Arial,sans-serif" font-size="15">Acteur</text>
+  <rect x="600" y="350" width="210" height="38" rx="5" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="615" y="375" fill="#20314b" font-family="Arial,sans-serif" font-size="14">Tous les acteurs</text>
+  <text x="835" y="337" fill="#536176" font-family="Arial,sans-serif" font-size="15">Référence fictive</text>
+  <rect x="835" y="350" width="265" height="38" rx="5" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="850" y="375" fill="#20314b" font-family="Arial,sans-serif" font-size="14">DEMO-0001</text>
+  <rect x="1120" y="350" width="245" height="38" rx="6" fill="#245ba5"/>
+  <text x="1242" y="375" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="15" font-weight="700">Appliquer les filtres</text>
+  <rect x="284" y="424" width="1120" height="290" rx="10" fill="#fff" stroke="#d8e0ec"/>
+  <rect x="284" y="424" width="1120" height="48" rx="10" fill="#eaf0f8"/>
+  <text x="304" y="454" fill="#354660" font-family="Arial,sans-serif" font-size="14" font-weight="700">DATE / HEURE</text>
+  <text x="490" y="454" fill="#354660" font-family="Arial,sans-serif" font-size="14" font-weight="700">ACTEUR</text>
+  <text x="690" y="454" fill="#354660" font-family="Arial,sans-serif" font-size="14" font-weight="700">ACTION</text>
+  <text x="970" y="454" fill="#354660" font-family="Arial,sans-serif" font-size="14" font-weight="700">RÉFÉRENCE</text>
+  <text x="1200" y="454" fill="#354660" font-family="Arial,sans-serif" font-size="14" font-weight="700">RÉSULTAT</text>
+  <g font-family="Arial,sans-serif" font-size="14" fill="#334155">
+    <text x="304" y="510">08/11/2026 09:14</text><text x="490" y="510">Utilisateur Démo</text><text x="690" y="510">Consultation bordereau</text><text x="970" y="510">REF-DEMO-0001</text><text x="1200" y="510" fill="#147344">Succès (fictif)</text>
+    <text x="304" y="558">08/11/2026 09:18</text><text x="490" y="558">Utilisateur Démo</text><text x="690" y="558">Prévisualisation imputation</text><text x="970" y="558">REF-DEMO-0001</text><text x="1200" y="558" fill="#147344">Aperçu (fictif)</text>
+    <text x="304" y="606">08/11/2026 09:21</text><text x="490" y="606">Agent Démonstration</text><text x="690" y="606">Saisie comptable</text><text x="970" y="606">DEMO-0001</text><text x="1200" y="606" fill="#147344">Traité (simulation)</text>
+    <text x="304" y="654">08/11/2026 09:30</text><text x="490" y="654">Utilisateur Démo</text><text x="690" y="654">Consultation situation</text><text x="970" y="654">DEMO-2026-001</text><text x="1200" y="654" fill="#147344">Succès (fictif)</text>
+  </g>
+  <line x1="284" y1="526" x2="1404" y2="526" stroke="#e5eaf1"/>
+  <line x1="284" y1="574" x2="1404" y2="574" stroke="#e5eaf1"/>
+  <line x1="284" y1="622" x2="1404" y2="622" stroke="#e5eaf1"/>
+  <rect x="284" y="735" width="1120" height="105" rx="10" fill="#fff" stroke="#d8e0ec"/>
+  <text x="310" y="773" fill="#1c2d49" font-family="Arial,sans-serif" font-size="19" font-weight="700">Détail de la trace sélectionnée — exemple fictif</text>
+  <text x="310" y="808" fill="#536176" font-family="Arial,sans-serif" font-size="15">État avant : authentifié</text>
+  <text x="595" y="808" fill="#536176" font-family="Arial,sans-serif" font-size="15">État après : traité (simulation)</text>
+  <text x="1440" y="882" text-anchor="end" fill="#64748b" font-family="Arial,sans-serif" font-size="13">Utilisateur, références et événements inventés pour illustration</text>
+</svg>

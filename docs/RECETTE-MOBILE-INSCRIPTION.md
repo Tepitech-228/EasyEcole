@@ -7,24 +7,27 @@ inscription ou une réinscription, y compris la photo de profil et le dépôt de
 pièces justificatives. La recette couvre les appareils et navigateurs réellement
 utilisés par les étudiants, pas seulement un navigateur de bureau.
 
-## Correctifs intégrés (06/11/2026)
+## Correctifs intégrés (07/11/2026)
 
-Les points de friction identifiés lors de l'analyse mobile ont été traités
-côté frontend et backend :
+Les points de friction identifiés lors de l'analyse mobile sont traités
+**côté serveur**, pour éviter tout décodage d'image volumineuse dans le
+navigateur du téléphone :
 
 | Sujet | Comportement actuel |
 |---|---|
-| Photos trop lourdes | Redimensionnement et compression avant envoi : photo de profil ≤ 1200 px / JPEG q0.86 ; pièces ≤ 2400 px / JPEG q0.88. |
-| HEIC (iPhone) | Le navigateur tente de convertir le fichier en JPEG. Si le navigateur ne sait pas le décoder, un message explicite invite à choisir un JPG ou une autre photo. Le backend sait également convertir un HEIC reçu directement. |
-| Formats acceptés | Pièces : PDF, JPG, JPEG, PNG, HEIC/HEIF (converti). Photo : JPG, PNG, GIF, WebP, HEIC (converti). |
-| Limites | Pièce ≤ 20 Mo avant préparation ; photo ≤ 5 Mo après compression. |
-| Parcours concernés | Wizard de première inscription, page de correction des pièces, wizard de réinscription. |
+| Photos trop lourdes | Le fichier est envoyé tel quel (≤ 20 Mo). Le backend le redimensionne : photo de profil ≤ 1200 px / JPEG q0.86 ; pièces ≤ 2400 px / JPEG q0.88. |
+| HEIC (iPhone) | Le backend convertit nativement le HEIC/HEIF en JPEG (`heic-convert` + `sharp`), puis applique le redimensionnement. Aucun message d'incompatibilité côté navigateur. |
+| Formats acceptés | Pièces : PDF, JPG, JPEG, PNG, HEIC/HEIF. Photo : JPG, PNG, GIF, WebP, HEIC/HEIF. Les PDF et GIF ne sont pas transformés. |
+| Limites | Pièce ≤ 20 Mo ; photo ≤ 20 Mo avant normalisation serveur (stockée ≤ 5 Mo après redimensionnement). |
+| Parcours concernés | Wizard de première inscription, page de correction des pièces, wizard de réinscription, photo de profil, bordereaux. |
 
-Fichier utilitaire : `easy-ecole-web/src/app/shared/utils/image-compression.util.ts`.
+Fichier serveur : `easy-ecole-backend/src/core/helpers/NormaliserImage.ts`
+(middleware `normaliserImages`, placé après multer sur chaque route d'upload).
 
-> Si la conversion navigateur échoue, l'interface demande à l'utilisateur de
-> choisir un format compatible ; elle n'envoie pas le fichier sans prévenir.
-> Le backend applique aussi une conversion HEIC pour les autres clients.
+> La compression canvas côté navigateur a été retirée : sur les photos de
+> téléphone (48 Mpx), elle provoquait l'erreur « mémoire insuffisante pour
+> cette procédure » dans Safari/WebKit. Le serveur, via libvips (sharp), traite
+> ces images avec une empreinte mémoire maîtrisée.
 
 ## Environnements à couvrir
 
@@ -63,20 +66,23 @@ message d'erreur console.
 
 ### M-02 — Photo de profil HEIC > 5 Mo (P0)
 
-1. Choisir une photo iPhone au format HEIC de plus de 5 Mo.
+1. Choisir une photo iPhone au format HEIC de plus de 5 Mo (jusqu'à 20 Mo).
 2. Attendre la fin du téléversement.
 
-**Attendu :** la photo est acceptée, l'aperçu est net et correctement orienté ;
-dans l'onglet Réseau, la requête `PUT /auth/apprenants/photo` envoie un JPEG de
-moins de 5 Mo, pas le HEIC d'origine.
+**Attendu :** la photo est acceptée sans erreur mémoire ; l'aperçu local peut
+être vide sur certains navigateurs non-Safari, mais l'upload aboutit ; côté
+serveur, la photo est convertie en JPEG ≤ 1200 px et stockée sous 5 Mo. Dans
+l'onglet Réseau, la requête `PUT /auth/apprenants/photo` transmet le fichier
+d'origine (HEIC), pas un JPEG préparé par le navigateur.
 
 ### M-03 — Photo de pièce prise avec l'appareil photo (P0)
 
 1. Sur un document image, ouvrir le sélecteur et choisir « Prendre une photo ».
 2. Cadrer une pièce lisible, valider, puis soumettre.
 
-**Attendu :** la photo est convertie en JPEG, la pièce reste lisible, la taille
-envoyée est inférieure à la limite et l'envoi aboutit.
+**Attendu :** la photo est acceptée et transmise telle quelle ; le serveur la
+convertit en JPEG et la redimensionne, la pièce reste lisible et l'envoi
+aboutit sans erreur mémoire.
 
 ### M-04 — PDF volumineux (P1)
 
@@ -110,11 +116,11 @@ re-sélectionner ; aucune pièce n'est annoncée comme déposée à tort.
 ### M-07 — HEIC importé sur Android / Chrome (P1)
 
 1. Importer un fichier HEIC depuis l'application Fichiers de Chrome Android.
-2. Observer le message affiché.
+2. Attendre la fin du téléversement.
 
-**Attendu :** si le navigateur ne décode pas le HEIC, un message clair invite à
-choisir un JPG ou une autre photo ; le fichier n'est pas envoyé ; l'utilisateur
-peut immédiatement réessayer avec un autre format.
+**Attendu :** le fichier est accepté et envoyé ; le backend le convertit en JPEG.
+L'aperçu local peut ne pas s'afficher (Chrome ne décode pas le HEIC), mais la
+pièce est bien enregistrée et consultable après rechargement.
 
 ### M-08 — Correction de pièces depuis mobile (P0)
 
@@ -133,7 +139,8 @@ dossier repasse au statut attendu après traitement.
 3. Soumettre.
 
 **Attendu :** les six pièces et le bordereau sont acceptés ; les images sont
-compressées ; les PDF sont transmis sans modification ; la soumission aboutit.
+normalisées côté serveur (HEIC converti, redimensionnement) ; les PDF sont
+transmis sans modification ; la soumission aboutit.
 
 ### M-10 — Petit écran et rotation (P1)
 
@@ -146,12 +153,12 @@ masque un champ ou un bouton.
 
 ### M-11 — Formats photo de profil limites (P2)
 
-1. Tester un JPG de 12 Mo, un PNG, un GIF animé et un WebP.
-2. Tester un fichier de plus de 5 Mo après compression ou un format refusé.
+1. Tester un JPG de 12 Mo, un PNG, un GIF animé, un WebP et un HEIC.
+2. Tester un fichier de plus de 20 Mo ou un format refusé (`.docx`).
 
-**Attendu :** les images valides sont acceptées et compressées ; un GIF reste
-un GIF ; un fichier trop lourd ou d'un format non autorisé est refusé avec un
-message compréhensible.
+**Attendu :** les images valides sont acceptées et normalisées côté serveur ;
+un GIF reste un GIF ; un fichier de plus de 20 Mo ou d'un format non autorisé
+est refusé avec un message compréhensible.
 
 ### M-12 — Session expirée pendant la soumission (P1)
 
@@ -163,15 +170,16 @@ conservé ; aucune demande n'est créée deux fois.
 
 ## Points de contrôle techniques
 
-- **Réseau :** comparer la taille du fichier sélectionné et celle de la requête
-  réellement envoyée (onglet Réseau). Une photo de 12 Mo doit arriver sous
-  forme de JPEG nettement plus léger.
-- **Console :** aucune erreur non gérée, aucun message silencieux.
-- **Nom du fichier :** après conversion, l'extension envoyée est `.jpg`.
+- **Réseau :** la requête d'upload transmet le fichier d'origine (jusqu'à 20 Mo).
+  Vérifier ensuite l'URL du fichier stocké : le serveur renvoie un JPEG
+  redimensionné (≤ 1200 px pour une photo de profil, ≤ 2400 px pour une pièce).
+- **Console :** aucune erreur non gérée, aucun message « mémoire insuffisante ».
+- **Nom du fichier :** après normalisation serveur, le fichier stocké porte
+  l'extension `.jpg`.
 - **Orientation :** une photo prise en portrait doit s'afficher dans le bon
-  sens, sans rotation manuelle.
+  sens, sans rotation manuelle (rotation EXIF appliquée par sharp).
 - **Lisibilité :** vérifier qu'un texte fin (numéro de pièce, date) reste lisible
-  après compression.
+  après redimensionnement serveur.
 
 ## Preuves à joindre au rapport
 
@@ -206,5 +214,9 @@ planifier :
   globale « Soumission… » est affichée.
 - **PWA / hors ligne :** pas de service worker ni de manifeste ; l'application
   nécessite une connexion.
-- **Formats :** le HEIC reste non accepté par le backend ; seule la conversion
-  navigateur le rend utilisable.
+- **Charge serveur :** la conversion HEIC et le redimensionnement consomment du
+  CPU ; un envoi massif simultané (plusieurs dizaines de photos 20 Mo) doit être
+  surveillé (mémoire du conteneur backend).
+- **Aperçu HEIC :** sur les navigateurs qui ne décodent pas le HEIC (Chrome,
+  Firefox), l'aperçu local avant envoi peut rester vide ; le fichier est
+  néanmoins accepté et converti côté serveur.

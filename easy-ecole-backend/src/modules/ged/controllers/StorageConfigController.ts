@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import path from "path";
 import fs from "fs";
-import { GED_CONFIG } from "../../../core/config/GedConfig";
+import { getDocumentsRoot } from "../../../core/services/DocumentStorageService";
 
 const CONFIG_PATH = path.resolve(process.cwd(), "config", "storage.json");
 
@@ -17,7 +17,7 @@ function readConfig(): any {
   if (!fs.existsSync(CONFIG_PATH)) {
     const defaults = {
       provider: "local",
-      basePath: GED_CONFIG.UPLOAD_DIR,
+      basePath: getDocumentsRoot(),
       options: {}
     };
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(defaults, null, 2));
@@ -62,7 +62,7 @@ export default class StorageConfigController {
       const { provider, host, port, bucket, accessKey } = req.body;
 
       if (provider === "local" || !provider) {
-        const testPath = path.resolve(process.cwd(), "public/ged");
+        const testPath = getDocumentsRoot();
         const ok = fs.existsSync(testPath);
         return res.status(200).json({
           success: ok,

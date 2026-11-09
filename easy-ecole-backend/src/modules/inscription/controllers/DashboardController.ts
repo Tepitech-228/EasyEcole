@@ -60,8 +60,6 @@ class DashboardController {
                     return res.json(await DashboardController.getEnseignantDashboard(utilisateurId));
                 case RolesUtilisateur.APPRENANT:
                     return res.json(await DashboardController.getApprenantDashboard(utilisateurId));
-                case RolesUtilisateur.CAISSIER_BANQUE:
-                    return res.json(await DashboardController.getCaissierDashboard());
                 case RolesUtilisateur.CABINET_COMPTABLE:
                     return res.json(await DashboardController.getComptableDashboard());
                 case RolesUtilisateur.ESA_COMPTA:

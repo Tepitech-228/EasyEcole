@@ -7,6 +7,7 @@ import { TypeDocument } from 'src/app/data/modules/scolarite/models/TypeDocument
 import { DemandeDocumentService } from 'src/app/data/modules/scolarite/services/demande-document.service';
 import { TypeDocumentService } from 'src/app/data/modules/scolarite/services/type-document.service';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+import { AnneeAcademiqueService } from 'src/app/data/modules/inscription/services/annee-academique.service';
 
 @Component({
   selector: 'app-demandes-documents-page',
@@ -17,7 +18,10 @@ export class DemandesDocumentsPageComponent extends BaseComponentClass implement
   demandes: DemandeDocument[] = [];
   _demandes: DemandeDocument[] = [];
   typesDocument: TypeDocument[] = [];
-  newDemande: any = { typeDocumentId: '' };
+  newDemande: any = { typeDocumentId: null, recuCaisseId: null, anneeAcademiqueId: null, semestre: '' };
+  anneesAcademiques: any[] = [];
+  recusDisponibles: any[] = [];
+  loadingRecus = false;
   searchQuery: string = '';
   filterStatut: string = 'undefined';
   loading: boolean = false;
@@ -28,8 +32,6 @@ export class DemandesDocumentsPageComponent extends BaseComponentClass implement
 
   /** État précis (gratuit/payant/payé) récupéré via GET /:id/verifier-acces */
   accesMap: Record<string, VerifierAccesDemandeDocument> = {};
-  /** Id de la demande en cours de paiement (pour désactiver les boutons) */
-  payingId: string | null = null;
 
   currentPage: number = 1;
   pageSize: number = 10;
@@ -37,6 +39,7 @@ export class DemandesDocumentsPageComponent extends BaseComponentClass implement
   constructor(
     private demandeService: DemandeDocumentService,
     private typeDocumentService: TypeDocumentService,
+    private anneeAcademiqueService: AnneeAcademiqueService,
     private router: Router
   ) {
     super();
@@ -45,12 +48,35 @@ export class DemandesDocumentsPageComponent extends BaseComponentClass implement
   ngOnInit() {
     this.loadDemandes();
     this.loadTypesDocument();
+    this.anneeAcademiqueService.getAll().subscribe({
+      next: annees => this.anneesAcademiques = annees,
+      error: () => this.errorMessage = "Impossible de charger les années académiques."
+    });
   }
 
   get selectedTypeFrais(): number | null {
     if (!this.newDemande.typeDocumentId) return null;
-    const type = this.typesDocument.find(t => t.id === this.newDemande.typeDocumentId);
-    return type ? type.frais : null;
+    const type = this.typesDocument.find(t => Number(t.id) === Number(this.newDemande.typeDocumentId));
+    return type ? Number(type.frais) : null;
+  }
+
+  get typeSelectionne(): TypeDocument | undefined {
+    return this.typesDocument.find(t => Number(t.id) === Number(this.newDemande.typeDocumentId));
+  }
+
+  get estReleveNotes(): boolean {
+    const libelle = (this.typeSelectionne?.libelle || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    return libelle.includes('releve') && libelle.includes('note');
+  }
+
+  get peutCommencerDemande(): boolean {
+    if (!this.newDemande.typeDocumentId || this.loading || this.loadingRecus) return false;
+    if ((this.selectedTypeFrais || 0) > 0 && !this.newDemande.recuCaisseId) return false;
+    return !this.estReleveNotes || (!!this.newDemande.anneeAcademiqueId && !!this.newDemande.semestre);
+  }
+
+  libelleSemestre(semestre: string): string {
+    return `Semestre ${semestre.replace('semestre', '')}`;
   }
 
   get paginatedDemandes(): DemandeDocument[] {
@@ -126,14 +152,38 @@ export class DemandesDocumentsPageComponent extends BaseComponentClass implement
     });
   }
 
+  onTypeDocumentChange(): void {
+    this.newDemande.recuCaisseId = null;
+    this.recusDisponibles = [];
+    if ((this.selectedTypeFrais || 0) <= 0 || !this.newDemande.typeDocumentId) return;
+    this.loadingRecus = true;
+    this.demandeService.getMesPaiementsDisponibles(Number(this.newDemande.typeDocumentId)).subscribe({
+      next: recus => {
+        this.recusDisponibles = recus;
+        this.loadingRecus = false;
+      },
+      error: err => {
+        this.loadingRecus = false;
+        this.errorMessage = err?.error?.message || 'Impossible de charger les reçus de paiement.';
+      }
+    });
+  }
+
   submitDemande() {
-    if (!this.newDemande.typeDocumentId) return;
+    if (!this.peutCommencerDemande) return;
     this.loading = true;
     this.errorMessage = '';
     this.successMessage = '';
-    this.demandeService.create(this.newDemande).subscribe({
+    const payload = {
+      typeDocumentId: String(this.newDemande.typeDocumentId),
+      recuCaisseId: this.newDemande.recuCaisseId ? Number(this.newDemande.recuCaisseId) : undefined,
+      anneeAcademiqueId: this.estReleveNotes ? Number(this.newDemande.anneeAcademiqueId) : undefined,
+      semestre: this.estReleveNotes ? this.newDemande.semestre : undefined
+    };
+    this.demandeService.create(payload).subscribe({
       next: (demande) => {
-        this.newDemande = { typeDocumentId: '' };
+        this.newDemande = { typeDocumentId: null, recuCaisseId: null, anneeAcademiqueId: null, semestre: '' };
+        this.recusDisponibles = [];
         this.loading = false;
         if (!demande.id) {
           this.errorMessage = 'Le brouillon a été créé sans identifiant récupérable.';
@@ -141,8 +191,8 @@ export class DemandesDocumentsPageComponent extends BaseComponentClass implement
         }
         this.router.navigate(['/scolarite/demandes-documents', demande.id]);
       },
-      error: () => {
-        this.errorMessage = 'Erreur lors de la soumission de la demande';
+      error: err => {
+        this.errorMessage = err?.error?.message || 'Erreur lors de la création de la demande';
         this.loading = false;
       }
     });
@@ -153,45 +203,10 @@ export class DemandesDocumentsPageComponent extends BaseComponentClass implement
     this.router.navigate(['/scolarite/demandes-documents', demande.id]);
   }
 
-  /**
-   * Paiement via bordereau : crée le bordereau de la demande puis redirige
-   * vers la page « Mes bordereaux » (encaissement bordereau existant).
-   */
-  payerBordereau(demande: DemandeDocument) {
-    if (!demande.id) return;
-    this.payingId = demande.id;
-    this.errorMessage = '';
-    this.successMessage = '';
-    this.demandeService.creerBordereau(demande.id).subscribe({
-      next: () => {
-        this.payingId = null;
-        this.successMessage = 'Bordereau de paiement créé. Téléversez votre justificatif depuis « Mes bordereaux ».';
-        this.router.navigate(['/inscription/bordereaux']);
-      },
-      error: (err) => {
-        this.payingId = null;
-        this.errorMessage = err?.error?.message || 'Erreur lors de la création du bordereau';
-      }
-    });
-  }
-
-  /** Paiement en ligne simulé : confirmation automatique + écriture comptable */
-  payerEnLigne(demande: DemandeDocument) {
-    if (!demande.id) return;
-    this.payingId = demande.id;
-    this.errorMessage = '';
-    this.successMessage = '';
-    this.demandeService.confirmerPaiementAuto(demande.id).subscribe({
-      next: () => {
-        this.payingId = null;
-        this.successMessage = 'Paiement en ligne confirmé avec succès.';
-        this.loadDemandes();
-      },
-      error: (err) => {
-        this.payingId = null;
-        this.errorMessage = err?.error?.message || 'Erreur lors du paiement en ligne';
-      }
-    });
+  peutAnnulerDemande(demande: DemandeDocument): boolean {
+    return !this.accesFor(demande).fraisPayes
+      && !demande.recuCaisseId
+      && ['brouillon', 'soumise', 'en_attente_paiement', 'rejetee'].includes(demande.statut);
   }
 
   confirmDelete(demande: DemandeDocument) {

@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900">
+  <rect width="1440" height="900" fill="#f3f6fb"/>
+  <rect width="1440" height="44" fill="#d97706"/>
+  <text x="720" y="29" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="18" font-weight="700">SIMULATION — DOSSIER FICTIF — AUCUNE DEMANDE RÉELLE</text>
+  <rect y="44" width="1440" height="72" fill="#18335f"/>
+  <text x="34" y="90" fill="#fff" font-family="Arial,sans-serif" font-size="25" font-weight="700">EasyEcole</text>
+  <text x="1210" y="87" fill="#d8e4f6" font-family="Arial,sans-serif" font-size="16">Comité d'orientation · Démonstration</text>
+  <rect y="116" width="250" height="784" fill="#203d6b"/>
+  <text x="28" y="160" fill="#b9c9e2" font-family="Arial,sans-serif" font-size="15">ADMISSION</text>
+  <rect x="14" y="180" width="222" height="46" rx="8" fill="#31558b"/>
+  <text x="34" y="210" fill="#fff" font-family="Arial,sans-serif" font-size="16">Validation comité</text>
+  <text x="34" y="266" fill="#d8e4f6" font-family="Arial,sans-serif" font-size="16">Préinscriptions</text>
+  <text x="34" y="308" fill="#d8e4f6" font-family="Arial,sans-serif" font-size="16">Demandes</text>
+  <text x="284" y="155" fill="#738198" font-family="Arial,sans-serif" font-size="14">Pédagogique  /  Admission &amp; inscription  /  Validation comité</text>
+  <text x="284" y="205" fill="#1c2d49" font-family="Arial,sans-serif" font-size="30" font-weight="700">Demande d'inscription — décision du comité</text>
+  <rect x="284" y="230" width="1120" height="50" rx="8" fill="#fff1d6" stroke="#f1c16d"/>
+  <text x="305" y="261" fill="#8a4b08" font-family="Arial,sans-serif" font-size="16" font-weight="700">EXEMPLE DE FORMATION — toutes les données sont fictives</text>
+  <rect x="284" y="300" width="1120" height="168" rx="12" fill="#fff" stroke="#d8e0ec"/>
+  <text x="310" y="340" fill="#1c2d49" font-family="Arial,sans-serif" font-size="21" font-weight="700">Candidat fictif — DEMO-2026-001</text>
+  <text x="310" y="378" fill="#536176" font-family="Arial,sans-serif" font-size="16">Session : 2026–2027</text>
+  <text x="310" y="412" fill="#536176" font-family="Arial,sans-serif" font-size="16">Parcours demandé : Licence — Gestion (exemple)</text>
+  <rect x="1050" y="322" width="320" height="48" rx="24" fill="#dff3e7"/>
+  <text x="1210" y="352" text-anchor="middle" fill="#167443" font-family="Arial,sans-serif" font-size="16" font-weight="700">DEMANDE VALIDÉE — EXEMPLE</text>
+  <rect x="284" y="490" width="690" height="330" rx="12" fill="#fff" stroke="#d8e0ec"/>
+  <text x="310" y="531" fill="#1c2d49" font-family="Arial,sans-serif" font-size="20" font-weight="700">Vérification du dossier (simulation)</text>
+  <circle cx="326" cy="574" r="10" fill="#24935b"/><path d="M321 574l4 4 7-9" fill="none" stroke="#fff" stroke-width="2"/>
+  <text x="350" y="580" fill="#334155" font-family="Arial,sans-serif" font-size="16">Informations du candidat vérifiées (fictif)</text>
+  <circle cx="326" cy="620" r="10" fill="#24935b"/><path d="M321 620l4 4 7-9" fill="none" stroke="#fff" stroke-width="2"/>
+  <text x="350" y="626" fill="#334155" font-family="Arial,sans-serif" font-size="16">Pièces du dossier présentes (exemple)</text>
+  <circle cx="326" cy="666" r="10" fill="#24935b"/><path d="M321 666l4 4 7-9" fill="none" stroke="#fff" stroke-width="2"/>
+  <text x="350" y="672" fill="#334155" font-family="Arial,sans-serif" font-size="16">Bordereau contrôlé — référence DEMO-0001</text>
+  <circle cx="326" cy="712" r="10" fill="#24935b"/><path d="M321 712l4 4 7-9" fill="none" stroke="#fff" stroke-width="2"/>
+  <text x="350" y="718" fill="#334155" font-family="Arial,sans-serif" font-size="16">Avis favorable enregistré (simulation)</text>
+  <text x="310" y="773" fill="#738198" font-family="Arial,sans-serif" font-size="14">Aucun document personnel réel n'est représenté.</text>
+  <rect x="994" y="490" width="410" height="330" rx="12" fill="#fff" stroke="#d8e0ec"/>
+  <text x="1020" y="531" fill="#1c2d49" font-family="Arial,sans-serif" font-size="20" font-weight="700">Étapes de la demande</text>
+  <line x1="1032" y1="574" x2="1032" y2="748" stroke="#b7c8df" stroke-width="3"/>
+  <g font-family="Arial,sans-serif" font-size="15" fill="#334155">
+    <circle cx="1032" cy="580" r="9" fill="#25885a"/><text x="1055" y="586">Soumise</text>
+    <circle cx="1032" cy="633" r="9" fill="#25885a"/><text x="1055" y="639">Pièces vérifiées</text>
+    <circle cx="1032" cy="686" r="9" fill="#25885a"/><text x="1055" y="692">Examinée en comité</text>
+    <circle cx="1032" cy="739" r="10" fill="#25885a"/><text x="1055" y="745" font-weight="700" fill="#167443">Validée (simulation)</text>
+  </g>
+  <rect x="284" y="840" width="1120" height="36" rx="6" fill="#fff1d6"/>
+  <text x="844" y="864" text-anchor="middle" fill="#8a4b08" font-family="Arial,sans-serif" font-size="14" font-weight="700">Illustration fictive — aucune demande réelle n'a été créée ou validée</text>
+</svg>

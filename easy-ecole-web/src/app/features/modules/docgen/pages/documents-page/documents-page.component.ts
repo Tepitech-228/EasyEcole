@@ -93,6 +93,32 @@ export class DocumentsPageComponent extends BaseComponentClass implements OnInit
     });
   }
 
+  imprimer(doc: DocGenDocument): void {
+    if (!doc.id) return;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      window.alert("Autorisez les fenêtres contextuelles pour imprimer ce document.");
+      return;
+    }
+
+    this.documentService.download(doc.id).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        printWindow.addEventListener('load', () => {
+          printWindow.focus();
+          printWindow.print();
+          window.setTimeout(() => URL.revokeObjectURL(url), 120_000);
+        }, { once: true });
+        printWindow.location.href = url;
+      },
+      error: () => {
+        printWindow.close();
+        window.alert("Impossible de charger ce document pour l'impression.");
+      }
+    });
+  }
+
   getStatutBadge(statut?: string): string {
     const map: any = { 'brouillon': 'bg-gray-100 text-gray-700', 'en_attente_enseignant': 'bg-amber-50 text-amber-700', 'en_attente_directeur': 'bg-blue-50 text-blue-700', 'signé': 'bg-green-50 text-green-700' };
     return map[statut || ''] || 'bg-gray-100 text-gray-700';

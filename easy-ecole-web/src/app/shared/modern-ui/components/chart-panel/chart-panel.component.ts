@@ -270,7 +270,7 @@ export class ChartPanelComponent implements OnInit, OnChanges, OnDestroy {
 
     if (isDoughnut) {
       (options as any).cutout = '68%';
-      (options as any).scales = { display: false };
+      options.scales = {};
       return options;
     }
 

@@ -308,12 +308,13 @@ export class ListeDossiersPageComponent extends BaseComponentClass implements On
       if (selectedFile) this.photoUploadMessage = "Impossible d'identifier le compte apprenant de ce dossier."
       return
     }
-    if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(selectedFile.type)) {
-      this.photoUploadMessage = 'Format refusé. Choisissez une image JPG, PNG, GIF ou WebP.'
+    const extension = `.${selectedFile.name.split('.').pop() || ''}`.toLowerCase()
+    if (!['.jpg', '.jpeg', '.jpe', '.png', '.gif', '.webp', '.heic', '.heif'].includes(extension)) {
+      this.photoUploadMessage = 'Format refusé. Choisissez une image JPG, PNG, GIF, WebP ou HEIC.'
       return
     }
-    if (selectedFile.size > 5 * 1024 * 1024) {
-      this.photoUploadMessage = 'La photo ne doit pas dépasser 5 Mo.'
+    if (selectedFile.size > 20 * 1024 * 1024) {
+      this.photoUploadMessage = 'La photo ne doit pas dépasser 20 Mo.'
       return
     }
 

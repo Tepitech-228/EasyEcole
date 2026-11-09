@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aperçu des simulations de pointage</title>
+  <style>
+    html, body { margin: 0; min-height: 100%; background: #edf2fb; }
+    main { display: flex; justify-content: center; padding: 18px; }
+    img { display: block; width: min(100%, 1000px); height: auto; }
+  </style>
+</head>
+<body>
+  <main><img id="preview" alt="Simulation EasyEcole de pointage étudiant"></main>
+  <script>
+    const images = {
+      retard: "simulation-pointage-01-retard.svg",
+      partiel: "simulation-pointage-02-partiel.svg",
+      solde: "simulation-pointage-03-solde.svg",
+      jour: "simulation-pointage-04-a-jour.svg",
+    };
+    document.getElementById("preview").src =
+      images[new URLSearchParams(location.search).get("case")] || "simulation-pointage-etudiant.svg";
+  </script>
+</body>
+</html>

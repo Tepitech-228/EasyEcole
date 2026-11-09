@@ -200,6 +200,8 @@ export class BordereauDossierService {
                 anneeAcademique: anneeLibelle,
                 email: user?.email || "",
                 utilisateurId,
+                periode: apprenant?.periode || null,
+                site: etablissement.site || etablissement.nom || '',
             },
         };
 
@@ -367,8 +369,8 @@ export class BordereauDossierService {
             throw new Error("Le bordereau et le parcours ne relèvent pas du même site")
         }
         const siteDossierId = etablissementId ?? bordereau.etablissementId ?? null
-        const etablissement = etablissementId
-            ? await Etablissement.findByPk(etablissementId, { transaction })
+        const etablissement = siteDossierId
+            ? await Etablissement.findByPk(siteDossierId, { transaction })
             : null
 
         const MATRICULE_FINAL_REGEX = /^[0-9]+-[A-Z]+[0-9]?[JS]-[0-9]{2}-[A-Z]+$/
@@ -544,6 +546,8 @@ export class BordereauDossierService {
                     anneeAcademique: anneeLibelle,
                     email: user?.email || '',
                     utilisateurId: demande.utilisateurId,
+                    periode: apprenant?.periode || null,
+                    site: etablissement?.site || etablissement?.nom || '',
                 })
                 await dossier.update({ cartePath, carteGeneree: true }, { transaction })
 
@@ -768,6 +772,7 @@ export class BordereauDossierService {
         try {
             if (demande.dossiersDemande) {
                 for (const doc of demande.dossiersDemande) {
+                    if (!doc.nomFichier) continue;
                     if (doc.nomFichier?.replace(/\\/g, '/').startsWith('public/dossiers/')) {
                         continue;
                     }

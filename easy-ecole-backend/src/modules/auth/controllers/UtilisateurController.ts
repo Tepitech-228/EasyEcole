@@ -298,10 +298,6 @@ export default class UtilisateurController {
     }
 
     static async updateUtilisateur(req: Request, res: Response): Promise<Response | null> {
-        if ((req as any).utilisateurRole == RolesUtilisateur.ADMIN) {
-            return res.status(403).json({ success: false })
-        }
-
         let options: FindOptions<InferAttributes<Utilisateur>> = { where: { id: (req as any).utilisateurId } }
 
         let utilisateur: Utilisateur | null = await Utilisateur.findOne(options);

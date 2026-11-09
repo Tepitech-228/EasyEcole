@@ -10,9 +10,12 @@ import { DossierEtudiant } from "../models/DossierEtudiant";
 import { DossierInscription } from "../models/DossierInscription";
 import { PreInscription } from "../models/PreInscription";
 import { EtudiantUploadStorageService } from "../services/EtudiantUploadStorageService";
+import { getOriginRoot } from "../../../core/services/DocumentStorageService";
 
 const publicRoot = path.resolve(process.cwd(), "public");
 const docgenRoot = path.resolve(process.cwd(), "storage", "docgen");
+const studentUploadsRoot = getOriginRoot("uploads");
+const migrationKey = "student_upload_layout_v2";
 const applyChanges = process.argv.includes("--apply");
 const failures: string[] = [];
 let migrated = 0;
@@ -22,9 +25,14 @@ function isWithinPublic(candidate: string): boolean {
     return candidate.startsWith(`${publicRoot}${path.sep}`);
 }
 
+function isWithinStudentUploads(candidate: string): boolean {
+    return candidate.startsWith(`${studentUploadsRoot}${path.sep}`);
+}
+
 function isAlreadyOrganized(reference: string): boolean {
-    const normalized = reference.replace(/\\/g, "/");
-    return normalized.startsWith("public/dossiers/") && normalized.includes("/Etudiants/");
+    const candidate = path.resolve(process.cwd(), reference.replace(/\\/g, "/"));
+    if (!isWithinStudentUploads(candidate)) return false;
+    return path.relative(studentUploadsRoot, candidate).split(path.sep).includes("Etudiants");
 }
 
 function findSource(reference: string, legacyDirectories: string[]): string | null {
@@ -142,7 +150,7 @@ async function migrateDemandeDocuments(): Promise<void> {
                 );
                 await document.save();
             } else {
-                console.log(`[APERÇU] dossier#${document.demandeId}/${document.dossierId} : ${source} -> public/dossiers/${treeFolders.join("/")}/Etudiants/${identity.nom}_${identity.prenoms}_${identity.matricule || `ID${identity.id}`}/${category}/${subfolders.join("/")}/Version_01/${path.basename(source)}`);
+                console.log(`[APERÇU] dossier#${document.demandeId}/${document.dossierId} : ${source} -> ${path.relative(process.cwd(), studentUploadsRoot).replace(/\\/g, "/")}/${treeFolders.join("/")}/Etudiants/${identity.nom}_${identity.prenoms}_${identity.matricule || `ID${identity.id}`}/${category}/${subfolders.join("/")}/Version_01/${path.basename(source)}`);
             }
             migrated++;
         } catch (error) {
@@ -204,7 +212,7 @@ async function migrateBordereaux(): Promise<void> {
                 );
                 await bordereau.save();
             } else {
-                console.log(`[APERÇU] bordereau#${bordereau.id} : ${source} -> public/dossiers/${treeFolders.join("/")}/Etudiants/${identity.nom}_${identity.prenoms}_${identity.matricule || `ID${identity.id}`}/Bordereaux/${subfolders.join("/")}/Version_01/${path.basename(source)}`);
+                console.log(`[APERÇU] bordereau#${bordereau.id} : ${source} -> ${path.relative(process.cwd(), studentUploadsRoot).replace(/\\/g, "/")}/${treeFolders.join("/")}/Etudiants/${identity.nom}_${identity.prenoms}_${identity.matricule || `ID${identity.id}`}/Bordereaux/${subfolders.join("/")}/Version_01/${path.basename(source)}`);
             }
             migrated++;
         } catch (error) {
@@ -260,7 +268,7 @@ async function migrateAuthorisations(): Promise<void> {
                 );
                 await preInscription.save();
             } else {
-                console.log(`[APERÇU] autorisation#${preInscription.id} : ${source} -> public/dossiers/${treeFolders.join("/")}/Etudiants/${identity.nom}_${identity.prenoms}_${identity.matricule || `ID${identity.id}`}/Dossiers/${subfolders.join("/")}/Version_01/${path.basename(source)}`);
+                console.log(`[APERÇU] autorisation#${preInscription.id} : ${source} -> ${path.relative(process.cwd(), studentUploadsRoot).replace(/\\/g, "/")}/${treeFolders.join("/")}/Etudiants/${identity.nom}_${identity.prenoms}_${identity.matricule || `ID${identity.id}`}/Dossiers/${subfolders.join("/")}/Version_01/${path.basename(source)}`);
             }
             migrated++;
         } catch (error) {
@@ -280,17 +288,17 @@ async function main(): Promise<void> {
 
         if (applyChanges) {
             const [completedRows] = await sequelize.query(
-                "SELECT migration_key FROM ins_student_upload_layout_migrations WHERE migration_key = 'student_upload_layout_v1' LIMIT 1",
+                `SELECT migration_key FROM ins_student_upload_layout_migrations WHERE migration_key = '${migrationKey}' LIMIT 1`,
             );
             if (Array.isArray(completedRows) && completedRows.length > 0) {
-                console.log("Migration historique déjà terminée ; aucune copie à refaire.");
+                console.log("Migration vers le stockage documentaire déjà terminée ; aucune copie à refaire.");
                 return;
             }
         }
 
         console.log(applyChanges
-            ? "Migration des fichiers existants : MODE APPLICATION (les originaux sont conservés)."
-            : "Migration des fichiers existants : aperçu uniquement. Ajoutez --apply pour appliquer.");
+            ? "Migration des fichiers étudiants vers documents/uploads : MODE APPLICATION (les originaux sont conservés)."
+            : "Migration des fichiers étudiants vers documents/uploads : aperçu uniquement. Ajoutez --apply pour appliquer.");
         await migrateDemandeDocuments();
         await migrateBordereaux();
         await migrateAuthorisations();
@@ -299,7 +307,7 @@ async function main(): Promise<void> {
             process.exitCode = 1;
         } else if (applyChanges) {
             await sequelize.query(
-                "INSERT INTO ins_student_upload_layout_migrations (migration_key, completed_at) VALUES ('student_upload_layout_v1', NOW()) ON DUPLICATE KEY UPDATE completed_at = VALUES(completed_at)",
+                `INSERT INTO ins_student_upload_layout_migrations (migration_key, completed_at) VALUES ('${migrationKey}', NOW()) ON DUPLICATE KEY UPDATE completed_at = VALUES(completed_at)`,
             );
         }
     } finally {

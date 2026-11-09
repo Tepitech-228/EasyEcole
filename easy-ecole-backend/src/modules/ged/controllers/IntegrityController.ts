@@ -6,19 +6,12 @@ import path from "path";
 import fs from "fs";
 import crypto from "crypto";
 import { Op, Sequelize } from "sequelize";
-import { GED_CONFIG } from "../../../core/config/GedConfig";
-import { resolveStoredDocumentPath } from "../../../core/services/DocumentStorageService";
+import { getDocumentPath } from "../../../core/services/DocumentStorageService";
+import { GED_LEGACY_DIR, resolveGedPath } from "../../../core/services/GedStorageService";
 
-const UPLOAD_DIR = GED_CONFIG.UPLOAD_DIR;
-
-function resolveGedDocumentPath(storedPath: string): string {
-  return resolveStoredDocumentPath(storedPath, [path.resolve(process.cwd(), UPLOAD_DIR)])
-    || path.resolve(process.cwd(), UPLOAD_DIR, storedPath);
-}
-
-function computeHash(filePath: string): string | null {
+function computeHash(filePath: string | null): string | null {
   try {
-    if (!fs.existsSync(filePath)) {
+    if (!filePath || !fs.existsSync(filePath)) {
       console.warn(`[GED][Integrity] fichier introuvable: ${filePath}`);
       return null;
     }
@@ -42,7 +35,7 @@ export default class IntegrityController {
         return res.status(404).json({ success: false, message: "Document non trouvé" });
       }
 
-      const filePath = resolveGedDocumentPath(document.fichier);
+      const filePath = resolveGedPath(document.fichier);
       const currentHash = computeHash(filePath);
       const storedHash = document.integrityHash;
 
@@ -84,7 +77,7 @@ export default class IntegrityController {
       let missingCount = 0;
 
       for (const doc of documents) {
-        const filePath = resolveGedDocumentPath(doc.fichier);
+        const filePath = resolveGedPath(doc.fichier);
         const currentHash = computeHash(filePath);
         const valid = currentHash !== null && currentHash === doc.integrityHash;
 
@@ -123,8 +116,8 @@ export default class IntegrityController {
       let totalSize = 0;
 
       for (const doc of documents) {
-        const srcPath = resolveGedDocumentPath(doc.fichier);
-        if (fs.existsSync(srcPath)) {
+        const srcPath = resolveGedPath(doc.fichier);
+        if (srcPath && fs.existsSync(srcPath)) {
           const destPath = path.resolve(backupDir, String(doc.id) + "_" + path.basename(doc.fichier));
           fs.copyFileSync(srcPath, destPath);
           const stat = fs.statSync(destPath);
@@ -186,7 +179,10 @@ export default class IntegrityController {
       for (const entry of manifest) {
         if (!entry.copied) continue;
         const srcPath = path.resolve(backupDir, String(entry.id) + "_" + path.basename(entry.fichier));
-        const destPath = path.resolve(process.cwd(), UPLOAD_DIR, entry.fichier);
+        const storedPath = String(entry.fichier ?? "").replace(/\\/g, "/");
+        const destPath = /^(uploads|created)\//.test(storedPath)
+          ? getDocumentPath(storedPath)
+          : path.resolve(GED_LEGACY_DIR, storedPath);
         const destDir = path.dirname(destPath);
         if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
         if (fs.existsSync(srcPath)) {

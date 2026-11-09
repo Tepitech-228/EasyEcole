@@ -4,8 +4,9 @@ import { AnneeAcademique } from "../models/AnneeAcademique";
 import { Parcours } from "../models/Parcours";
 import { Classe } from "../models/Classe";
 import { NiveauEtude } from "../models/NiveauEtude";
+import { getOriginRoot } from "../../../core/services/DocumentStorageService";
 
-const BASE_DOSSIERS = "public/dossiers";
+const BASE_DOSSIERS = getOriginRoot("uploads");
 
 export const SOUS_DOSSIERS = [
     "autorisations",
@@ -23,7 +24,7 @@ export type TypeSousDossier = typeof SOUS_DOSSIERS[number];
 export class DossierStorageService {
 
     /**
-     * Construit le chemin: public/dossiers/{annee}/{parcours}/{classe}/{niveau}/{matricule}/{sousDossier}/
+     * Construit le chemin sous documents/uploads/{annee}/{parcours}/{classe}/{niveau}/{matricule}/{sousDossier}/
      * Si matricule est null, s'arrête au niveau.
      */
     static getChemin(
@@ -34,10 +35,20 @@ export class DossierStorageService {
         matricule?: string | null,
         sousDossier?: TypeSousDossier | null,
     ): string {
-        const parts = [BASE_DOSSIERS, annee, parcours, classe, niveau];
+        const parts = [annee, parcours, classe, niveau];
         if (matricule) parts.push(matricule);
         if (sousDossier) parts.push(sousDossier);
-        return path.resolve(parts.join("/"));
+        const resolvedPath = path.resolve(BASE_DOSSIERS, ...parts);
+        const relativePath = path.relative(BASE_DOSSIERS, resolvedPath);
+        if (
+            !relativePath
+            || relativePath === ".."
+            || relativePath.startsWith(`..${path.sep}`)
+            || path.isAbsolute(relativePath)
+        ) {
+            throw new Error("Chemin de dossier étudiant hors de la racine documentaire");
+        }
+        return resolvedPath;
     }
 
     /**
@@ -53,7 +64,7 @@ export class DossierStorageService {
 
     /**
      * Crée l'arborescence au niveau année uniquement.
-     * public/dossiers/{annee}/
+     * documents/uploads/{annee}/
      */
     static creerSqueletteAnnee(annee: AnneeAcademique): string {
         const chemin = DossierStorageService.getChemin(annee.libelle, "", "", "");
@@ -62,7 +73,7 @@ export class DossierStorageService {
 
     /**
      * Crée l'arborescence pour une classe:
-     * public/dossiers/{annee}/{parcours.type}/{classe.libelle}/{niveau.libelle}/
+     * documents/uploads/{annee}/{parcours.type}/{classe.libelle}/{niveau.libelle}/
      */
     static creerSqueletteClasse(
         annee: AnneeAcademique,
@@ -81,7 +92,7 @@ export class DossierStorageService {
 
     /**
      * Crée l'arborescence complète pour un étudiant validé:
-     * public/dossiers/{annee}/{parcours}/{classe}/{niveau}/{matricule}/
+     * documents/uploads/{annee}/{parcours}/{classe}/{niveau}/{matricule}/
      *     + tous les sous-dossiers (autorisations, bordereaux, bulletins, etc.)
      * Retourne le chemin du dossier matricule.
      */
@@ -178,8 +189,7 @@ export class DossierStorageService {
     }
 
     /**
-     * Résout le chemin relatif depuis public/ à partir d'un chemin absolu.
-     * Utile pour stocker en DB un chemin relatif.
+     * Résout le chemin relatif depuis la racine du projet pour le stocker en base.
      */
     static cheminRelatif(cheminAbsolu: string): string {
         const cwd = path.resolve(process.cwd());

@@ -213,7 +213,7 @@ describe('createPaiementInscription', () => {
     )
   })
 
-  it('crée un paiement pour CAISSIER_BANQUE avec type EN_LIGNE', async () => {
+  it('crée un paiement pour ESA_COMPTA avec type EN_LIGNE', async () => {
     const mockDemande = { id: 42, matricule: 'MAT-001', utilisateurId: 1 }
     const basePaiementEnLigne = {
       id: 100,
@@ -232,7 +232,7 @@ describe('createPaiementInscription', () => {
     ;(PaiementInscription as jest.Mock).mockReturnValue({ save: mockSave })
 
     const req = mockRequest({
-      utilisateurRole: RolesUtilisateur.CAISSIER_BANQUE,
+      utilisateurRole: RolesUtilisateur.ESA_COMPTA,
       utilisateurId: 5,
       protocol: 'http',
       get: jest.fn().mockReturnValue('localhost'),

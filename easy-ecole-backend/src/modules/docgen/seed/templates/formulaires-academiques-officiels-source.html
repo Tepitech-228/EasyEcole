@@ -344,12 +344,12 @@
                     </tr>
                     <tr>
                         <td><strong>SPÉCIALITÉ</strong></td>
-                        <td><span class="check-box"></span></td>
-                        <td><span class="check-box"></span></td>
-                        <td><span class="check-box"></span></td>
-                        <td><span class="check-box"></span></td>
-                        <td><span class="check-box"></span></td>
-                        <td><span class="check-box"></span></td>
+                        <td><span class="check-box">{{#if etudiant.diplomeBac}}√{{/if}}</span></td>
+                        <td><span class="check-box">{{#if etudiant.diplomeDtsDut}}√{{/if}}</span></td>
+                        <td><span class="check-box">{{#if etudiant.diplomeBts}}√{{/if}}</span></td>
+                        <td><span class="check-box">{{#if etudiant.diplomeLicence}}√{{/if}}</span></td>
+                        <td><span class="check-box">{{#if etudiant.diplomeMaitrise}}√{{/if}}</span></td>
+                        <td><span class="check-box">{{#if etudiant.diplomeAutres}}√{{/if}}</span></td>
                     </tr>
                 </table>
 
@@ -365,11 +365,11 @@
                     </tr>
                     <tr>
                         <td><strong>SPÉCIALITÉ</strong></td>
-                        <td><span class="check-box"></span></td>
-                        <td><span class="check-box"></span></td>
-                        <td><span class="check-box"></span></td>
-                        <td><span class="check-box"></span></td>
-                        <td><span class="check-box"></span></td>
+                        <td><span class="check-box">{{#if etudiant.relevesSem12}}√{{/if}}</span></td>
+                        <td><span class="check-box">{{#if etudiant.relevesSem34}}√{{/if}}</span></td>
+                        <td><span class="check-box">{{#if etudiant.relevesSem56}}√{{/if}}</span></td>
+                        <td><span class="check-box">{{#if etudiant.relevesSem78}}√{{/if}}</span></td>
+                        <td><span class="check-box">{{#if etudiant.relevesSem910}}√{{/if}}</span></td>
                     </tr>
                 </table>
 
@@ -387,11 +387,11 @@
                     </tr>
                     <tr>
                         <td><strong>SPÉCIALITÉ</strong></td>
-                        <td><span class="check-box"></span></td>
-                        <td><span class="check-box"></span></td>
-                        <td><span class="check-box"></span></td>
-                        <td><span class="check-box"></span></td>
-                        <td><span class="check-box"></span></td>
+                        <td><span class="check-box">{{#if etudiant.parcoursLicence12}}√{{/if}}</span></td>
+                        <td><span class="check-box">{{#if etudiant.parcoursLicence34}}√{{/if}}</span></td>
+                        <td><span class="check-box">{{#if etudiant.parcoursLicence56}}√{{/if}}</span></td>
+                        <td><span class="check-box">{{#if etudiant.parcoursMaster12}}√{{/if}}</span></td>
+                        <td><span class="check-box">{{#if etudiant.parcoursMaster34}}√{{/if}}</span></td>
                     </tr>
                 </table>
 
@@ -1278,7 +1278,7 @@
 
             <div class="content-body">
                 <div style="text-align: right; font-weight: bold; margin-top: 6px; margin-bottom: 18px;">
-                    Lomé, le 22 septembre 2026
+                    Lomé, le {{dateEdition}}
                 </div>
 
                 <div style="margin-bottom: 12px; font-weight: bold;">
@@ -1295,18 +1295,18 @@
 
                 <p style="text-align: justify; margin-top: 12px;">
                     C’est avec un grand plaisir et une réelle conviction que je m’adresse à vous aujourd’hui pour vous recommander chaleureusement
-                    la candidature de <strong>Mademoiselle ADKPELI Nes... Françoise</strong>, étudiante en Deuxième Année de Licence (Semestres 3 et 4)
-                    au sein de notre établissement, dans la filière <strong>Assistant de Gestion PMI-PME</strong>.
+                    la candidature de <strong>{{etudiant.nom}} {{etudiant.prenom}}</strong>, étudiant(e) inscrit(e)
+                    au sein de notre établissement dans la filière <strong>{{etudiant.filiere}}</strong>.
                 </p>
 
                 <p style="text-align: justify;">
-                    Au cours de sa formation à l’École Supérieure des Affaires (ESA), Mademoiselle ADKPELI s’est distinguée par son engagement constant,
-                    sa rigueur intellectuelle et une assiduité exemplaire. Ses résultats académiques ainsi que son comportement au quotidien témoignent
-                    de son sérieux, de sa maturité et de sa détermination à réussir dans le domaine de la gestion d’entreprise.
+                    Au cours de sa formation au sein de notre établissement, la personne recommandée a fait preuve d’un engagement constant,
+                    de rigueur intellectuelle et d’une assiduité exemplaire. Ses résultats académiques ainsi que son comportement au quotidien témoignent
+                    de son sérieux, de sa maturité et de sa détermination à réussir dans son domaine de formation.
                 </p>
 
                 <p style="text-align: justify;">
-                    Sur le plan individuel et relationnel, elle démontre :
+                    Sur le plan individuel et relationnel, la personne recommandée démontre :
                 </p>
 
                 <ul style="margin: 6px 0 10px 22px; text-align: justify; padding-left: 16px;">
@@ -1317,12 +1317,12 @@
 
                 <p style="text-align: justify;">
                     Dans le cadre de la finalisation de son parcours et de la préparation de son mémoire de fin de cycle, un stage pratique en entreprise
-                    représente une étape fondamentale. Je suis pleinement convaincu(e) que son dynamisme, sa curiosité intellectuelle et sa volonté d’apprendre
-                    constitueront un atout précieux pour vos équipes et que sa contribution sera à la hauteur de vos attentes.
+                    représente une étape fondamentale. Son dynamisme, sa curiosité intellectuelle et sa volonté d’apprendre
+                    constitueront un atout précieux pour vos équipes. Sa contribution sera à la hauteur de vos attentes.
                 </p>
 
                 <p style="text-align: justify;">
-                    C’est pourquoi je vous la recommande très favorablement et sans la moindre réserve pour l’accueil en stage au sein de votre structure.
+                    C’est pourquoi je recommande cette candidature très favorablement et sans la moindre réserve pour un stage au sein de votre structure.
                 </p>
 
                 <p style="text-align: justify;">

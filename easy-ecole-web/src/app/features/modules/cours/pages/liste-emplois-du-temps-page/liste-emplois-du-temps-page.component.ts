@@ -161,6 +161,10 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
   ngAfterViewInit(): void {
   }
 
+  get peutGererPlanning(): boolean {
+    return this.rolesValue.isInstitution || this.rolesValue.isAdmin || this.rolesValue.isSuperviseurGeneral
+  }
+
   getWeekRange(date: Date): { start: string, end: string } {
     const day = date.getDay()
     const diff = date.getDate() - day + (day === 0 ? -6 : 1)
@@ -240,7 +244,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
   }
 
   handleDateClick(arg: any) {
-    if (!this.rolesValue.isInstitution && !this.rolesValue.isAdmin) return
+    if (!this.peutGererPlanning) return
 
     const dateStr = arg.dateStr || ''
     const parts = dateStr.split('T')
@@ -266,7 +270,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
   }
 
   handleEventClick(clickInfo: any) {
-    if (this.rolesValue.isInstitution || this.rolesValue.isAdmin) {
+    if (this.peutGererPlanning) {
       this.openModificationSeanceModal(clickInfo)
     }
   }

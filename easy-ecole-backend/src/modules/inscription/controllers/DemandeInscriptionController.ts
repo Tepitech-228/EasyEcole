@@ -450,7 +450,10 @@ export default class DemandeInscriptionController {
                     },]
             }
         }
-        else if ((req as any).utilisateurRole == RolesUtilisateur.INSTITUTION || (req as any).utilisateurRole == RolesUtilisateur.CAISSIER_BANQUE) {
+        else if (
+            (req as any).utilisateurRole == RolesUtilisateur.INSTITUTION
+            || (req as any).utilisateurRole == RolesUtilisateur.ESA_COMPTA
+        ) {
             options = {
                 where: { matricule: req.params.matricule },
                 include: [
@@ -1107,6 +1110,9 @@ export default class DemandeInscriptionController {
             try {
               const user = demandeInscription.utilisateur as any
               const apprenant = user.apprenant
+              const etablissementCarte = dossierEtudiant.etablissementId
+                ? await Etablissement.findByPk(dossierEtudiant.etablissementId)
+                : null
               const cartePath = await GenerateurCarteService.generer({
                 nom: user.nom,
                 prenom: user.prenoms,
@@ -1118,6 +1124,8 @@ export default class DemandeInscriptionController {
                 anneeAcademique: savedCursus.anneeAcademique?.libelle || req.body.cursusApprenant?.anneeAcademiqueLibelle || '',
                 email: demandeInscription.utilisateur.email,
                 utilisateurId: demandeInscription.utilisateurId,
+                periode: apprenant?.periode || null,
+                site: etablissementCarte?.site || etablissementCarte?.nom || '',
               })
               await dossierEtudiant.update({ cartePath, carteGeneree: true })
             } catch (cardError) {

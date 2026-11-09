@@ -4,9 +4,9 @@
 
 **Profil :** Audit & contrôle  
 **Nombre d'écrans :** 9  
-**Généré le :** 02/11/2026
+**Mise à jour :** 08/11/2026
 
-Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. Chaque section contient une capture, l'objectif de l'écran et les actions principales.
+Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. L'image complémentaire du journal financier est une simulation explicitement signalée ; elle ne représente aucune trace réelle.
 
 ## Sommaire
 
@@ -51,6 +51,8 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 ## 3. Journal d'audit
 
 ![Journal d'audit](../images-nouveau/admin/103_journal-audit.png)
+
+![Exemple fictif de journal d'audit financier, marqué comme simulation](../images-nouveau/admin/198_journal-audit-simulation.png)
 
 **Objectif :** Journal horodaté des actions sensibles : acteur, action, entité, ancienne et nouvelle valeur.
 
@@ -146,4 +148,4 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 
 ---
 
-*Guide généré par `scripts/guide/generer-guides.cjs`. Les captures valides les plus récentes sont utilisées, avec repli sur les captures historiques.*
+*Guide Audit & contrôle — mis à jour le 08/11/2026. L'illustration supplémentaire est entièrement fictive et ne constitue pas un journal réel.*

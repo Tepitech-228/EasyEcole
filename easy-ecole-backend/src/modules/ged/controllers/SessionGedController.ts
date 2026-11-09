@@ -5,6 +5,7 @@ import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import Folder from "../models/Folder";
 import crypto from "crypto";
 import { AuditService } from "../../../core/services/AuditService";
+import { saveGedUpload } from "../../../core/services/GedStorageService";
 
 function parseJsonField(value: any): any {
   if (!value) return null;
@@ -139,15 +140,10 @@ export default class SessionGedController {
       const createdDocs = [];
 
       for (const file of files) {
-        let finalFilename = file.filename;
-        if (folderId) {
-          const folderPath = `public/ged/${folderId}`;
-          if (!require('fs').existsSync(folderPath)) require('fs').mkdirSync(folderPath, { recursive: true });
-          const oldPath = `public/ged/${file.filename}`;
-          const newPath = `${folderPath}/${file.filename}`;
-          require('fs').renameSync(oldPath, newPath);
-          finalFilename = `${folderId}/${file.filename}`;
-        }
+        const saved = await saveGedUpload(file, {
+          folderId,
+          subcategory: folderId ? null : `session_${sessionId}`,
+        });
 
         const document = await DocumentGed.create({
           titre: metadata?.titre || file.originalname,
@@ -159,7 +155,7 @@ export default class SessionGedController {
           nommage: metadata?.nommage || null,
           type: metadata?.type || (file.mimetype.includes('tiff') ? 'TIFF' : 'PDF'),
           statut: metadata?.statut || 'Disponible',
-          fichier: finalFilename,
+          fichier: saved.relativePath,
           taille: `${(file.size / 1024).toFixed(1)} Ko`,
           uploaderId: (req as any).utilisateurId,
           folderId: folderId || undefined,

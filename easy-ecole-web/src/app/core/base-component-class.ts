@@ -7,7 +7,7 @@ import { LocalStorageService } from "./services/local-storage.service"
 export class BaseComponentClass {
     private jwtTokenService: JwtTokenService = new JwtTokenService()
     static utilisateur: Utilisateur = new Utilisateur()
-    rolesValue: RolesValueType = { isApprenant: false, isInstitution: false, isEnseignant: false, isCaissierBanque: false, isPersonnelAdministratif: false, isRessourcesHumaines: false, isCabinetComptable: false, isEsacompta: false, isComiteOrientation: false, isAdmin: false, isParent: false, isSecretaire: false, isSurveillant: false }
+    rolesValue: RolesValueType = { isApprenant: false, isInstitution: false, isEnseignant: false, isCaissierBanque: false, isPersonnelAdministratif: false, isRessourcesHumaines: false, isCabinetComptable: false, isEsacompta: false, isComiteOrientation: false, isAdmin: false, isParent: false, isSecretaire: false, isSurveillant: false, isSuperviseurGeneral: false }
 
     constructor() {
         if(BaseComponentClass.utilisateur.role == undefined) {
@@ -28,7 +28,7 @@ export class BaseComponentClass {
 
     private getRoles(): void {
         const role: RolesUtilisateur | undefined = BaseComponentClass.utilisateur.role
-        this.rolesValue = { isApprenant: false, isInstitution: false, isEnseignant: false, isCaissierBanque: false, isPersonnelAdministratif: false, isRessourcesHumaines: false, isCabinetComptable: false, isEsacompta: false, isComiteOrientation: false, isAdmin: false, isParent: false, isSecretaire: false, isSurveillant: false }
+        this.rolesValue = { isApprenant: false, isInstitution: false, isEnseignant: false, isCaissierBanque: false, isPersonnelAdministratif: false, isRessourcesHumaines: false, isCabinetComptable: false, isEsacompta: false, isComiteOrientation: false, isAdmin: false, isParent: false, isSecretaire: false, isSurveillant: false, isSuperviseurGeneral: false }
 
         switch (role) {
             case RolesUtilisateur.APPRENANT:
@@ -83,8 +83,12 @@ export class BaseComponentClass {
                 this.rolesValue.isSurveillant = true
                 break;
 
+            case RolesUtilisateur.SUPERVISEUR_GENERAL:
+                this.rolesValue.isSuperviseurGeneral = true
+                break;
+
             default:
-                this.rolesValue = { isApprenant: false, isInstitution: false, isEnseignant: false, isCaissierBanque: false, isPersonnelAdministratif: false, isRessourcesHumaines: false, isCabinetComptable: false, isEsacompta: false, isComiteOrientation: false, isAdmin: false, isParent: false, isSecretaire: false, isSurveillant: false }
+                this.rolesValue = { isApprenant: false, isInstitution: false, isEnseignant: false, isCaissierBanque: false, isPersonnelAdministratif: false, isRessourcesHumaines: false, isCabinetComptable: false, isEsacompta: false, isComiteOrientation: false, isAdmin: false, isParent: false, isSecretaire: false, isSurveillant: false, isSuperviseurGeneral: false }
                 break;
         }
     }

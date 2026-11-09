@@ -138,6 +138,7 @@ RUN --mount=type=cache,target=/root/.npm \
 COPY --from=build /app/lib ./lib
 COPY easy-ecole-backend/index.js ./
 COPY easy-ecole-backend/docker-entrypoint.sh ./
+COPY easy-ecole-web/src/assets/images/logo-esa.png ./assets/logo-esa.png
 
 # ---------------------------------------------------------------------------
 # Migrations SQL + runner

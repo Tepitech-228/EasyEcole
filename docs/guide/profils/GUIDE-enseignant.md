@@ -1,14 +1,18 @@
 # Guide d'utilisation — Enseignant
 
-> Enseignement et évaluation : cahiers de texte, présences, notes, bulletins, conseils de classe, ressources et e-learning.
+> Enseignement et évaluation : consultation du planning attribué, cahiers de texte, présences, notes, bulletins, ressources et e-learning. La création et la publication des emplois du temps ne sont pas proposées au rôle Enseignant dans l'application actuelle.
 
 **Profil :** Enseignant  
-**Nombre d'écrans :** 23  
-**Généré le :** 02/11/2026
+**Nombre d'écrans :** 29
+**Généré le :** 08/11/2026
 
 Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. Chaque section contient une capture, l'objectif de l'écran et les actions principales.
 
 ## Sommaire
+
+### Procédures pas à pas
+- [Cahier de texte — vérifier le planning, créer le cahier et saisir une séance](#cahier-de-texte-verifier-le-planning-creer-le-cahier-et-saisir-une-seance)
+- [Présences — créer une liste et enregistrer les états d’une séance](#presences-creer-une-liste-et-enregistrer-les-etats-d-une-seance)
 
 1. [Salles de classe](#1-salles-de-classe)
 2. [Équivalences](#2-equivalences)
@@ -18,21 +22,119 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 6. [Sessions d'examens](#6-sessions-d-examens)
 7. [Rattrapages](#7-rattrapages)
 8. [Mon tableau de bord](#8-mon-tableau-de-bord)
-9. [Cahiers de texte](#9-cahiers-de-texte)
-10. [Cahier de présence](#10-cahier-de-presence)
-11. [Notes](#11-notes)
-12. [Bibliothèque](#12-bibliotheque)
-13. [Bulletins](#13-bulletins)
-14. [Moyennes](#14-moyennes)
-15. [Absences](#15-absences)
-16. [Conseils de classe](#16-conseils-de-classe)
-17. [Annonces](#17-annonces)
-18. [Vie estudiantine](#18-vie-estudiantine)
-19. [Catalogue e-learning](#19-catalogue-e-learning)
-20. [Mon profil](#20-mon-profil)
-21. [Mon compte](#21-mon-compte)
-22. [Tous les documents](#22-tous-les-documents)
-23. [Unités d'enseignement](#23-unites-d-enseignement)
+9. [Notes](#9-notes)
+10. [Bibliothèque](#10-bibliotheque)
+11. [Bulletins](#11-bulletins)
+12. [Moyennes](#12-moyennes)
+13. [Absences](#13-absences)
+14. [Conseils de classe](#14-conseils-de-classe)
+15. [Annonces](#15-annonces)
+16. [Vie estudiantine](#16-vie-estudiantine)
+17. [Catalogue e-learning](#17-catalogue-e-learning)
+18. [Mon profil](#18-mon-profil)
+19. [Mon compte](#19-mon-compte)
+20. [Tous les documents](#20-tous-les-documents)
+21. [Unités d'enseignement](#21-unites-d-enseignement)
+22. [Cahiers de texte — exemple fictif](#22-cahiers-de-texte-exemple-fictif)
+23. [Cahier de texte — séances fictives](#23-cahier-de-texte-seances-fictives)
+24. [Cahier de texte — formulaire de séance](#24-cahier-de-texte-formulaire-de-seance)
+25. [Listes de présence — exemple fictif](#25-listes-de-presence-exemple-fictif)
+26. [Feuille de présence — exemple fictif](#26-feuille-de-presence-exemple-fictif)
+27. [Nouvelle séance de présence — exemple fictif](#27-nouvelle-seance-de-presence-exemple-fictif)
+28. [Nouveau cahier de texte — formulaire fictif](#28-nouveau-cahier-de-texte-formulaire-fictif)
+29. [Nouvelle liste de présence — formulaire fictif](#29-nouvelle-liste-de-presence-formulaire-fictif)
+
+## Procédures pas à pas
+
+### Cahier de texte — vérifier le planning, créer le cahier et saisir une séance
+
+Les captures ci-dessous sont des illustrations statiques avec des données entièrement fictives. Elles ne créent aucun cours, cahier ou bloc. Un cahier doit être rattaché à un cours déjà attribué à l’enseignant ; si le cours n’existe pas ou n’apparaît pas, demander son affectation au service chargé de la planification.
+
+![Cahiers de texte — exemple fictif](../images-nouveau/enseignant/90_cahier-texte-exemple.png)
+
+![Nouveau cahier de texte — formulaire fictif](../images-nouveau/enseignant/96_cahier-texte-nouveau-exemple.png)
+
+![Cahier de texte — séances fictives](../images-nouveau/enseignant/91_cahier-texte-detail-exemple.png)
+
+![Cahier de texte — formulaire de séance](../images-nouveau/enseignant/92_cahier-texte-nouveau-bloc-exemple.png)
+
+#### Vérifier que le cours est programmé
+
+1. **Ouvrir Emplois du temps et sélectionner la date, la classe ou l’enseignant pour consulter le planning.**
+   - Pourquoi : Le cahier et ses blocs doivent correspondre à un cours et à une séance réellement programmés.
+   - Responsable : Enseignant
+2. **Si le cours ou le site n’apparaît pas, ne pas créer ni publier un emploi du temps depuis ce compte ; transmettre l’anomalie à l’administration ou au responsable de planification.**
+   - Pourquoi : La création et la publication de l’emploi du temps sont réservées aux profils Institution, Administrateur et Superviseur général.
+   - Responsable : Enseignant, puis Institution / Administrateur
+
+#### Créer le cahier à partir d’un cours existant
+
+1. **Ouvrir Cours > Cahiers de texte, puis filtrer par niveau, classe ou parcours et rechercher le cours.**
+   - Pourquoi : Les filtres évitent d’ouvrir un cahier appartenant à une autre classe.
+   - Responsable : Enseignant
+2. **Si aucun cahier n’existe, cliquer sur Nouveau cahier de texte, activer Choisir parmi les cours et sélectionner le cours déjà attribué.**
+   - Pourquoi : L’enseignant rattache le cahier à l’offre de cours existante ; il ne crée ni UE ni cours depuis ce formulaire.
+   - Responsable : Enseignant
+3. **Vérifier l’enseignant associé, ajouter une description si utile, puis cliquer sur Enregistrer.**
+   - Pourquoi : L’enregistrement crée le cahier dans l’application ; la capture de démonstration, elle, ne sauvegarde rien.
+   - Responsable : Enseignant
+
+#### Ajouter le contenu d’une séance
+
+1. **Ouvrir le cahier du cours et cliquer sur Nouveau bloc.**
+   - Pourquoi : Chaque bloc décrit une séance dans le cahier sélectionné.
+   - Responsable : Enseignant
+2. **Renseigner la date, l’heure de début, l’heure de fin et le contenu réellement traité.**
+   - Pourquoi : Ces champs sont requis et permettent de rapprocher le cahier de la séance planifiée.
+   - Responsable : Enseignant
+3. **Relire le contenu puis cliquer sur Enregistrer ; vérifier ensuite que le bloc apparaît dans le tableau.**
+   - Pourquoi : L’enregistrement est une opération persistante ; contrôler le résultat évite les doublons ou les erreurs de date.
+   - Responsable : Enseignant
+
+### Présences — créer une liste et enregistrer les états d’une séance
+
+Les captures de cette procédure présentent des apprenants et des états entièrement fictifs. Elles ne créent ni liste ni présence. Les droits et contrôles varient selon le rôle connecté et le site autorisé.
+
+![Listes de présence — exemple fictif](../images-nouveau/enseignant/93_presence-liste-exemple.png)
+
+![Nouvelle liste de présence — formulaire fictif](../images-nouveau/enseignant/97_presence-nouvelle-liste-exemple.png)
+
+![Feuille de présence — exemple fictif](../images-nouveau/enseignant/94_presence-feuille-exemple.png)
+
+![Nouvelle séance de présence — exemple fictif](../images-nouveau/enseignant/95_presence-nouvelle-seance-exemple.png)
+
+#### Ouvrir ou créer la liste du cours
+
+1. **Ouvrir Cours > Présences, puis filtrer ou rechercher la liste liée au cours et à la classe concernés.**
+   - Pourquoi : Réutiliser la bonne liste conserve l’historique des séances et évite les doublons.
+   - Responsable : Enseignant
+2. **Ouvrir la liste existante. Si elle n’existe pas, cliquer sur Nouvelle liste, choisir le cours existant, vérifier l’enseignant et enregistrer.**
+   - Pourquoi : Une liste de présence est rattachée au cours ; les sélecteurs ne donnent pas le droit de créer un cours.
+   - Responsable : Enseignant
+
+#### Renseigner une séance et les participants
+
+1. **Dans la liste, cliquer sur Nouvelle présence, puis renseigner la date, l’heure de début et l’heure de fin.**
+   - Pourquoi : La feuille doit correspondre à la séance réellement tenue.
+   - Responsable : Enseignant
+2. **Contrôler les participants affichés et attribuer à chacun l’état exact : Présent, Absent, Absence justifiée ou Non renseigné.**
+   - Pourquoi : Les états saisis dans le formulaire sont enregistrés avec la séance.
+   - Responsable : Enseignant
+3. **Relire les horaires et les états, puis cliquer sur Enregistrer. Vérifier la feuille après le retour à la liste.**
+   - Pourquoi : L’enregistrement crée la séance et ses états ; toute correction ultérieure doit respecter les droits du rôle.
+   - Responsable : Enseignant
+4. **Signer la feuille seulement après contrôle si le bouton Signer la feuille est proposé.**
+   - Pourquoi : La signature est une action engageante et n’est disponible que dans les conditions prévues par le rôle et la feuille.
+   - Responsable : Enseignant
+
+#### Cas du Surveillant
+
+1. **Accéder uniquement aux listes et sites autorisés par le compte ; si l’écran indique qu’aucun site actif n’est autorisé, demander l’affectation au responsable.**
+   - Pourquoi : La simulation ne doit pas contourner les restrictions de site.
+   - Responsable : Surveillant / Administrateur
+2. **Sur une feuille existante, choisir l’état dans le sélecteur affiché puis vérifier le résultat.**
+   - Pourquoi : Pour le rôle Surveillant, le changement de sélection enregistre immédiatement l’état ; il n’y a pas de bouton Enregistrer distinct sur cette cellule.
+   - Responsable : Surveillant
 
 ## 1. Salles de classe
 
@@ -80,13 +182,13 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 
 ![Emplois du temps](../images-nouveau/enseignant/04_emplois-du-temps.png)
 
-**Objectif :** Planning des cours par classe, enseignant et salle.
+**Objectif :** Planning des cours par classe, enseignant et salle. Les profils Institution, Administrateur et Superviseur général peuvent gérer et publier le planning dans leur périmètre autorisé ; les autres profils le consultent.
 
 **Actions principales :**
 
-1. Choisir la classe ou l’enseignant
-2. Consulter le planning
-3. Détecter les conflits
+1. Vérifier le site actif autorisé
+2. Consulter ou gérer les séances selon le rôle
+3. Vérifier les conflits puis publier le planning si le rôle le permet
 
 ---
 
@@ -146,35 +248,7 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 
 ---
 
-## 9. Cahiers de texte
-
-![Cahiers de texte](../images-nouveau/enseignant/09_cahiers-de-texte.png)
-
-**Objectif :** Contenu des séances : objectifs, activités, devoirs et ressources.
-
-**Actions principales :**
-
-1. Choisir la classe et la séance
-2. Renseigner le contenu
-3. Publier pour les étudiants
-
----
-
-## 10. Cahier de présence
-
-![Cahier de présence](../images-nouveau/enseignant/10_cahier-de-presence.png)
-
-**Objectif :** Appel et suivi des présences par séance, avec motif d’absence.
-
-**Actions principales :**
-
-1. Ouvrir la séance
-2. Marquer les présents et absents
-3. Enregistrer
-
----
-
-## 11. Notes
+## 9. Notes
 
 ![Notes](../images-nouveau/enseignant/11_notes.png)
 
@@ -188,7 +262,7 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 
 ---
 
-## 12. Bibliothèque
+## 10. Bibliothèque
 
 ![Bibliothèque](../images-nouveau/enseignant/12_bibliotheque.png)
 
@@ -202,7 +276,7 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 
 ---
 
-## 13. Bulletins
+## 11. Bulletins
 
 ![Bulletins](../images-nouveau/enseignant/13_bulletins.png)
 
@@ -216,7 +290,7 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 
 ---
 
-## 14. Moyennes
+## 12. Moyennes
 
 ![Moyennes](../images-nouveau/enseignant/14_moyennes.png)
 
@@ -230,7 +304,7 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 
 ---
 
-## 15. Absences
+## 13. Absences
 
 ![Absences](../images-nouveau/enseignant/15_absences.png)
 
@@ -244,7 +318,7 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 
 ---
 
-## 16. Conseils de classe
+## 14. Conseils de classe
 
 ![Conseils de classe](../images-nouveau/enseignant/16_conseils-classe.png)
 
@@ -258,7 +332,7 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 
 ---
 
-## 17. Annonces
+## 15. Annonces
 
 ![Annonces](../images-nouveau/enseignant/17_annonces.png)
 
@@ -272,7 +346,7 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 
 ---
 
-## 18. Vie estudiantine
+## 16. Vie estudiantine
 
 ![Vie estudiantine](../images-nouveau/enseignant/18_vie-estudiantine.png)
 
@@ -286,7 +360,7 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 
 ---
 
-## 19. Catalogue e-learning
+## 17. Catalogue e-learning
 
 ![Catalogue e-learning](../images-nouveau/enseignant/20_catalogue-e-learning.png)
 
@@ -300,7 +374,7 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 
 ---
 
-## 20. Mon profil
+## 18. Mon profil
 
 ![Mon profil](../images-nouveau/enseignant/21_mon-profil.png)
 
@@ -314,7 +388,7 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 
 ---
 
-## 21. Mon compte
+## 19. Mon compte
 
 ![Mon compte](../images-nouveau/enseignant/22_mon-compte.png)
 
@@ -328,7 +402,7 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 
 ---
 
-## 22. Tous les documents
+## 20. Tous les documents
 
 ![Tous les documents](../images-nouveau/enseignant/23_tous-les-documents.png)
 
@@ -342,7 +416,7 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 
 ---
 
-## 23. Unités d'enseignement
+## 21. Unités d'enseignement
 
 ![Unités d'enseignement](../images-nouveau/enseignant/25_unites-d-enseignements.png)
 
@@ -353,6 +427,118 @@ Ce guide présente les écrans du profil dans l'ordre d'utilisation conseillé. 
 1. Créer une UE
 2. Ajouter les ECUE
 3. Définir crédits et prérequis
+
+---
+
+## 22. Cahiers de texte — exemple fictif
+
+![Cahiers de texte — exemple fictif](../images-nouveau/enseignant/90_cahier-texte-exemple.png)
+
+**Objectif :** Illustration de la liste des cahiers associés à des cours existants. Les noms, classes et codes affichés sont fictifs.
+
+**Actions principales :**
+
+1. Filtrer par niveau, classe ou parcours
+2. Rechercher le cours déjà attribué
+3. Ouvrir le cahier concerné
+
+---
+
+## 23. Cahier de texte — séances fictives
+
+![Cahier de texte — séances fictives](../images-nouveau/enseignant/91_cahier-texte-detail-exemple.png)
+
+**Objectif :** Illustration de blocs de cours comportant un horaire et un contenu pédagogique d’exemple, sans enregistrement.
+
+**Actions principales :**
+
+1. Vérifier le cours et la classe
+2. Relire la date et les horaires du bloc
+3. Vérifier que le contenu décrit la séance réellement dispensée
+
+---
+
+## 24. Cahier de texte — formulaire de séance
+
+![Cahier de texte — formulaire de séance](../images-nouveau/enseignant/92_cahier-texte-nouveau-bloc-exemple.png)
+
+**Objectif :** Exemple du formulaire de création d’un bloc : date, heure de début, heure de fin et contenu sont obligatoires.
+
+**Actions principales :**
+
+1. Renseigner la date et les deux horaires
+2. Décrire le contenu effectivement traité
+3. Enregistrer uniquement après vérification
+
+---
+
+## 25. Listes de présence — exemple fictif
+
+![Listes de présence — exemple fictif](../images-nouveau/enseignant/93_presence-liste-exemple.png)
+
+**Objectif :** Illustration de la liste de présence d’un cours existant. Les personnes et le cours affichés sont fictifs.
+
+**Actions principales :**
+
+1. Filtrer ou rechercher une liste
+2. Ouvrir la liste correspondant au cours
+3. Créer une liste seulement si elle n’existe pas
+
+---
+
+## 26. Feuille de présence — exemple fictif
+
+![Feuille de présence — exemple fictif](../images-nouveau/enseignant/94_presence-feuille-exemple.png)
+
+**Objectif :** Exemple de feuille avec les états Présent, Absent et Absence justifiée. Aucun état n’a été enregistré.
+
+**Actions principales :**
+
+1. Vérifier le cours, la date et les horaires
+2. Contrôler chaque état de présence
+3. Signer uniquement après vérification si cette action est disponible
+
+---
+
+## 27. Nouvelle séance de présence — exemple fictif
+
+![Nouvelle séance de présence — exemple fictif](../images-nouveau/enseignant/95_presence-nouvelle-seance-exemple.png)
+
+**Objectif :** Illustration du formulaire qui associe une date et des horaires aux participants et à leur état de présence.
+
+**Actions principales :**
+
+1. Renseigner la date et les horaires
+2. Vérifier la liste des participants
+3. Renseigner les états puis enregistrer
+
+---
+
+## 28. Nouveau cahier de texte — formulaire fictif
+
+![Nouveau cahier de texte — formulaire fictif](../images-nouveau/enseignant/96_cahier-texte-nouveau-exemple.png)
+
+**Objectif :** Illustration du formulaire qui rattache un cahier à un cours déjà existant, avec l’enseignant et une description facultative.
+
+**Actions principales :**
+
+1. Choisir parmi les cours
+2. Sélectionner le cours attribué
+3. Vérifier l’enseignant avant d’enregistrer
+
+---
+
+## 29. Nouvelle liste de présence — formulaire fictif
+
+![Nouvelle liste de présence — formulaire fictif](../images-nouveau/enseignant/97_presence-nouvelle-liste-exemple.png)
+
+**Objectif :** Illustration du formulaire de création d’une liste rattachée à un cours existant.
+
+**Actions principales :**
+
+1. Choisir un cours existant
+2. Vérifier l’enseignant
+3. Enregistrer la liste après contrôle
 
 ---
 

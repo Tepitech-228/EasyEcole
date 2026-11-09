@@ -10,3 +10,9 @@ export interface TypeDocument {
   actif?: boolean;
   piecesRequises?: Array<{ cle: string; libelle: string; obligatoire: boolean }>;
 }
+
+export interface TarifTypeDocument {
+  id: string | number;
+  libelle: string;
+  frais: number;
+}

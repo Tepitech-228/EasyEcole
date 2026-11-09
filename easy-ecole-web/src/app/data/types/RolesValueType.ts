@@ -12,4 +12,5 @@ export type RolesValueType = {
     isParent: boolean
     isSecretaire: boolean
     isSurveillant: boolean
+    isSuperviseurGeneral: boolean
 }

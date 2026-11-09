@@ -18,7 +18,8 @@ export class UtilisateurService {
   }
 
   get(id?: string): Observable<Utilisateur> {
-    return this.httpClient.get<Utilisateur>(`${this.SERVICE_URL}/${id || ''}`)
+    const url = id ? `${this.SERVICE_URL}/${encodeURIComponent(id)}` : `${this.SERVICE_URL}/moi`
+    return this.httpClient.get<Utilisateur>(url)
   }
 
   update(utilisateur: Utilisateur): Observable<Utilisateur> {

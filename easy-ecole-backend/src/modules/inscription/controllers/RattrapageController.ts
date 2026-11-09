@@ -294,7 +294,7 @@ export default class RattrapageController {
 
   static async validerPaiementRattrapage(req: Request, res: Response): Promise<Response> {
     const role = (req as any).utilisateurRole
-    if (role !== RolesUtilisateur.INSTITUTION && role !== RolesUtilisateur.ADMIN && role !== RolesUtilisateur.CAISSIER_BANQUE) {
+    if (role !== RolesUtilisateur.INSTITUTION && role !== RolesUtilisateur.ADMIN && role !== RolesUtilisateur.ESA_COMPTA) {
       return res.status(403).json({ success: false, message: 'Validation comptable réservée à l’administration' })
     }
 
@@ -702,7 +702,7 @@ export default class RattrapageController {
 
   static async getDemandes(req: Request, res: Response): Promise<Response> {
     const role = (req as any).utilisateurRole;
-    if (role != RolesUtilisateur.INSTITUTION && role != RolesUtilisateur.ADMIN && role != RolesUtilisateur.CAISSIER_BANQUE) {
+    if (role != RolesUtilisateur.INSTITUTION && role != RolesUtilisateur.ADMIN && role != RolesUtilisateur.ESA_COMPTA) {
       return res.status(403).json({ success: false, message: "Accès réservé à l'institution" });
     }
     try {
@@ -846,7 +846,7 @@ export default class RattrapageController {
 
   static async confirmerPaiementDemande(req: Request, res: Response): Promise<Response | null> {
     const role = (req as any).utilisateurRole;
-    if (role != RolesUtilisateur.INSTITUTION && role != RolesUtilisateur.ADMIN && role != RolesUtilisateur.CAISSIER_BANQUE) {
+    if (role != RolesUtilisateur.INSTITUTION && role != RolesUtilisateur.ADMIN && role != RolesUtilisateur.ESA_COMPTA) {
       return res.status(403).json({ success: false, message: "Accès réservé à l'institution" });
     }
     try {

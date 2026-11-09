@@ -82,7 +82,7 @@
                     <label for="inscription-photo" class="mb-1 block text-sm font-semibold text-gray-800">
                         Photo de l’étudiant <span class="text-red-600">*</span>
                     </label>
-                    <input id="inscription-photo" type="file" accept="image/jpeg,image/png,image/gif,image/webp"
+                    <input id="inscription-photo" type="file" accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif"
                         (change)="surSelectionPhotoProfil($event)" [disabled]="photoUploadEnCours">
                     <small *ngIf="photoUploadEnCours" class="text-blue-700" role="status">
                         Téléversement de la photo en cours…
@@ -632,6 +632,37 @@
                 <app-custom-button *ngIf="etapeActuelle === totalEtapes" [disabled]="false" (click)="validerProfilApprenant()"
                     text="Enregistrer"></app-custom-button>
             </div>
+        </div>
+    </form>
+</div>
+
+<div class="w-full" *ngIf="profilUtilisateur && profilForm">
+    <form [formGroup]="profilForm" class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+        <h2 class="text-base font-semibold leading-7 text-gray-900 mb-1">Informations personnelles</h2>
+        <p class="text-sm text-gray-500 mb-6">Modifiez votre nom, vos prénoms et votre contact.</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-6">
+            <div>
+                <label for="profilNom" class="mb-2 block text-sm leading-6 text-gray-600">Nom</label>
+                <input type="text" id="profilNom" formControlName="nom"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <app-form-message *ngIf="profilForm.get('nom')?.invalid && profilForm.get('nom')?.touched"
+                    text="Veuillez saisir votre nom"></app-form-message>
+            </div>
+            <div>
+                <label for="profilPrenoms" class="mb-2 block text-sm leading-6 text-gray-600">Prénoms</label>
+                <input type="text" id="profilPrenoms" formControlName="prenoms"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                <app-form-message *ngIf="profilForm.get('prenoms')?.invalid && profilForm.get('prenoms')?.touched"
+                    text="Veuillez saisir vos prénoms"></app-form-message>
+            </div>
+            <div>
+                <label for="profilContact" class="mb-2 block text-sm leading-6 text-gray-600">Contact</label>
+                <input type="text" id="profilContact" formControlName="contact"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+        </div>
+        <div class="w-full flex justify-end items-center pt-6">
+            <app-custom-button [disabled]="profilForm.invalid" (click)="validerProfilUtilisateur()" text="Enregistrer"></app-custom-button>
         </div>
     </form>
 </div>

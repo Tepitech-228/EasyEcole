@@ -6,6 +6,8 @@
  *   node scripts/guide/generer-guides.cjs --pdf           # + PDF par profil
  *   node scripts/guide/generer-guides.cjs --profil=audit  # un seul profil
  *   node scripts/guide/generer-guides.cjs --profil audit --pdf
+ *   node scripts/guide/generer-guides.cjs --profil etudiants --pdf-only
+ *   node scripts/guide/generer-guides.cjs --profil etudiants --pdf-only --pdf-output docs/guide/pdf/GUIDE-etudiants-corrige.pdf
  *
  * Sources : captures valides de docs/guide/images-nouveau/ en priorité,
  *           avec repli sur docs/guide/images/<dossier>/<fichier>.png
@@ -16,7 +18,7 @@
 const fs = require('fs');
 const path = require('path');
 const { PROFILS } = require('./profils.cjs');
-const { ECRANS } = require('./ecrans.cjs');
+const { ECRANS, ECRANS_PAR_PROFIL, PROCEDURES_PAR_PROFIL } = require('./ecrans.cjs');
 
 const RACINE = path.resolve(__dirname, '..', '..', '..');
 const IMAGES = path.join(RACINE, 'docs', 'guide', 'images');
@@ -34,11 +36,14 @@ const CAPTURES_VALIDES = fs.existsSync(RAPPORT_CAPTURE)
   : new Set();
 
 const args = process.argv.slice(2);
-const avecPdf = args.includes('--pdf');
+const pdfSeulement = args.includes('--pdf-only');
+const avecPdf = args.includes('--pdf') || pdfSeulement;
+let pdfSortiePersonnalisee = null;
 let filtreProfil = null;
 for (let i = 0; i < args.length; i++) {
   if (args[i].startsWith('--profil=')) filtreProfil = args[i].split('=')[1];
   else if (args[i] === '--profil' && args[i + 1]) filtreProfil = args[++i];
+  else if (args[i] === '--pdf-output' && args[i + 1]) pdfSortiePersonnalisee = path.resolve(RACINE, args[++i]);
 }
 
 function slugify(value) {
@@ -102,15 +107,18 @@ function collecterEcrans(profil) {
   const vus = new Map();
 
   for (const source of sources) {
-    const fichiers = source.fichiers && source.fichiers.length
+    const fichiersSource = source.fichiers && source.fichiers.length
       ? [...source.fichiers]
       : fichiersDossier(source.dossier);
+    const exclus = new Set(source.exclure || []);
+    const fichiers = fichiersSource.filter(fichier => !exclus.has(fichier));
     for (const fichier of fichiers) {
       const cheminOriginal = path.join(IMAGES, source.dossier, fichier);
       const cheminNouveau = path.join(IMAGES_NOUVEAU, source.dossier, fichier);
-      const utiliserNouveau = CAPTURES_VALIDES.has(`${source.dossier}/${fichier}`)
-        && fs.existsSync(cheminNouveau)
-        && fs.statSync(cheminNouveau).size > 5000;
+      const nouveauValide = fs.existsSync(cheminNouveau)
+        && fs.statSync(cheminNouveau).size > 5000
+        && (CAPTURES_VALIDES.has(`${source.dossier}/${fichier}`) || !fs.existsSync(cheminOriginal));
+      const utiliserNouveau = nouveauValide;
       const chemin = utiliserNouveau ? cheminNouveau : cheminOriginal;
       if (!fs.existsSync(chemin)) {
         console.warn(`  ! image manquante : ${source.dossier}/${fichier}`);
@@ -119,7 +127,7 @@ function collecterEcrans(profil) {
       const slug = sansPrefixe(fichier);
       const occurrence = (vus.get(slug) || 0) + 1;
       vus.set(slug, occurrence);
-      const base = ECRANS[slug] || fallbackEcran(slug);
+      const base = ECRANS_PAR_PROFIL[profil.cle]?.[slug] || ECRANS[slug] || fallbackEcran(slug);
       ecrans.push({
         dossier: source.dossier,
         fichier,
@@ -143,6 +151,7 @@ function lienImage(ecran) {
 
 function construireMarkdown(profil, ecrans) {
   const lignes = [];
+  const procedures = PROCEDURES_PAR_PROFIL[profil.cle] || [];
   lignes.push(`# Guide d'utilisation — ${profil.titre}`);
   lignes.push('');
   lignes.push(`> ${profil.resume}`);
@@ -155,11 +164,46 @@ function construireMarkdown(profil, ecrans) {
   lignes.push('');
   lignes.push('## Sommaire');
   lignes.push('');
+  if (procedures.length) {
+    lignes.push('### Procédures pas à pas');
+    procedures.forEach(procedure => {
+      lignes.push(`- [${procedure.titre}](#${slugify(procedure.titre)})`);
+    });
+    lignes.push('');
+  }
   ecrans.forEach((ecran, index) => {
     const ancre = slugify(`${index + 1}-${ecran.titre}`);
     lignes.push(`${index + 1}. [${ecran.titre}](#${ancre})`);
   });
   lignes.push('');
+
+  if (procedures.length) {
+    lignes.push('## Procédures pas à pas');
+    lignes.push('');
+    procedures.forEach(procedure => {
+      lignes.push(`### ${procedure.titre}`);
+      lignes.push('');
+      lignes.push(procedure.introduction);
+      lignes.push('');
+      (procedure.captures || [])
+        .map(slug => ecrans.find(ecran => ecran.slug === slug))
+        .filter(Boolean)
+        .forEach(ecran => {
+          lignes.push(`![${ecran.titre}](${lienImage(ecran)})`);
+          lignes.push('');
+        });
+      (procedure.sections || []).forEach(section => {
+        lignes.push(`#### ${section.titre}`);
+        lignes.push('');
+        (section.etapes || []).forEach((etape, etapeIndex) => {
+          lignes.push(`${etapeIndex + 1}. **${etape.action}**`);
+          lignes.push(`   - Pourquoi : ${etape.pourquoi}`);
+          lignes.push(`   - Responsable : ${etape.responsable}`);
+        });
+        lignes.push('');
+      });
+    });
+  }
 
   ecrans.forEach((ecran, index) => {
     lignes.push(`## ${index + 1}. ${ecran.titre}`);
@@ -217,10 +261,57 @@ async function construirePdf(profil, ecrans, cheminSortie) {
   doc.addPage();
   doc.fontSize(20).fillColor(BLEU).font('Helvetica-Bold').text('Sommaire');
   doc.moveDown(0.6);
+  const procedures = PROCEDURES_PAR_PROFIL[profil.cle] || [];
+  procedures.forEach((procedure, index) => {
+    doc.fontSize(10).fillColor('#222222').font('Helvetica')
+      .text(`${index + 1}. ${procedure.titre}`, { lineGap: 2 });
+  });
+  if (procedures.length) doc.moveDown(0.25);
   ecrans.forEach((ecran, index) => {
     doc.fontSize(10).fillColor('#222222').font('Helvetica')
       .text(`${index + 1}. ${ecran.titre}`, { lineGap: 2 });
   });
+
+  for (const procedure of procedures) {
+    doc.addPage();
+    doc.fontSize(19).fillColor(BLEU).font('Helvetica-Bold').text(procedure.titre);
+    doc.moveDown(0.25);
+    doc.fontSize(10).fillColor('#222222').font('Helvetica')
+      .text(procedure.introduction, { align: 'justify' });
+    doc.moveDown(0.4);
+    for (const section of procedure.sections || []) {
+      if (doc.y > doc.page.height - 150) doc.addPage();
+      doc.fontSize(13).fillColor(BLEU).font('Helvetica-Bold').text(section.titre);
+      doc.moveDown(0.15);
+      for (const [index, etape] of (section.etapes || []).entries()) {
+        if (doc.y > doc.page.height - 100) doc.addPage();
+        doc.fontSize(10).fillColor('#222222').font('Helvetica-Bold')
+          .text(`${index + 1}. ${etape.action}`, { lineGap: 1 });
+        doc.fontSize(9).fillColor('#444444').font('Helvetica')
+          .text(`Pourquoi : ${etape.pourquoi}`, { indent: 14, lineGap: 1 });
+        doc.fontSize(9).fillColor('#444444').font('Helvetica-Oblique')
+          .text(`Responsable : ${etape.responsable}`, { indent: 14 });
+        doc.moveDown(0.25);
+      }
+      doc.moveDown(0.2);
+    }
+    for (const slug of procedure.captures || []) {
+      const ecran = ecrans.find(item => item.slug === slug);
+      if (!ecran) continue;
+      doc.addPage();
+      doc.fontSize(15).fillColor(BLEU).font('Helvetica-Bold')
+        .text(`Illustration — ${ecran.titre}`);
+      doc.moveDown(0.3);
+      doc.fontSize(9).fillColor('#6b4d00').font('Helvetica')
+        .text('Simulation avec des données fictives — aucune opération métier n’a été enregistrée.');
+      doc.moveDown(0.4);
+      const imageY = doc.y;
+      doc.image(ecran.chemin, 50, imageY, {
+        fit: [largeur, doc.page.height - imageY - 55],
+        align: 'center',
+      });
+    }
+  }
 
   for (let index = 0; index < ecrans.length; index++) {
     const ecran = ecrans[index];
@@ -269,7 +360,9 @@ function ecrireIndex(resultats) {
   const lignes = [];
   lignes.push('# Guides d\'utilisation EasyEcole');
   lignes.push('');
-  lignes.push('Guides générés automatiquement à partir des captures d\'écran de `docs/guide/images/`.');
+  lignes.push('Pour les procédures détaillées étape par étape et la répartition des responsabilités, consulter le [guide des processus et profils](PROCESSUS-ET-PROFILS.md).');
+  lignes.push('');
+  lignes.push('Guides générés automatiquement à partir des captures d\'écran de `docs/guide/images/` et `docs/guide/images-nouveau/`.');
   lignes.push('');
   lignes.push('```bash');
   lignes.push('cd easy-ecole-backend');
@@ -286,7 +379,7 @@ function ecrireIndex(resultats) {
     lignes.push(`| ${index + 1} | ${resultat.profil.titre} | ${md} | ${pdf} | ${resultat.ecrans.length} |`);
   });
   lignes.push('');
-  lignes.push('> Les guides sont régénérés par le script ; ne pas modifier les fichiers générés à la main.');
+  lignes.push('> Les guides de profil sont générés par le script. Le guide des processus est maintenu séparément.');
   lignes.push('');
   fs.writeFileSync(INDEX, lignes.join('\n'), 'utf8');
 }
@@ -304,6 +397,11 @@ function ecrireIndex(resultats) {
     process.exitCode = 1;
     return;
   }
+  if (pdfSortiePersonnalisee && profils.length !== 1) {
+    console.error('--pdf-output nécessite de sélectionner un seul profil avec --profil.');
+    process.exitCode = 1;
+    return;
+  }
 
   const resultats = [];
   const generiques = new Set();
@@ -313,11 +411,14 @@ function ecrireIndex(resultats) {
     ecrans.filter(ecran => ecran.generique).forEach(ecran => generiques.add(ecran.slug));
 
     const fichierMd = path.join(SORTIE_MD, `GUIDE-${profil.cle}.md`);
-    fs.writeFileSync(fichierMd, construireMarkdown(profil, ecrans), 'utf8');
+    if (!pdfSeulement) {
+      fs.writeFileSync(fichierMd, construireMarkdown(profil, ecrans), 'utf8');
+    }
 
     let fichierPdf = null;
     if (avecPdf) {
-      fichierPdf = path.join(SORTIE_PDF, `GUIDE-${profil.cle}.pdf`);
+      fichierPdf = pdfSortiePersonnalisee || path.join(SORTIE_PDF, `GUIDE-${profil.cle}.pdf`);
+      fs.mkdirSync(path.dirname(fichierPdf), { recursive: true });
       await construirePdf(profil, ecrans, fichierPdf);
     }
 
@@ -325,7 +426,7 @@ function ecrireIndex(resultats) {
     resultats.push({ profil, ecrans, md: fichierMd, pdf: fichierPdf });
   }
 
-  if (!filtreProfil) ecrireIndex(resultats);
+  if (!filtreProfil && !pdfSeulement) ecrireIndex(resultats);
 
   if (generiques.size) {
     console.log(`\n${generiques.size} écran(s) sans fiche dédiée (description générique) :`);

@@ -46,26 +46,59 @@
   <div class="card mb-6">
     <div class="card-header">
       <h2 class="card-title">Nouvelle demande</h2>
-      <p class="card-subtitle">Le brouillon sera créé dès le lancement du wizard et restera enregistré dans votre historique.</p>
+      <p class="card-subtitle">Pour un document payant, choisissez d'abord le reçu remis par le service de recouvrement.</p>
     </div>
     <div class="card-body">
       <div class="form-grid">
         <div class="form-group">
           <label class="form-label">Type de document</label>
-          <select [(ngModel)]="newDemande.typeDocumentId" class="form-select">
-            <option value="" disabled>Sélectionner un type</option>
-            <option *ngFor="let type of typesDocument" [value]="type.id">{{ type.libelle }} - {{ type.frais | number }} FC</option>
+          <select [(ngModel)]="newDemande.typeDocumentId" (ngModelChange)="onTypeDocumentChange()" class="form-select">
+            <option [ngValue]="null" disabled>Sélectionner un type</option>
+            <option *ngFor="let type of typesDocument" [ngValue]="type.id">{{ type.libelle }} - {{ type.frais | number }} FC</option>
           </select>
           <p *ngIf="selectedTypeFrais === 0" class="form-helper text-emerald-600 font-medium">
             Cette demande est gratuite (génération normale)
           </p>
           <p *ngIf="selectedTypeFrais && selectedTypeFrais > 0" class="form-helper text-orange-600 font-medium">
-            Cette demande est payante : {{ selectedTypeFrais | number }} FC
+            Demande payante : {{ selectedTypeFrais | number }} FCFA. Le reçu correspondant est obligatoire.
           </p>
+        </div>
+        <div *ngIf="selectedTypeFrais !== null && selectedTypeFrais > 0" class="form-group">
+          <label class="form-label">Reçu de paiement (bordereau)</label>
+          <select [(ngModel)]="newDemande.recuCaisseId" class="form-select" [disabled]="loadingRecus">
+            <option [ngValue]="null" disabled>{{ loadingRecus ? 'Chargement des reçus…' : 'Sélectionner un reçu payé' }}</option>
+            <option *ngFor="let recu of recusDisponibles" [ngValue]="recu.id">
+              {{ recu.numero }} — {{ recu.montant | number }} FCFA — {{ recu.datePaiement | date:'shortDate' }}
+            </option>
+          </select>
+          <p *ngIf="!loadingRecus && recusDisponibles.length === 0" class="form-helper text-red-600">
+            Aucun reçu valide pour ce document. Présentez-vous au service de recouvrement avant de continuer.
+          </p>
+          <p *ngIf="newDemande.recuCaisseId" class="form-helper text-green-700">
+            Le reçu reste valable au montant qui y est indiqué, même si le tarif change ensuite.
+          </p>
+        </div>
+        <div *ngIf="estReleveNotes" class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Année académique</label>
+            <select [(ngModel)]="newDemande.anneeAcademiqueId" class="form-select">
+              <option [ngValue]="null" disabled>Sélectionner une année</option>
+              <option *ngFor="let annee of anneesAcademiques" [ngValue]="annee.id">{{ annee.libelle }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Semestre</label>
+            <select [(ngModel)]="newDemande.semestre" class="form-select">
+              <option value="" disabled>Sélectionner un semestre</option>
+              <option *ngFor="let semestre of ['semestre1', 'semestre2', 'semestre3', 'semestre4', 'semestre5', 'semestre6']" [value]="semestre">
+                {{ libelleSemestre(semestre) }}
+              </option>
+            </select>
+          </div>
         </div>
       </div>
       <div class="form-actions">
-        <app-custom-button (click)="submitDemande()" text="Commencer le wizard" color="primary" [disabled]="!newDemande.typeDocumentId || loading"></app-custom-button>
+        <app-custom-button (click)="submitDemande()" text="Continuer vers le wizard" color="primary" [disabled]="!peutCommencerDemande"></app-custom-button>
       </div>
     </div>
   </div>
@@ -147,9 +180,8 @@
             </div>
 
             <!-- Paiement d'une demande payante non réglée -->
-            <div *ngIf="!accesFor(demande).gratuit && !accesFor(demande).fraisPayes && demande.statut !== 'delivree' && demande.statut !== 'brouillon' && demande.statut !== 'rejetee'" class="flex items-center gap-2">
-              <app-custom-button (click)="payerBordereau(demande)" [disabled]="payingId === demande.id" text="Payer (bordereau)" color="primary"></app-custom-button>
-              <app-custom-button (click)="payerEnLigne(demande)" [disabled]="payingId === demande.id" text="Payer en ligne" color="primary" [outlined]="true"></app-custom-button>
+            <div *ngIf="!accesFor(demande).gratuit && !accesFor(demande).fraisPayes && demande.statut !== 'delivree' && demande.statut !== 'brouillon' && demande.statut !== 'rejetee'" class="text-xs text-orange-700">
+              Paiement à effectuer au service de recouvrement avant toute nouvelle demande.
             </div>
 
             <app-custom-button *ngIf="demande.statut === 'brouillon' || demande.statut === 'rejetee'"
@@ -157,7 +189,7 @@
               [text]="demande.statut === 'rejetee' ? 'Corriger le dossier' : 'Continuer le dossier'"
               color="primary"></app-custom-button>
 
-            <button *ngIf="demande.statut === 'soumise' && !accesFor(demande).fraisPayes" (click)="confirmDelete(demande)"
+            <button *ngIf="peutAnnulerDemande(demande)" (click)="confirmDelete(demande)"
               class="btn-icon text-red-500 hover:text-red-700" title="Annuler la demande">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>

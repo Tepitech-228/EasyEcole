@@ -20,6 +20,10 @@ jest.mock('../../../modules/auth/models/Enseignant', () => ({
   },
 }))
 
+jest.mock('../../../modules/auth/models/Apprenant', () => ({
+  Apprenant: { findAll: jest.fn().mockResolvedValue([]) },
+}))
+
 jest.mock('../../../modules/auth/models/SiteUtilisateur', () => ({
   SiteUtilisateur: { findOne: jest.fn() },
 }))
@@ -43,6 +47,7 @@ jest.mock('../../../modules/inscription/models/Seance', () => {
 const { Seance } = require('../../../modules/inscription/models/Seance')
 const { Cours } = require('../../../modules/inscription/models/Cours')
 const { Enseignant } = require('../../../modules/auth/models/Enseignant')
+const { Apprenant } = require('../../../modules/auth/models/Apprenant')
 const { SiteUtilisateur } = require('../../../modules/auth/models/SiteUtilisateur')
 const { getSurveillantSiteId } = require('../../../core/helpers/SurveillantSiteScope')
 beforeEach(() => { jest.clearAllMocks() })
@@ -192,6 +197,37 @@ describe('SeanceController.deleteSeance', () => {
     const res = mockResponse()
     await SeanceController.deleteSeance(mockRequest({ utilisateurRole: 'admin', params: { id: '1' } } as any), res)
     expect(d).toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+})
+
+describe('SeanceController.publierEmploiDuTemps', () => {
+  it('requires an active site when a general supervisor publishes', async () => {
+    const res = mockResponse()
+
+    await SeanceController.publierEmploiDuTemps(mockRequest({
+      utilisateurRole: 'superviseur_general',
+      etablissementId: null,
+    } as any), res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(Seance.findAll).not.toHaveBeenCalled()
+  })
+
+  it('limits a general supervisor publication to courses from the active site', async () => {
+    ;(Cours.findAll as jest.Mock).mockResolvedValue([{ id: 12 }])
+    ;(Seance.findAll as jest.Mock).mockResolvedValue([])
+    ;(Apprenant.findAll as jest.Mock).mockResolvedValue([])
+    const res = mockResponse()
+
+    await SeanceController.publierEmploiDuTemps(mockRequest({
+      utilisateurRole: 'superviseur_general',
+      etablissementId: 3,
+    } as any), res)
+
+    expect(Seance.findAll).toHaveBeenCalledWith(expect.objectContaining({
+      where: { coursId: expect.objectContaining({ [require('sequelize').Op.in]: [12] }) },
+    }))
     expect(res.status).toHaveBeenCalledWith(200)
   })
 })

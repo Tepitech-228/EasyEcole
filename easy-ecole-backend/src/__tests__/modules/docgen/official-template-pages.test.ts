@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { load } from "cheerio";
 import { extractOfficialTemplatePages } from "../../../modules/docgen/seed/official-template-pages";
 import { TemplateEngine } from "../../../modules/docgen/services/TemplateEngine";
 
@@ -29,8 +30,11 @@ describe("official academic DocGen templates", () => {
       .toContain("{{initialesComite}}");
     expect(pages.find(({ typeCode }) => typeCode === "API002")?.contenu)
       .toContain("{{#each etudiant.uesPrescrites}}");
-    expect(pages.find(({ typeCode }) => typeCode === "RCH008")?.contenu)
-      .not.toContain("ADKPELI");
+    const recommendation = pages.find(({ typeCode }) => typeCode === "RCH008")?.contenu || "";
+    expect(recommendation).not.toContain("ADKPELI");
+    expect(recommendation).toContain("{{etudiant.nom}} {{etudiant.prenom}}");
+    expect(recommendation).toContain("{{etudiant.filiere}}");
+    expect(recommendation).toContain("{{dateEdition}}");
   });
 
   it("renders student values in the extracted form", () => {
@@ -45,6 +49,72 @@ describe("official academic DocGen templates", () => {
     expect(rendered).toContain("Jane");
     expect(rendered).toContain("Gestion");
     expect(rendered).not.toContain("{{etudiant.");
+  });
+
+  it("renders the recommendation letter with the selected student's data", () => {
+    const recommendation = extractOfficialTemplatePages(fs.readFileSync(sourcePath, "utf-8"))
+      .find(({ typeCode }) => typeCode === "RCH008");
+
+    const rendered = TemplateEngine.render(recommendation!.contenu, {
+      dateEdition: "04/10/2026",
+      etudiant: { nom: "TETE EKUE", prenom: "PATRICE", filiere: "Gestion commerciale" },
+    });
+    const $ = load(rendered);
+
+    expect($("strong").text()).toContain("TETE EKUE PATRICE");
+    expect($("strong").text()).toContain("Gestion commerciale");
+    expect(rendered).toContain("Lomé, le 04/10/2026");
+    expect(rendered).not.toContain("{{");
+  });
+
+  it("renders API identity and checklist data in normal-weight text", () => {
+    const api = extractOfficialTemplatePages(fs.readFileSync(sourcePath, "utf-8"))
+      .find(({ typeCode }) => typeCode === "API001");
+    const rendered = TemplateEngine.render(api!.contenu, {
+      anneeAcademique: "2026-2027",
+      initialesComite: "JD",
+      etudiant: {
+        nom: "TETE EKUE",
+        prenom: "PATRICE",
+        dateNaissance: "20/05/2002",
+        lieuNaissance: "Lomé",
+        nationalite: "Togolaise",
+        filiere: "Gestion commerciale",
+        specialiteDiplome: "Série D",
+        specialiteReleves: "Gestion",
+        specialiteParcours: "Gestion commerciale",
+        diplomeBac: true,
+        diplomeDtsDut: false,
+        diplomeBts: true,
+        diplomeLicence: false,
+        diplomeMaitrise: false,
+        diplomeAutres: false,
+        relevesSem12: true,
+        relevesSem34: true,
+        relevesSem56: false,
+        relevesSem78: false,
+        relevesSem910: false,
+        parcoursLicence12: false,
+        parcoursLicence34: false,
+        parcoursLicence56: true,
+        parcoursMaster12: false,
+        parcoursMaster34: false,
+      },
+    });
+    const $ = load(rendered);
+
+    expect($(".dotted-line").eq(1).text()).toBe("20/05/2002");
+    expect($(".dotted-line").eq(2).text()).toBe("Lomé");
+    expect($(".dotted-line").eq(3).text()).toBe("Togolaise");
+    expect($("strong").text()).not.toContain("TETE EKUE");
+    expect($("strong").text()).not.toContain("Série D");
+    expect($(".data-table").eq(0).find(".check-box").map((_i, el) => $(el).text()).get())
+      .toEqual(["√", "", "√", "", "", ""]);
+    expect($(".data-table").eq(1).find(".check-box").map((_i, el) => $(el).text()).get())
+      .toEqual(["√", "√", "", "", ""]);
+    expect($(".data-table").eq(2).find(".check-box").map((_i, el) => $(el).text()).get())
+      .toEqual(["", "", "√", "", ""]);
+    expect(rendered).not.toContain("{{");
   });
 
   it("fails explicitly if the reference pack page structure changes", () => {

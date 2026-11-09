@@ -83,7 +83,7 @@ export default class QuitusController {
     }
 
     static async generateQuitus(req: Request, res: Response): Promise<Response | null> {
-        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole != RolesUtilisateur.CAISSIER_BANQUE) {
+        if ((req as any).utilisateurRole != RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole != RolesUtilisateur.ESA_COMPTA) {
             return res.status(403).json({ success: false })
         }
 

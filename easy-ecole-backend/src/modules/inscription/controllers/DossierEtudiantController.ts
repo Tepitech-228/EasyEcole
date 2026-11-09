@@ -34,7 +34,6 @@ import path from "path";
 /** Rôles « staff » autorisés à lire l'ensemble des dossiers étudiants. */
 const ROLES_STAFF_DOSSIER = [
     RolesUtilisateur.INSTITUTION,
-    RolesUtilisateur.CAISSIER_BANQUE,
     RolesUtilisateur.ENSEIGNANT,
     RolesUtilisateur.PERSONNEL_ADMINISTRATIF,
     RolesUtilisateur.RESSOURCES_HUMAINES,
@@ -734,6 +733,10 @@ export default class DossierEtudiantController {
                 where,
                 include: [
                     {
+                        association: DossierEtudiant.associations.etablissement,
+                        attributes: ['nom', 'site', 'ville'],
+                    },
+                    {
                         association: DossierEtudiant.associations.utilisateur,
                         include: [{ model: Apprenant, as: 'apprenant' }]
                     }
@@ -774,6 +777,8 @@ export default class DossierEtudiantController {
                 anneeAcademique: (cursus as any)?.anneeAcademique?.libelle || '',
                 email: user.email,
                 utilisateurId: dossier.utilisateurId,
+                periode: apprenant?.periode || null,
+                site: dossier.etablissement?.site || dossier.etablissement?.ville || dossier.etablissement?.nom || '',
             })
 
             await dossier.update({ cartePath, carteGeneree: true })

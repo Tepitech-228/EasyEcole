@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { DemandeDocument } from 'src/app/data/modules/scolarite/models/DemandeDocument.model';
 import { DemandeDocumentService } from 'src/app/data/modules/scolarite/services/demande-document.service';
-import { RecuCaisseService } from 'src/app/data/modules/scolarite/services/recu-caisse.service';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { AnneeAcademiqueService } from 'src/app/data/modules/inscription/services/annee-academique.service';
 import { NiveauEtudeService } from 'src/app/data/modules/inscription/services/niveau-etude.service';
@@ -53,12 +52,6 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
   showRejetModal: boolean = false;
   motifRejet: string = '';
 
-  // Payment collection modal
-  showPaiementModal: boolean = false;
-  paiementMode: string = 'especes';
-  paiementMontant: number = 0;
-  paiementLoadingId: string | null = null;
-
   // Dossier tree nodes
   treeNodes: DossierNode[] = [];
 
@@ -84,7 +77,6 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
   constructor(
     private router: Router,
     private demandeService: DemandeDocumentService,
-    private recuCaisseService: RecuCaisseService,
     private anneeAcademiqueService: AnneeAcademiqueService,
     private niveauEtudeService: NiveauEtudeService,
     private parcoursService: ParcoursService,
@@ -279,59 +271,6 @@ export class TraiterDemandesPageComponent extends BaseComponentClass implements 
     } else if (event.action === 'imprimer') {
       this.imprimerDocument(event.item);
     }
-  }
-
-  openPaiementModal(demande: DemandeDocument): void {
-    if (!demande.id) return;
-    this.paiementMontant = Number(demande.montant) || 0;
-    this.paiementMode = 'especes';
-    this.paiementLoadingId = String(demande.id);
-    this.showPaiementModal = true;
-  }
-
-  submitPaiement(): void {
-    if (!this.paiementLoadingId) return;
-    this.errorMessage = '';
-    this.successMessage = '';
-    this.recuCaisseService.collecterPaiement(this.paiementLoadingId, this.paiementMode, this.paiementMontant).subscribe({
-      next: () => {
-        this.showPaiementModal = false;
-        this.paiementLoadingId = null;
-        this.successMessage = 'Encaissement confirmé : reçu de caisse généré, demande marquée payée.';
-        this.loadDemandes();
-      },
-      error: (err) => {
-        this.errorMessage = err?.error?.message || 'Erreur lors de la confirmation du paiement';
-      }
-    });
-  }
-
-  /** Confirme l'encaissement d'une demande payante (PUT /:id/confirmer-paiement) */
-  confirmerPaiement(demande: DemandeDocument): void {
-    if (!demande.id) return;
-    if (demande.fraisPayes) {
-      this.errorMessage = 'Cette demande est déjà réglée.';
-      return;
-    }
-    if (Number(demande.montant) <= 0) {
-      this.errorMessage = 'Cette demande est gratuite, aucun paiement à confirmer.';
-      return;
-    }
-
-    this.paiementLoadingId = demande.id;
-    this.errorMessage = '';
-    this.successMessage = '';
-    this.demandeService.confirmerPaiement(demande.id).subscribe({
-      next: () => {
-        this.paiementLoadingId = null;
-        this.successMessage = 'Paiement confirmé avec succès.';
-        this.loadDemandes();
-      },
-      error: (err) => {
-        this.paiementLoadingId = null;
-        this.errorMessage = err?.error?.message || 'Erreur lors de la confirmation du paiement';
-      }
-    });
   }
 
   preparerDocument(demande: DemandeDocument): void {

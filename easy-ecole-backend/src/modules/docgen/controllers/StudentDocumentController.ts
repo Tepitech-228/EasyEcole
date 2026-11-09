@@ -13,6 +13,7 @@ import { DataResolverService } from "../services/DataResolverService";
 import { TemplateEngine } from "../services/TemplateEngine";
 import { PdfGeneratorService } from "../services/PdfGeneratorService";
 import { CursusApprenant } from "../../inscription/models/CursusApprenant";
+import { DemandeInscription } from "../../inscription/models/DemandeInscription";
 
 const DOCGEN_SECRET: string = process.env.DOCGEN_SECRET || '';
 if (!DOCGEN_SECRET) {
@@ -70,22 +71,60 @@ export default class StudentDocumentController {
       const type = await DocGenType.findOne({ where: { code: typeCode } });
       if (!type) return res.status(404).json({ success: false, message: 'Type non trouvé' });
 
-      const ownCursusId = await StudentDocumentController.resolveOwnCursusId(utilisateurId, sourceId);
-      if (!ownCursusId) {
-        return res.status(403).json({
-          success: false,
-          message: 'Aucun cursus trouvé pour cet apprenant',
-        });
-      }
+      let ownCursusId: number | null = null;
+      let ownDemandeId: number | null = null;
+      if (typeCode === 'PRE001') {
+        const targetId = sourceId !== undefined && sourceId !== null ? Number(sourceId) : null;
+        const whereDemande: Record<string, number> = { utilisateurId };
+        if (targetId && targetId !== utilisateurId) whereDemande.id = targetId;
 
-      if (sourceId !== undefined && sourceId !== null && Number(sourceId) !== ownCursusId && Number(sourceId) !== utilisateurId) {
-        return res.status(403).json({
-          success: false,
-          message: 'Le sourceId ne correspond pas à votre compte',
+        let demande = await DemandeInscription.findOne({
+          where: whereDemande,
+          order: [['dateDemande', 'DESC']],
         });
-      }
+        if (!demande && targetId && targetId !== utilisateurId) {
+          const cursus = await CursusApprenant.findOne({
+            where: { id: targetId, utilisateurId },
+          });
+          if (!cursus) {
+            return res.status(403).json({
+              success: false,
+              message: 'Le sourceId ne correspond pas à votre compte',
+            });
+          }
+          demande = await DemandeInscription.findOne({
+            where: { utilisateurId },
+            order: [['dateDemande', 'DESC']],
+          });
+        }
 
-      params.cursusApprenantId = ownCursusId;
+        if (!demande) {
+          return res.status(404).json({
+            success: false,
+            message: 'Aucune demande de préinscription trouvée pour cet apprenant',
+          });
+        }
+        ownDemandeId = Number(demande.id);
+        params.sourceId = ownDemandeId;
+        params.etudiantId = utilisateurId;
+      } else {
+        ownCursusId = await StudentDocumentController.resolveOwnCursusId(utilisateurId, sourceId);
+        if (!ownCursusId) {
+          return res.status(403).json({
+            success: false,
+            message: 'Aucun cursus trouvé pour cet apprenant',
+          });
+        }
+
+        if (sourceId !== undefined && sourceId !== null && Number(sourceId) !== ownCursusId && Number(sourceId) !== utilisateurId) {
+          return res.status(403).json({
+            success: false,
+            message: 'Le sourceId ne correspond pas à votre compte',
+          });
+        }
+
+        params.cursusApprenantId = ownCursusId;
+      }
 
       const template = await DocGenTemplate.findOne({ where: { typeId: type.id, isDefault: true } });
       if (!template) return res.status(404).json({ success: false, message: 'Template par défaut non trouvé' });
@@ -144,8 +183,8 @@ export default class StudentDocumentController {
           statut: 'genere',
           filePath,
           hash,
-          sourceType: sourceType || 'cursus',
-          sourceId: ownCursusId,
+          sourceType: sourceType || (typeCode === 'PRE001' ? 'pre_inscription' : 'cursus'),
+          sourceId: ownDemandeId || ownCursusId!,
           metadata: metadata ? JSON.stringify(metadata) : undefined,
           generatedById: utilisateurId,
         });

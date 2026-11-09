@@ -274,13 +274,29 @@ describe('UtilisateurController.adminCreateUtilisateur site scope', () => {
 })
 
 describe('UtilisateurController.updateUtilisateur', () => {
-  it('retourne 403 si ADMIN', async () => {
-    const req = mockRequest({ utilisateurRole: 'admin' } as any)
+  it('autorise ADMIN à modifier ses propres champs de profil', async () => {
+    const req = mockRequest({
+      utilisateurRole: 'admin',
+      utilisateurId: 7,
+      body: { nom: 'Admin', prenoms: 'Test', contact: '12345678' },
+    } as any)
     const res = mockResponse()
+    const update = jest.fn().mockResolvedValue(undefined)
+    ;(Utilisateur.findOne as jest.Mock).mockResolvedValue({
+      nom: 'Admin',
+      prenoms: 'Test',
+      update,
+    })
 
     await UtilisateurController.updateUtilisateur(req, res)
 
-    expect(res.status).toHaveBeenCalledWith(403)
+    expect(update).toHaveBeenCalledWith({
+      nom: 'Admin',
+      prenoms: 'Test',
+      contact: '12345678',
+    })
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.json).toHaveBeenCalledWith({ success: true })
   })
 
   it('retourne 404 si utilisateur introuvable', async () => {
