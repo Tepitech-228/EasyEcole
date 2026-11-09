@@ -114,13 +114,39 @@ export class DatabaseConnection {
             await this._sequelize.authenticate();
             console.log('Database connected successfully');
 
+            // Nettoyer les rattachements de site AVANT le sync, qui ajoute leurs FK
+            // lors de la création de la table. Les anciennes lignes orphelines font
+            // échouer l'ALTER TABLE même quand FOREIGN_KEY_CHECKS est désactivé.
+            // Le réglage DISABLE_BOOT_ORPHAN_PURGE=true désactive ce nettoyage.
+            if (process.env.DISABLE_BOOT_ORPHAN_PURGE !== 'true') {
+                try {
+                    const removedAssignments = await this._sequelize.query(`
+                        DELETE site
+                        FROM aut_utilisateur_etablissements AS site
+                        LEFT JOIN aut_utilisateurs AS utilisateur
+                            ON utilisateur.id = site.utilisateurId
+                        WHERE utilisateur.id IS NULL
+                    `, { type: QueryTypes.BULKDELETE });
+                    if (removedAssignments > 0) {
+                        console.warn(`[DB] ${removedAssignments} rattachement(s) de site orphelin(s) supprimé(s) avant synchronisation.`);
+                    }
+                } catch (cleanupError: any) {
+                    if (cleanupError?.parent?.code === 'ER_NO_SUCH_TABLE') {
+                        console.log('[DB] Nettoyage des rattachements de site ignoré : table absente avant sa création.');
+                    } else {
+                        console.error('[DB] Impossible de nettoyer les rattachements de site orphelins :', cleanupError);
+                        throw cleanupError;
+                    }
+                }
+            }
+
             // Nettoyer les orphelins AVANT de syncer les tables rattrapage.
             // La purge ne supprime QUE les enregistrements dont la clé étrangère
             // pointe vers une ligne inexistante (véritables orphelins) : elle est
             // donc sûre et idempotente. Elle reste ACTIVE par défaut, mais peut
             // être désactivée en production (grosse base) via
             // DISABLE_BOOT_ORPHAN_PURGE=true pour éviter le scan DELETE à chaque boot.
-            if (process.env.DISABLE_BOOT_ORPHAN_PURGE !== 'false') {
+            if (process.env.DISABLE_BOOT_ORPHAN_PURGE !== 'true') {
                 try {
                     await this._sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
 
