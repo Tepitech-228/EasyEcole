@@ -22,17 +22,20 @@ export interface ExcelImportResult {
   errorCount: number;
   message?: string;
   ignoredCount?: number;
-  ignoredRows?: { ligne: number; raison: string }[];
+  ignoredRows?: { ligne: number; raison: string; fichier?: string }[];
   details: {
     ligne?: number;
     code?: string;
     intitule?: string;
+    fichier?: string;
+    parcoursTitre?: string;
     ecueCode?: string;
     ecueLibelle?: string;
     type?: string | null;
     cmHoraire?: number;
     tdTpHoraire?: number;
     tpeHoraire?: number;
+    vhHoraire?: number | null;
     creditEcts?: number;
     semestre?: string;
     categorie?: string | null;

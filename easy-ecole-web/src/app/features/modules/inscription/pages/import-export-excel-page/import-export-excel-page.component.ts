@@ -27,7 +27,6 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
   importType: ImportType = 'utilisateurs';
   importFormat: 'xlsx' | 'docx' = 'xlsx';
   selectedImportRole: string = RolesUtilisateur.APPRENANT;
-  selectedImportParcoursId: string = '';
   selectedImportSemestre = '';
   parcoursLoading = false;
   parcoursLoadError = false;
@@ -50,6 +49,7 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
   anneesList: any[] = [];
 
   selectedFile: File | null = null;
+  selectedUeFiles: { file: File; parcoursId: string }[] = [];
   importing = false;
   importResult: ExcelImportResult | null = null;
   exportMigrationLoading = false;
@@ -244,8 +244,16 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
   }
 
   onFileSelected(event: any): void {
-    const file = event.target.files[0] as File;
-    this.selectedFile = file;
+    if (this.importing) return;
+    const files = Array.from(event.target.files || []) as File[];
+    if (this.importType === 'ue') {
+      this.selectedUeFiles = files.map(file => ({ file, parcoursId: '' }));
+      this.selectedFile = files[0] || null;
+    } else {
+      this.selectedFile = files[0] || null;
+      this.selectedUeFiles = [];
+    }
+    const file = files[0];
     if (file) {
       const ext = file.name.split('.').pop()?.toLowerCase();
       this.importFormat = ext === 'docx' ? 'docx' : 'xlsx';
@@ -254,14 +262,23 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
     this.importResult = null;
     this.errorMessage = null;
     this.successMessage = null;
+    event.target.value = '';
   }
 
   onDrop(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
+    if (this.importing) return;
     if (event.dataTransfer && event.dataTransfer.files.length > 0) {
-      const file = event.dataTransfer.files[0];
-      this.selectedFile = file;
+      const files = Array.from(event.dataTransfer.files) as File[];
+      if (this.importType === 'ue') {
+        this.selectedUeFiles = files.map(file => ({ file, parcoursId: '' }));
+        this.selectedFile = files[0] || null;
+      } else {
+        this.selectedFile = files[0] || null;
+        this.selectedUeFiles = [];
+      }
+      const file = files[0];
       if (file) {
         const ext = file.name.split('.').pop()?.toLowerCase();
         this.importFormat = ext === 'docx' ? 'docx' : 'xlsx';
@@ -271,6 +288,11 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
       this.errorMessage = null;
       this.successMessage = null;
     }
+  }
+
+  removeUeFile(index: number): void {
+    this.selectedUeFiles.splice(index, 1);
+    this.selectedFile = this.selectedUeFiles[0]?.file || null;
   }
 
   private selectMigrationTypeForExport(file: File): void {
@@ -336,10 +358,14 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
   }
 
    importer(): void {
-     if (!this.selectedFile) {
+    if (this.importType === 'ue') {
+       this.importerUeFiles();
+       return;
+    }
+    if (!this.selectedFile) {
        this.errorMessage = 'Veuillez sélectionner un fichier.';
        return;
-     }
+    }
 
     this.importing = true;
     this.importResult = null;
@@ -353,18 +379,7 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
       return;
     }
 
-    if (this.importType === 'ue') {
-      const parcours = this.parcoursList.find(item => String(item.id) === this.selectedImportParcoursId);
-      if (!parcours && this.selectedFile.name.toLowerCase().endsWith('.docx')) {
-        import$ = this.excelService.importUe(this.selectedFile, undefined, this.selectedImportSemestre);
-      } else if (!parcours) {
-        this.importing = false;
-        this.errorMessage = 'Sélectionnez le parcours auquel rattacher la maquette UE/ECUE.';
-        return;
-      } else {
-        import$ = this.excelService.importUe(this.selectedFile, parcours?.titre, this.selectedImportSemestre);
-      }
-    } else if (this.importType === 'etudiants') {
+    if (this.importType === 'etudiants') {
       import$ = this.excelService.importApprenants(this.selectedFile);
     } else if (this.importType === 'enseignants') {
       import$ = this.excelService.importEnseignants(this.selectedFile);
@@ -378,10 +393,6 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
         this.importing = false;
         if (result.success) {
           this.successMessage = `Import terminé : ${result.importedCount} réussi(s), ${result.errorCount} erreur(s).`;
-          if (this.importType === 'ue') {
-            const grouped = this.getGroupedUe();
-            if (grouped.length > 0) this.expandedUeCode = grouped[0].code;
-          }
         }
       },
       error: (err) => {
@@ -392,8 +403,95 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
     });
   }
 
+  private importerUeFiles(): void {
+    if (this.selectedUeFiles.length === 0) {
+      this.errorMessage = 'Sélectionnez au moins une maquette UE/ECUE.';
+      return;
+    }
+    const unsupportedFile = this.selectedUeFiles.find(item => !/\.(xlsx|docx)$/i.test(item.file.name));
+    if (unsupportedFile) {
+      this.errorMessage = `Le fichier "${unsupportedFile.file.name}" n'est pas pris en charge. Utilisez .docx ou .xlsx.`;
+      return;
+    }
+
+    const parcoursByFile = this.selectedUeFiles.map(item => ({
+      ...item,
+      parcours: this.parcoursList.find(parcours => String(parcours.id) === item.parcoursId)
+    }));
+    if (parcoursByFile.some(item => !item.parcours)) {
+      this.errorMessage = 'Sélectionnez le parcours correspondant à chaque fichier.';
+      return;
+    }
+
+    this.importing = true;
+    this.importResult = null;
+    this.errorMessage = null;
+    this.successMessage = null;
+    this.detailFilter = 'all';
+    this.expandedUeCode = null;
+
+    const details: ExcelImportResult['details'] = [];
+    const ignoredRows: NonNullable<ExcelImportResult['ignoredRows']> = [];
+    let importedCount = 0;
+    let errorCount = 0;
+    let ignoredCount = 0;
+    let index = 0;
+
+    const importNextFile = (): void => {
+      if (index >= parcoursByFile.length) {
+        this.importResult = { success: true, importedCount, errorCount, ignoredCount, ignoredRows, details };
+        this.importing = false;
+        this.successMessage = `Import terminé pour ${parcoursByFile.length} fichier(s) : ${importedCount} ECUE importé(s), ${errorCount} erreur(s), ${ignoredCount} ligne(s) ignorée(s).`;
+        if (errorCount > 0) {
+          this.errorMessage = `${errorCount} erreur(s) détectée(s). Consultez le rapport pour identifier le fichier et la ligne concernés.`;
+        }
+        const firstGroup = this.getGroupedUe()[0];
+        if (firstGroup) this.expandedUeCode = firstGroup.key;
+        return;
+      }
+
+      const item = parcoursByFile[index++];
+      this.excelService.importUe(item.file, item.parcours!.titre, this.selectedImportSemestre).subscribe({
+        next: result => {
+          importedCount += result.importedCount || 0;
+          errorCount += result.errorCount || 0;
+          ignoredCount += result.ignoredCount || 0;
+          details.push(...(result.details || []).map(detail => ({
+            ...detail,
+            fichier: item.file.name,
+            parcoursTitre: item.parcours!.titre
+          })));
+          ignoredRows.push(...(result.ignoredRows || []).map(row => ({ ...row, fichier: item.file.name })));
+          if (result.success === false && !(result.details || []).some(detail => detail.statut === 'erreur')) {
+            errorCount++;
+            details.push({
+              fichier: item.file.name,
+              parcoursTitre: item.parcours!.titre,
+              statut: 'erreur',
+              message: result.message || 'Le fichier n’a pas pu être traité.'
+            });
+          }
+          importNextFile();
+        },
+        error: err => {
+          errorCount++;
+          details.push({
+            fichier: item.file.name,
+            parcoursTitre: item.parcours!.titre,
+            statut: 'erreur',
+            message: err?.error?.message || 'Erreur pendant le traitement de ce fichier.'
+          });
+          importNextFile();
+        }
+      });
+    };
+
+    importNextFile();
+  }
+
    resetImport(): void {
       this.selectedFile = null;
+      this.selectedUeFiles = [];
       this.importResult = null;
       this.errorMessage = null;
       this.successMessage = null;
@@ -402,10 +500,16 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
     }
 
    importTypeChanged(): void {
-     this.detailFilter = 'all';
-      if (this.importType === 'migration') {
-        this.importFormat = 'xlsx';
-      }
+    if (this.importing) return;
+    this.selectedFile = null;
+    this.selectedUeFiles = [];
+    this.importResult = null;
+    this.errorMessage = null;
+    this.successMessage = null;
+    this.detailFilter = 'all';
+    if (this.importType === 'migration') {
+      this.importFormat = 'xlsx';
+    }
    }
 
   getImportFileTypeLabel(): string {
@@ -449,9 +553,13 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
 
     for (const detail of filtered) {
       const code = detail.code || '(sans code)';
-      if (!groupMap[code]) {
-        groupMap[code] = {
+      const key = `${detail.fichier || ''}|${detail.parcoursTitre || ''}|${code}`;
+      if (!groupMap[key]) {
+        groupMap[key] = {
+          key,
           code: code,
+          fichier: detail.fichier || '',
+          parcoursTitre: detail.parcoursTitre || '',
           intitule: '',
           semestre: '',
           categorie: null,
@@ -460,13 +568,14 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
           totalCm: 0,
           totalTdTp: 0,
           totalTpe: 0,
+          totalVh: 0,
           totalEcts: 0,
           statut: 'succès',
           ecues: []
         };
-        order.push(code);
+        order.push(key);
       }
-      const g = groupMap[code];
+      const g = groupMap[key];
       if (!g.intitule && detail.intitule) g.intitule = detail.intitule;
       if (!g.semestre && detail.semestre) g.semestre = detail.semestre;
       if (!g.categorie && detail.categorie != null) g.categorie = detail.categorie;
@@ -475,13 +584,14 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
       g.totalCm += (detail.cmHoraire || 0);
       g.totalTdTp += (detail.tdTpHoraire || 0);
       g.totalTpe += (detail.tpeHoraire || 0);
+      g.totalVh += detail.vhHoraire ?? (detail.cmHoraire || 0) + (detail.tdTpHoraire || 0) + (detail.tpeHoraire || 0);
       g.totalEcts += (detail.creditEcts || 0);
       const s = (detail.statut || '').trim().toLowerCase();
       if (s === 'erreur' || s === 'error') g.statut = 'erreur';
       g.ecues.push(detail);
     }
 
-    return order.map(code => groupMap[code]);
+    return order.map(key => groupMap[key]);
   }
 
   statutBadgeClass(statut: string): string {
@@ -525,7 +635,7 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
     return this.importResult.ignoredCount ?? this.importResult.ignoredRows?.length ?? 0;
   }
 
-  get ignoredRows(): { ligne: number; raison: string }[] {
+  get ignoredRows(): NonNullable<ExcelImportResult['ignoredRows']> {
     return this.importResult?.ignoredRows ?? [];
   }
 

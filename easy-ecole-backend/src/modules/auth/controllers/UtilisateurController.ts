@@ -219,12 +219,14 @@ export default class UtilisateurController {
     }
 
     static async getAllUtilisateurs(req: Request, res: Response): Promise<Response> {
+        const role = req.utilisateurRole;
         const rolesAutorises: RolesUtilisateur[] = [
             RolesUtilisateur.ADMIN,
             RolesUtilisateur.INSTITUTION,
             RolesUtilisateur.SECRETAIRE,
+            RolesUtilisateur.SURVEILLANT,
         ];
-        if (!rolesAutorises.includes((req as any).utilisateurRole)) {
+        if (!rolesAutorises.includes(role as RolesUtilisateur)) {
             return res.status(403).json({ success: false })
         }
 
@@ -233,10 +235,19 @@ export default class UtilisateurController {
         }
 
         try {
-            if ((req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
-                if (!(req as any).etablissementId) return res.status(200).send([]);
+            if (role === RolesUtilisateur.SURVEILLANT) {
+                if (!req.utilisateurId) return res.status(403).json({ success: false });
+                const comptesCrees = await SiteUtilisateur.findAll({
+                    where: { affectePar: req.utilisateurId },
+                    attributes: ['utilisateurId'],
+                });
+                const utilisateurIds = [...new Set(comptesCrees.map(item => item.utilisateurId))];
+                if (utilisateurIds.length === 0) return res.status(200).send([]);
+                options.where = { id: { [Op.in]: utilisateurIds } };
+            } else if (role !== RolesUtilisateur.ADMIN) {
+                if (!req.etablissementId) return res.status(200).send([]);
                 const affectations = await SiteUtilisateur.findAll({
-                    where: { etablissementId: (req as any).etablissementId },
+                    where: { etablissementId: req.etablissementId },
                     attributes: ['utilisateurId'],
                     include: [{
                         association: SiteUtilisateur.associations.etablissement,

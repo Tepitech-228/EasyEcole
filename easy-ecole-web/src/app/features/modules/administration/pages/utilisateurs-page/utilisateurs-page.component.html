@@ -1,6 +1,6 @@
 <div class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
     <app-header-title title="Utilisateurs"
-        [subtitle]="rolesValue.isSurveillant ? 'Création de comptes apprenants, enseignants et personnels non-administrateurs' : 'Gestion de tous les utilisateurs du système'"></app-header-title>
+        [subtitle]="rolesValue.isSurveillant ? 'Comptes créés par vous et création de nouveaux comptes' : 'Gestion de tous les utilisateurs du système'"></app-header-title>
     <button *ngIf="rolesValue.isAdmin || rolesValue.isInstitution || rolesValue.isSurveillant" (click)="openAddModal()"
         class="inline-flex w-full items-center justify-center gap-x-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 sm:w-auto">
         <span class="material-symbols-outlined text-lg">add</span>
@@ -8,7 +8,7 @@
     </button>
 </div>
 
-<div *ngIf="!rolesValue.isSurveillant" class="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
+<div class="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
     <div class="p-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-4">
         <div class="relative w-full sm:w-auto">
             <input type="text" [(ngModel)]="searchTerm" placeholder="Rechercher un utilisateur..."
@@ -36,7 +36,7 @@
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rôle</th>
                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Statut</th>
-                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th *ngIf="!rolesValue.isSurveillant" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -68,7 +68,7 @@
                         {{ getStatut(u) }}
                     </span>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                <td *ngIf="!rolesValue.isSurveillant" class="px-6 py-4 whitespace-nowrap text-right text-sm">
                     <button (click)="openEditModal(u)"
                         class="text-indigo-600 hover:text-indigo-900 mr-2 font-medium">Modifier</button>
                     <button (click)="openPermissions(u)"

@@ -76,9 +76,7 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
   ) { super() }
 
   ngOnInit(): void {
-    if (!this.rolesValue.isSurveillant) {
-      this.loadUtilisateurs()
-    }
+    this.loadUtilisateurs()
   }
 
   get roleKeysForForm(): string[] {

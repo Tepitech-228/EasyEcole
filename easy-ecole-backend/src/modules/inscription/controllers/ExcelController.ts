@@ -383,27 +383,35 @@ export async function lireTableauWord(filePath: string): Promise<string[][]> {
     // The two-level header has 10 visible cells, while data rows have 11.
     // Keeping the maximum width prevents the teacher column from shifting data.
     const headerCols = Math.max(11, ...rawRows.map(row => row.cells.reduce((sum, cell) => sum + cell.colspan, 0)));
-    const activeRowspans: { text: string; remaining: number }[] = [];
+    const activeRowspans: Array<{ text: string; remaining: number } | undefined> = [];
     for (const rawRow of rawRows) {
       const row: string[] = new Array(headerCols).fill('');
+      const occupiedColumns = new Set<number>();
+      for (let index = 0; index < headerCols; index++) {
+        const span = activeRowspans[index];
+        if (!span) continue;
+        if (span.remaining > 0) {
+          row[index] = span.text;
+          occupiedColumns.add(index);
+          span.remaining--;
+        }
+        if (span.remaining <= 0) activeRowspans[index] = undefined;
+      }
+
       let col = 0;
       for (const cell of rawRow.cells) {
-        while (col < headerCols && row[col] !== '') col++;
+        while (col < headerCols && occupiedColumns.has(col)) col++;
         if (col >= headerCols) break;
+        const colspan = Math.max(1, cell.colspan || 1);
+        const rowspan = Math.max(1, cell.rowspan || 1);
         row[col] = cell.text;
-        if (cell.rowspan > 1) {
-          for (let offset = 0; offset < cell.colspan && col + offset < headerCols; offset++) {
-            activeRowspans[col + offset] = { text: cell.text, remaining: cell.rowspan - 1 };
+        for (let offset = 0; offset < colspan && col + offset < headerCols; offset++) {
+          occupiedColumns.add(col + offset);
+          if (rowspan > 1) {
+            activeRowspans[col + offset] = { text: cell.text, remaining: rowspan - 1 };
           }
         }
-        for (let offset = 1; offset < cell.colspan && col + offset < headerCols; offset++) row[col + offset] = '';
-        col += cell.colspan;
-      }
-      for (let index = 0; index < headerCols; index++) {
-        if (!row[index] && activeRowspans[index]?.remaining > 0) {
-          row[index] = activeRowspans[index].text;
-          activeRowspans[index].remaining--;
-        }
+        col += colspan;
       }
       matrix.push(row);
     }
@@ -620,7 +628,7 @@ export default class ExcelController {
     static async importUe(req: Request, res: Response): Promise<Response> {
     if (!req.file) return res.status(400).json({ success: false, message: "Aucun fichier fourni" });
 
-    const results: { code?: string; intitule?: string; ecueCode?: string; ligne?: number; semestre?: string; categorie?: string | null; statut: string; message: string; coursId?: number; ecueLibelle?: string; type?: string | null; cmHoraire?: number; tdTpHoraire?: number; tpeHoraire?: number; creditEcts?: number; enseignant?: string | null; enseignantId?: number }[] = [];
+    const results: { code?: string; intitule?: string; ecueCode?: string; ligne?: number; semestre?: string; categorie?: string | null; statut: string; message: string; coursId?: number; ecueLibelle?: string; type?: string | null; cmHoraire?: number; tdTpHoraire?: number; tpeHoraire?: number; vhHoraire?: number | null; creditEcts?: number; enseignant?: string | null; enseignantId?: number }[] = [];
     const filePath = req.file.path;
     const isWord = /\.docx$/i.test(req.file.originalname);
     const enseignantIds = new Set<number>();
@@ -681,12 +689,12 @@ export default class ExcelController {
             const ecueCode = row[col('CONTENUS DES ENSEIGNEMENTS', 3) - 1] || `${code}-${i}`;
             const ecueLibelle = row[col('CONTENUS DES ENSEIGNEMENTS', 3) - 1] || intitule;
             if (ecueCode) {
-              const [ecue, ecueCreated] = await Ecue.findOrCreate({ where: { code: ecueCode, coursId: cours.id }, defaults: { code: ecueCode, libelle: ecueLibelle, coursId: cours.id, creditEcts, cmHoraire, tdTpHoraire, tpeHoraire, type: ['F', 'T', 'S', 'C', 'L', 'M'].includes(ecueType || '') ? ecueType : null, enseignantId: null } as any });
+              const [ecue, ecueCreated] = await Ecue.findOrCreate({ where: { code: ecueCode, coursId: cours.id }, defaults: { code: ecueCode, libelle: ecueLibelle, coursId: cours.id, creditEcts, cmHoraire, tdTpHoraire, tpeHoraire, vhHoraire: null, type: ['F', 'T', 'S', 'C', 'L', 'M'].includes(ecueType || '') ? ecueType : null, enseignantId: null } as any });
               if (!ecueCreated) await ecue.update({ libelle: ecueLibelle, creditEcts, cmHoraire, tdTpHoraire, tpeHoraire, type: ecueType } as any);
               imported++;
               const enseignantId = (ecue.enseignantId as unknown as number) || null;
               if (enseignantId) enseignantIds.add(enseignantId);
-              results.push({ code, intitule, ecueCode, ligne: i + 1, semestre: semestreDemande || 'semestre1', categorie: null, statut: "succès", message: created ? "Créé" : "Mis à jour", coursId: cours.id, ecueLibelle, type: ecueType, cmHoraire, tdTpHoraire, tpeHoraire, creditEcts, enseignantId: enseignantId as number | undefined });
+              results.push({ code, intitule, ecueCode, ligne: i + 1, semestre: semestreDemande || 'semestre1', categorie: null, statut: "succès", message: created ? "Créé" : "Mis à jour", coursId: cours.id, ecueLibelle, type: ecueType, cmHoraire, tdTpHoraire, tpeHoraire, vhHoraire: null, creditEcts, enseignantId: enseignantId as number | undefined });
             }
           } catch (err: any) { errors++; results.push({ code, intitule, ligne: i + 1, semestre: semestreDemande || 'semestre1', categorie: null, statut: "erreur", message: err.message }); }
         }
@@ -696,12 +704,44 @@ export default class ExcelController {
         let blockUeCode = '';
         let blockUeIntitule = '';
         let blockSemestre = '';
-        let blockEcueData: Array<{ ecueCode: string; ecueLibelle: string; cmHoraire: number; tdTpHoraire: number; tpeHoraire: number; creditEcts: number; type: string | null; ligne: number }> = [];
+        let blockEcueData: Array<{ ecueCode: string; ecueLibelle: string; cmHoraire: number; tdTpHoraire: number; tpeHoraire: number; vhHoraire: number | null; creditEcts: number; type: string | null; ligne: number }> = [];
 
         if (!parcoursTitre) return res.status(400).json({ success: false, message: "Le parcours (parcoursTitre) est obligatoire pour le Format B" });
         const parcours = await resolveParcours(parcoursTitre);
         if (!parcours) return res.status(400).json({ success: false, message: `Parcours "${parcoursTitre}" introuvable` });
         const parcoursId = parcours.id;
+        const normalizeHeader = (value: string): string => normalizeText(value)
+          .toUpperCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^A-Z0-9]/g, '');
+        const isCodeHeader = (label: string): boolean => label.includes('CODEDEL') || label === 'CODEUE';
+        const headerRows = matrix.slice(0, 10);
+        const headerRow = headerRows.find(row => {
+          const labels = row.map(normalizeHeader);
+          return labels.includes('UE') && (labels.includes('ECUE') || labels.includes('MATIERE'));
+        }) || headerRows.find(row => row.map(normalizeHeader).some(isCodeHeader)) || matrix[0];
+        const headers = headerRow.map(normalizeHeader);
+        const findColumn = (predicate: (label: string) => boolean, fallback: number): number => {
+          const index = headers.findIndex(predicate);
+          return index >= 0 ? index : fallback;
+        };
+        const columns = {
+          code: findColumn(isCodeHeader, 0),
+          intitule: findColumn(label => label === 'UE' || label.startsWith('UNITEDENSEIGNEMENT') || label.startsWith('INTITULE'), 1),
+          ecue: findColumn(label => label === 'ECUE' || label === 'MATIERE' || label.includes('CONTENUSDESENSEIGNEMENTS'), 2),
+          type: findColumn(label => label.startsWith('TYPE'), -1),
+          cm: findColumn(label => label === 'CM', -1),
+          tdTp: findColumn(label => label === 'TDTP', -1),
+          tpe: findColumn(label => label === 'TPE', -1),
+          vh: headers.findIndex(label => label === 'VH' || label.startsWith('VH') || label === 'VOLUMEHORAIRE'),
+          total: findColumn(label => label === 'TOTAL' || (label.startsWith('TOTAL') && !label.startsWith('TOTALPRESENTIEL')), -1),
+          credit: findColumn(label => label.startsWith('CREDIT'), 9),
+        };
+        const parseNumericCell = (value: string): number => {
+          const parsed = Number.parseFloat(normalizeText(value).replace(',', '.'));
+          return Number.isFinite(parsed) ? parsed : 0;
+        };
         const detectSemestre = (text: string): string | null => {
           const match = normalizeText(text).match(/(?:TOTAL\s+)?SEMESTRE\s*([1-6])/i);
           return match ? `semestre${match[1]}` : null;
@@ -718,37 +758,69 @@ export default class ExcelController {
         const parseMatiereCell = (cellValue: string): { ecueCode: string; ecueLibelle: string } | null => {
           const text = normalizeText(cellValue).trim();
           if (!text) return null;
-          const match = text.match(/^(\d+)[\.\-]([A-Z0-9]+)\s*:\s*(.+)$/i);
-          if (match) return { ecueCode: match[2].trim(), ecueLibelle: match[3].trim() };
-          const match2 = text.match(/^([A-Z0-9]+)\s*:\s*(.+)$/i);
-          if (match2) return { ecueCode: match2[1].trim(), ecueLibelle: match2[2].trim() };
+          const match = text.match(/^(\d+)[\.\-]([A-Z0-9 ]+)\s*:\s*(.+)$/i);
+          if (match) return { ecueCode: match[2].replace(/\s+/g, ''), ecueLibelle: match[3].trim() };
+          const match2 = text.match(/^([A-Z0-9 ]+)\s*:\s*(.+)$/i);
+          if (match2) return { ecueCode: match2[1].replace(/\s+/g, ''), ecueLibelle: match2[2].trim() };
           return null;
         };
 
         const flushBlock = async (): Promise<void> => {
           if (!blockUeCode) return;
           try {
-            const creditSum = blockEcueData.reduce((s, e) => s + e.creditEcts, 0);
-            const volumeSum = blockEcueData.reduce((s, e) => s + e.cmHoraire + e.tdTpHoraire, 0);
-            const [cours, created] = await Cours.findOrCreate({
-              where: { code: blockUeCode, parcoursId },
-              defaults: { code: blockUeCode, intitule: blockUeIntitule, parcoursId, etablissementId: null, credit: creditSum || null, creditEcts: creditSum || null, semestre: blockSemestre || semestreDemande || 'semestre1', coefficient: creditSum || null, volumeHoraire: volumeSum || null, estObligatoire: true, objectifs: null, enseignantId: null, categorieUe: currentCategorieUe },
-            } as any);
-            coursModified = true;
-            if (!created) await cours.update({ intitule: blockUeIntitule, credit: creditSum || null, creditEcts: creditSum || null, semestre: blockSemestre || semestreDemande || 'semestre1', coefficient: creditSum || null, volumeHoraire: volumeSum || null, estObligatoire: true, objectifs: null, categorieUe: currentCategorieUe } as any);
-            for (const ed of blockEcueData) {
-              const [ecue, ecueCreated] = await Ecue.findOrCreate({ where: { code: ed.ecueCode, coursId: cours.id }, defaults: { code: ed.ecueCode, libelle: ed.ecueLibelle, coursId: cours.id, creditEcts: ed.creditEcts, cmHoraire: ed.cmHoraire, tdTpHoraire: ed.tdTpHoraire, tpeHoraire: ed.tpeHoraire, type: ed.type, enseignantId: null } as any });
-              if (!ecueCreated) await ecue.update({ libelle: ed.ecueLibelle, creditEcts: ed.creditEcts, cmHoraire: ed.cmHoraire, tdTpHoraire: ed.tdTpHoraire, tpeHoraire: ed.tpeHoraire, type: ed.type } as any);
-imported++;
-               const enseignantId = (ecue.enseignantId as unknown as number) || null;
-               if (enseignantId) enseignantIds.add(enseignantId);
-               results.push({ code: blockUeCode, intitule: blockUeIntitule, ecueCode: ed.ecueCode, ligne: ed.ligne, semestre: blockSemestre || semestreDemande || 'semestre1', categorie: currentCategorieUe, statut: "succès", message: ecueCreated ? "Créé" : "Mis à jour", coursId: cours.id, ecueLibelle: ed.ecueLibelle, type: ed.type, cmHoraire: ed.cmHoraire, tdTpHoraire: ed.tdTpHoraire, tpeHoraire: ed.tpeHoraire, creditEcts: ed.creditEcts, enseignantId: enseignantId as number | undefined });
-             }
-          } catch (err: any) { console.error(`Erreur flush block UE ${blockUeCode}:`, err.message); }
+            if (blockEcueData.length === 0) {
+              throw new Error("Aucun ECUE reconnu pour cette UE");
+            }
+            const transaction = await Cours.sequelize!.transaction();
+            try {
+              const creditSum = blockEcueData.reduce((s, e) => s + e.creditEcts, 0);
+              const volumeSum = blockEcueData.reduce((s, e) => s + (e.vhHoraire ?? e.cmHoraire + e.tdTpHoraire + e.tpeHoraire), 0);
+              const [cours, created] = await Cours.findOrCreate({
+                 where: { code: blockUeCode, parcoursId },
+                 defaults: { code: blockUeCode, intitule: blockUeIntitule, parcoursId, etablissementId: null, credit: creditSum || null, creditEcts: creditSum || null, semestre: blockSemestre || semestreDemande || 'semestre1', coefficient: creditSum || null, volumeHoraire: volumeSum || null, estObligatoire: true, objectifs: null, enseignantId: null, categorieUe: currentCategorieUe },
+                 transaction,
+              } as any);
+              if (!created) await cours.update({ intitule: blockUeIntitule, credit: creditSum || null, creditEcts: creditSum || null, semestre: blockSemestre || semestreDemande || 'semestre1', coefficient: creditSum || null, volumeHoraire: volumeSum || null, estObligatoire: true, objectifs: null, categorieUe: currentCategorieUe } as any, { transaction } as any);
+              const blockResults: typeof results = [];
+              for (const ed of blockEcueData) {
+                 const [ecue, ecueCreated] = await Ecue.findOrCreate({
+                   where: { code: ed.ecueCode, coursId: cours.id },
+                   defaults: { code: ed.ecueCode, libelle: ed.ecueLibelle, coursId: cours.id, creditEcts: ed.creditEcts, cmHoraire: ed.cmHoraire, tdTpHoraire: ed.tdTpHoraire, tpeHoraire: ed.tpeHoraire, vhHoraire: ed.vhHoraire, type: ed.type, enseignantId: null } as any,
+                   transaction,
+                 } as any);
+                 if (!ecueCreated) await ecue.update({ libelle: ed.ecueLibelle, creditEcts: ed.creditEcts, cmHoraire: ed.cmHoraire, tdTpHoraire: ed.tdTpHoraire, tpeHoraire: ed.tpeHoraire, vhHoraire: ed.vhHoraire, type: ed.type } as any, { transaction } as any);
+                 const enseignantId = (ecue.enseignantId as unknown as number) || null;
+                 blockResults.push({ code: blockUeCode, intitule: blockUeIntitule, ecueCode: ed.ecueCode, ligne: ed.ligne, semestre: blockSemestre || semestreDemande || 'semestre1', categorie: currentCategorieUe, statut: "succès", message: ecueCreated ? "Créé" : "Mis à jour", coursId: cours.id, ecueLibelle: ed.ecueLibelle, type: ed.type, cmHoraire: ed.cmHoraire, tdTpHoraire: ed.tdTpHoraire, tpeHoraire: ed.tpeHoraire, vhHoraire: ed.vhHoraire, creditEcts: ed.creditEcts, enseignantId: enseignantId as number | undefined });
+              }
+              await transaction.commit();
+              coursModified = true;
+              imported += blockResults.length;
+              for (const result of blockResults) {
+                 if (result.enseignantId) enseignantIds.add(result.enseignantId);
+                 results.push(result);
+              }
+            } catch (error) {
+              await transaction.rollback();
+              throw error;
+            }
+          } catch (err: unknown) {
+             const message = err instanceof Error ? err.message : String(err);
+             console.error(`Erreur flush block UE ${blockUeCode}:`, message);
+            errors++;
+            results.push({
+              code: blockUeCode,
+              intitule: blockUeIntitule,
+              ligne: blockEcueData[0]?.ligne,
+              semestre: blockSemestre || semestreDemande || 'semestre1',
+              categorie: currentCategorieUe,
+              statut: "erreur",
+              message: `UE/ECUE non enregistré(e) : ${message}`,
+            });
+          }
           blockEcueData = [];
         };
 
-        for (let i = 2; i < matrix.length; i++) {
+        for (let i = 1; i < matrix.length; i++) {
           const row = matrix[i];
           const isSection = row.some(c => { const t = normalizeText(c).toUpperCase(); return t.includes('UNITES D\'ENSEIGNEMENT MINEURES') || t.includes('UNITES D\'ENSEIGNEMENT MAJEURES') || t.includes('UNITES D\'ENSEIGNEMENT LIBRES'); });
            if (isSection) { await flushBlock(); const ts = row.map(c => normalizeText(c).toUpperCase()).join(' '); if (ts.includes('MINEURES')) currentCategorieUe = 'MINEURE'; else if (ts.includes('MAJEURES')) currentCategorieUe = 'MAJEURE'; else if (ts.includes('LIBRES')) currentCategorieUe = 'LIBRE'; ignored++; ignoredRows.push({ ligne: i + 1, raison: `Ligne ignorée : section ${currentCategorieUe}` }); continue; }
@@ -759,24 +831,33 @@ imported++;
              ignoredRows.push({ ligne: i + 1, raison: `Ligne ignorée : total ${rowSemestre}` });
              continue;
            }
-          const rowHeaderText = row.map(c => normalizeText(c).toUpperCase()).join(' ');
+          const rowHeaderText = normalizeText(row.map(c => normalizeText(c).toUpperCase()).join(' '));
           if (rowHeaderText.includes('CODE DE L') || rowHeaderText.includes('CONTENUS DES ENSEIGNEMENTS') || rowHeaderText === 'UE ECUE' || rowHeaderText.includes('TYPE') || rowHeaderText.includes('TOTAL PRESENTIEL')) {
             continue;
           }
 
           const normalizedRow = row.map(cell => normalizeText(cell || ''));
-          const typeIndex = normalizedRow.findIndex(cell => /^[FTSCLM]$/i.test(cell));
-          const isContinuationCode = /^\d+[\.\-][A-Z0-9]+\s*:/i.test(normalizedRow[0]);
-          const cellCodeUE = isContinuationCode ? '' : normalizedRow[0];
-          const cellIntituleUE = isContinuationCode ? '' : normalizedRow[1];
-          const cellMatiere = isContinuationCode ? normalizedRow[0] : normalizedRow[2];
-          const metricStart = typeIndex >= 0 ? typeIndex + 1 : 4;
-          const cellType = typeIndex >= 0 ? normalizedRow[typeIndex] : '';
-          const cellCM = normalizedRow[metricStart] || '';
-          const cellTD = normalizedRow[metricStart + 1] || '';
-          const cellTPE = normalizedRow[metricStart + 2] || '';
-          const cellCredit = normalizedRow[metricStart + 5] || normalizedRow[9] || '';
-          if (!cellCodeUE && !cellMatiere) continue;
+          const codeCell = normalizedRow[columns.code] || '';
+          const isContinuationCode = /^\d+[\.\-][A-Z0-9 ]+\s*:/i.test(codeCell);
+          const cellCodeUE = isContinuationCode ? '' : codeCell.replace(/\s+/g, '');
+          const cellIntituleUE = isContinuationCode ? '' : normalizedRow[columns.intitule] || '';
+          const cellMatiere = isContinuationCode ? codeCell : normalizedRow[columns.ecue] || '';
+          const cellType = columns.type >= 0 ? normalizedRow[columns.type] || '' : '';
+          const cmHoraire = parseNumericCell(normalizedRow[columns.cm] || '');
+          const tdTpHoraire = parseNumericCell(normalizedRow[columns.tdTp] || '');
+          const tpeHoraire = parseNumericCell(normalizedRow[columns.tpe] || '');
+          const totalHoraire = parseNumericCell(normalizedRow[columns.total] || '');
+          const vhCell = columns.vh >= 0 ? normalizedRow[columns.vh] || '' : '';
+          const vhHoraire = vhCell ? parseNumericCell(vhCell) :
+            (!cmHoraire && !tdTpHoraire && !tpeHoraire && totalHoraire ? totalHoraire : null);
+          const creditEcts = parseNumericCell(normalizedRow[columns.credit] || '');
+          if (!cellCodeUE && !cellMatiere) {
+            if (normalizedRow.some(cell => cell.trim() !== '')) {
+              ignored++;
+              ignoredRows.push({ ligne: i + 1, raison: "Ligne non reconnue comme UE ou ECUE" });
+            }
+            continue;
+          }
 
           const isNewBlock = cellCodeUE !== '' && cellCodeUE !== blockUeCode;
           const isRowspanContinuation = cellCodeUE === '' && cellMatiere !== '';
@@ -789,18 +870,28 @@ imported++;
             blockUeIntitule = cellIntituleUE || cellCodeUE;
             blockSemestre = detectNextSemestre(i);
             const parsed = parseMatiereCell(cellMatiere);
-            const cmH = parseInt(cellCM) || 0, tdT = parseInt(cellTD) || 0, tpe = parseInt(cellTPE) || 0, cr = parseInt(cellCredit) || 0;
+            const cmH = cmHoraire, tdT = tdTpHoraire, tpe = tpeHoraire, cr = creditEcts;
             const et = cellType.toUpperCase() || null;
             const vt = ['F', 'T', 'S', 'C', 'L', 'M'].includes(et || '') ? et : null;
-            blockEcueData.push(parsed
-              ? { ecueCode: parsed.ecueCode, ecueLibelle: parsed.ecueLibelle, cmHoraire: cmH, tdTpHoraire: tdT, tpeHoraire: tpe, creditEcts: cr, type: vt, ligne: i + 1 }
-              : { ecueCode: blockUeCode, ecueLibelle: blockUeIntitule || blockUeCode, cmHoraire: cmH, tdTpHoraire: tdT, tpeHoraire: tpe, creditEcts: cr, type: vt, ligne: i + 1 });
+            if (parsed) {
+              blockEcueData.push({ ecueCode: parsed.ecueCode, ecueLibelle: parsed.ecueLibelle, cmHoraire: cmH, tdTpHoraire: tdT, tpeHoraire: tpe, vhHoraire, creditEcts: cr, type: vt, ligne: i + 1 });
+            } else if (cellMatiere) {
+              ignored++;
+              ignoredRows.push({ ligne: i + 1, raison: `Format de l'ECUE non reconnu dans l'UE ${blockUeCode}` });
+            } else {
+              blockEcueData.push({ ecueCode: blockUeCode, ecueLibelle: blockUeIntitule || blockUeCode, cmHoraire: cmH, tdTpHoraire: tdT, tpeHoraire: tpe, vhHoraire, creditEcts: cr, type: vt, ligne: i + 1 });
+            }
           } else if (isRowspanContinuation || isSameUeNewMatiere) {
             const parsed = parseMatiereCell(cellMatiere);
-            const cmH = parseInt(cellCM) || 0, tdT = parseInt(cellTD) || 0, tpe = parseInt(cellTPE) || 0, cr = parseInt(cellCredit) || 0;
+            const cmH = cmHoraire, tdT = tdTpHoraire, tpe = tpeHoraire, cr = creditEcts;
             const et = cellType.toUpperCase() || null;
             const vt = ['F', 'T', 'S', 'C', 'L', 'M'].includes(et || '') ? et : null;
-            if (parsed) blockEcueData.push({ ecueCode: parsed.ecueCode, ecueLibelle: parsed.ecueLibelle, cmHoraire: cmH, tdTpHoraire: tdT, tpeHoraire: tpe, creditEcts: cr, type: vt, ligne: i + 1 });
+            if (parsed) {
+              blockEcueData.push({ ecueCode: parsed.ecueCode, ecueLibelle: parsed.ecueLibelle, cmHoraire: cmH, tdTpHoraire: tdT, tpeHoraire: tpe, vhHoraire, creditEcts: cr, type: vt, ligne: i + 1 });
+            } else if (cellMatiere) {
+              ignored++;
+              ignoredRows.push({ ligne: i + 1, raison: `ECUE non reconnue dans l'UE ${blockUeCode}` });
+            }
           }
         }
         await flushBlock();
@@ -1095,7 +1186,7 @@ imported++;
                 makeDataCell(String(ecues[0].cmHoraire || "")),
                 makeDataCell(String(ecues[0].tdTpHoraire || "")),
                 makeDataCell(String(ecues[0].tpeHoraire || "")),
-                makeDataCell(String((ecues[0].cmHoraire || 0) + (ecues[0].tdTpHoraire || 0) + (ecues[0].tpeHoraire || 0))),
+                makeDataCell(String(ecues[0].vhHoraire ?? (ecues[0].cmHoraire || 0) + (ecues[0].tdTpHoraire || 0) + (ecues[0].tpeHoraire || 0))),
                 makeDataCell(String((ecues[0].cmHoraire || 0) + (ecues[0].tdTpHoraire || 0) + (ecues[0].tpeHoraire || 0))),
                 makeDataCell(String(ecues[0].creditEcts || "")),
                 makeDataCell(""),
@@ -1111,7 +1202,7 @@ imported++;
                   makeDataCell(String(ecues[i].cmHoraire || "")),
                   makeDataCell(String(ecues[i].tdTpHoraire || "")),
                   makeDataCell(String(ecues[i].tpeHoraire || "")),
-                  makeDataCell(String((ecues[i].cmHoraire || 0) + (ecues[i].tdTpHoraire || 0) + (ecues[i].tpeHoraire || 0))),
+                  makeDataCell(String(ecues[i].vhHoraire ?? (ecues[i].cmHoraire || 0) + (ecues[i].tdTpHoraire || 0) + (ecues[i].tpeHoraire || 0))),
                   makeDataCell(String((ecues[i].cmHoraire || 0) + (ecues[i].tdTpHoraire || 0) + (ecues[i].tpeHoraire || 0))),
                   makeDataCell(String(ecues[i].creditEcts || "")),
                   makeDataCell(""),

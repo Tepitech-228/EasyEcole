@@ -2,13 +2,8 @@ import { Request, Response } from "express";
 import { FindOptions, InferAttributes, Op } from "sequelize";
 import { CursusApprenant } from "../models/CursusApprenant";
 import { DossierEtudiant } from "../models/DossierEtudiant";
-import { Echeance } from "../models/Echeance";
-import { Parcours } from "../models/Parcours";
 import { SemestreAcademique } from "../models/SemestreAcademique";
 import { Utilisateur } from "../../auth/models/Utilisateur";
-import { AnneeAcademique } from "../models/AnneeAcademique";
-import { NiveauEtude } from "../models/NiveauEtude";
-import { Classe } from "../models/Classe";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 
 const STATUTS_IRREGULIERS = ['impaye', 'partiel', 'en_retard'] as const;
@@ -126,16 +121,7 @@ export default class FinanceEcheanceController {
             // cursus puis les dossiers avec leurs échéances, ce qui garde le même
             // comportement métier tout en restant stable.
             const includeOptions: FindOptions<InferAttributes<CursusApprenant>>['include'] = [
-                {
-                    association: CursusApprenant.associations.parcours as any,
-                    include: [
-                        {
-                            association: (Parcours as any).associations.semestresAcademiques as any,
-                            where: { statut: 'cloture' },
-                            required: false,
-                        }
-                    ]
-                },
+                { association: CursusApprenant.associations.parcours as any },
                 { association: CursusApprenant.associations.niveauEtude },
                 { association: CursusApprenant.associations.classe },
                 { association: CursusApprenant.associations.anneeAcademique },

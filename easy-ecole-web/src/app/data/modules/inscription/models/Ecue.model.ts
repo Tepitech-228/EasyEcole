@@ -8,6 +8,7 @@ export class Ecue {
   declare cmHoraire?: number
   declare tdTpHoraire?: number
   declare tpeHoraire?: number
+  declare vhHoraire?: number
   declare type?: 'F' | 'T' | 'S' | 'C' | 'L' | 'M'
   declare enseignantId?: string
   declare enseignant?: { id?: string; utilisateur?: { nom?: string; prenoms?: string } }

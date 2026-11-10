@@ -26,7 +26,7 @@
             <svg class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             Modèle vide
         </button>
-        <button (click)="importFileInput.click()" title="Importer un emploi du temps depuis un fichier Excel (.xls / .csv)"
+        <button *ngIf="peutGererPlanning" (click)="importFileInput.click()" title="Importer un emploi du temps depuis un fichier Excel (.xls / .csv)"
             class="inline-flex items-center flex-shrink-0 px-3.5 py-2 text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors border-0 cursor-pointer">
             <svg class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
             Importer Excel
@@ -40,6 +40,10 @@
         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         <span>{{ publierMessage }}</span>
     </div>
+</div>
+
+<div *ngIf="rolesValue.isEnseignant && messagePointage" class="mb-4 text-sm text-indigo-800" role="status">
+    {{ messagePointage }}
 </div>
 
 <div *ngIf="showImportResult" class="mb-6 p-4 rounded-xl border"
@@ -58,15 +62,20 @@
             <app-custom-button (click)="prevDate()" text="Précédent"></app-custom-button>
             <app-custom-button (click)="nextDate()" text="Suivant"></app-custom-button>
         </div>
-        <div *ngIf="peutGererPlanning" class="block col-span-4 flex justify-center items-center gap-4">
-            <select [(ngModel)]="filterEnseignantId" (change)="onFilterChange()"
+        <div *ngIf="peutGererPlanning || rolesValue.isSurveillant || rolesValue.isEnseignant" class="block col-span-4 flex justify-center items-center gap-4">
+            <select [(ngModel)]="filterSiteId" (change)="onFilterChange()"
+                class="block w-full max-w-[200px] rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                <option value="">Tous les sites</option>
+                <option *ngFor="let site of sitesPlanning" [value]="site.id">{{ site.nom }}</option>
+            </select>
+            <select *ngIf="peutGererPlanning" [(ngModel)]="filterEnseignantId" (change)="onFilterChange()"
                 class="block w-full max-w-[200px] rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                 <option value="">Tous les enseignants</option>
                 <option *ngFor="let e of enseignants" [value]="e.id">
                     {{ e.utilisateur?.nom + ' ' + e.utilisateur?.prenoms }}
                 </option>
             </select>
-            <select [(ngModel)]="filterClasseId" (change)="onFilterChange()"
+            <select *ngIf="peutGererPlanning" [(ngModel)]="filterClasseId" (change)="onFilterChange()"
                 class="block w-full max-w-[200px] rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                 <option value="">Toutes les classes</option>
                 <option *ngFor="let c of classes" [value]="c.id">{{ c.libelle }}</option>
@@ -102,7 +111,42 @@
                                     <img src="assets/icons/location_on.svg" alt="icon">
                                     <div>{{ arg.event.extendedProps.salle }}</div>
                                 </div>
-                            </div>
+                                <div *ngIf="arg.event.extendedProps.etablissement" class="text-xs font-semibold">
+                                    {{ arg.event.extendedProps.etablissement }}
+                                </div>
+                                <span *ngIf="rolesValue.isSurveillant || rolesValue.isSuperviseurGeneral"
+                                    class="w-fit rounded px-2 py-0.5 text-xs font-semibold"
+                                    [ngClass]="{
+                                        'bg-gray-100 text-gray-700': arg.event.extendedProps.statutPointage === 'a_venir',
+                                        'bg-blue-100 text-blue-700': arg.event.extendedProps.statutPointage === 'en_cours',
+                                        'bg-amber-100 text-amber-700': arg.event.extendedProps.statutPointage === 'en_retard',
+                                        'bg-emerald-100 text-emerald-700': arg.event.extendedProps.statutPointage === 'termine',
+                                        'bg-orange-100 text-orange-700': arg.event.extendedProps.statutPointage === 'termine_en_avance',
+                                        'bg-red-100 text-red-700': arg.event.extendedProps.statutPointage === 'absent'
+                                    }">
+                                    {{ arg.event.extendedProps.statutPointage }}
+                                </span>
+                                </div>
+                                <div *ngIf="rolesValue.isEnseignant" class="flex flex-wrap gap-1">
+                                    <span *ngIf="arg.event.extendedProps.pointage?.heureDebutReelle" class="text-xs">
+                                        Début : {{ arg.event.extendedProps.pointage.heureDebutReelle }}
+                                    </span>
+                                    <button *ngIf="!arg.event.extendedProps.pointage?.heureDebutReelle"
+                                        type="button" [disabled]="pointageEnCours[arg.event.id]"
+                                        (click)="$event.stopPropagation(); pointerSeance(planningEvent(arg.event.id), 'debut')"
+                                        class="px-2 py-1 text-xs text-white bg-indigo-600 rounded disabled:opacity-50">
+                                        Pointer début
+                                    </button>
+                                    <span *ngIf="arg.event.extendedProps.pointage?.heureFinReelle" class="text-xs">
+                                        Fin : {{ arg.event.extendedProps.pointage.heureFinReelle }}
+                                    </span>
+                                    <button *ngIf="arg.event.extendedProps.pointage?.heureDebutReelle && !arg.event.extendedProps.pointage?.heureFinReelle"
+                                        type="button" [disabled]="pointageEnCours[arg.event.id]"
+                                        (click)="$event.stopPropagation(); pointerSeance(planningEvent(arg.event.id), 'fin')"
+                                        class="px-2 py-1 text-xs text-white bg-emerald-600 rounded disabled:opacity-50">
+                                        Pointer fin
+                                    </button>
+                                </div>
                             <div *ngIf="peutGererPlanning" class="flex justify-between items-center">
                                 <button (click)="openModificationSeanceModal(arg)"
                                     class="p-1 rounded focus:ring-1 focus:ring-gray-300 border-0 bg-transparent cursor-pointer">

@@ -14,6 +14,7 @@ export class Ecue extends Model<InferAttributes<Ecue>, InferCreationAttributes<E
   declare cmHoraire: CreationOptional<number | null>
   declare tdTpHoraire: CreationOptional<number | null>
   declare tpeHoraire: CreationOptional<number | null>
+  declare vhHoraire: CreationOptional<number | null>
   declare type: CreationOptional<'F' | 'T' | 'S' | 'C' | 'L' | 'M' | null>
   declare enseignantId: ForeignKey<Enseignant['id'] | null>
 
@@ -66,6 +67,10 @@ Ecue.init({
     allowNull: true
   },
   tpeHoraire: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
+  },
+  vhHoraire: {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: true
   },

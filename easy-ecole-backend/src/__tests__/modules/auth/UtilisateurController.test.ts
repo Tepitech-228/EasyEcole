@@ -93,6 +93,41 @@ describe('UtilisateurController.getAllUtilisateurs', () => {
     expect(res.send).toHaveBeenCalledWith(fakeUsers)
   })
 
+  it('retourne uniquement les comptes créés par le surveillant connecté', async () => {
+    const req = mockRequest({ utilisateurRole: 'surveillant', utilisateurId: 12 } as any)
+    const res = mockResponse()
+    const fakeUsers = [{ id: 21, nom: 'Test', prenoms: 'User', email: 'test@test.com' }]
+    ;(SiteUtilisateur.findAll as jest.Mock).mockResolvedValue([
+      { utilisateurId: 21 },
+      { utilisateurId: 21 },
+    ])
+    ;(Utilisateur.findAll as jest.Mock).mockResolvedValue(fakeUsers)
+
+    await UtilisateurController.getAllUtilisateurs(req, res)
+
+    expect(SiteUtilisateur.findAll).toHaveBeenCalledWith({
+      where: { affectePar: 12 },
+      attributes: ['utilisateurId'],
+    })
+    expect(Utilisateur.findAll).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: { [Op.in]: [21] } },
+    }))
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.send).toHaveBeenCalledWith(fakeUsers)
+  })
+
+  it('ne retourne aucun compte au surveillant si aucun rattachement ne porte son identifiant', async () => {
+    const req = mockRequest({ utilisateurRole: 'surveillant', utilisateurId: 12 } as any)
+    const res = mockResponse()
+    ;(SiteUtilisateur.findAll as jest.Mock).mockResolvedValue([])
+
+    await UtilisateurController.getAllUtilisateurs(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.send).toHaveBeenCalledWith([])
+    expect(Utilisateur.findAll).not.toHaveBeenCalled()
+  })
+
   it('retourne 500 en cas d\'erreur', async () => {
     const req = mockRequest({ utilisateurRole: 'admin' } as any)
     const res = mockResponse()

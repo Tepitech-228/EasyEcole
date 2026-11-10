@@ -1112,6 +1112,7 @@ export const modelSchemas = {
       cmHoraire: { type: 'integer', nullable: true },
       tdTpHoraire: { type: 'integer', nullable: true },
       tpeHoraire: { type: 'integer', nullable: true },
+      vhHoraire: { type: 'integer', nullable: true },
       type: { type: 'string', enum: ['F', 'T', 'S', 'C', 'L', 'M'], nullable: true },
       enseignantId: { type: 'integer', nullable: true },
     }

@@ -121,6 +121,7 @@
                         <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">CM (h)</th>
                         <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">TD/TP (h)</th>
                         <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">TPE (h)</th>
+                        <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">VH (h)</th>
                         <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">Total (h)</th>
                         <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">ECTS</th>
                         <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">Coeff.</th>
@@ -135,6 +136,7 @@
                         <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.cmHoraire ?? '—' }}</td>
                         <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.tdTpHoraire ?? '—' }}</td>
                         <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.tpeHoraire ?? '—' }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.vhHoraire ?? '—' }}</td>
                         <td class="px-4 py-3 text-sm text-gray-900 font-medium">{{ ecueTotalHoraire(ecue) }}</td>
                         <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.creditEcts ?? '—' }}</td>
                         <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.coefficient ?? '1' }}</td>
@@ -337,6 +339,7 @@
                             <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">CM</th>
                             <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">TD/TP</th>
                             <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">TPE</th>
+                            <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">VH</th>
                             <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">Type</th>
                             <th scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-left">Enseignant</th>
                             <th *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" scope="col" class="text-sm font-medium text-gray-900 px-4 py-3 text-right">Actions</th>
@@ -351,6 +354,7 @@
                             <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.cmHoraire ?? '—' }}</td>
                             <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.tdTpHoraire ?? '—' }}</td>
                             <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.tpeHoraire ?? '—' }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">{{ ecue.vhHoraire ?? '—' }}</td>
                             <td class="px-4 py-3 text-sm text-gray-600 font-medium">{{ ecue.type ?? '—' }}</td>
                             <td class="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{{ nomEnseignant(ecue) }}</td>
                             <td *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" class="px-4 py-3 text-sm text-right whitespace-nowrap">
@@ -368,6 +372,7 @@
                             <td class="px-4 py-3 text-sm text-gray-600">{{ totalCmHoraire }}</td>
                             <td class="px-4 py-3 text-sm text-gray-600">{{ totalTdTpHoraire }}</td>
                             <td class="px-4 py-3 text-sm text-gray-600">{{ totalTpeHoraire }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">{{ totalVhHoraire }}</td>
                             <td class="px-4 py-3 text-sm text-gray-600">—</td>
                             <td class="px-4 py-3 text-sm text-gray-600">—</td>
                             <td *ngIf="rolesValue.isInstitution || rolesValue.isAdmin" class="px-4 py-3 text-sm text-right"></td>
@@ -580,6 +585,11 @@
             <div class="col-span-2">
                 <span class="mb-2 block text-sm text-gray-400">TPE</span>
                 <input type="number" formControlName="tpeHoraire" min="0" placeholder="0"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm">
+            </div>
+            <div class="col-span-2">
+                <span class="mb-2 block text-sm text-gray-400">VH total</span>
+                <input type="number" formControlName="vhHoraire" min="0" placeholder="0"
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm">
             </div>
             <div class="col-span-3">

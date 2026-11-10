@@ -73,7 +73,17 @@ jest.mock('../../../modules/inscription/models/NiveauEtude', () => ({
 }))
 
 jest.mock('../../../core/helpers/DatabaseConnection', () => {
-  const sequelize = { transaction: jest.fn() }
+  const { Sequelize } = require('sequelize')
+  const sequelize = new Sequelize({
+    database: 'easyecole_test',
+    username: 'root',
+    password: '',
+    dialect: 'mysql',
+    host: 'localhost',
+    port: 3306,
+    logging: false,
+  })
+  sequelize.transaction = jest.fn()
   return { DatabaseConnection: { instance: null, getInstance: jest.fn(() => ({ sequelize })) } }
 })
 

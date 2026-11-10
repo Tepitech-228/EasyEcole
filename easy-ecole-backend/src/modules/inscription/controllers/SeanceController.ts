@@ -20,7 +20,17 @@ import { Pointage } from "../models/Pointage";
 import { Apprenant } from "../../auth/models/Apprenant";
 import { ParentEnfant } from "../../parent/models/ParentEnfant";
 import { SiteUtilisateur } from "../../auth/models/SiteUtilisateur";
+import { SeancePointage } from "../models/SeancePointage";
 import { getSurveillantSiteId } from "../../../core/helpers/SurveillantSiteScope";
+
+function dateIso(value: unknown): string {
+    return value instanceof Date ? value.toISOString().slice(0, 10) : String(value).slice(0, 10);
+}
+
+function minutes(value: unknown): number {
+    const [hours, mins] = String(value).slice(0, 5).split(":").map(Number);
+    return hours * 60 + mins;
+}
 
 export default class SeanceController {
 
@@ -28,7 +38,7 @@ export default class SeanceController {
 
     private static baseIncludes() {
         return [
-            Seance.associations.cours,
+            { association: Seance.associations.cours, include: [Cours.associations.etablissement] },
             { association: Seance.associations.enseignant, include: [Enseignant.associations.utilisateur] },
             { association: Seance.associations.salleDeClasse, required: false },
             { association: Seance.associations.creneau, required: false },
@@ -42,7 +52,11 @@ export default class SeanceController {
 
     private static async coursDuSiteActif(req: Request): Promise<number[] | null> {
         const etablissementId = Number((req as any).etablissementId);
-        if (!Number.isSafeInteger(etablissementId) || etablissementId <= 0) return null;
+        return SeanceController.coursDuSite(etablissementId);
+    }
+
+    private static async coursDuSite(etablissementId: number | null): Promise<number[] | null> {
+        if (etablissementId === null || !Number.isSafeInteger(etablissementId) || etablissementId <= 0) return null;
 
         const cours = await Cours.findAll({
             where: { etablissementId },
@@ -97,10 +111,6 @@ export default class SeanceController {
         try {
             let seances: Seance[];
             const role = (req as any).utilisateurRole;
-            if (role === RolesUtilisateur.SURVEILLANT && !(await getSurveillantSiteId(req))) {
-                return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
-            }
-
             if (role === RolesUtilisateur.APPRENANT) {
                 const cursus = await CursusApprenant.findAll({
                     where: { utilisateurId: (req as any).utilisateurId },
@@ -128,7 +138,16 @@ export default class SeanceController {
             }
 
             const where = (options.where || {}) as any;
-            SeanceController.filtrerCoursDuSite(where, await SeanceController.coursDuSiteActif(req));
+            if (role === RolesUtilisateur.SURVEILLANT) {
+                const siteId = await getSurveillantSiteId(req);
+                if (!siteId) return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
+                SeanceController.filtrerCoursDuSite(where, await SeanceController.coursDuSite(siteId));
+            } else if (![RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.SUPERVISEUR_GENERAL, RolesUtilisateur.ADMIN].includes(role)) {
+                SeanceController.filtrerCoursDuSite(where, await SeanceController.coursDuSiteActif(req));
+            }
+            if (role !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
+                where.publieeLe = { [Op.ne]: null };
+            }
             options.where = where;
             seances = await Seance.findAll(options);
             return res.status(200).send(seances);
@@ -153,13 +172,17 @@ export default class SeanceController {
         }
 
         try {
-            if ((req as any).utilisateurRole === RolesUtilisateur.SURVEILLANT && !(await getSurveillantSiteId(req))) {
-                return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
+            const role = (req as any).utilisateurRole;
+            if (role === RolesUtilisateur.SURVEILLANT) {
+                const siteId = await getSurveillantSiteId(req);
+                if (!siteId) return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
+                SeanceController.filtrerCoursDuSite(options.where as any, await SeanceController.coursDuSite(siteId));
+            } else if (![RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.SUPERVISEUR_GENERAL, RolesUtilisateur.ADMIN].includes(role)) {
+                SeanceController.filtrerCoursDuSite(options.where as any, await SeanceController.coursDuSiteActif(req));
             }
-            SeanceController.filtrerCoursDuSite(
-                options.where as any,
-                await SeanceController.coursDuSiteActif(req)
-            );
+            if (role !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
+                (options.where as any).publieeLe = { [Op.ne]: null };
+            }
             const seance: Seance | null = await Seance.findOne(options);
 
             if (seance == null)
@@ -203,9 +226,6 @@ export default class SeanceController {
             };
 
             const role = (req as any).utilisateurRole;
-            if (role === RolesUtilisateur.SURVEILLANT && !(await getSurveillantSiteId(req))) {
-                return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
-            }
             if (role === RolesUtilisateur.APPRENANT) {
                 const cursus = await CursusApprenant.findAll({
                     where: { utilisateurId: (req as any).utilisateurId },
@@ -247,7 +267,16 @@ export default class SeanceController {
                 }
             }
 
-            SeanceController.filtrerCoursDuSite(options.where as any, await SeanceController.coursDuSiteActif(req));
+            if (role === RolesUtilisateur.SURVEILLANT) {
+                const siteId = await getSurveillantSiteId(req);
+                if (!siteId) return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
+                SeanceController.filtrerCoursDuSite(options.where as any, await SeanceController.coursDuSite(siteId));
+            } else if (![RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.SUPERVISEUR_GENERAL, RolesUtilisateur.ADMIN].includes(role)) {
+                SeanceController.filtrerCoursDuSite(options.where as any, await SeanceController.coursDuSiteActif(req));
+            }
+            if (role !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
+                (options.where as any).publieeLe = { [Op.ne]: null };
+            }
             const seances = await Seance.findAll(options);
             const events: any[] = [];
 
@@ -258,6 +287,7 @@ export default class SeanceController {
                 [JoursSemaine.JEUDI]: 4,
                 [JoursSemaine.VENDREDI]: 5,
                 [JoursSemaine.SAMEDI]: 6,
+                [JoursSemaine.DIMANCHE]: 0,
             };
 
             for (const seance of seances) {
@@ -305,9 +335,48 @@ export default class SeanceController {
                             anneeAcademique: seance.anneeAcademique,
                             semestreAcademiqueId: seance.semestreAcademiqueId,
                             semestreAcademique: seance.semestreAcademique,
+                            etablissementId: (seance as any).cours?.etablissementId,
+                            etablissement: (seance as any).cours?.etablissement,
+                            publieeLe: seance.publieeLe,
                         });
                     }
                     current.setDate(current.getDate() + 1);
+                }
+            }
+
+            const pointages = events.length
+                ? await SeancePointage.findAll({
+                    where: {
+                        seanceId: { [Op.in]: [...new Set(events.map(event => event.seanceId))] },
+                        date: { [Op.between]: [semaineDebut, semaineFin] },
+                    },
+                })
+                : [];
+            const pointagesParSeanceEtDate = new Map(
+                pointages.map(pointage => [`${pointage.seanceId}-${dateIso(pointage.date)}`, pointage])
+            );
+            const aujourdHui = new Date().toISOString().slice(0, 10);
+            const heureActuelle = new Date().toISOString().slice(11, 16);
+            for (const event of events) {
+                const pointage = pointagesParSeanceEtDate.get(`${event.seanceId}-${event.date}`);
+                event.pointage = pointage ? {
+                    heureDebutReelle: pointage.heureDebutReelle,
+                    heureFinReelle: pointage.heureFinReelle,
+                } : null;
+                if (pointage?.heureFinReelle) {
+                    event.statutPointage = minutes(pointage.heureFinReelle) < minutes(event.heureFin)
+                        ? "termine_en_avance"
+                        : "termine";
+                } else if (pointage?.heureDebutReelle) {
+                    event.statutPointage = minutes(pointage.heureDebutReelle) > minutes(event.heureDebut)
+                        ? "en_retard"
+                        : "en_cours";
+                } else if (event.date < aujourdHui || (event.date === aujourdHui && heureActuelle >= String(event.heureFin).slice(0, 5))) {
+                    event.statutPointage = "absent";
+                } else if (event.date === aujourdHui && heureActuelle >= String(event.heureDebut).slice(0, 5)) {
+                    event.statutPointage = "en_retard";
+                } else {
+                    event.statutPointage = "a_venir";
                 }
             }
 
@@ -326,7 +395,7 @@ export default class SeanceController {
             if (req.query.classeId) coursWhere.classeId = req.query.classeId
             const cours = await Cours.findAll({ where: coursWhere, attributes: ['id', 'code', 'intitule', 'volumeHoraire'] })
             const result = await Promise.all(cours.map(async (ue) => {
-                const seances = await Seance.findAll({ where: { coursId: ue.id }, attributes: ['enseignantId', 'jourSemaine', 'dateDebut', 'dateFin', 'heureDebut', 'heureFin'] })
+                const seances = await Seance.findAll({ where: { coursId: ue.id }, attributes: ['id', 'enseignantId', 'jourSemaine', 'dateDebut', 'dateFin', 'heureDebut', 'heureFin'] })
                 const consomme = await SeanceController.heuresEffectuees(seances)
                 const prevu = Number(ue.volumeHoraire || 0)
                 return {
@@ -387,23 +456,42 @@ export default class SeanceController {
         try {
             const now = new Date()
             const today = now.toISOString().split('T')[0]
-            const heure = now.toTimeString().split(' ')[0]
+            const heure = now.toISOString().slice(11, 19)
             const seances = await Seance.findAll({
                 where: { dateDebut: { [Op.lte]: today }, dateFin: { [Op.gte]: today }, heureDebut: { [Op.lte]: heure } },
                 include: [{ association: Seance.associations.cours }, { association: Seance.associations.enseignant, include: [Enseignant.associations.utilisateur] }]
             })
-            const pointages = await (await import('../models/Pointage')).Pointage.findAll({ where: { date: today }, attributes: ['utilisateurId', 'heureArrivee'] })
+            const seanceIds = seances.map(seance => seance.id)
+            const [pointagesSeance, pointages] = await Promise.all([
+                seanceIds.length
+                    ? SeancePointage.findAll({ where: { seanceId: { [Op.in]: seanceIds }, date: today }, attributes: ['seanceId', 'heureDebutReelle'] })
+                    : Promise.resolve([]),
+                Pointage.findAll({ where: { date: today }, attributes: ['utilisateurId', 'heureArrivee'] })
+            ])
+            const pointagesSeanceParSeance = new Map(pointagesSeance.map(p => [Number(p.seanceId), p]))
             const pointagesParUtilisateur = new Map(pointages.map(p => [Number(p.utilisateurId), p]))
             const result = seances.map(seance => {
                 const utilisateurId = Number((seance as any).enseignant?.utilisateur?.id)
+                const pointageSeance = pointagesSeanceParSeance.get(Number(seance.id))
                 const pointage = pointagesParUtilisateur.get(utilisateurId)
                 const fin = String(seance.heureFin)
-                const arrivee = pointage ? String(pointage.heureArrivee).slice(0, 8) : null
+                const arrivee = pointageSeance?.heureDebutReelle
+                    ? String(pointageSeance.heureDebutReelle).slice(0, 8)
+                    : pointage ? String(pointage.heureArrivee).slice(0, 8) : null
                 const debut = String(seance.heureDebut).slice(0, 8)
                 const statut = arrivee
                     ? (arrivee > debut ? 'en_retard' : 'pointe')
                     : (heure > fin ? 'absent' : 'en_retard')
-                return { seanceId: seance.id, cours: (seance as any).cours?.intitule, enseignant: (seance as any).enseignant?.utilisateur, heureDebut: seance.heureDebut, heureFin: seance.heureFin, heureArrivee: arrivee, statut }
+                return {
+                    seanceId: seance.id,
+                    cours: (seance as any).cours?.intitule,
+                    enseignant: (seance as any).enseignant?.utilisateur,
+                    heureDebut: seance.heureDebut,
+                    heureFin: seance.heureFin,
+                    heureArrivee: arrivee,
+                    sourcePointage: pointageSeance?.heureDebutReelle ? 'seance' : pointage ? 'qr' : null,
+                    statut
+                }
             }).filter(item => item.statut !== 'pointe')
             return res.status(200).json(result)
         } catch (error) {
@@ -419,22 +507,37 @@ export default class SeanceController {
         return Math.max(0, (toMinutes(fin) - toMinutes(debut)) / 60)
     }
 
-    /** Compte uniquement le chevauchement d'une séance avec un pointage QR complet. */
+    /** Compte le chevauchement des séances avec le pointage de séance, puis le pointage QR complet en secours. */
     private static async heuresEffectuees(seances: any[]): Promise<number> {
         if (!seances.length) return 0
         const dates = seances.flatMap(seance => [new Date(seance.dateDebut), new Date(seance.dateFin)])
         const debut = new Date(Math.min(...dates.map(date => date.getTime()))).toISOString().slice(0, 10)
         const fin = new Date(Math.max(...dates.map(date => date.getTime()))).toISOString().slice(0, 10)
+        const seanceIds = Array.from(new Set(seances.map(seance => Number(seance.id)).filter(Boolean)))
         const utilisateurIds = Array.from(new Set(seances.map(seance => Number(seance.enseignant?.utilisateurId || seance.enseignantId)).filter(Boolean)))
-        const pointages = await Pointage.findAll({ where: { utilisateurId: { [Op.in]: utilisateurIds }, date: { [Op.between]: [debut, fin] } }, attributes: ['utilisateurId', 'date', 'heureArrivee', 'heureDepart'] })
-        const index = new Map(pointages.map(pointage => [`${pointage.utilisateurId}|${new Date(pointage.date).toISOString().slice(0, 10)}`, pointage]))
+        const [pointagesSeance, pointages] = await Promise.all([
+            seanceIds.length
+                ? SeancePointage.findAll({ where: { seanceId: { [Op.in]: seanceIds }, date: { [Op.between]: [debut, fin] } }, attributes: ['seanceId', 'date', 'heureDebutReelle', 'heureFinReelle'] })
+                : Promise.resolve([]),
+            Pointage.findAll({ where: { utilisateurId: { [Op.in]: utilisateurIds }, date: { [Op.between]: [debut, fin] } }, attributes: ['utilisateurId', 'date', 'heureArrivee', 'heureDepart'] })
+        ])
+        const indexSeance = new Map(pointagesSeance.map(pointage => [`${pointage.seanceId}|${dateIso(pointage.date)}`, pointage]))
+        const indexQR = new Map(pointages.map(pointage => [`${pointage.utilisateurId}|${dateIso(pointage.date)}`, pointage]))
         let total = 0
         for (const seance of seances) {
             for (const date = new Date(seance.dateDebut); date <= new Date(seance.dateFin); date.setUTCDate(date.getUTCDate() + 1)) {
                 const jour = String(((date.getUTCDay() + 6) % 7) + 1)
                 if (jour !== String(seance.jourSemaine)) continue
-                const cle = `${seance.enseignant?.utilisateurId || seance.enseignantId}|${date.toISOString().slice(0, 10)}`
-                const pointage = index.get(cle) as any
+                const jourIso = date.toISOString().slice(0, 10)
+                const pointageSeance = indexSeance.get(`${seance.id}|${jourIso}`) as any
+                if (pointageSeance?.heureDebutReelle && pointageSeance?.heureFinReelle) {
+                    const debutEffectif = Math.max(SeanceController.minutes(pointageSeance.heureDebutReelle), SeanceController.minutes(seance.heureDebut))
+                    const finEffective = Math.min(SeanceController.minutes(pointageSeance.heureFinReelle), SeanceController.minutes(seance.heureFin))
+                    if (finEffective > debutEffectif) total += (finEffective - debutEffectif) / 60
+                    continue
+                }
+                const cle = `${seance.enseignant?.utilisateurId || seance.enseignantId}|${jourIso}`
+                const pointage = indexQR.get(cle) as any
                 if (pointage?.heureArrivee && pointage?.heureDepart) {
                     const debutEffectif = Math.max(SeanceController.minutes(pointage.heureArrivee), SeanceController.minutes(seance.heureDebut))
                     const finEffective = Math.min(SeanceController.minutes(pointage.heureDepart), SeanceController.minutes(seance.heureFin))
@@ -454,7 +557,7 @@ export default class SeanceController {
         const now = new Date()
         const today = now.toISOString().slice(0, 10)
         const dayNumber = now.getUTCDay() || 7
-        const heureActuelle = now.toTimeString().slice(0, 8)
+        const heureActuelle = now.toISOString().slice(11, 19)
         const seances = await Seance.findAll({
             where: {
                 enseignantId,
@@ -462,19 +565,27 @@ export default class SeanceController {
                 dateDebut: { [Op.lte]: today },
                 dateFin: { [Op.gte]: today }
             },
-            attributes: ['heureDebut', 'heureFin'],
+            attributes: ['id', 'heureDebut', 'heureFin'],
             order: [['heureDebut', 'ASC']]
         })
         const premiereSeance = seances[0]
         if (!premiereSeance) return { statut: 'aucun_cours' }
 
-        const pointage = await Pointage.findOne({
-            where: { utilisateurId, date: today },
-            attributes: ['heureArrivee']
-        })
+        const [pointageSeance, pointage] = await Promise.all([
+            SeancePointage.findOne({
+                where: { seanceId: premiereSeance.id, date: today, utilisateurId },
+                attributes: ['heureDebutReelle', 'heureFinReelle']
+            }),
+            Pointage.findOne({
+                where: { utilisateurId, date: today },
+                attributes: ['heureArrivee']
+            })
+        ])
         const heureDebut = String(premiereSeance.heureDebut).slice(0, 8)
         const heureFin = String(premiereSeance.heureFin).slice(0, 8)
-        const heureArrivee = pointage ? String(pointage.heureArrivee).slice(0, 8) : null
+        const heureDebutReelle = pointageSeance?.heureDebutReelle ? String(pointageSeance.heureDebutReelle).slice(0, 8) : null
+        const heureFinReelle = pointageSeance?.heureFinReelle ? String(pointageSeance.heureFinReelle).slice(0, 8) : null
+        const heureArrivee = heureDebutReelle || (pointage ? String(pointage.heureArrivee).slice(0, 8) : null)
 
         let statut: string
         if (heureArrivee) {
@@ -486,7 +597,15 @@ export default class SeanceController {
         } else {
             statut = 'a_pointer'
         }
-        return { statut, heureDebut, heureFin, heureArrivee }
+        return {
+            statut,
+            heureDebut,
+            heureFin,
+            heureArrivee,
+            heureDebutReelle,
+            heureFinReelle,
+            sourcePointage: heureDebutReelle ? 'seance' : pointage ? 'qr' : null
+        }
     }
 
     static async checkConflits(req: Request, res: Response): Promise<Response> {
@@ -619,8 +738,8 @@ export default class SeanceController {
     }
 
     static async createSeance(req: Request, res: Response): Promise<Response | null> {
-        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN && (req as any).utilisateurRole !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
-            return res.status(403).json({ success: false, message: "Réservé à l'institution" });
+        if ((req as any).utilisateurRole !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
+            return res.status(403).json({ success: false, message: "Réservé au superviseur général" });
         }
 
         const erreurSite = await SeanceController.verifierAffectationSite(req, req.body.coursId, req.body.enseignantId);
@@ -643,6 +762,7 @@ export default class SeanceController {
         seance.dateFin = req.body.dateFin
         seance.heureDebut = req.body.heureDebut
         seance.heureFin = req.body.heureFin
+        seance.publieeLe = null
         seance.description = req.body.description
         seance.coursId = req.body.coursId
         seance.enseignantId = req.body.enseignantId
@@ -668,8 +788,8 @@ export default class SeanceController {
     }
 
     static async updateSeance(req: Request, res: Response): Promise<Response | null> {
-        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN && (req as any).utilisateurRole !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
-            return res.status(403).json({ success: false, message: "Réservé à l'institution" });
+        if ((req as any).utilisateurRole !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
+            return res.status(403).json({ success: false, message: "Réservé au superviseur général" });
         }
 
         const coursSiteIds = await SeanceController.coursDuSiteActif(req);
@@ -713,6 +833,7 @@ export default class SeanceController {
                 parcoursId: req.body.parcoursId ?? seance.parcoursId,
                 anneeAcademiqueId: req.body.anneeAcademiqueId ?? seance.anneeAcademiqueId,
                 semestreAcademiqueId: req.body.semestreAcademiqueId ?? seance.semestreAcademiqueId,
+                publieeLe: null,
             })
             await SeanceController.notifierModification(seance)
             return res.status(200).send(seance)
@@ -758,12 +879,14 @@ export default class SeanceController {
     }
 
     static async deleteSeance(req: Request, res: Response): Promise<Response | null> {
-        if ((req as any).utilisateurRole !== RolesUtilisateur.INSTITUTION && (req as any).utilisateurRole !== RolesUtilisateur.ADMIN && (req as any).utilisateurRole !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
-            return res.status(403).json({ success: false, message: "Réservé à l'institution" });
+        if ((req as any).utilisateurRole !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
+            return res.status(403).json({ success: false, message: "Réservé au superviseur général" });
         }
 
         const seanceWhere: any = { id: req.params.id };
-        SeanceController.filtrerCoursDuSite(seanceWhere, await SeanceController.coursDuSiteActif(req));
+        if ((req as any).utilisateurRole !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
+            SeanceController.filtrerCoursDuSite(seanceWhere, await SeanceController.coursDuSiteActif(req));
+        }
         let seance: Seance | null = await Seance.findOne({ where: seanceWhere });
         if (seance) {
             await seance.destroy()
@@ -808,25 +931,24 @@ export default class SeanceController {
 
     static async publierEmploiDuTemps(req: Request, res: Response): Promise<Response> {
         const role = (req as any).utilisateurRole;
-        if (role !== RolesUtilisateur.INSTITUTION && role !== RolesUtilisateur.ADMIN && role !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
-            return res.status(403).json({ success: false, message: "Réservé à l'institution" });
+        if (role !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
+            return res.status(403).json({ success: false, message: "Réservé au superviseur général" });
         }
 
         try {
-            const coursSiteIds = role === RolesUtilisateur.SUPERVISEUR_GENERAL
-                ? await SeanceController.coursDuSiteActif(req)
-                : null;
-            if (role === RolesUtilisateur.SUPERVISEUR_GENERAL && coursSiteIds === null) {
-                return res.status(403).json({ success: false, message: "Sélectionnez un site actif autorisé pour publier l'emploi du temps." });
+            const coursSiteIds = await SeanceController.coursDuSiteActif(req);
+            if (coursSiteIds === null) {
+                return res.status(403).json({ success: false, message: "Sélectionnez un site avant de publier l'emploi du temps." });
             }
-
+            const where = { coursId: { [Op.in]: coursSiteIds } };
             const seances = await Seance.findAll({
-                ...(coursSiteIds !== null && { where: { coursId: { [Op.in]: coursSiteIds } } }),
+                where,
                 include: [
                     { association: Seance.associations.cours },
                     { association: Seance.associations.enseignant, include: [Enseignant.associations.utilisateur] }
                 ]
             });
+            await Seance.update({ publieeLe: new Date() }, { where });
 
             const enseignantsNotifies = new Set<number>();
             const enseignantsNotifications: { id: number; nom: string; nbSeances: number }[] = [];

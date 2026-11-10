@@ -38,6 +38,13 @@ export interface PlanningEvent {
   cours?: Cours
   enseignantId?: string
   enseignant?: Enseignant
+  etablissementId?: number
+  etablissement?: { id: number, nom: string }
+  pointage?: {
+    heureDebutReelle?: string | null
+    heureFinReelle?: string | null
+  } | null
+  statutPointage?: 'a_venir' | 'en_cours' | 'en_retard' | 'termine' | 'termine_en_avance' | 'absent'
 }
 
 export interface ConflitSeance {

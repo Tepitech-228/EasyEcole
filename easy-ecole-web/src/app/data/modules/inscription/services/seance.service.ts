@@ -48,6 +48,14 @@ export class SeanceService {
     return this.httpClient.get(`${this.SERVICE_URL}/tableau-de-bord`)
   }
 
+  pointerDebut(seanceId: string, date: string): Observable<any> {
+    return this.httpClient.post(`${this.SERVICE_URL}/${seanceId}/pointage/debut`, { date })
+  }
+
+  pointerFin(seanceId: string, date: string): Observable<any> {
+    return this.httpClient.post(`${this.SERVICE_URL}/${seanceId}/pointage/fin`, { date })
+  }
+
   getVolumesEnseignants(mois: string): Observable<any> {
     return this.httpClient.get(`${this.SERVICE_URL}/volumes-enseignants`, { params: { mois } })
   }

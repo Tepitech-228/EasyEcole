@@ -22,6 +22,7 @@ export class Seance extends Model<InferAttributes<Seance>, InferCreationAttribut
   declare dateFin: Date
   declare heureDebut: Date
   declare heureFin: Date
+  declare publieeLe: CreationOptional<Date | null>
   declare description: CreationOptional<string>
   declare regime: CreationOptional<RegimesCours | null>
 
@@ -106,6 +107,10 @@ Seance.init({
   heureFin: {
     type: DataTypes.TIME,
     allowNull: false,
+  },
+  publieeLe: {
+    type: DataTypes.DATE,
+    allowNull: true,
   },
   salleDeClasseId: {
     type: DataTypes.INTEGER.UNSIGNED,

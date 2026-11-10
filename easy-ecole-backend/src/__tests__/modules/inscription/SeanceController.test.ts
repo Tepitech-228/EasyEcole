@@ -31,6 +31,14 @@ jest.mock('../../../core/helpers/SurveillantSiteScope', () => ({
   getSurveillantSiteId: jest.fn(),
 }))
 
+jest.mock('../../../modules/inscription/models/Pointage', () => ({
+  Pointage: { findAll: jest.fn(), findOne: jest.fn() },
+}))
+
+jest.mock('../../../modules/inscription/models/SeancePointage', () => ({
+  SeancePointage: { findAll: jest.fn(), findOne: jest.fn() },
+}))
+
 import SeanceController from '../../../modules/inscription/controllers/SeanceController'
 
 jest.mock('../../../modules/inscription/models/Seance', () => {
@@ -40,6 +48,7 @@ jest.mock('../../../modules/inscription/models/Seance', () => {
   Mock.findByPk = jest.fn()
   Mock.create = jest.fn()
   Mock.findAndCountAll = jest.fn()
+  Mock.update = jest.fn().mockResolvedValue([1])
   Mock.associations = { cours: 'cours', enseignant: 'enseignant', salleDeClasse: 'salleDeClasse' }
   return { Seance: Mock }
 })
@@ -50,6 +59,8 @@ const { Enseignant } = require('../../../modules/auth/models/Enseignant')
 const { Apprenant } = require('../../../modules/auth/models/Apprenant')
 const { SiteUtilisateur } = require('../../../modules/auth/models/SiteUtilisateur')
 const { getSurveillantSiteId } = require('../../../core/helpers/SurveillantSiteScope')
+const { Pointage } = require('../../../modules/inscription/models/Pointage')
+const { SeancePointage } = require('../../../modules/inscription/models/SeancePointage')
 beforeEach(() => { jest.clearAllMocks() })
 
 describe('SeanceController.getAllSeances', () => {
@@ -65,7 +76,10 @@ describe('SeanceController.getAllSeances', () => {
     const res = mockResponse()
     await SeanceController.getAllSeances(mockRequest({ etablissementId: 3 }), res)
     expect(Seance.findAll).toHaveBeenCalledWith(expect.objectContaining({
-      where: { coursId: expect.objectContaining({ [require('sequelize').Op.in]: [12] }) },
+      where: expect.objectContaining({
+        coursId: expect.objectContaining({ [require('sequelize').Op.in]: [12] }),
+        publieeLe: expect.objectContaining({ [require('sequelize').Op.ne]: null }),
+      }),
     }))
   })
   it('limite les séances du surveillant à son site actif affecté', async () => {
@@ -81,7 +95,10 @@ describe('SeanceController.getAllSeances', () => {
     } as any), res)
 
     expect(Seance.findAll).toHaveBeenCalledWith(expect.objectContaining({
-      where: { coursId: expect.objectContaining({ [require('sequelize').Op.in]: [12] }) },
+      where: expect.objectContaining({
+        coursId: expect.objectContaining({ [require('sequelize').Op.in]: [12] }),
+        publieeLe: expect.objectContaining({ [require('sequelize').Op.ne]: null }),
+      }),
     }))
   })
   it('refuse les séances du surveillant sans site autorisé', async () => {
@@ -138,7 +155,7 @@ describe('SeanceController.createSeance', () => {
     ;(Seance.findAll as jest.Mock).mockResolvedValue([])
     const res = mockResponse()
     await SeanceController.createSeance(mockRequest({
-      utilisateurRole: 'institution',
+      utilisateurRole: 'superviseur_general',
       etablissementId: 3,
       body: { coursId: 1, enseignantId: 9 }
     } as any), res)
@@ -148,7 +165,7 @@ describe('SeanceController.createSeance', () => {
     ;(Cours.findOne as jest.Mock).mockResolvedValue(null)
     const res = mockResponse()
     await SeanceController.createSeance(mockRequest({
-      utilisateurRole: 'institution',
+      utilisateurRole: 'superviseur_general',
       etablissementId: 3,
       body: { coursId: 1, enseignantId: 9 }
     } as any), res)
@@ -165,15 +182,20 @@ describe('SeanceController.updateSeance', () => {
   it('retourne 404 si introuvable', async () => {
     ;(Seance.findOne as jest.Mock).mockResolvedValue(null)
     const res = mockResponse()
-    await SeanceController.updateSeance(mockRequest({ utilisateurRole: 'institution', params: { id: '999' } } as any), res)
+    ;(Cours.findAll as jest.Mock).mockResolvedValue([{ id: 12 }])
+    await SeanceController.updateSeance(mockRequest({ utilisateurRole: 'superviseur_general', etablissementId: 3, params: { id: '999' } } as any), res)
     expect(res.status).toHaveBeenCalledWith(404)
   })
   it('met à jour et retourne 200', async () => {
     const up = jest.fn().mockResolvedValue({})
-    ;(Seance.findOne as jest.Mock).mockResolvedValue({ id: 1, update: up })
+    ;(Cours.findAll as jest.Mock).mockResolvedValue([{ id: 12 }])
+    ;(Cours.findOne as jest.Mock).mockResolvedValue({ id: 12 })
+    ;(Enseignant.findByPk as jest.Mock).mockResolvedValue({ utilisateurId: 8 })
+    ;(SiteUtilisateur.findOne as jest.Mock).mockResolvedValue({ id: 9 })
+    ;(Seance.findOne as jest.Mock).mockResolvedValue({ id: 1, coursId: 12, enseignantId: 9, update: up })
     ;(Seance.findAll as jest.Mock).mockResolvedValue([])
     const res = mockResponse()
-    await SeanceController.updateSeance(mockRequest({ utilisateurRole: 'admin', params: { id: '1' }, body: { coursId: 2 } } as any), res)
+    await SeanceController.updateSeance(mockRequest({ utilisateurRole: 'superviseur_general', etablissementId: 3, params: { id: '1' }, body: { coursId: 12, enseignantId: 9 } } as any), res)
     expect(up).toHaveBeenCalled()
     expect(res.status).toHaveBeenCalledWith(200)
   })
@@ -188,16 +210,64 @@ describe('SeanceController.deleteSeance', () => {
   it('retourne 404 si introuvable', async () => {
     ;(Seance.findOne as jest.Mock).mockResolvedValue(null)
     const res = mockResponse()
-    await SeanceController.deleteSeance(mockRequest({ utilisateurRole: 'institution', params: { id: '999' } } as any), res)
+    await SeanceController.deleteSeance(mockRequest({ utilisateurRole: 'superviseur_general', params: { id: '999' } } as any), res)
     expect(res.status).toHaveBeenCalledWith(404)
   })
   it('supprime et retourne 200', async () => {
     const d = jest.fn().mockResolvedValue(undefined)
     ;(Seance.findOne as jest.Mock).mockResolvedValue({ id: 1, destroy: d })
     const res = mockResponse()
-    await SeanceController.deleteSeance(mockRequest({ utilisateurRole: 'admin', params: { id: '1' } } as any), res)
+    await SeanceController.deleteSeance(mockRequest({ utilisateurRole: 'superviseur_general', params: { id: '1' } } as any), res)
     expect(d).toHaveBeenCalled()
     expect(res.status).toHaveBeenCalledWith(200)
+  })
+})
+
+describe('SeanceController.getRetardsEnseignants', () => {
+  it('utilise le pointage de séance en priorité', async () => {
+    ;(Seance.findAll as jest.Mock).mockResolvedValue([{
+      id: 7,
+      heureDebut: '09:00:00',
+      heureFin: '10:00:00',
+      cours: { intitule: 'Algorithmique' },
+      enseignant: { utilisateur: { id: 42 } },
+    }])
+    ;(SeancePointage.findAll as jest.Mock).mockResolvedValue([
+      { seanceId: 7, heureDebutReelle: '09:15:00' },
+    ])
+    ;(Pointage.findAll as jest.Mock).mockResolvedValue([])
+    const res = mockResponse()
+
+    await SeanceController.getRetardsEnseignants(mockRequest(), res)
+
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.json).toHaveBeenCalledWith([
+      expect.objectContaining({
+        seanceId: 7,
+        heureArrivee: '09:15:00',
+        sourcePointage: 'seance',
+        statut: 'en_retard',
+      }),
+    ])
+  })
+
+  it('retombe sur le pointage QR quand la séance n a pas été pointée', async () => {
+    ;(Seance.findAll as jest.Mock).mockResolvedValue([{
+      id: 8,
+      heureDebut: '09:00:00',
+      heureFin: '10:00:00',
+      cours: { intitule: 'Physique' },
+      enseignant: { utilisateur: { id: 43 } },
+    }])
+    ;(SeancePointage.findAll as jest.Mock).mockResolvedValue([])
+    ;(Pointage.findAll as jest.Mock).mockResolvedValue([
+      { utilisateurId: 43, heureArrivee: '08:50:00' },
+    ])
+    const res = mockResponse()
+
+    await SeanceController.getRetardsEnseignants(mockRequest(), res)
+
+    expect(res.json).toHaveBeenCalledWith([])
   })
 })
 

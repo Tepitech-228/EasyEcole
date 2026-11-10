@@ -55,7 +55,9 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
   planningEvents: PlanningEvent[] = []
   currentWeekStart: string = ''
   currentWeekEnd: string = ''
-  couleurCoursMap: Record<string, string> = {}
+  filterSiteId: string = ''
+  pointageEnCours: Record<string, boolean> = {}
+  messagePointage: string = ''
 
   filterEnseignantId: string = ''
   filterClasseId: string = ''
@@ -162,7 +164,17 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
   }
 
   get peutGererPlanning(): boolean {
-    return this.rolesValue.isInstitution || this.rolesValue.isAdmin || this.rolesValue.isSuperviseurGeneral
+    return this.rolesValue.isSuperviseurGeneral
+  }
+
+  get sitesPlanning(): Array<{ id: number, nom: string }> {
+    const sites = new Map<number, string>()
+    for (const event of this.planningEvents) {
+      if (event.etablissementId) {
+        sites.set(event.etablissementId, event.etablissement?.nom || `Site ${event.etablissementId}`)
+      }
+    }
+    return Array.from(sites, ([id, nom]) => ({ id, nom }))
   }
 
   getWeekRange(date: Date): { start: string, end: string } {
@@ -184,12 +196,9 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
     this.loadPlanning(range.start, range.end)
   }
 
-  getCouleurCours(coursId: string): string {
-    if (!coursId) return '#3b82f6'
-    if (this.couleurCoursMap[coursId]) return this.couleurCoursMap[coursId]
-    const index = Object.keys(this.couleurCoursMap).length % COULEURS_PALETTE.length
-    this.couleurCoursMap[coursId] = COULEURS_PALETTE[index]
-    return this.couleurCoursMap[coursId]
+  getCouleurSite(etablissementId?: number): string {
+    if (!etablissementId) return COULEURS_PALETTE[0]
+    return COULEURS_PALETTE[Math.abs(Number(etablissementId)) % COULEURS_PALETTE.length]
   }
 
   loadPlanning(semaineDebut: string, semaineFin: string): void {
@@ -199,8 +208,10 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
       .subscribe({
         next: (events) => {
           this.planningEvents = events
-          const calendarEvents: EventInput[] = events.map((event: PlanningEvent, index: number) => {
-            const couleur = this.getCouleurCours(event.coursId || '')
+          const calendarEvents: EventInput[] = events
+            .filter((event) => !this.filterSiteId || String(event.etablissementId) === this.filterSiteId)
+            .map((event: PlanningEvent, index: number) => {
+            const couleur = this.getCouleurSite(event.etablissementId)
             return {
               id: event.id,
               title: event.titre,
@@ -219,6 +230,11 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
                 enseignant: event.enseignant?.utilisateur?.nom + ' ' + event.enseignant?.utilisateur?.prenoms,
                 cours: event.cours,
                 couleur: couleur,
+                etablissementId: event.etablissementId,
+                etablissement: event.etablissement?.nom,
+                date: event.date,
+                pointage: event.pointage,
+                statutPointage: event.statutPointage,
               },
             }
           })
@@ -240,6 +256,42 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
   onFilterChange(): void {
     if (this.currentWeekStart && this.currentWeekEnd) {
       this.loadPlanning(this.currentWeekStart, this.currentWeekEnd)
+    }
+  }
+
+  planningEvent(eventId: string): PlanningEvent | undefined {
+    return this.planningEvents.find((event) => event.id === eventId)
+  }
+
+  pointerSeance(event: PlanningEvent | undefined, action: 'debut' | 'fin'): void {
+    if (!event?.seanceId || this.pointageEnCours[event.id]) return
+    this.pointageEnCours[event.id] = true
+    this.messagePointage = ''
+    const request = action === 'debut'
+      ? this.seanceService.pointerDebut(event.seanceId, event.date)
+      : this.seanceService.pointerFin(event.seanceId, event.date)
+
+    request.subscribe({
+      next: (result) => {
+        this.messagePointage = result.message || 'Pointage enregistré.'
+        this.annoncer(this.messagePointage)
+        this.loadPlanning(this.currentWeekStart, this.currentWeekEnd)
+      },
+      error: (error) => {
+        this.messagePointage = error.error?.message || 'Le pointage n’a pas pu être enregistré.'
+        this.annoncer(this.messagePointage)
+        this.pointageEnCours[event.id] = false
+      },
+      complete: () => {
+        this.pointageEnCours[event.id] = false
+      },
+    })
+  }
+
+  private annoncer(message: string): void {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel()
+      window.speechSynthesis.speak(new SpeechSynthesisUtterance(message))
     }
   }
 

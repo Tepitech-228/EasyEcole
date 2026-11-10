@@ -55,6 +55,7 @@ export class DetailsCoursPageComponent extends BaseComponentClass implements OnI
     cmHoraire: new FormControl(null, []),
     tdTpHoraire: new FormControl(null, []),
     tpeHoraire: new FormControl(null, []),
+    vhHoraire: new FormControl(null, []),
     type: new FormControl(null, []),
     enseignantId: new FormControl(null, []),
   })
@@ -181,9 +182,13 @@ export class DetailsCoursPageComponent extends BaseComponentClass implements OnI
      return this.ecuesSafe.reduce((acc, e) => acc + (e.tdTpHoraire ?? 0), 0)
    }
 
-   get totalTpeHoraire(): number {
-     return this.ecuesSafe.reduce((acc, e) => acc + (e.tpeHoraire ?? 0), 0)
-   }
+  get totalTpeHoraire(): number {
+    return this.ecuesSafe.reduce((acc, e) => acc + (e.tpeHoraire ?? 0), 0)
+  }
+
+  get totalVhHoraire(): number {
+    return this.ecuesSafe.reduce((acc, e) => acc + (e.vhHoraire ?? 0), 0)
+  }
 
    get totalHoraire(): number {
      return this.totalCmHoraire + this.totalTdTpHoraire + this.totalTpeHoraire
@@ -253,6 +258,7 @@ export class DetailsCoursPageComponent extends BaseComponentClass implements OnI
         cmHoraire: ecue.cmHoraire,
         tdTpHoraire: ecue.tdTpHoraire,
         tpeHoraire: ecue.tpeHoraire,
+        vhHoraire: ecue.vhHoraire,
         type: ecue.type,
         enseignantId: ecue.enseignantId,
       })
@@ -280,6 +286,7 @@ export class DetailsCoursPageComponent extends BaseComponentClass implements OnI
     ecue.cmHoraire = this.ecueForm.get('cmHoraire')!.value
     ecue.tdTpHoraire = this.ecueForm.get('tdTpHoraire')!.value
     ecue.tpeHoraire = this.ecueForm.get('tpeHoraire')!.value
+    ecue.vhHoraire = this.ecueForm.get('vhHoraire')!.value
     ecue.type = this.ecueForm.get('type')!.value
     ecue.enseignantId = this.ecueForm.get('enseignantId')!.value
     ecue.coursId = this.id

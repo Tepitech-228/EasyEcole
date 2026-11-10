@@ -10,6 +10,7 @@ import { CursusApprenant } from '../../inscription/models/CursusApprenant';
 // Établissement hasMany associations
 Etablissement.hasMany(Utilisateur, { foreignKey: 'etablissementId', as: 'utilisateurs' });
 Etablissement.hasMany(Cours, { foreignKey: 'etablissementId', as: 'cours' });
+Cours.belongsTo(Etablissement, { foreignKey: 'etablissementId', as: 'etablissement' });
 Etablissement.hasMany(Classe, { foreignKey: 'etablissementId', as: 'classes' });
 Etablissement.hasMany(Parcours, { foreignKey: 'etablissementId', as: 'parcours' });
 Etablissement.hasMany(Session, { foreignKey: 'etablissementId', as: 'sessions' });

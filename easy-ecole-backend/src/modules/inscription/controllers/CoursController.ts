@@ -8,6 +8,7 @@ import { Enseignant } from "../../auth/models/Enseignant";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { CoursParticipant } from "../models/CoursParticipant";
 import { SiteUtilisateur } from "../../auth/models/SiteUtilisateur";
+import { getSurveillantSiteId } from "../../../core/helpers/SurveillantSiteScope";
 
 export default class CoursController {
 
@@ -72,6 +73,13 @@ export default class CoursController {
         }
 
         try {
+            if ((req as any).utilisateurRole == RolesUtilisateur.SURVEILLANT) {
+                const siteId = await getSurveillantSiteId(req);
+                if (!siteId) {
+                    return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
+                }
+                (options.where as any).etablissementId = siteId;
+            }
             if (hasPagination) {
                 const { count, rows } = await Cours.findAndCountAll(options);
                 return res.status(200).json({
@@ -95,6 +103,10 @@ export default class CoursController {
 
     static async getCours(req: Request, res: Response): Promise<Response> {
         let options: FindOptions<InferAttributes<Cours>> = {}
+        const etablissementId = Number((req as any).etablissementId);
+        const siteFilter = Number.isSafeInteger(etablissementId) && etablissementId > 0
+            ? { etablissementId }
+            : {};
         options = {
             include: [Cours.associations.classe],
             where: { id: req.params.id }
@@ -104,11 +116,13 @@ export default class CoursController {
             (req as any).utilisateurRole == RolesUtilisateur.APPRENANT ||
             (req as any).utilisateurRole == RolesUtilisateur.INSTITUTION ||
             (req as any).utilisateurRole == RolesUtilisateur.ADMIN ||
-            (req as any).utilisateurRole == RolesUtilisateur.SUPERVISEUR_GENERAL
+            (req as any).utilisateurRole == RolesUtilisateur.SUPERVISEUR_GENERAL ||
+            (req as any).utilisateurRole == RolesUtilisateur.SURVEILLANT
         ) {
             options = {
                 where: {
-                    id: req.params.id
+                    id: req.params.id,
+                    ...siteFilter
                 },
                 include: [
                     Cours.associations.classe,
@@ -140,6 +154,13 @@ export default class CoursController {
         }
 
         try {
+            if ((req as any).utilisateurRole == RolesUtilisateur.SURVEILLANT) {
+                const siteId = await getSurveillantSiteId(req);
+                if (!siteId) {
+                    return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
+                }
+                (options.where as any).etablissementId = siteId;
+            }
             const cours: Cours | null = await Cours.findOne(options);
 
             if (cours == null)
