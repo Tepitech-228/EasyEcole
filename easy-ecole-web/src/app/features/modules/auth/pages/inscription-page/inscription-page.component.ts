@@ -1,16 +1,18 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Utilisateur } from 'src/app/data/modules/auth/models/Utilisateur.model';
 import { AuthService } from 'src/app/data/modules/auth/services/auth.service';
+import { merge, of, Subject } from 'rxjs';
+import { catchError, debounceTime, switchMap, takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-inscription-page',
   templateUrl: './inscription-page.component.html',
   styleUrls: ['./inscription-page.component.scss']
 })
-export class InscriptionPageComponent implements OnInit {
+export class InscriptionPageComponent implements OnInit, OnDestroy {
 
   emptyError: boolean = false
   error: boolean = false
@@ -20,7 +22,12 @@ export class InscriptionPageComponent implements OnInit {
 
   emailAlreadyUsed: boolean = false
   identifiantAlreadyUsed: boolean = false
-  nomPrenomsAlreadyUsed: boolean = false
+  identifiantSuggestions: string[] = []
+  identifiantSuggestionsLoading: boolean = false
+  identifiantSuggestionsError: boolean = false
+
+  private readonly nomsModifies$ = new Subject<void>()
+  private readonly destroyed$ = new Subject<void>()
 
   inscriptionForm: FormGroup = new FormGroup({
     nom: new FormControl(null, [Validators.required]),
@@ -34,6 +41,58 @@ export class InscriptionPageComponent implements OnInit {
   constructor(private authService: AuthService, private router: Router) { }
 
   ngOnInit(): void {
+    const nomControl = this.inscriptionForm.get('nom')!
+    const prenomsControl = this.inscriptionForm.get('prenoms')!
+
+    merge(nomControl.valueChanges, prenomsControl.valueChanges)
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe(() => {
+        this.inscriptionForm.get('identifiant')?.setValue(null, { emitEvent: false })
+        this.identifiantSuggestions = []
+        this.identifiantAlreadyUsed = false
+        this.identifiantSuggestionsError = false
+        this.nomsModifies$.next()
+      })
+
+    this.nomsModifies$
+      .pipe(
+        debounceTime(350),
+        switchMap(() => {
+          const nom = String(nomControl.value || '').trim()
+          const prenoms = String(prenomsControl.value || '').trim()
+          if (!nom || !prenoms) {
+            this.identifiantSuggestionsLoading = false
+            return of(null)
+          }
+
+          this.identifiantSuggestionsLoading = true
+          this.identifiantSuggestionsError = false
+          return this.authService.getIdentifiantSuggestions(nom, prenoms).pipe(
+            catchError(() => {
+              this.identifiantSuggestionsError = true
+              return of(null)
+            })
+          )
+        }),
+        takeUntil(this.destroyed$)
+      )
+      .subscribe((result) => {
+        this.identifiantSuggestionsLoading = false
+        this.identifiantSuggestions = result?.suggestions || []
+        if (result && result.suggestions.length === 0) {
+          this.identifiantSuggestionsError = true
+        }
+      })
+  }
+
+  ngOnDestroy(): void {
+    this.destroyed$.next()
+    this.destroyed$.complete()
+    this.nomsModifies$.complete()
+  }
+
+  demanderSuggestions(): void {
+    this.nomsModifies$.next()
   }
 
   inscription(): void {
@@ -99,8 +158,13 @@ export class InscriptionPageComponent implements OnInit {
                 // une TypeError masque le vrai problème et spamme la console.
                 this.emailAlreadyUsed = !!err?.error?.emailAlreadyUsed
                 this.identifiantAlreadyUsed = !!err?.error?.identifiantAlreadyUsed
-                this.nomPrenomsAlreadyUsed = !!err?.error?.nomPrenomsAlreadyUsed
-                if (!this.emailAlreadyUsed && !this.identifiantAlreadyUsed && !this.nomPrenomsAlreadyUsed) {
+                if (Array.isArray(err?.error?.identifiantSuggestions)) {
+                  this.identifiantSuggestions = err.error.identifiantSuggestions
+                }
+                if (this.identifiantAlreadyUsed || err?.error?.identifiantSuggestionRequired) {
+                  this.inscriptionForm.get('identifiant')?.setValue(null)
+                }
+                if (!this.emailAlreadyUsed && !this.identifiantAlreadyUsed && !err?.error?.identifiantSuggestionRequired) {
                   this.error = true
                 }
 
@@ -108,7 +172,6 @@ export class InscriptionPageComponent implements OnInit {
                   this.error = false
                   this.emailAlreadyUsed = false
                   this.identifiantAlreadyUsed = false
-                  this.nomPrenomsAlreadyUsed = false
                 }, 3000)
               },
             }

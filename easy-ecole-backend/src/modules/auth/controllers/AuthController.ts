@@ -19,6 +19,24 @@ function masquerEmail(email: string): string {
   return `${local[0]}***${local[local.length - 1]}@${domaine}`
 }
 
+function normaliserIdentifiantPartie(valeur: string): string {
+  return valeur
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/œ/g, 'oe')
+    .replace(/æ/g, 'ae')
+    .replace(/ß/g, 'ss')
+    .replace(/[^a-z0-9]/g, '')
+}
+
+function construireBaseIdentifiant(nom: string, prenoms: string): string {
+  const premierPrenom = prenoms.trim().split(/\s+/)[0] || ''
+  const prenomNormalise = normaliserIdentifiantPartie(premierPrenom).slice(0, 30)
+  const nomNormalise = normaliserIdentifiantPartie(nom).slice(0, 30)
+  return prenomNormalise && nomNormalise ? `${prenomNormalise}.${nomNormalise}` : ''
+}
+
 function signToken(utilisateur: Utilisateur): string {
   return jwt.sign(
     {
@@ -87,23 +105,65 @@ export default class AuthController {
     }
   }
 
+  static async getIdentifiantSuggestions(req: Request, res: Response): Promise<Response> {
+    const nom = typeof req.body?.nom === 'string' ? req.body.nom.trim() : ''
+    const prenoms = typeof req.body?.prenoms === 'string' ? req.body.prenoms.trim() : ''
+    const base = construireBaseIdentifiant(nom, prenoms)
+
+    if (!nom || !prenoms || !base) {
+      return res.status(400).json({ message: 'Le nom et le prénom sont requis pour proposer un identifiant' })
+    }
+
+    try {
+      const suggestions = await AuthController.getPropositionsDisponibles(base)
+      return res.status(200).json({ suggestions })
+    } catch (error) {
+      console.error('Erreur lors de la génération des identifiants proposés:', error)
+      return res.status(500).json({ message: 'Impossible de proposer un nom d’utilisateur pour le moment' })
+    }
+  }
+
   static async register(req: Request, res: Response): Promise<Response | null> {
-    if (req.body.identifiant == undefined || req.body.email == undefined) {
+    const nom = typeof req.body?.nom === 'string' ? req.body.nom.trim() : ''
+    const prenoms = typeof req.body?.prenoms === 'string' ? req.body.prenoms.trim() : ''
+    const identifiant = typeof req.body?.identifiant === 'string' ? req.body.identifiant.trim() : ''
+
+    if (!nom || !prenoms || !identifiant || !req.body.email || !req.body.motDePasse) {
       return res.status(400).json({ emptyField: true });
     }
 
-    let emailAlreadyUsed: boolean = await Utilisateur.findOne({ where: { email: req.body.email } }) != null
-    let identifiantAlreadyUsed: boolean = await Utilisateur.findOne({ where: { identifiant: req.body.identifiant } }) != null
-    let nomPrenomsAlreadyUsed: boolean = await Utilisateur.findOne({ where: { [Op.and]: [{ nom: req.body.nom }, { prenoms: req.body.prenoms }] } }) != null
+    const baseIdentifiant = construireBaseIdentifiant(nom, prenoms)
+    let propositions: string[]
+    let emailAlreadyUsed: boolean
+    let identifiantAlreadyUsed: boolean
+    try {
+      propositions = await AuthController.getPropositionsDisponibles(baseIdentifiant)
+      emailAlreadyUsed = await Utilisateur.findOne({ where: { email: req.body.email } }) != null
+      identifiantAlreadyUsed = await Utilisateur.findOne({ where: { identifiant } }) != null
+    } catch (error) {
+      console.error('Erreur lors de la vérification des informations d’inscription:', error)
+      return res.status(500).json({ message: 'Impossible de vérifier les informations d’inscription' })
+    }
 
-    if (emailAlreadyUsed || identifiantAlreadyUsed || nomPrenomsAlreadyUsed) {
-      return res.status(400).json({ emailAlreadyUsed, identifiantAlreadyUsed, nomPrenomsAlreadyUsed });
+    if (emailAlreadyUsed || identifiantAlreadyUsed) {
+      return res.status(400).json({
+        emailAlreadyUsed,
+        identifiantAlreadyUsed,
+        identifiantSuggestions: propositions
+      });
+    }
+
+    if (!propositions.includes(identifiant)) {
+      return res.status(400).json({
+        identifiantSuggestionRequired: true,
+        identifiantSuggestions: propositions
+      });
     }
 
     let utilisateur: Utilisateur = new Utilisateur();
-    utilisateur.nom = req.body.nom;
-    utilisateur.prenoms = req.body.prenoms;
-    utilisateur.identifiant = req.body.identifiant;
+    utilisateur.nom = nom;
+    utilisateur.prenoms = prenoms;
+    utilisateur.identifiant = identifiant;
     utilisateur.email = req.body.email;
     utilisateur.motDePasse = bcrypt.hashSync(req.body.motDePasse, 12);
     utilisateur.contact = req.body.contact;
@@ -132,6 +192,39 @@ export default class AuthController {
       });
 
     return null
+  }
+
+  private static async getPropositionsDisponibles(base: string): Promise<string[]> {
+    if (!base) return []
+
+    const suggestions: string[] = []
+    let suffix = 0
+
+    while (suggestions.length < 3 && suffix < 10000) {
+      const candidats = Array.from({ length: 100 }, (_, index) => {
+        const numero = suffix + index
+        return numero === 0 ? base : `${base}${numero}`
+      })
+      const comptesExistants = await Utilisateur.findAll({
+        attributes: ['identifiant'],
+        where: { identifiant: { [Op.in]: candidats } },
+        raw: true
+      })
+      const identifiantsOccupes = new Set(
+        comptesExistants.map((compte) => compte.identifiant.toLowerCase())
+      )
+
+      for (const candidat of candidats) {
+        if (!identifiantsOccupes.has(candidat.toLowerCase())) {
+          suggestions.push(candidat)
+          if (suggestions.length === 3) break
+        }
+      }
+
+      suffix += candidats.length
+    }
+
+    return suggestions
   }
 
   static async verifyOtp(req: Request, res: Response): Promise<Response> {

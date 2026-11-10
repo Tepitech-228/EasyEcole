@@ -44,6 +44,8 @@ import { InscriptionWizardPageComponent } from './pages/inscription-wizard-page/
 import { ImpayesPageComponent } from './pages/impayes-page/impayes-page.component';
 import { SituationFinancierePageComponent } from './pages/situation-financiere-page/situation-financiere-page.component';
 import { InscriptionCorrectionDocumentsPageComponent } from './pages/inscription-correction-documents-page/inscription-correction-documents-page.component';
+import { SuiviRecouvrementPageComponent } from './pages/suivi-recouvrement-page/suivi-recouvrement-page.component';
+import { NgChartsModule } from 'ng2-charts';
 @NgModule({
   declarations: [
     MonCursusPageComponent,
@@ -84,14 +86,16 @@ ListeClassesPageComponent,
         InscriptionWizardPageComponent,
     ImpayesPageComponent,
     SituationFinancierePageComponent,
-    InscriptionCorrectionDocumentsPageComponent
+    InscriptionCorrectionDocumentsPageComponent,
+    SuiviRecouvrementPageComponent
   ],
   imports: [
     CommonModule,
     InscriptionRoutingModule,
     SharedModule,
     FormsModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    NgChartsModule
   ]
 })
 export class InscriptionModule { }

@@ -114,6 +114,11 @@ describe("official academic DocGen templates", () => {
       .toEqual(["√", "√", "", "", ""]);
     expect($(".data-table").eq(2).find(".check-box").map((_i, el) => $(el).text()).get())
       .toEqual(["", "", "√", "", ""]);
+    for (const tableIndex of [0, 1]) {
+      const rows = $(".data-table").eq(tableIndex).find("tr");
+      expect(rows.eq(2).find("td").first().text()).toBe("Dates");
+      expect(rows.eq(2).find("td")).toHaveLength(tableIndex === 0 ? 7 : 6);
+    }
     expect(rendered).not.toContain("{{");
   });
 

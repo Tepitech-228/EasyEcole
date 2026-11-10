@@ -31,6 +31,8 @@ export interface PdfGeneratorOptions {
   headerHeightMm?: number;
   /** Désactive le header institutionnel global (ex. documents qui gèrent leur propre en-tête). */
   disableHeader?: boolean;
+  /** Désactive les en-têtes et pieds de page globaux pour les documents issus des modèles DocGen. */
+  disableHeaderFooter?: boolean;
 }
 
 export interface DocGenPdfParams {
@@ -52,9 +54,20 @@ export class PdfGeneratorService {
    * rendu pdfkit afin que la validation du comité ne soit jamais bloquée.
    */
   static async generateDocGen(params: DocGenPdfParams): Promise<Buffer> {
+    const options: PdfGeneratorOptions = {
+      ...params.options,
+      disableHeaderFooter: true,
+      margins: {
+        top: params.options?.margins?.top || '15mm',
+        right: params.options?.margins?.right || '15mm',
+        bottom: params.options?.margins?.bottom || '15mm',
+        left: params.options?.margins?.left || '15mm',
+      },
+    };
+
     if (params.typeCode === 'API001') {
       try {
-        return await this.generate(params.html, params.options);
+        return await this.generate(params.html, options);
       } catch (error) {
         console.warn(
           '[DOCGEN][API001] Chromium indisponible, repli sur pdfkit:',
@@ -69,7 +82,7 @@ export class PdfGeneratorService {
         });
       }
     }
-    return this.generate(params.html, params.options);
+    return this.generate(params.html, options);
   }
 
   static async generate(html: string, options?: PdfGeneratorOptions): Promise<Buffer> {
@@ -86,11 +99,13 @@ export class PdfGeneratorService {
 
       const googleFontsUrl = 'https://fonts.googleapis.com'; // non utilisé, gardé pour compat
 
-      const headerTemplate = options?.disableHeader
+      const headerTemplate = options?.disableHeader || options?.disableHeaderFooter
         ? '<span></span>'
         : this.buildHeaderTemplate(options?.ecoleNom || 'ESA');
 
-      const footerTemplate = this.buildFooterTemplate();
+      const footerTemplate = options?.disableHeaderFooter
+        ? '<span></span>'
+        : this.buildFooterTemplate();
 
       // La marge haute doit TOUJOURS être au moins aussi grande que l'en-tête,
       // sinon le contenu passerait derrière lui. On retient donc la valeur la
@@ -100,8 +115,8 @@ export class PdfGeneratorService {
         const m = String(v).match(/([\d.]+)\s*mm/i);
         return m ? parseFloat(m[1]) : def;
       };
-      const margeTopDemandee = parseMm(options?.margins?.top, 0);
-      const margeTopFinale = options?.disableHeader
+      const margeTopDemandee = parseMm(options?.margins?.top, options?.disableHeaderFooter ? 15 : 0);
+      const margeTopFinale = options?.disableHeader || options?.disableHeaderFooter
         ? margeTopDemandee
         : Math.max(margeTopDemandee, headerHeight + 2);
 
@@ -109,7 +124,7 @@ export class PdfGeneratorService {
         format: (options?.format as any) || 'A4',
         landscape: options?.orientation === 'landscape',
         printBackground: true,
-        displayHeaderFooter: true,
+        displayHeaderFooter: !options?.disableHeaderFooter,
         headerTemplate,
         footerTemplate,
         margin: {

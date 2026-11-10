@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import path from "path";
 import { FindOptions, InferAttributes, Op } from "sequelize";
 import { Bordereau } from "../models/Bordereau";
+import { MODULE_MODEL_PREFIX } from "../InscriptionModule";
 import { Echeance } from "../models/Echeance";
 import { DossierEtudiant } from "../models/DossierEtudiant";
 import { DemandeInscription } from "../models/DemandeInscription";
@@ -12,7 +13,13 @@ import { TypeOperationBordereau } from "../models/TypeOperationBordereau";
 import { PaiementInscription } from "../models/PaiementInscription";
 import { TypesPaiement } from "../../../core/enums/TypesPaiement";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
+import { AuthSuperviseurGeneral } from "../../../core/middlewares/AuthSuperviseurGeneral";
 import { AuthEsacompta } from "../../../core/middlewares/AuthEsacompta";
+import {
+  construireSuiviRecouvrements,
+  GranulariteRecouvrement,
+  LigneRecouvrementAgregee,
+} from "../services/SuiviRecouvrementService";
 import CheckPermission from "../../../core/middlewares/CheckPermission";
 import Authenticate from "../../../core/middlewares/Authenticate";
 import { ImputationService, ResultatImputation } from "../services/ImputationService";
@@ -55,6 +62,99 @@ const canAccessFinanceWithoutSite = (req: Request): boolean => {
   const role = (req as any).utilisateurRole;
   return role === RolesUtilisateur.ADMIN || role === RolesUtilisateur.ESA_COMPTA;
 };
+
+const dateOnlyUtc = (date: Date): string => date.toISOString().slice(0, 10);
+
+const parseDateOnlyUtc = (value: string): Date | null => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return Number.isNaN(date.getTime()) || dateOnlyUtc(date) !== value ? null : date;
+};
+
+router.get('/suivi-recouvrements', [AuthSuperviseurGeneral], async (req: Request, res: Response) => {
+  try {
+    const dateFinQuery = req.query.dateFin;
+    const dateDebutQuery = req.query.dateDebut;
+    const granulariteQuery = req.query.granularite;
+    if (
+      (dateDebutQuery !== undefined && typeof dateDebutQuery !== 'string')
+      || (dateFinQuery !== undefined && typeof dateFinQuery !== 'string')
+      || (granulariteQuery !== undefined && typeof granulariteQuery !== 'string')
+    ) {
+      return res.status(400).json({ success: false, message: "Filtres de suivi invalides" });
+    }
+
+    const dateFin = parseDateOnlyUtc(
+      dateFinQuery as string | undefined || dateOnlyUtc(new Date())
+    );
+    const dateFinPourDebut = dateFin ? new Date(dateFin) : null;
+    dateFinPourDebut?.setUTCDate(dateFinPourDebut.getUTCDate() - 29);
+    const dateDebut = parseDateOnlyUtc(
+      dateDebutQuery as string | undefined || (dateFinPourDebut ? dateOnlyUtc(dateFinPourDebut) : '')
+    );
+    const granularite = ((granulariteQuery as string | undefined) || 'jour') as GranulariteRecouvrement;
+
+    if (!dateDebut || !dateFin || dateDebut > dateFin) {
+      return res.status(400).json({ success: false, message: "La période sélectionnée est invalide" });
+    }
+    if (!['jour', 'semaine'].includes(granularite)) {
+      return res.status(400).json({ success: false, message: "La fréquence doit être jour ou semaine" });
+    }
+
+    const nombreJours = Math.floor((dateFin.getTime() - dateDebut.getTime()) / 86400000) + 1;
+    if (nombreJours > 366) {
+      return res.status(400).json({ success: false, message: "La période ne peut pas dépasser 366 jours" });
+    }
+
+    const dateFinExclusive = new Date(dateFin);
+    dateFinExclusive.setUTCDate(dateFinExclusive.getUTCDate() + 1);
+    const sequelize = DatabaseConnection.getInstance().sequelize;
+    const bordereauAlias = `${MODULE_MODEL_PREFIX}Bordereau`;
+    const lignes = await Bordereau.findAll({
+      attributes: [
+        'saisiParId',
+        [sequelize.fn('DATE', sequelize.col(`${bordereauAlias}.dateSaisieComptable`)), 'date'],
+        [sequelize.fn('COUNT', sequelize.col(`${bordereauAlias}.id`)), 'nombre'],
+        [sequelize.fn('COALESCE', sequelize.fn('SUM', sequelize.col(`${bordereauAlias}.montant`)), 0), 'montantTotal'],
+      ],
+      include: [{
+        association: Bordereau.associations.saisiPar,
+        attributes: ['id', 'nom', 'prenoms'],
+        required: false,
+      }],
+      where: {
+        saisiParId: { [Op.ne]: null },
+        dateSaisieComptable: { [Op.gte]: dateDebut, [Op.lt]: dateFinExclusive },
+      },
+      group: [
+        sequelize.col(`${bordereauAlias}.saisiParId`),
+        sequelize.fn('DATE', sequelize.col(`${bordereauAlias}.dateSaisieComptable`)),
+        sequelize.col('saisiPar.id'),
+        sequelize.col('saisiPar.nom'),
+        sequelize.col('saisiPar.prenoms'),
+      ],
+      order: [[sequelize.fn('DATE', sequelize.col(`${bordereauAlias}.dateSaisieComptable`)), 'ASC']],
+    });
+
+    const suivi = construireSuiviRecouvrements(
+      lignes.map(ligne => ligne.get({ plain: true }) as Bordereau & LigneRecouvrementAgregee),
+      dateDebut,
+      dateFin,
+      granularite
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        periode: { dateDebut: dateOnlyUtc(dateDebut), dateFin: dateOnlyUtc(dateFin), granularite },
+        ...suivi,
+      },
+    });
+  } catch (error) {
+    console.error("Erreur chargement suivi des recouvrements:", error);
+    return res.status(500).json({ success: false, message: "Impossible de charger le suivi des recouvrements" });
+  }
+});
 
 /**
  * @openapi
@@ -1002,6 +1102,8 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
 
     // Marquer la saisie ESA comme effectuée (AVANT le commit, dans la transaction)
     bordereau.statutPaiement = 'saisi'
+    bordereau.saisiParId = (req as any).utilisateurId
+    bordereau.dateSaisieComptable = new Date()
     await bordereau.save({ transaction })
 
     // ── Alerte « double mixte » dans la même session académique ──

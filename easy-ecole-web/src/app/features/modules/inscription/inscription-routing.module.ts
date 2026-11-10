@@ -40,6 +40,8 @@ import { InscriptionWizardPageComponent } from './pages/inscription-wizard-page/
 import { ImpayesPageComponent } from './pages/impayes-page/impayes-page.component';
 import { SituationFinancierePageComponent } from './pages/situation-financiere-page/situation-financiere-page.component';
 import { InscriptionCorrectionDocumentsPageComponent } from './pages/inscription-correction-documents-page/inscription-correction-documents-page.component';
+import { SuiviRecouvrementPageComponent } from './pages/suivi-recouvrement-page/suivi-recouvrement-page.component';
+import { SuperviseurGeneralGuard } from 'src/app/core/guards/superviseur-general.guard';
 
 const routes: Routes = [
   {
@@ -306,6 +308,12 @@ const routes: Routes = [
     component: EsacomptaBordereauxPageComponent,
     pathMatch: 'full',
     data: { statut: 'valide,en_saisie_comptable' }
+  },
+  {
+    path: 'finance/suivi-recouvrements',
+    component: SuiviRecouvrementPageComponent,
+    canActivate: [SuperviseurGeneralGuard],
+    pathMatch: 'full'
   },
   {
     path: 'finance/situation-financiere',

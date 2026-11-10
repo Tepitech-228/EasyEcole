@@ -26,6 +26,7 @@ jest.mock('../../../modules/auth/models/Utilisateur', () => {
     update: mockUtilUpdate,
   }))
   MockUtilisateur.findOne = jest.fn()
+  MockUtilisateur.findAll = jest.fn()
   return { Utilisateur: MockUtilisateur }
 })
 
@@ -71,6 +72,7 @@ const { SiteUtilisateur } = require('../../../modules/auth/models/SiteUtilisateu
 const { Etablissement } = require('../../../modules/etablissement/models/Etablissement')
 beforeEach(() => {
   jest.clearAllMocks()
+  ;(Utilisateur.findAll as jest.Mock).mockResolvedValue([])
 })
 
 describe('AuthController.getEmailConfirmationToken', () => {
@@ -142,6 +144,19 @@ describe('AuthController.login', () => {
 })
 
 describe('AuthController.register', () => {
+  it('propose des identifiants normalisés et ajoute un chiffre en cas de doublon', async () => {
+    const req = mockRequest({ body: { nom: 'Dœ', prenoms: 'Élodie' } })
+    const res = mockResponse()
+    ;(Utilisateur.findAll as jest.Mock).mockResolvedValue([{ identifiant: 'elodie.doe' }])
+
+    await AuthController.getIdentifiantSuggestions(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.json).toHaveBeenCalledWith({
+      suggestions: ['elodie.doe1', 'elodie.doe2', 'elodie.doe3']
+    })
+  })
+
   it('retourne 400 si identifiant ou email manquant', async () => {
     const req = mockRequest({ body: { nom: 'Test' } })
     const res = mockResponse()
@@ -164,14 +179,17 @@ describe('AuthController.register', () => {
   })
 
   it('crée un utilisateur et retourne 201', async () => {
-    const req = mockRequest({ body: { identifiant: 'newuser', email: 'new@test.com', nom: 'Test', prenoms: 'User', motDePasse: 'pass123', contact: '123456' } })
+    const req = mockRequest({ body: { identifiant: 'user.test', email: 'new@test.com', nom: 'Test', prenoms: 'User', motDePasse: 'pass123', contact: '123456' } })
     const res = mockResponse()
-    ;(Utilisateur.findOne as jest.Mock).mockResolvedValue(null)
+    ;(Utilisateur.findOne as jest.Mock).mockImplementation(({ where }: any) => {
+      return Reflect.ownKeys(where).some((key) => typeof key === 'symbol') ? { id: 2 } : null
+    })
     mockUtilSave.mockResolvedValue({ id: 1, identifiant: 'newuser', email: 'new@test.com' })
 
     await AuthController.register(req, res)
 
     expect(mockUtilSave).toHaveBeenCalled()
+    expect(Utilisateur.findOne).toHaveBeenCalledTimes(2)
     expect(res.status).toHaveBeenCalledWith(201)
     expect(res.json).toHaveBeenCalledWith({
       otpRequired: true,
@@ -181,8 +199,23 @@ describe('AuthController.register', () => {
     })
   })
 
+  it('refuse un identifiant saisi librement qui ne fait pas partie des propositions', async () => {
+    const req = mockRequest({ body: { identifiant: 'custom-user', email: 'new@test.com', nom: 'Test', prenoms: 'User', motDePasse: 'pass123' } })
+    const res = mockResponse()
+    ;(Utilisateur.findOne as jest.Mock).mockResolvedValue(null)
+
+    await AuthController.register(req, res)
+
+    expect(mockUtilSave).not.toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(res.json).toHaveBeenCalledWith({
+      identifiantSuggestionRequired: true,
+      identifiantSuggestions: ['user.test', 'user.test1', 'user.test2']
+    })
+  })
+
   it('retourne 400 si la sauvegarde échoue', async () => {
-    const req = mockRequest({ body: { identifiant: 'newuser', email: 'new@test.com', nom: 'Test', prenoms: 'User', motDePasse: 'pass123' } })
+    const req = mockRequest({ body: { identifiant: 'user.test', email: 'new@test.com', nom: 'Test', prenoms: 'User', motDePasse: 'pass123' } })
     const res = mockResponse()
     ;(Utilisateur.findOne as jest.Mock).mockResolvedValue(null)
     mockUtilSave.mockRejectedValue(new Error('Save error'))

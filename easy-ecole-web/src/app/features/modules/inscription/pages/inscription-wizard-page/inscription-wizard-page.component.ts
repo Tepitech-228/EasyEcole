@@ -213,7 +213,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.filiereSelectionId = etat.filiereSelectionId || ''
     this.sessionSelectionneeId = etat.sessionSelectionneeId
     this.sessions = etat.sessions || []
-    this.documentsRequis = etat.documentsRequis || []
+    this.documentsRequis = (etat.documentsRequis || []).filter((document: any) => this.estBordereau(document))
     this.documents = etat.documents || {}
     this.bordereau = etat.bordereau || null
     this.infos = {
@@ -365,7 +365,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
           ? documentsSession.filter((d: any) => this.estBordereau(d))
           : estCorrectionComite
             ? documentsSession.filter((d: any) => piecesCorrection.has(String(d.id)))
-            : documentsSession.filter((d: any) => d.etape === 'premiere' || this.estBordereau(d))
+            : documentsSession.filter((d: any) => this.estBordereau(d))
         this.piecesServeur = new Map(
           (Array.isArray(demande.dossiersDemande) ? demande.dossiersDemande : [])
             .filter((p: any) => p?.dossierId != null)
@@ -417,6 +417,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
             }
             if (etatSauve.documentsRequis?.length && this.documentsRequis.length === 0) {
               this.documentsRequis = etatSauve.documentsRequis
+                .filter((document: any) => this.estBordereau(document))
             }
             // La filière n'est PAS connue du serveur tant que le dossier est un
             // brouillon (le parcours est créé seulement à la soumission). On la
@@ -692,7 +693,8 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   }
 
   /**
-   * Charge les documents requis pour une session donnée (documents de session uniquement).
+   * Charge le bordereau requis en première étape. Les autres pièces sont
+   * demandées uniquement après validation du paiement par le recouvrement.
    * Les dossiers d'inscription ne sont inclus QUE par l'endpoint détail
    * (GET /sessions/:id), pas par la liste — on appelle donc le détail.
    */
@@ -704,7 +706,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
         description: d.description,
         obligatoire: true,
         etape: d.etape,
-      })).filter((d: any) => d.etape === 'premiere' || this.estBordereau(d))
+      })).filter((d: any) => this.estBordereau(d))
     this.documents = {}
     this.documentsRequis = dossiersSession
     // Nouvelle session ⇒ les pièces de la précédente ne sont plus attendues.
@@ -928,7 +930,6 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
       this.infos.nom
       && this.infos.prenoms
       && this.infos.dateNaissance
-      && this.infos.numeroPiece
       && this.infos.matriculeEtudiant?.trim()
       && this.siteSelectionValide
     )

@@ -6,8 +6,8 @@ import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../AuthModule";
 
 export class AdresseApprenant extends Model<InferAttributes<AdresseApprenant>, InferCreationAttributes<AdresseApprenant>> {
   declare id: CreationOptional<string>
-  declare boitePostale: string
-  declare prorietaireBoitePostale: string
+  declare boitePostale: CreationOptional<string | null>
+  declare prorietaireBoitePostale: CreationOptional<string | null>
   declare telMobile: string
   declare telDomicile: CreationOptional<string>
   declare quartier: string
@@ -28,11 +28,11 @@ AdresseApprenant.init({
   },
   boitePostale: {
     type: new DataTypes.STRING,
-    allowNull: false
+    allowNull: true
   },
   prorietaireBoitePostale: {
     type: new DataTypes.STRING,
-    allowNull: false
+    allowNull: true
   },
   telMobile: {
     type: new DataTypes.STRING,

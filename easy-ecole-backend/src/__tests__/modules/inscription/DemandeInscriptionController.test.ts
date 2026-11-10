@@ -215,6 +215,39 @@ describe('DemandeInscriptionController.soumettreDemande', () => {
     expect(HikvisionEnrollmentService.processPending).toHaveBeenCalled()
   })
 
+  it('requires only the payment slip before recouvrement, even if other session documents are marked as first-step', async () => {
+    const demande = {
+      id: 10,
+      utilisateurId: 7,
+      sessionId: 3,
+      etablissementId: 4,
+      modeFormation: 'en_ligne',
+      statutPipeline: null,
+      update: jest.fn().mockResolvedValue(undefined),
+    }
+    ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue(demande)
+    ;(DossierInscription.findAll as jest.Mock).mockResolvedValue([
+      { id: 20, titre: 'Extrait de naissance', etape: 'premiere' },
+      { id: 21, titre: 'Bordereau de paiement', etape: 'premiere' },
+    ])
+    ;(DemandeInscriptionDossier.findAll as jest.Mock).mockResolvedValue([{ dossierId: 21 }])
+    const req = mockRequest({
+      utilisateurRole: 'apprenant',
+      utilisateurId: 7,
+      params: { id: '10' },
+      body: {},
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.soumettreDemande(req, res)
+
+    expect(demande.update).toHaveBeenCalledWith(expect.objectContaining({
+      statutPipeline: 'soumis',
+      soumissionComite: false,
+    }))
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
   it('keeps the submitted request successful and reports when no terminal is configured', async () => {
     const demande = {
       id: 10,

@@ -1,0 +1,124 @@
+<section class="suivi-recouvrement">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Pilotage financier</p>
+      <h1>Suivi des recouvrements</h1>
+      <p class="subtitle">Fréquence des traitements par compte et évolution de l’activité.</p>
+    </div>
+  </header>
+
+  <form class="filters" (ngSubmit)="chargerSuivi()">
+    <label>
+      Du
+      <input type="date" name="dateDebut" [(ngModel)]="dateDebut">
+    </label>
+    <label>
+      Au
+      <input type="date" name="dateFin" [(ngModel)]="dateFin">
+    </label>
+    <label>
+      Fréquence
+      <select name="granularite" [(ngModel)]="granularite">
+        <option value="jour">Par jour</option>
+        <option value="semaine">Par semaine</option>
+      </select>
+    </label>
+    <button type="submit" [disabled]="loading">
+      <span class="material-icons">filter_alt</span>
+      {{ loading ? 'Chargement…' : 'Appliquer' }}
+    </button>
+  </form>
+
+  <p class="error-message" *ngIf="error" role="alert">{{ error }}</p>
+  <div class="loading-state" *ngIf="loading">Chargement des statistiques…</div>
+
+  <ng-container *ngIf="!loading && data as suivi">
+    <div class="kpi-grid">
+      <article class="kpi-card">
+        <span class="kpi-icon indigo"><span class="material-icons">receipt_long</span></span>
+        <div>
+          <p>Total des recouvrements</p>
+          <strong>{{ suivi.totaux.nombreRecouvrements | number }}</strong>
+        </div>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-icon teal"><span class="material-icons">groups</span></span>
+        <div>
+          <p>Comptes ayant traité</p>
+          <strong>{{ suivi.totaux.comptesActifs | number }}</strong>
+        </div>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-icon amber"><span class="material-icons">trending_up</span></span>
+        <div>
+          <p>Moyenne {{ frequenceLabel }}</p>
+          <strong>{{ suivi.totaux.moyenneParPeriode | number:'1.0-2' }}</strong>
+        </div>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-icon blue"><span class="material-icons">payments</span></span>
+        <div>
+          <p>Montant traité</p>
+          <strong>{{ suivi.totaux.montantTotal | number:'1.0-0' }} FCFA</strong>
+        </div>
+      </article>
+    </div>
+
+    <div class="charts-grid">
+      <article class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Fréquence par compte {{ frequenceLabel }}</h2>
+            <p>Nombre de traitements par personne et par période</p>
+          </div>
+        </div>
+        <div class="chart-container" *ngIf="suivi.totaux.nombreRecouvrements > 0; else noEvolution">
+          <canvas baseChart [data]="graphiqueEvolution" [options]="optionsGraphiqueEvolution" type="bar"></canvas>
+        </div>
+        <ng-template #noEvolution><p class="empty-state">Aucun recouvrement sur cette période.</p></ng-template>
+      </article>
+
+      <article class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Recouvrements par compte</h2>
+            <p>Classement des comptes les plus actifs</p>
+          </div>
+        </div>
+        <div class="chart-container" *ngIf="suivi.parCompte.length; else noAccounts">
+          <canvas baseChart [data]="graphiqueComptes" [options]="optionsGraphiqueComptes" type="bar"></canvas>
+        </div>
+        <ng-template #noAccounts><p class="empty-state">Aucun compte avec une activité sur cette période.</p></ng-template>
+      </article>
+    </div>
+
+    <article class="panel account-panel">
+      <div class="panel-heading">
+        <div>
+          <h2>Détail par compte</h2>
+          <p>{{ suivi.periode.dateDebut }} — {{ suivi.periode.dateFin }}</p>
+        </div>
+        <span class="account-count">{{ suivi.parCompte.length }} compte(s)</span>
+      </div>
+      <div class="table-wrap" *ngIf="suivi.parCompte.length; else noAccountsTable">
+        <table>
+          <thead>
+            <tr>
+              <th>Compte</th>
+              <th>Nombre de recouvrements</th>
+              <th>Montant total traité</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let compte of suivi.parCompte">
+              <td>{{ compte.nomComplet }}</td>
+              <td><span class="count-pill">{{ compte.nombreRecouvrements | number }}</span></td>
+              <td>{{ compte.montantTotal | number:'1.0-0' }} FCFA</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <ng-template #noAccountsTable><p class="empty-state">Aucune donnée à afficher pour cette période.</p></ng-template>
+    </article>
+  </ng-container>
+</section>

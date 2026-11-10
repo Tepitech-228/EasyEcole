@@ -186,7 +186,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
     {
         label: 'Financier',
         icon: 'paid',
-        allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.APPRENANT, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN, RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ESA_COMPTA],
+        allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.APPRENANT, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN, RolesUtilisateur.RESSOURCES_HUMAINES, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.SUPERVISEUR_GENERAL],
         groups: [
             {
                 label: 'Finance',
@@ -202,6 +202,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                      { label: 'Bordereaux traités', route: '/inscription/finance/bordereaux/traites', icon: 'receipt_long', permissionKey: 'menu.finances.bordereaux-a-traiter', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.ADMIN] },
                      { label: 'Bordereaux rejetés', route: '/inscription/finance/bordereaux/rejetes', icon: 'receipt_long', permissionKey: 'menu.finances.bordereaux-a-traiter', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.ADMIN] },
                     { label: 'Types de bordereau', route: '/inscription/finance/types-bordereaux', icon: 'category', permissionKey: 'menu.finances.types-bordereaux', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.ADMIN] },
+                    { label: 'Suivi recouvrements', route: '/inscription/finance/suivi-recouvrements', icon: 'monitoring', allowedRoles: [RolesUtilisateur.SUPERVISEUR_GENERAL], roleRestricted: true },
                 ]
             },
             {

@@ -94,7 +94,7 @@ export default class DemandeInscriptionController {
                 ParcoursChoisi.findOne({ where: { demandeInscriptionId: demandeId } }),
                 DossierInscription.findAll({
                     where: { sessionId: demande.sessionId },
-                    attributes: ['id', 'etape', 'profilRequis']
+                    attributes: ['id', 'titre']
                 }),
                 DemandeInscriptionDossier.findAll({
                     where: { demandeId },
@@ -107,21 +107,17 @@ export default class DemandeInscriptionController {
 
             const apprenant = await Apprenant.findOne({
                 where: { utilisateurId: req.utilisateurId },
-                attributes: ['photo', 'statutEtudiant'],
+                attributes: ['photo'],
             });
-            const profilEtudiant = apprenant?.statutEtudiant === 'ancien' ? 'ancien' : 'nouveau'
             const dossiersDeposesIds = new Set(dossiersDeposes.map(dossier => Number(dossier.dossierId)));
             const documentsManquants = dossiersRequis.filter(dossier => {
-                const etape = (dossier as any).etape || 'premiere'
-                const profilRequis = (dossier as any).profilRequis || 'tous'
-                return etape === 'premiere'
-                    && (profilRequis === 'tous' || profilRequis === profilEtudiant)
+                return /bordereau/i.test(dossier.titre)
                     && !dossiersDeposesIds.has(Number(dossier.id))
             });
             if (documentsManquants.length > 0) {
                 return res.status(400).json({
                     success: false,
-                    message: "Veuillez téléverser tous les documents requis avant de soumettre la demande.",
+                    message: "Veuillez téléverser le bordereau de paiement avant de soumettre la demande.",
                     documentsManquants: documentsManquants.map(dossier => dossier.id)
                 });
             }

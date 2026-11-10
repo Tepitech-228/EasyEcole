@@ -35,6 +35,8 @@ export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAt
   declare dateValidation: CreationOptional<Date | null>
   declare datePaiement: CreationOptional<Date | null>
   declare valideParId: CreationOptional<ForeignKey<Utilisateur['id']> | null>
+  declare saisiParId: CreationOptional<ForeignKey<Utilisateur['id']> | null>
+  declare dateSaisieComptable: CreationOptional<Date | null>
   declare commentaire: CreationOptional<string>
   declare quitusId: CreationOptional<ForeignKey<Quitus['id']>>
   declare typeOperationId: CreationOptional<ForeignKey<TypeOperationBordereau['id']> | null>
@@ -44,6 +46,7 @@ export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAt
   declare echeance?: NonAttribute<Echeance>
   declare utilisateur?: NonAttribute<Utilisateur>
   declare validePar?: NonAttribute<Utilisateur>
+  declare saisiPar?: NonAttribute<Utilisateur>
   declare quitus?: NonAttribute<Quitus>
   declare typeOperation?: NonAttribute<TypeOperationBordereau>
 
@@ -54,6 +57,7 @@ export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAt
     echeance: Association<Bordereau, Echeance>
     utilisateur: Association<Bordereau, Utilisateur>
     validePar: Association<Bordereau, Utilisateur>
+    saisiPar: Association<Bordereau, Utilisateur>
     quitus: Association<Bordereau, Quitus>
     typeOperation: Association<Bordereau, TypeOperationBordereau>
   };
@@ -137,6 +141,16 @@ Bordereau.init({
   },
   valideParId: {
     type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true,
+    defaultValue: null
+  },
+  saisiParId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true,
+    defaultValue: null
+  },
+  dateSaisieComptable: {
+    type: DataTypes.DATE,
     allowNull: true,
     defaultValue: null
   },

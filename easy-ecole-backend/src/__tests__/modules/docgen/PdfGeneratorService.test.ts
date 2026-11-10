@@ -42,8 +42,26 @@ describe('PdfGeneratorService.generateDocGen', () => {
 
     expect(result).toEqual(pdf)
     expect(mockGetPuppeteerBrowser).toHaveBeenCalled()
-    expect(page.pdf).toHaveBeenCalled()
+    expect(page.pdf).toHaveBeenCalledWith(expect.objectContaining({
+      displayHeaderFooter: false,
+      headerTemplate: '<span></span>',
+      footerTemplate: '<span></span>',
+      margin: expect.objectContaining({ top: '15mm' }),
+    }))
     expect(mockAutorisationGenerate).not.toHaveBeenCalled()
+  })
+
+  it('désactive les en-têtes et pieds de page pour les autres modèles DocGen', async () => {
+    const pdf = Buffer.from('%PDF-1.4 chromium')
+    const { page } = mockChromium(pdf)
+
+    await PdfGeneratorService.generateDocGen({ ...baseParams, typeCode: 'API002' })
+
+    expect(page.pdf).toHaveBeenCalledWith(expect.objectContaining({
+      displayHeaderFooter: false,
+      headerTemplate: '<span></span>',
+      footerTemplate: '<span></span>',
+    }))
   })
 
   it("bascule sur pdfkit si Chromium est indisponible pour API001", async () => {

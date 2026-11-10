@@ -57,13 +57,11 @@ Utilisateur.init({
   },
   nom: {
     type: new DataTypes.STRING,
-    allowNull: false,
-    unique: 'nom-prenoms'
+    allowNull: false
   },
   prenoms: {
     type: new DataTypes.STRING,
-    allowNull: false,
-    unique: 'nom-prenoms'
+    allowNull: false
   },
   identifiant: {
     type: new DataTypes.STRING,

@@ -436,6 +436,8 @@ Bordereau.belongsTo(Utilisateur, { foreignKey: 'utilisateurId', as: 'utilisateur
 // Bordereau - Utilisateur (validé par)
 Utilisateur.hasMany(Bordereau, { foreignKey: 'valideParId', as: 'bordereauxValides' })
 Bordereau.belongsTo(Utilisateur, { foreignKey: 'valideParId', as: 'validePar' })
+Utilisateur.hasMany(Bordereau, { foreignKey: 'saisiParId', as: 'bordereauxSaisis' })
+Bordereau.belongsTo(Utilisateur, { foreignKey: 'saisiParId', as: 'saisiPar' })
 
 // Bordereau - Quitus
 Bordereau.hasOne(Quitus, { foreignKey: 'bordereauId', as: 'quitus' })

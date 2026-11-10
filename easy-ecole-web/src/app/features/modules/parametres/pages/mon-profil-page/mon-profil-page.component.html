@@ -258,24 +258,17 @@
                     </div>
                 </div>
                 <div class="col-span-2">
-                    <label for="typePieceIdentite" class="mb-2 block text-sm leading-6 text-gray-600">Type de pièce d'identité <span class="text-red-600">*</span></label>
+                    <label for="typePieceIdentite" class="mb-2 block text-sm leading-6 text-gray-600">Type de pièce d'identité</label>
                     <select id="typePieceIdentite" formControlName="typePieceIdentite"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        <option [ngValue]="null">— Non renseigné —</option>
                         <option *ngFor="let option of typePieceOptions" [value]="option.value">{{ option.label }}</option>
                     </select>
-                    <div *ngIf="profilForm.get('typePieceIdentite')!.invalid && (profilForm.get('typePieceIdentite')!.dirty || profilForm.get('typePieceIdentite')!.touched)">
-                        <app-form-message *ngIf="profilForm.get('typePieceIdentite')!.errors?.['required']"
-                            text="Veuillez sélectionner un type de pièce"></app-form-message>
-                    </div>
                 </div>
                 <div class="col-span-2">
-                    <label for="numeroPiece" class="mb-2 block text-sm leading-6 text-gray-600">N° de la pièce <span class="text-red-600">*</span></label>
+                    <label for="numeroPiece" class="mb-2 block text-sm leading-6 text-gray-600">N° de la pièce</label>
                     <input type="text" id="numeroPiece" formControlName="numeroPiece" placeholder="Ex: AB123456789"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-                    <div *ngIf="profilForm.get('numeroPiece')!.invalid && (profilForm.get('numeroPiece')!.dirty || profilForm.get('numeroPiece')!.touched)">
-                        <app-form-message *ngIf="profilForm.get('numeroPiece')!.errors?.['required']"
-                            text="Veuillez saisir le numéro de votre pièce d'identité"></app-form-message>
-                    </div>
                 </div>
                 <div class="col-span-2">
                     <label for="statutEtudiant" class="mb-2 block text-sm leading-6 text-gray-600">Nouveau / Ancien <span class="text-red-600">*</span></label>
@@ -365,23 +358,15 @@
             <h2 class="text-base font-semibold leading-7 text-gray-900 mb-6">Adresse</h2>
             <div class="grid grid-cols-6 gap-x-8 gap-y-6">
                 <div class="col-span-3">
-                    <label for="boitePostale" class="mb-2 block text-sm leading-6 text-gray-600">Boîte postale <span class="text-red-600">*</span></label>
+                    <label for="boitePostale" class="mb-2 block text-sm leading-6 text-gray-600">Boîte postale</label>
                     <input type="text" id="boitePostale" formControlName="boitePostale"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-                    <div *ngIf="profilForm.get('adresse.boitePostale')!.invalid && (profilForm.get('adresse.boitePostale')!.dirty || profilForm.get('adresse.boitePostale')!.touched)">
-                        <app-form-message *ngIf="profilForm.get('adresse.boitePostale')!.errors?.['required']"
-                            text="Veuillez entrer une boîte postale"></app-form-message>
-                    </div>
                 </div>
                 <div class="col-span-3">
                     <label for="prorietaireBoitePostale" class="mb-2 block text-sm leading-6 text-gray-600">Propriétaire de la boîte
-                        postale <span class="text-red-600">*</span></label>
+                        postale</label>
                     <input type="text" id="prorietaireBoitePostale" formControlName="prorietaireBoitePostale"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-                    <div *ngIf="profilForm.get('adresse.prorietaireBoitePostale')!.invalid && (profilForm.get('adresse.prorietaireBoitePostale')!.dirty || profilForm.get('adresse.prorietaireBoitePostale')!.touched)">
-                        <app-form-message *ngIf="profilForm.get('adresse.prorietaireBoitePostale')!.errors?.['required']"
-                            text="Veuillez préciser le propriétaire de la boîte postale"></app-form-message>
-                    </div>
                 </div>
                 <div class="col-span-3">
                     <label for="telMobile" class="mb-2 block text-sm leading-6 text-gray-600">Téléphone mobile <span class="text-red-600">*</span></label>

@@ -46,6 +46,13 @@ export class AuthService {
     return this.httpClient.post(`${this.SERVICE_URL}/register`, utilisateur, { params: queryParams })
   }
 
+  getIdentifiantSuggestions(nom: string, prenoms: string): Observable<{ suggestions: string[] }> {
+    return this.httpClient.post<{ suggestions: string[] }>(
+      `${this.SERVICE_URL}/register/identifiant-suggestions`,
+      { nom, prenoms }
+    )
+  }
+
   registerEnseignant(enseignant: Enseignant): Observable<any> {
     return this.httpClient.post(`${this.SERVICE_URL}/register/enseignant`, enseignant)
   }

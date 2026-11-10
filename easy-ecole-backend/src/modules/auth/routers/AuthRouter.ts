@@ -51,6 +51,14 @@ const verifyOtpLimiter = rateLimit({
   message: { success: false, message: 'Trop de tentatives de vérification, réessayez dans 1 minute' }
 })
 
+const identifiantSuggestionsLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Trop de demandes de propositions, réessayez plus tard' }
+})
+
 const router = express.Router()
 const storage = multer.diskStorage({
     destination: (req, file, callback) => {
@@ -109,6 +117,7 @@ const upload = multer({
  */
 router
     .post('/login', [loginLimiter], AuthController.login)
+    .post('/register/identifiant-suggestions', [identifiantSuggestionsLimiter], AuthController.getIdentifiantSuggestions)
     /**
      * @openapi
      * /auth/register:
