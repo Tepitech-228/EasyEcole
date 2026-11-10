@@ -88,6 +88,7 @@ describe("official academic DocGen templates", () => {
         diplomeBts: true,
         diplomeLicence: false,
         diplomeMaitrise: false,
+        diplomeMaster: true,
         diplomeAutres: false,
         relevesSem12: true,
         relevesSem34: true,
@@ -109,7 +110,7 @@ describe("official academic DocGen templates", () => {
     expect($("strong").text()).not.toContain("TETE EKUE");
     expect($("strong").text()).not.toContain("Série D");
     expect($(".data-table").eq(0).find(".check-box").map((_i, el) => $(el).text()).get())
-      .toEqual(["√", "", "√", "", "", ""]);
+      .toEqual(["√", "", "√", "", "", "√", ""]);
     expect($(".data-table").eq(1).find(".check-box").map((_i, el) => $(el).text()).get())
       .toEqual(["√", "√", "", "", ""]);
     expect($(".data-table").eq(2).find(".check-box").map((_i, el) => $(el).text()).get())
@@ -117,8 +118,12 @@ describe("official academic DocGen templates", () => {
     for (const tableIndex of [0, 1]) {
       const rows = $(".data-table").eq(tableIndex).find("tr");
       expect(rows.eq(2).find("td").first().text()).toBe("Dates");
-      expect(rows.eq(2).find("td")).toHaveLength(tableIndex === 0 ? 7 : 6);
+      expect(rows.eq(2).find("td")).toHaveLength(tableIndex === 0 ? 8 : 6);
     }
+    expect($(".authorization-footer .committee-heading").text())
+      .toContain("Pour le Comité d’Orientation, d’Equivalence et d’Etude de Dossiers");
+    expect($(".authorization-footer .signatory-name").map((_i, el) => $(el).text()).get())
+      .toEqual(["Steve BARRIGAH-BENISSAN.", "GNOHOE-KPADE Jeannot"]);
     expect(rendered).not.toContain("{{");
   });
 

@@ -71,7 +71,33 @@ const { NiveauEtude } = require('../../../modules/inscription/models/NiveauEtude
 const { GenerateurCarteService } = require('../../../modules/inscription/services/GenerateurCarteService')
 const { DossierStorageService } = require('../../../modules/inscription/services/DossierStorageService')
 const { FolderAutoService } = require('../../../modules/ged/services/FolderAutoService')
-import { BordereauDossierService } from '../../../modules/inscription/services/BordereauDossierService'
+import {
+  BordereauDossierService,
+  documentsManquantsPremiereEtape,
+} from '../../../modules/inscription/services/BordereauDossierService'
+
+describe('documentsManquantsPremiereEtape', () => {
+  it('requires the uploaded bordereau but not complementary session documents', () => {
+    expect(documentsManquantsPremiereEtape(
+      [
+        { id: 1, titre: 'Bordereau de paiement' },
+        { id: 2, titre: 'Copie du diplôme' },
+        { id: 3, titre: 'Relevés de notes' },
+      ],
+      [{ dossierId: 1 }],
+    )).toEqual([])
+  })
+
+  it('reports the bordereau as missing even if complementary documents are uploaded', () => {
+    expect(documentsManquantsPremiereEtape(
+      [
+        { id: 1, titre: 'Bordereau de paiement' },
+        { id: 2, titre: 'Copie du diplôme' },
+      ],
+      [{ dossierId: 2 }],
+    )).toEqual([1])
+  })
+})
 
 describe('BordereauDossierService.finaliserAffectationPedagogique', () => {
   beforeEach(() => {

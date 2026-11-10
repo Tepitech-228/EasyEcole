@@ -135,6 +135,7 @@ export function extractOfficialTemplatePages(source: string): OfficialTemplatePa
         "diplomeBts",
         "diplomeLicence",
         "diplomeMaitrise",
+        "diplomeMaster",
         "diplomeAutres",
       ];
       const transcriptRows = [

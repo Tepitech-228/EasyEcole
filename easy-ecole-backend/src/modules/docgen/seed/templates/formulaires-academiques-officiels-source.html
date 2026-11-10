@@ -90,6 +90,35 @@
             margin-bottom: 24px;
         }
 
+        .authorization-page .committee-initials,
+        .authorization-page .authorization-footer {
+            transform: translateY(-7mm);
+        }
+
+        .authorization-page .authorization-footer {
+            margin-top: 0;
+        }
+
+        .authorization-page .committee-heading {
+            padding: 0 4mm 7mm;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .authorization-page .authorization-footer .sign-cell {
+            padding: 0 5mm;
+        }
+
+        .authorization-page .signatory-name {
+            display: inline-block;
+            margin-bottom: 2mm;
+        }
+
+        .authorization-page .authorization-date {
+            padding-top: 6mm;
+            text-align: right;
+        }
+
         .prescribed-ue-page {
             min-height: 297mm;
             padding: 25mm 10mm 12mm 35mm;
@@ -340,6 +369,7 @@
                         <th class="center">BTS</th>
                         <th class="center">LICENCE</th>
                         <th class="center">MAÎTRISE</th>
+                        <th class="center">MASTER</th>
                         <th class="center">AUTRES</th>
                     </tr>
                     <tr>
@@ -349,11 +379,12 @@
                         <td><span class="check-box">{{#if etudiant.diplomeBts}}√{{/if}}</span></td>
                         <td><span class="check-box">{{#if etudiant.diplomeLicence}}√{{/if}}</span></td>
                         <td><span class="check-box">{{#if etudiant.diplomeMaitrise}}√{{/if}}</span></td>
+                        <td><span class="check-box">{{#if etudiant.diplomeMaster}}√{{/if}}</span></td>
                         <td><span class="check-box">{{#if etudiant.diplomeAutres}}√{{/if}}</span></td>
                     </tr>
                     <tr>
                         <td><strong>Dates</strong></td>
-                        <td></td><td></td><td></td><td></td><td></td><td></td>
+                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
                     </tr>
                 </table>
 
@@ -416,24 +447,24 @@
             </div>
         </div>
 
-        <table class="footer-table">
+        <table class="footer-table authorization-footer">
             <tr>
-                <td class="sign-cell" style="width: 70%;">
-                    <div class="sign-title">Pour le Comité d’Orientation ,d’Equivalence et d’Etude de Dossiers</div>
-                    <table style="width: 100%;">
-                        <tr>
-                            <td style="text-align: center;">
-                                <strong>Steve BARRIGAH-B.</strong><br>
-                                <span class="sign-sub">Secrétaire Général / ESA</span>
-                            </td>
-                            <td style="text-align: center;">
-                                <strong>GNOHOE-KPADE Jeannot</strong><br>
-                                <span class="sign-sub">Chargé de la communication</span>
-                            </td>
-                        </tr>
-                    </table>
+                <td class="committee-heading" colspan="2">
+                    <strong>Pour le Comité d’Orientation, d’Equivalence et d’Etude de Dossiers</strong>
                 </td>
-                <td class="date-cell">Lomé, le ....................................</td>
+            </tr>
+            <tr>
+                <td class="sign-cell" style="width: 50%;">
+                    <strong class="signatory-name">Steve BARRIGAH-BENISSAN.</strong><br>
+                    <span class="sign-sub">Secrétaire Général / ESA</span>
+                </td>
+                <td class="sign-cell" style="width: 50%;">
+                    <strong class="signatory-name">GNOHOE-KPADE Jeannot</strong><br>
+                    <span class="sign-sub">Chargé de la communication</span>
+                </td>
+            </tr>
+            <tr>
+                <td class="date-cell authorization-date" colspan="2">Lomé, le ....................................</td>
             </tr>
         </table>
     </div>

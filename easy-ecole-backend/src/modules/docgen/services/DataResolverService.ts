@@ -663,6 +663,7 @@ async function resolveAutorisationProvisoire(params: GenerateParams): Promise<Re
     /\bbts\b/,
     /\blicence\b/,
     /\bmaitrise\b/,
+    /\bmaster\b/,
   ]
   const hasOtherDiploma = uploadedDocuments.some(({ text }: { text: string }) =>
     !/\b(releve|notes?)\b/.test(text)
@@ -725,6 +726,7 @@ async function resolveAutorisationProvisoire(params: GenerateParams): Promise<Re
     diplomeBts: hasDiplomaDocument(/\bbts\b/),
     diplomeLicence: hasDiplomaDocument(/\blicence\b/),
     diplomeMaitrise: hasDiplomaDocument(/\bmaitrise\b/),
+    diplomeMaster: hasDiplomaDocument(/\bmaster\b/),
     diplomeAutres: hasOtherDiploma,
     specialiteDiplome: apprenant?.serieBac || '',
     specialiteReleves: '',

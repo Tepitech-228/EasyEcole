@@ -646,11 +646,20 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       return res.status(400).json({ success: false, message: "Bordereau déjà traité", details: { statut: bordereau.statut } })
     }
 
-    const montantPaiement = Number(req.body.montantPaiement)
+    const montantRecu = req.body?.montantPaiement
+    const montantPaiement = typeof montantRecu === 'number'
+      ? montantRecu
+      : typeof montantRecu === 'string' && montantRecu.trim() !== ''
+        ? Number(montantRecu)
+        : Number.NaN
     if (!Number.isFinite(montantPaiement) || montantPaiement <= 0) {
       await transaction.rollback()
       console.log(_rid, 'ERREUR 400: Montant invalide — reçu:', req.body.montantPaiement, '→ Number:', montantPaiement)
-      return res.status(400).json({ success: false, message: "Montant de paiement invalide", details: { recu: req.body.montantPaiement, parsed: montantPaiement } })
+      return res.status(400).json({
+        success: false,
+        message: "Montant de paiement invalide",
+        details: { recu: montantRecu, parsed: Number.isFinite(montantPaiement) ? montantPaiement : null },
+      })
     }
 
     // ── Règle du PREMIER bordereau de l'étudiant ──

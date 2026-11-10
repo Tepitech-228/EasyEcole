@@ -66,6 +66,17 @@ const getParcoursFinal = <T extends { choixFinal?: any; parcoursId?: number | st
     return undefined;
 };
 
+export const documentsManquantsPremiereEtape = (
+    dossiersRequis: Array<{ id: number; titre: string }>,
+    dossiersTeleverses: Array<{ dossierId: number }>,
+): number[] => {
+    const dossiersTeleversesIds = new Set(dossiersTeleverses.map(dossier => Number(dossier.dossierId)));
+    return dossiersRequis
+        .filter(dossier => /bordereau/i.test(dossier.titre))
+        .filter(dossier => !dossiersTeleversesIds.has(Number(dossier.id)))
+        .map(dossier => Number(dossier.id));
+};
+
 export interface CarteEtudiantDifferee {
     dossierId: number;
     data: CarteData;
@@ -322,8 +333,12 @@ export class BordereauDossierService {
         }
         const dossiersRequis = demande.session?.dossiersInscription || []
         const dossiersUploades = demande.dossiersDemande || []
-        if (dossiersRequis.length > 0 && dossiersUploades.length !== dossiersRequis.length) {
-            throw new Error("Tous les documents requis doivent être téléversés")
+        const dossiersManquantsPremiereEtape = documentsManquantsPremiereEtape(
+            dossiersRequis,
+            dossiersUploades,
+        )
+        if (dossiersManquantsPremiereEtape.length > 0) {
+            throw new Error("Le bordereau de paiement doit être téléversé avant la validation comptable")
         }
         if (!demande.preInscription || demande.preInscription.statut !== EtatPreInscription.VALIDE) {
             throw new Error("La préinscription doit être validée")

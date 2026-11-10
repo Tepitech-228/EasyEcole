@@ -20,6 +20,14 @@ import { environment } from 'src/environments/environment';
 import { ToastService } from 'src/app/core/services/toast.service';
 import { Observable, of } from 'rxjs';
 
+const montantPaiementValide = (control: AbstractControl): ValidationErrors | null => {
+  const value = control.value;
+  if (value === null || value === undefined || value === '') return null;
+
+  const montant = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(montant) && montant >= 1 ? null : { montantInvalide: true };
+};
+
 @Component({
   selector: 'app-esacompta-bordereaux-page',
   templateUrl: './esacompta-bordereaux-page.component.html',
@@ -166,7 +174,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   ) {
     super()
     this.saisieForm = this.fb.group({
-      montantPaiement: [null, [Validators.required, Validators.min(1)]],
+      montantPaiement: [null, [Validators.required, Validators.min(1), montantPaiementValide]],
       matriculeEtudiant: [''],
       referenceBancaire: ['', Validators.required, this.verificateurUnicite('referenceBancaire')],
       numeroBordereau: ['', Validators.required, this.verificateurUnicite('numeroBordereau')],
@@ -558,11 +566,21 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
 
   private executerSaisie(): void {
     if (!this.selectedBordereau) return
+    const montantControl = this.saisieForm.get('montantPaiement')
+    const montantPaiement = Number(montantControl?.value)
+    if (!Number.isFinite(montantPaiement) || montantPaiement < 1) {
+      montantControl?.setErrors({ ...(montantControl.errors || {}), montantInvalide: true })
+      montantControl?.markAsTouched()
+      this.apiErrorMessage = 'Saisissez un montant valide supérieur ou égal à 1.'
+      this.error = true
+      return
+    }
+
     // Pour les types MIXTE, on n'envoie plus de composition manuelle :
     // le backend calcule automatiquement (inscription d'abord, reste scolarité).
     const raw = this.saisieForm.value
     const payload: any = {
-      montantPaiement: raw.montantPaiement,
+      montantPaiement,
       ...(this.matriculeEtudiantRequis
         ? { matriculeEtudiant: String(raw.matriculeEtudiant || '').trim() }
         : {}),
