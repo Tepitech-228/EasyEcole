@@ -80,10 +80,18 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
   }
 
   get roleKeysForForm(): string[] {
-    if (!this.rolesValue.isSurveillant) return this.roleKeys
-    return this.roleKeys.filter(key =>
-      this.rolesCreablesParSurveillant.includes(RolesUtilisateur[key])
-    )
+    let keys = this.roleKeys
+    if (this.rolesValue.isSurveillant) {
+      keys = keys.filter(key =>
+        this.rolesCreablesParSurveillant.includes(RolesUtilisateur[key])
+      )
+    }
+    if (this.rolesValue.isInstitution) {
+      keys = keys.filter(key =>
+        ![RolesUtilisateur.ADMIN, RolesUtilisateur.INSTITUTION].includes(RolesUtilisateur[key])
+      )
+    }
+    return keys
   }
 
   loadUtilisateurs(): void {
@@ -134,8 +142,11 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
       fonction: '', matricule: '', statut: 'Permanent', directionService: '',
       cni: '', dateNaissance: '', lieuNaissance: '', sexe: 'M', nationalite: '',
       specialite: '', gradeAcademique: '', fonctionAdministrative: '',
-      anneeExperience: 0, plusHautDiplome: '',
+      nifOtr: '', anneeExperience: 0, heureTheoriqueAnnuelle: 0, heureReelleAnnuelle: 0,
+      plusHautDiplome: '', statutHandicap: false, natureHandicap: '',
       statutEtudiant: 'nouveau', periode: 'matin',
+      typePieceIdentite: '', numeroPiece: '', anneeObtentionBac: '', serieBac: '',
+      anneePremiereInscription: '', nombreInscriptions: 0, diplomePrepare: '',
       estPrescripteur: false,
     }
     this.showModal = true
@@ -145,15 +156,110 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
   openEditModal(user: any): void {
     this.editingUser = user
     this.selectedPhoto = null
+    this.formData = this.buildEditFormData(user, user.role || RolesUtilisateur.APPRENANT)
+    this.showModal = true
+    this.loadAvailableSites()
+  }
+
+  onRoleChange(role: RolesUtilisateur): void {
+    const accountFields = {
+      nom: this.formData.nom,
+      prenoms: this.formData.prenoms,
+      email: this.formData.email,
+      identifiant: this.formData.identifiant,
+      motDePasse: this.formData.motDePasse,
+      contact: this.formData.contact,
+      siteIds: this.sitesSelectionnes,
+    }
+    if (this.editingUser) {
+      this.formData = {
+        ...this.buildEditFormData(this.editingUser, role),
+        ...accountFields,
+        role,
+      }
+      if (this.siteSelectionRequired && this.sitesSelectionnes.length === 0 && this.availableSites.length === 1) {
+        this.formData.siteIds = [Number(this.availableSites[0].id)]
+      }
+      return
+    }
     this.formData = {
+      ...this.formData,
+      ...this.emptyProfileFields(),
+      ...accountFields,
+      role,
+    }
+    if (this.siteSelectionRequired && this.sitesSelectionnes.length === 0 && this.availableSites.length === 1) {
+      this.formData.siteIds = [Number(this.availableSites[0].id)]
+    }
+  }
+
+  private buildEditFormData(user: any, role: RolesUtilisateur): Record<string, any> {
+    const profile = this.profileForRole(user, role)
+    const siteIds = Array.isArray(user.affectationsSites)
+      ? user.affectationsSites.map((assignment: any) => Number(assignment.etablissementId))
+      : []
+    if (user.etablissementId && !siteIds.includes(Number(user.etablissementId))) {
+      siteIds.push(Number(user.etablissementId))
+    }
+    return {
+      ...this.emptyProfileFields(),
+      ...profile,
       nom: user.nom || '',
       prenoms: user.prenoms || '',
       email: user.email || '',
       identifiant: user.identifiant || '',
+      motDePasse: '',
       contact: user.contact || '',
-      role: user.role || RolesUtilisateur.APPRENANT,
+      role,
+      siteIds,
     }
-    this.showModal = true
+  }
+
+  private emptyProfileFields(): Record<string, any> {
+    return {
+      fonction: '', matricule: '', statut: 'Permanent', directionService: '',
+      cni: '', dateNaissance: '', lieuNaissance: '', sexe: 'M', nationalite: '',
+      specialite: '', gradeAcademique: '', fonctionAdministrative: '', nifOtr: '',
+      anneeExperience: 0, heureTheoriqueAnnuelle: 0, heureReelleAnnuelle: 0,
+      plusHautDiplome: '', statutHandicap: false, natureHandicap: '',
+      statutEtudiant: 'nouveau', periode: 'matin', typePieceIdentite: '',
+      numeroPiece: '', anneeObtentionBac: '', serieBac: '',
+      anneePremiereInscription: '', nombreInscriptions: 0, diplomePrepare: '',
+      estPrescripteur: false,
+    }
+  }
+
+  private profileForRole(user: any, role: RolesUtilisateur): Record<string, any> {
+    let profile: any = null
+    switch (role) {
+      case RolesUtilisateur.APPRENANT:
+        profile = user.apprenant
+        break
+      case RolesUtilisateur.ENSEIGNANT:
+        profile = user.enseignant
+        break
+      case RolesUtilisateur.COMITE_ORIENTATION:
+        profile = user.comiteOrientation
+        break
+      case RolesUtilisateur.CAISSIER_BANQUE:
+        profile = user.caissierBanque
+        break
+      case RolesUtilisateur.INSTITUTION:
+        profile = user.institution
+        break
+      default:
+        if (this.staffRoles.includes(role)) profile = user.personnelAdministratif
+    }
+    if (!profile) return {}
+    return {
+      ...profile,
+      dateNaissance: this.dateForInput(profile.dateNaissance),
+    }
+  }
+
+  private dateForInput(value: string | Date | null | undefined): string {
+    if (!value) return ''
+    return value instanceof Date ? value.toISOString().slice(0, 10) : String(value).slice(0, 10)
   }
 
   closeModal(): void {
@@ -176,14 +282,16 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
       next: sites => {
         this.availableSites = sites
         this.sitesLoading = false
-        if (sites.length === 1) {
+        if (!this.editingUser && sites.length === 1) {
+          this.formData.siteIds = [Number(sites[0].id)]
+        } else if (this.siteSelectionRequired && this.sitesSelectionnes.length === 0 && sites.length === 1) {
           this.formData.siteIds = [Number(sites[0].id)]
         }
       },
       error: () => {
         this.availableSites = []
         this.sitesLoading = false
-        this.sitesError = 'Les sites autorisés ne peuvent pas être chargés. Réessayez avant de créer l’utilisateur.'
+        this.sitesError = 'Les sites autorisés ne peuvent pas être chargés. Réessayez avant d’enregistrer.'
       }
     })
   }
@@ -227,30 +335,36 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
       this.toastService.error('Une photo de profil est obligatoire pour créer un compte utilisateur')
       return
     }
-    if (!this.editingUser && this.sitesLoading) {
+    if (this.sitesLoading) {
       this.toastService.error('Attendez le chargement des sites autorisés')
       return
     }
-    if (!this.editingUser && this.sitesError) {
+    if (this.sitesError) {
       this.toastService.error(this.sitesError)
       return
     }
-    if (!this.editingUser && this.siteSelectionRequired && this.sitesSelectionnes.length === 0) {
+    if (this.siteSelectionRequired && this.sitesSelectionnes.length === 0) {
       this.toastService.error('Sélectionnez au moins un site pour cet utilisateur')
       return
     }
-    if (!this.editingUser && this.isApprenant && this.sitesSelectionnes.length !== 1) {
+    if (this.isApprenant && this.sitesSelectionnes.length !== 1) {
       this.toastService.error('Un apprenant doit être rattaché à un seul site')
       return
     }
+    if (this.isApprenant && (!this.formData.dateNaissance || !this.formData.lieuNaissance)) {
+      this.toastService.error('La date et le lieu de naissance sont obligatoires pour un apprenant')
+      return
+    }
+    if (this.isStaff && !String(this.formData.fonction || '').trim()) {
+      this.toastService.error('La fonction est obligatoire pour ce profil')
+      return
+    }
     this.saving = true
-    const userData = this.editingUser
-      ? this.formData
-      : { ...this.formData, siteIds: this.sitesSelectionnes }
+    const userData = { ...this.formData, siteIds: this.sitesSelectionnes }
     const photo = this.selectedPhoto
     let obs: Observable<any>
     if (this.editingUser) {
-      obs = this.utilisateurService.adminUpdate(this.editingUser.id, userData)
+      obs = this.utilisateurService.adminUpdate(this.editingUser.id, userData, photo)
     } else if (photo) {
       obs = this.utilisateurService.adminCreate(userData, photo)
     } else {
@@ -314,7 +428,12 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
   }
 
   get showProfilFields(): boolean {
-    return [RolesUtilisateur.APPRENANT, RolesUtilisateur.ENSEIGNANT, ...this.staffRoles].includes(this.formData.role)
+    return [
+      RolesUtilisateur.APPRENANT,
+      RolesUtilisateur.ENSEIGNANT,
+      RolesUtilisateur.INSTITUTION,
+      ...this.staffRoles,
+    ].includes(this.formData.role)
   }
 
   get isApprenant(): boolean {
@@ -327,12 +446,24 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
 
   get isStaff(): boolean {
     return this.staffRoles.includes(this.formData.role)
+      && ![RolesUtilisateur.CAISSIER_BANQUE, RolesUtilisateur.COMITE_ORIENTATION].includes(this.formData.role)
+  }
+
+  get isCaissier(): boolean {
+    return this.formData.role === RolesUtilisateur.CAISSIER_BANQUE
+  }
+
+  get isComite(): boolean {
+    return this.formData.role === RolesUtilisateur.COMITE_ORIENTATION
   }
 
   get profilSectionTitle(): string {
     if (this.isApprenant) return 'Profil Apprenant'
     if (this.isEnseignant) return 'Profil Enseignant'
     if (this.isStaff) return 'Profil Personnel'
+    if (this.isCaissier) return 'Profil Caissier Banque'
+    if (this.isComite) return "Profil Comité d'Orientation"
+    if (this.formData.role === RolesUtilisateur.INSTITUTION) return 'Profil Institution'
     return ''
   }
 

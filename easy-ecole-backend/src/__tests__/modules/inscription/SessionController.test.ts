@@ -29,7 +29,13 @@ jest.mock('../../../modules/inscription/models/DossierInscription', () => {
   const DossierInscription: any = jest.fn()
   DossierInscription.create = jest.fn()
   DossierInscription.findOne = jest.fn()
-  return { DossierInscription }
+  return {
+    DossierInscription,
+    normaliserProfilRequis: (valeur: any) => ['nouveau', 'ancien'].includes(valeur) ? valeur : 'tous',
+    normaliserEtapeDossier: (etape: any, titre: any) => /bordereau/i.test(titre || '')
+      ? 'premiere'
+      : (etape === 'complementaire' ? 'complementaire' : 'premiere'),
+  }
 })
 
 jest.mock('../../../core/helpers/DatabaseConnection', () => {

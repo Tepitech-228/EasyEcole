@@ -1,10 +1,13 @@
 import { Request, Response } from "express";
-import { CountOptions, FindOptions, InferAttributes, Op } from "sequelize";
+import { CountOptions, FindOptions, InferAttributes, Op, Transaction } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Utilisateur } from "../models/Utilisateur";
 import { PersonnelAdministratif } from "../models/PersonnelAdministratif";
 import { Enseignant } from "../models/Enseignant";
 import { Apprenant } from "../models/Apprenant";
+import { ComiteOrientation } from "../models/ComiteOrientation";
+import { Institution } from "../models/Institution";
+import { CaissierBanque } from "../models/CaissierBanque";
 import * as bcrypt from 'bcrypt';
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { IDGenerator } from "../../../core/helpers/IDGenerator";
@@ -231,7 +234,16 @@ export default class UtilisateurController {
         }
 
         let options: FindOptions<InferAttributes<Utilisateur>> = {
-            attributes: ['id', 'nom', 'prenoms', 'identifiant', 'email', 'role', 'contact', 'photoDeProfil', 'createdAt']
+            attributes: ['id', 'nom', 'prenoms', 'identifiant', 'email', 'role', 'contact', 'photoDeProfil', 'dateVerificationEmail', 'etablissementId', 'createdAt'],
+            include: [
+                Utilisateur.associations.apprenant,
+                Utilisateur.associations.enseignant,
+                Utilisateur.associations.personnelAdministratif,
+                Utilisateur.associations.comiteOrientation,
+                Utilisateur.associations.institution,
+                Utilisateur.associations.caissierBanque,
+                Utilisateur.associations.affectationsSites,
+            ],
         }
 
         try {
@@ -342,6 +354,8 @@ export default class UtilisateurController {
     }
 
     static async adminUpdateUtilisateur(req: Request, res: Response): Promise<Response> {
+        let transaction: Transaction | null = null;
+        let transactionCommitted = false;
         try {
             const role = (req as any).utilisateurRole;
             if (role !== RolesUtilisateur.ADMIN && role !== RolesUtilisateur.INSTITUTION) {
@@ -353,19 +367,251 @@ export default class UtilisateurController {
                 return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
             }
 
-            const updateData: any = {};
-            if (req.body.nom !== undefined) updateData.nom = req.body.nom;
-            if (req.body.prenoms !== undefined) updateData.prenoms = req.body.prenoms;
-            if (req.body.email !== undefined) updateData.email = req.body.email;
-            if (req.body.identifiant !== undefined) updateData.identifiant = req.body.identifiant;
-            if (req.body.contact !== undefined) updateData.contact = req.body.contact;
-            if (req.body.role !== undefined) updateData.role = req.body.role;
-            if (req.body.motDePasse) updateData.motDePasse = bcrypt.hashSync(req.body.motDePasse, 12);
+            const userRole = req.body.role === undefined ? utilisateur.role : req.body.role as RolesUtilisateur;
+            if (!Object.values(RolesUtilisateur).includes(userRole)) {
+                return res.status(400).json({ success: false, message: "Rôle utilisateur invalide" });
+            }
+            if (
+                role === RolesUtilisateur.INSTITUTION
+                && (utilisateur.role === RolesUtilisateur.ADMIN
+                    || utilisateur.role === RolesUtilisateur.INSTITUTION
+                    || userRole === RolesUtilisateur.ADMIN
+                    || userRole === RolesUtilisateur.INSTITUTION)
+            ) {
+                return res.status(403).json({ success: false, message: "Une institution ne peut pas modifier le rôle d’un compte administrateur ou institution." });
+            }
+            if (req.body.motDePasse && String(req.body.motDePasse).length < 6) {
+                return res.status(400).json({ success: false, message: "Le nouveau mot de passe doit contenir au moins 6 caractères." });
+            }
 
-            await utilisateur.update(updateData);
-            return res.status(200).json({ success: true, message: "Utilisateur mis à jour" });
+            const nom = req.body.nom === undefined ? utilisateur.nom : String(req.body.nom).trim();
+            const prenoms = req.body.prenoms === undefined ? utilisateur.prenoms : String(req.body.prenoms).trim();
+            const email = req.body.email === undefined ? utilisateur.email : String(req.body.email).trim();
+            const identifiant = req.body.identifiant === undefined ? utilisateur.identifiant : String(req.body.identifiant).trim();
+            if (!nom || !prenoms || !email || !identifiant) {
+                return res.status(400).json({ success: false, message: "Nom, prénoms, email et identifiant sont obligatoires." });
+            }
+
+            const duplicate = await Utilisateur.findOne({
+                where: {
+                    id: { [Op.ne]: utilisateur.id },
+                    [Op.or]: [
+                        { email },
+                        { identifiant },
+                        { nom, prenoms },
+                    ],
+                },
+            });
+            if (duplicate) {
+                const message = duplicate.email === email
+                    ? "Cet email est déjà utilisé par un autre compte."
+                    : duplicate.identifiant === identifiant
+                        ? "Cet identifiant est déjà utilisé par un autre compte."
+                        : "Ce nom et ces prénoms sont déjà utilisés par un autre compte.";
+                return res.status(409).json({ success: false, message });
+            }
+
+            const affectationsActuelles = await SiteUtilisateur.findAll({
+                where: { utilisateurId: utilisateur.id },
+                attributes: ['etablissementId'],
+            });
+            const sitesActuels = [...new Set([
+                ...affectationsActuelles.map(item => Number(item.etablissementId)),
+                ...(utilisateur.etablissementId ? [Number(utilisateur.etablissementId)] : []),
+            ])];
+            const siteIdsDemandes = req.body.siteIds === undefined ? sitesActuels : req.body.siteIds;
+            const siteIds = await UtilisateurController.validerSites(siteIdsDemandes);
+            if (siteIds === null) {
+                return res.status(400).json({ success: false, message: "Un site demandé n’existe pas ou est inactif." });
+            }
+            if (!UtilisateurController.nombreSitesAutorise(userRole, siteIds)) {
+                return res.status(400).json({
+                    success: false,
+                    message: userRole === RolesUtilisateur.APPRENANT
+                        ? "Un apprenant doit être rattaché à un seul site."
+                        : "Ce profil doit être affecté à au moins un site.",
+                });
+            }
+            if (role === RolesUtilisateur.INSTITUTION) {
+                const sitesAccessibles = await UtilisateurController.sitesAccessibles(req);
+                if (siteIds.some(etablissementId =>
+                    !sitesAccessibles.includes(etablissementId) && !sitesActuels.includes(etablissementId)
+                )) {
+                    return res.status(403).json({ success: false, message: "Vous ne pouvez affecter ce compte qu’aux sites auxquels vous êtes affecté." });
+                }
+            }
+
+            const rolesPersonnel = [
+                RolesUtilisateur.PERSONNEL_ADMINISTRATIF,
+                RolesUtilisateur.CABINET_COMPTABLE,
+                RolesUtilisateur.RESSOURCES_HUMAINES,
+                RolesUtilisateur.ESA_COMPTA,
+                RolesUtilisateur.SECRETAIRE,
+                RolesUtilisateur.SURVEILLANT,
+                RolesUtilisateur.SUPERVISEUR_GENERAL,
+            ];
+            if (rolesPersonnel.includes(userRole) && !String(req.body.fonction || '').trim()) {
+                return res.status(400).json({ success: false, message: "La fonction est obligatoire pour ce profil." });
+            }
+            if (userRole === RolesUtilisateur.APPRENANT && (!req.body.dateNaissance || !req.body.lieuNaissance)) {
+                return res.status(400).json({ success: false, message: "La date et le lieu de naissance sont obligatoires pour un apprenant." });
+            }
+
+            transaction = await DatabaseConnection.getInstance().sequelize.transaction();
+            const updateData: Record<string, unknown> = {
+                nom,
+                prenoms,
+                email,
+                identifiant,
+                contact: req.body.contact === undefined ? utilisateur.contact : (req.body.contact || null),
+                role: userRole,
+                etablissementId: siteIds[0] || null,
+            };
+            if (req.body.motDePasse) updateData.motDePasse = bcrypt.hashSync(String(req.body.motDePasse), 12);
+            if (req.file) updateData.photoDeProfil = req.file.filename;
+            await utilisateur.update(updateData, { transaction });
+
+            const updateProfile = async (
+                model: any,
+                fields: string[],
+                defaults: Record<string, unknown> = {},
+            ): Promise<any> => {
+                const profileData: Record<string, unknown> = {};
+                for (const field of fields) {
+                    if (req.body[field] !== undefined) profileData[field] = req.body[field] === '' ? null : req.body[field];
+                }
+                if (req.file && model.rawAttributes.photo) profileData.photo = req.file.filename;
+                let profile = await model.findOne({ where: { utilisateurId: utilisateur.id }, transaction });
+                if (profile) {
+                    if (Object.keys(profileData).length) await profile.update(profileData, { transaction });
+                } else {
+                    profile = await model.create({
+                        ...defaults,
+                        ...profileData,
+                        utilisateurId: utilisateur.id,
+                    }, { transaction });
+                }
+                return profile;
+            };
+
+            if (userRole === RolesUtilisateur.ENSEIGNANT) {
+                const profile = await Enseignant.findOne({ where: { utilisateurId: utilisateur.id }, transaction });
+                const teacherFields = [
+                    'specialite', 'gradeAcademique', 'statut', 'fonctionAdministrative',
+                    'anneeExperience', 'heureTheoriqueAnnuelle', 'heureReelleAnnuelle',
+                    'cni', 'nifOtr', 'dateNaissance', 'lieuNaissance', 'sexe',
+                    'nationalite', 'contact', 'plusHautDiplome', 'statutHandicap', 'natureHandicap',
+                ] as const;
+                type TeacherProfileField = typeof teacherFields[number] | 'photo';
+                const teacherData: Partial<Record<TeacherProfileField, unknown>> = {};
+                for (const field of teacherFields) {
+                    if (req.body[field] !== undefined) teacherData[field] = req.body[field] === '' ? null : req.body[field];
+                }
+                if (req.file) teacherData.photo = req.file.filename;
+                if (profile) {
+                    for (const field of Object.keys(teacherData) as TeacherProfileField[]) {
+                        profile.setDataValue(field, teacherData[field] as Enseignant[typeof field]);
+                    }
+                    await profile.save({ transaction });
+                } else {
+                    const etablissement = siteIds[0] ? await Etablissement.findByPk(siteIds[0], { transaction }) : null;
+                    const etabCode = IDGenerator.deriveEtablissementCode(etablissement);
+                    const siteCode = IDGenerator.deriveSiteCode(etablissement);
+                    const matiereCode = IDGenerator.deriveMatiereCode(String(req.body.specialite || ''));
+                    const prefix = `${etabCode}-${matiereCode}-${siteCode}-`;
+                    const count = await Enseignant.count({ where: { matricule: { [Op.like]: `${prefix}%` } } as any, transaction });
+                    await Enseignant.create({
+                        utilisateurId: utilisateur.id,
+                        ...((req.file?.filename || utilisateur.photoDeProfil)
+                            ? { photo: req.file?.filename || utilisateur.photoDeProfil }
+                            : {}),
+                        matricule: IDGenerator.generateMatricule(etabCode, matiereCode, siteCode, count + 1),
+                        specialite: req.body.specialite || null,
+                        gradeAcademique: req.body.gradeAcademique || null,
+                        statut: req.body.statut || 'Permanent',
+                        fonctionAdministrative: req.body.fonctionAdministrative || null,
+                        anneeExperience: Number(req.body.anneeExperience) || 0,
+                        heureTheoriqueAnnuelle: Number(req.body.heureTheoriqueAnnuelle) || 0,
+                        heureReelleAnnuelle: Number(req.body.heureReelleAnnuelle) || 0,
+                        cni: req.body.cni || null,
+                        nifOtr: req.body.nifOtr || null,
+                        dateNaissance: req.body.dateNaissance || null,
+                        lieuNaissance: req.body.lieuNaissance || null,
+                        sexe: req.body.sexe || 'M',
+                        nationalite: req.body.nationalite || null,
+                        contact: req.body.contact || null,
+                        plusHautDiplome: req.body.plusHautDiplome || null,
+                    }, { transaction });
+                }
+            } else if (userRole === RolesUtilisateur.APPRENANT) {
+                await updateProfile(Apprenant, [
+                    'dateNaissance', 'lieuNaissance', 'sexe', 'nationalite', 'cni',
+                    'typePieceIdentite', 'numeroPiece', 'statutHandicap', 'natureHandicap',
+                    'anneeObtentionBac', 'serieBac', 'anneePremiereInscription',
+                    'nombreInscriptions', 'diplomePrepare',
+                    'statutEtudiant', 'periode',
+                ], {
+                    dateNaissance: req.body.dateNaissance,
+                    lieuNaissance: req.body.lieuNaissance,
+                    sexe: req.body.sexe || 'M',
+                    statutEtudiant: req.body.statutEtudiant || 'nouveau',
+                    periode: req.body.periode || 'matin',
+                    photo: utilisateur.photoDeProfil || null,
+                });
+            } else if (userRole === RolesUtilisateur.COMITE_ORIENTATION) {
+                await updateProfile(ComiteOrientation, ['fonction', 'estPrescripteur'], {
+                    fonction: req.body.fonction || UtilisateurController.roleToFonction(userRole),
+                    estPrescripteur: Boolean(req.body.estPrescripteur),
+                });
+            } else if (userRole === RolesUtilisateur.CAISSIER_BANQUE) {
+                await updateProfile(CaissierBanque, ['dateNaissance', 'lieuNaissance', 'fonction']);
+            } else if (rolesPersonnel.includes(userRole)) {
+                await updateProfile(PersonnelAdministratif, [
+                    'fonction', 'statut', 'directionService', 'cni', 'nifOtr',
+                    'dateNaissance', 'lieuNaissance', 'sexe', 'nationalite',
+                    'contact', 'plusHautDiplome', 'statutHandicap', 'natureHandicap',
+                ], {
+                    fonction: req.body.fonction || UtilisateurController.roleToFonction(userRole),
+                    statut: req.body.statut || 'Permanent',
+                    etablissementId: siteIds[0] || null,
+                });
+            } else if (userRole === RolesUtilisateur.INSTITUTION) {
+                await updateProfile(Institution, ['dateNaissance', 'lieuNaissance', 'fonction']);
+            }
+
+            if (req.body.siteIds !== undefined) {
+                await SiteUtilisateur.destroy({ where: { utilisateurId: utilisateur.id }, transaction });
+                if (siteIds.length) {
+                    await SiteUtilisateur.bulkCreate(siteIds.map(etablissementId => ({
+                        utilisateurId: utilisateur.id,
+                        etablissementId,
+                        affectePar: (req as any).utilisateurId || null,
+                    })), { transaction });
+                }
+                if (rolesPersonnel.includes(userRole)) {
+                    await PersonnelAdministratif.update(
+                        { etablissementId: siteIds[0] || null },
+                        { where: { utilisateurId: utilisateur.id }, transaction },
+                    );
+                }
+            }
+
+            await transaction.commit();
+            transactionCommitted = true;
+            return res.status(200).json({ success: true, message: "Compte et profil mis à jour." });
         } catch (error) {
-            return res.status(500).json({ success: false, message: "Erreur interne du serveur" });
+            if (transaction && !transactionCommitted) {
+                try {
+                    await transaction.rollback();
+                } catch (rollbackError) {
+                    console.error("Erreur rollback mise à jour utilisateur:", rollbackError);
+                }
+            }
+            if (UtilisateurController.isUniqueViolation(error)) {
+                return res.status(409).json({ success: false, message: "L’email, l’identifiant ou le matricule est déjà utilisé." });
+            }
+            console.error("Erreur mise à jour utilisateur:", error);
+            return res.status(500).json({ success: false, message: "Erreur lors de la mise à jour du compte." });
         }
     }
 

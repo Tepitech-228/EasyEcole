@@ -2,10 +2,11 @@ import { Request, Response } from "express";
 import { CountOptions, FindOptions, InferAttributes } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { ComiteVote } from "../models/ComiteVote";
-import { DossierInscription } from "../models/DossierInscription";
+import { DossierInscription, normaliserEtapeDossier, normaliserProfilRequis } from "../models/DossierInscription";
 import { DemandeInscriptionDossier } from "../models/DemandeInscriptionDossier";
 import { DemandeInscription } from "../models/DemandeInscription";
 import { Utilisateur } from "../../auth/models/Utilisateur";
+import { Apprenant } from "../../auth/models/Apprenant";
 import { EtudiantUploadStorageService } from "../services/EtudiantUploadStorageService";
 
 const getSiteScope = (req: Request): number | null | undefined => {
@@ -85,6 +86,8 @@ export default class DossierInscriptionController {
             let dossierInscription: DossierInscription = new DossierInscription();
             dossierInscription.titre = req.body.titre
             dossierInscription.description = req.body.description
+            dossierInscription.profilRequis = normaliserProfilRequis(req.body.profilRequis, req.body.titre)
+            dossierInscription.etape = normaliserEtapeDossier(req.body.etape, req.body.titre)
             dossierInscription.tailleMax = normaliserTailleMax(req.body.tailleMax) as any
             dossierInscription.sessionId = req.body.sessionId
 
@@ -197,7 +200,41 @@ export default class DossierInscriptionController {
                 nettoyerFichiersUpload();
                 return res.status(400).json({
                     success: false,
-                    message: "Cette pièce ne correspond pas aux documents requis pour cette inscription"
+                    message: "Cette pi��ce ne correspond pas aux documents requis pour cette inscription"
+                });
+            }
+
+            const etapeDossier = (dossierRequis as any).etape || 'premiere'
+            const profilRequis = (dossierRequis as any).profilRequis || 'tous'
+            if (etapeDossier === 'complementaire'
+                && !['saisie_validee', 'correction_demandee', 'rejete'].includes(statutPipeline)) {
+                nettoyerFichiersUpload();
+                return res.status(403).json({
+                    success: false,
+                    message: "Les documents complémentaires seront disponibles après la validation du paiement.",
+                });
+            }
+            if (profilRequis !== 'tous') {
+                const apprenant = await Apprenant.findOne({
+                    where: { utilisateurId: req.utilisateurId },
+                    attributes: ['statutEtudiant'],
+                })
+                const profilEtudiant = apprenant?.statutEtudiant === 'ancien' ? 'ancien' : 'nouveau'
+                if (profilRequis !== profilEtudiant) {
+                    nettoyerFichiersUpload();
+                    return res.status(403).json({
+                        success: false,
+                        message: "Cette pièce n'est pas requise pour votre profil.",
+                    });
+                }
+            }
+            if (etapeDossier === 'premiere'
+                && ['saisie_validee', 'transmis_comite', 'valide'].includes(statutPipeline)
+                && !correctionEnCours) {
+                nettoyerFichiersUpload();
+                return res.status(403).json({
+                    success: false,
+                    message: "Cette pièce ne peut plus être modifiée à cette étape.",
                 });
             }
 
@@ -330,6 +367,8 @@ export default class DossierInscriptionController {
                     titre: req.body.titre,
                     tailleMax: normaliserTailleMax(req.body.tailleMax) as any,
                     description: req.body.description,
+                    profilRequis: normaliserProfilRequis(req.body.profilRequis, req.body.titre),
+                    etape: normaliserEtapeDossier(req.body.etape, req.body.titre),
                 })
                     .then(async (dossierInscription) => {
                         return res.status(200).send(dossierInscription);

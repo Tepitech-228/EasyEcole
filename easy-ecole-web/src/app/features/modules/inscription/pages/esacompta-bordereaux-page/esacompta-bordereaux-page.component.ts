@@ -39,6 +39,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   selectedBordereau?: any
   showSaisieModal = false
   showPreviewModal = false
+  showMatriculeConfirmationModal = false
 
   previewResult: any = null
   error = false
@@ -77,6 +78,17 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   /** Le type choisi est-il MIXTE ? (répartition par nature exigée) */
   get estTypeMixte(): boolean {
     return String((this.typeSelectionne as any)?.code || '').toUpperCase() === 'MIXTE'
+  }
+
+  get matriculeEtudiantRequis(): boolean {
+    const demande = this.selectedBordereau?.demandeInscription
+    const statut = demande?.statutPipeline
+    if (demande?.typeDemande === 'reinscription'
+      || ['saisie_validee', 'transmis_comite', 'valide'].includes(statut)) {
+      return false
+    }
+    return !!demande
+      || ['inscription', 'mixte'].includes(String(this.selectedBordereau?.type || '').toLowerCase())
   }
 
   /** Montant de la composition auto-calculée (somme inscription + scolarité) */
@@ -155,6 +167,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     super()
     this.saisieForm = this.fb.group({
       montantPaiement: [null, [Validators.required, Validators.min(1)]],
+      matriculeEtudiant: [''],
       referenceBancaire: ['', Validators.required, this.verificateurUnicite('referenceBancaire')],
       numeroBordereau: ['', Validators.required, this.verificateurUnicite('numeroBordereau')],
       moyenPaiement: [''],
@@ -398,12 +411,22 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   openSaisieModal(bordereau: Bordereau): void {
     this.selectedBordereau = bordereau
     this.selectedBordereauSafeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.getDocUrl(bordereau))
+    const demande = (bordereau as any).demandeInscription
+    const matriculeExistant = demande?.matriculeEtudiant
+      || (bordereau as any).echeance?.dossierEtudiant?.matricule
+      || ''
+    const matriculeControl = this.saisieForm.get('matriculeEtudiant')
+    matriculeControl?.setValidators(this.matriculeEtudiantRequis
+      ? [Validators.required, Validators.maxLength(64), Validators.pattern(/\S/)]
+      : [])
+    matriculeControl?.updateValueAndValidity({ emitEvent: false })
     this.composition = { inscription: null, scolarite: null }
     this.compositionPreviewResult = null
     this.compositionLoading = false
     this.bourseInfo = null
     this.saisieForm.reset({
       montantPaiement: bordereau.montant || null,
+      matriculeEtudiant: matriculeExistant,
       referenceBancaire: bordereau.referenceBancaire || '',
       numeroBordereau: bordereau.numeroBordereau || '',
       moyenPaiement: bordereau.moyenPaiement || '',
@@ -427,6 +450,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
 
   closeSaisieModal(): void {
     this.showSaisieModal = false
+    this.showMatriculeConfirmationModal = false
     this.selectedBordereau = undefined
     this.selectedBordereauSafeUrl = null
     this.error = false
@@ -514,15 +538,34 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   }
 
   onConfirmerSaisie(): void {
+    this.saisieForm.markAllAsTouched()
     if (this.saisieForm.invalid || !this.selectedBordereau) return
     this.error = false
     this.apiErrorMessage = ''
 
+    if (this.matriculeEtudiantRequis) {
+      this.showMatriculeConfirmationModal = true
+      return
+    }
+    this.executerSaisie()
+  }
+
+  confirmerValidationMatricule(): void {
+    if (!this.selectedBordereau || this.saisieForm.invalid) return
+    this.showMatriculeConfirmationModal = false
+    this.executerSaisie()
+  }
+
+  private executerSaisie(): void {
+    if (!this.selectedBordereau) return
     // Pour les types MIXTE, on n'envoie plus de composition manuelle :
     // le backend calcule automatiquement (inscription d'abord, reste scolarité).
     const raw = this.saisieForm.value
     const payload: any = {
       montantPaiement: raw.montantPaiement,
+      ...(this.matriculeEtudiantRequis
+        ? { matriculeEtudiant: String(raw.matriculeEtudiant || '').trim() }
+        : {}),
       referenceBancaire: (raw.referenceBancaire || '').trim() || null,
       numeroBordereau: (raw.numeroBordereau || '').trim() || null,
       moyenPaiement: (raw.moyenPaiement || '').trim() || null,

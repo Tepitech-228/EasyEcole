@@ -64,6 +64,24 @@ function decodeCreatePayload(req: express.Request, res: express.Response, next: 
     }
 }
 
+function decodeUpdatePayload(req: express.Request, res: express.Response, next: express.NextFunction): void {
+    if (typeof req.body?.data !== "string") {
+        next()
+        return
+    }
+    try {
+        const payload = JSON.parse(req.body.data)
+        if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+            res.status(400).json({ success: false, message: "Données de modification utilisateur invalides." })
+            return
+        }
+        req.body = payload
+        next()
+    } catch {
+        res.status(400).json({ success: false, message: "Données de modification utilisateur invalides." })
+    }
+}
+
 function authorizeUserCreation(req: express.Request, res: express.Response, next: express.NextFunction): void {
     if (req.utilisateurRole === RolesUtilisateur.ADMIN || req.utilisateurRole === RolesUtilisateur.INSTITUTION) {
         next()
@@ -88,7 +106,7 @@ router
     /** GET /auth/utilisateurs/:id — Obtenir un utilisateur par ID */
     .get('/:id', [Authenticate], UtilisateurController.getUtilisateur)
     /** PUT /auth/utilisateurs/:id — Modifier un utilisateur (admin/institution) */
-    .put('/:id', [Authenticate], UtilisateurController.adminUpdateUtilisateur)
+    .put('/:id', [Authenticate, upload.single("photo"), decodeUpdatePayload], UtilisateurController.adminUpdateUtilisateur)
     /** PUT /auth/utilisateurs/:id/sites — Affecter un utilisateur à un ou plusieurs sites (admin) */
     .put('/:id/sites', [Authenticate], UtilisateurController.affecterSites)
     /** PUT /auth/utilisateurs — Modifier son propre profil */

@@ -6,7 +6,7 @@ import { DemandeInscription } from "../models/DemandeInscription";
 import { Apprenant } from "../../auth/models/Apprenant";
 import { FraisInscription } from "../models/FraisInscription";
 import { FraisScolarite, estModaliteScolarite } from "../models/FraisScolarite";
-import { DossierInscription } from "../models/DossierInscription";
+import { DossierInscription, normaliserEtapeDossier, normaliserProfilRequis } from "../models/DossierInscription";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { AnneeAcademique } from "../models/AnneeAcademique";
 import { DossierStorageService } from "../services/DossierStorageService";
@@ -200,6 +200,8 @@ export default class SessionController {
 
                 if (req.body.dossiers && Array.isArray(req.body.dossiers)) {
                     for (const dossierData of req.body.dossiers) {
+                        const profilRequis = normaliserProfilRequis(dossierData.profilRequis, dossierData.titre)
+                        const etape = normaliserEtapeDossier(dossierData.etape, dossierData.titre)
                         const existant = await DossierInscription.findOne({
                             where: { titre: dossierData.titre, sessionId: session.id },
                             paranoid: false,
@@ -209,6 +211,8 @@ export default class SessionController {
                             await existant.update({
                                 description: dossierData.description,
                                 tailleMax: normaliserTailleMax(dossierData.tailleMax) as any,
+                                profilRequis,
+                                etape,
                             }, { transaction: t });
                             if (existant.deletedAt != null) {
                                 await existant.restore({ transaction: t });
@@ -219,6 +223,8 @@ export default class SessionController {
                                 titre: dossierData.titre,
                                 description: dossierData.description,
                                 tailleMax: normaliserTailleMax(dossierData.tailleMax) as any,
+                                profilRequis,
+                                etape,
                                 sessionId: session.id,
                             }, { transaction: t });
                         }

@@ -24,6 +24,7 @@ import { NiveauEtude } from "../models/NiveauEtude";
 import { Parcours } from "../models/Parcours";
 import { ParcoursChoisi } from "../models/ParcoursChoisi";
 import { BordereauDossierService } from "../services/BordereauDossierService";
+import HikvisionEnrollmentService from "../services/HikvisionEnrollmentService";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { EmailSender } from "../../../core/helpers/EmailSender";
 import { DocGenGeneratorService } from "../../docgen/services/DocGenGeneratorService";
@@ -753,6 +754,65 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
     // Si ESA n'envoie pas de valeur mais que Cabinet a déjà renseigné
     // referenceBancaire/numeroBordereau, on conserve la valeur existante
     // (pré-remplissage automatique côté ESA-COMPTA après validation Cabinet).
+    const matriculeSaisi = typeof req.body?.matriculeEtudiant === 'string'
+      ? req.body.matriculeEtudiant.trim()
+      : ''
+    const matriculeRequis = !!demandePipeline
+      && demandePipeline.typeDemande !== 'reinscription'
+      && !demandePipeline.matriculeEtudiant
+    if (matriculeRequis && !matriculeSaisi) {
+      await transaction.rollback()
+      return res.status(400).json({
+        success: false,
+        message: "Le matricule Ǹtudiant est obligatoire pour valider la premi��re inscription.",
+      })
+    }
+    if (matriculeSaisi) {
+      if (matriculeSaisi.length > 64 || /[\u0000-\u001f\u007f]/.test(matriculeSaisi)) {
+        await transaction.rollback()
+        return res.status(400).json({
+          success: false,
+          message: "Le matricule Ǹtudiant est invalide (64 caract��res maximum).",
+        })
+      }
+      const dossierAvecMatricule = await DossierEtudiant.findOne({
+        where: {
+          matricule: matriculeSaisi,
+          utilisateurId: { [Op.ne]: bordereau.utilisateurId },
+        },
+        paranoid: false,
+        transaction,
+      })
+      if (dossierAvecMatricule) {
+        await transaction.rollback()
+        return res.status(409).json({
+          success: false,
+          message: "Ce matricule Ǹtudiant est dǸj�� attribuǸ.",
+        })
+      }
+      const autreDemande = await DemandeInscription.findOne({
+        where: {
+          matriculeEtudiant: matriculeSaisi,
+          utilisateurId: { [Op.ne]: bordereau.utilisateurId },
+          ...(demandePipeline ? { id: { [Op.ne]: demandePipeline.id } } : {}),
+        },
+        transaction,
+      })
+      if (autreDemande) {
+        await transaction.rollback()
+        return res.status(409).json({
+          success: false,
+          message: "Ce matricule Ǹtudiant est dǸj�� utilisǸ par une autre demande.",
+        })
+      }
+      if (demandePipeline) {
+        demandePipeline.matriculeEtudiant = matriculeSaisi
+      }
+    }
+    if (demandePipeline && !demandePipeline.matriculeEtudiant && dossierExistant?.matricule) {
+      demandePipeline.matriculeEtudiant = dossierExistant.matricule
+    }
+
     const refBancaire = (req.body.referenceBancaire || '').trim() || bordereau.referenceBancaire || null;
     const numBordereau = (req.body.numeroBordereau || '').trim() || bordereau.numeroBordereau || null;
     const moyPaiement = (req.body.moyenPaiement || '').trim() || null;
@@ -917,31 +977,27 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       }
     }
 
-    // ── Pipeline d'inscription (FLUX SÉQUENTIEL) ──
-    // Le dossier reste BLOQUÉ ('authentifie') tant que la saisie ESA-COMPTA
-    // n'est pas terminée : le comité ne voit pas le dossier (ComiteValidation
-    // exige statutPipeline='transmis_comite'). C'est ICI, en FIN de saisie,
-    // que la transmission au comité est déclenchée automatiquement.
-    // (La pré-inscription est posée/validée PLUS HAUT, AVANT la création du
-    // socle financier — voir bloc « Sécurité : pré-inscription ».)
+    // ── Première étape du pipeline d'inscription ──
+    // La saisie du paiement d'inscription valide la première étape, mais ne
+    // transmet pas encore le dossier au comité : l'étudiant devra d'abord
+    // déposer les documents complémentaires depuis son espace.
 
-    // FIN DE SAISIE ESA : si aucun bordereau non traité ne reste pour cet
-    // étudiant (ni 'en_attente', ni 'valide' non encore saisi), le dossier est
-    // transmis AUTOMATIQUEMENT au comité d'orientation.
-    if (demandePipeline && (!demandePipeline.statutPipeline || ['soumis', 'authentifie'].includes(demandePipeline.statutPipeline))) {
-      const restantsASaisir = await Bordereau.count({
-        where: {
-          utilisateurId: bordereau.utilisateurId,
-          ...(hasBordereauSiteScope ? { etablissementId: bordereauSiteScopeId } : {}),
-          statut: { [Op.in]: ['en_attente', 'valide'] },
-        },
-        transaction,
-      })
-      if (restantsASaisir === 0) {
-        demandePipeline.statutPipeline = 'transmis_comite'
-        demandePipeline.soumissionComite = true
-        await demandePipeline.save({ transaction })
-      }
+    // La première étape se valide dès que le recouvrement traite le paiement
+    // d'inscription, sans attendre d'éventuels autres bordereaux de l'étudiant.
+    const typeEffectifNormalise = String(typeEffectif || '').toLowerCase()
+    const contientPaiementInscription = typeEffectifNormalise === 'inscription'
+      || typeOperationCode === 'INSCRIPTION'
+      || (typeEffectifNormalise === 'mixte' && (composition || []).some(part => part.type === 'inscription'))
+    let premiereEtapeValidee = false
+    if (demandePipeline
+      && demandePipeline.typeDemande !== 'reinscription'
+      && contientPaiementInscription
+      && (!demandePipeline.statutPipeline || ['soumis', 'authentifie'].includes(demandePipeline.statutPipeline))) {
+      demandePipeline.statutPipeline = 'saisie_validee'
+      demandePipeline.soumissionComite = false
+      demandePipeline.motifPipeline = null
+      await demandePipeline.save({ transaction })
+      premiereEtapeValidee = true
     }
 
     // Marquer la saisie ESA comme effectuée (AVANT le commit, dans la transaction)
@@ -1003,25 +1059,39 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
     }
 
     // ── Email N°2 : transmission du dossier au comité de validation ──
-    if (demandePipeline?.statutPipeline === 'transmis_comite') {
+    if (premiereEtapeValidee && demandePipeline) {
+      if (demandePipeline.matriculeEtudiant) {
+        const etablissementId = Number(demandePipeline.etablissementId ?? bordereau.etablissementId)
+        if (Number.isSafeInteger(etablissementId) && etablissementId > 0) {
+          try {
+            const queuedCount = await HikvisionEnrollmentService.enqueueStudent(
+              Number(bordereau.utilisateurId),
+              etablissementId,
+              demandePipeline.matriculeEtudiant,
+              demandePipeline.consentementHikvisionAt ?? null
+            )
+            if (queuedCount > 0) {
+              void HikvisionEnrollmentService.processPending().catch(error => {
+                console.error("[Hikvision] Traitement de l'enrôlement impossible:", error)
+              })
+            }
+          } catch (hikvisionError) {
+            console.error("Erreur enrôlement Hikvision (non bloquante):", hikvisionError)
+          }
+        }
+      }
       try {
         const u: any = bordereau.utilisateur
         if (u?.email) {
           const nomComplet = `${u.prenoms || ''} ${u.nom || ''}`.trim() || 'étudiant(e)'
-          await EmailSender.getInstance().sendPdf(
+          await EmailSender.getInstance().sendValidationPremiereEtape(
             u.email,
             nomComplet,
-            "Votre dossier est transmis au comité de validation",
-            `<p>Cher ${nomComplet},</p>
-             <p>Les informations relatives à votre paiement ont été vérifiées et enregistrées par notre service comptable.</p>
-             <p>Votre dossier est maintenant transmis au comité pour son examen final.</p>
-             <p>Nous vous invitons à consulter régulièrement votre boîte mail afin de prendre connaissance de la décision du comité.</p>
-             <p>Cordialement,<br>Service des inscriptions</p>`,
-            '', ''
+            Number(demandePipeline.id)
           )
         }
       } catch (emailTransError) {
-        console.error("Erreur envoi email transmission comité (non bloquante):", emailTransError)
+        console.error("Erreur envoi email validation première étape (non bloquante):", emailTransError)
       }
     }
 

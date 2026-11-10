@@ -33,8 +33,14 @@ export class UtilisateurService {
     return this.httpClient.post(`${this.SERVICE_URL}`, formData)
   }
 
-  adminUpdate(id: string, data: any): Observable<any> {
-    return this.httpClient.put(`${this.SERVICE_URL}/${id}`, data)
+  adminUpdate(id: string, data: any, photo?: File | null): Observable<any> {
+    if (!photo) {
+      return this.httpClient.put(`${this.SERVICE_URL}/${id}`, data)
+    }
+    const formData = new FormData()
+    formData.append('data', JSON.stringify(data))
+    formData.append('photo', photo, photo.name)
+    return this.httpClient.put(`${this.SERVICE_URL}/${id}`, formData)
   }
 
   delete(id: string): Observable<any> {

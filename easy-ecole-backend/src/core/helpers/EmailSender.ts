@@ -374,6 +374,54 @@ export class EmailSender {
         })
     }
 
+    public sendValidationPremiereEtape(email: string, username: string, demandeId: number): Promise<void> {
+        if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200'
+        const link = `${frontendUrl}/inscription/demandes/${demandeId}`
+        void SmsSender.envoyerParEmail(email, `${EMAIL_SENDER_NAME} - La première étape de votre inscription est validée. Complétez votre dossier pour finaliser votre demande.`)
+        const template: EmailTemplateType = {
+            title: 'Première étape validée',
+            fullname: username,
+            paragraph1: 'La première étape de votre inscription a été validée avec succès. Pour finaliser votre demande, veuillez soumettre votre demande d’autorisation provisoire d’inscription et déposer les documents complémentaires requis.',
+            buttonLink: link,
+            button: 'Continuer mon inscription',
+            paragraph2: 'Si le bouton ne fonctionne pas, veuillez copier et coller le lien ci-dessous dans votre navigateur :',
+            link
+        }
+        const mailOptions: SendMailOptions = {
+            from: this.getFromAddress(),
+            to: email,
+            encoding: 'UTF-8',
+            subject: `${EMAIL_SENDER_NAME}: Première étape de votre inscription validée`,
+            html: this.getEmailTemplate(template)
+        }
+        return this.sendMail(mailOptions)
+    }
+
+    public sendDocumentsComplementairesTransmis(email: string, username: string): Promise<void> {
+        if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200'
+        const link = `${frontendUrl}/inscription/mon-dossier`
+        void SmsSender.envoyerParEmail(email, `${EMAIL_SENDER_NAME} - Vos documents ont été reçus. Votre dossier est en cours d'examen.`)
+        const template: EmailTemplateType = {
+            title: "Dossier en cours d'examen",
+            fullname: username,
+            paragraph1: "Vos documents complémentaires ont bien été reçus. Votre dossier est maintenant en cours d'examen par le comité de validation.",
+            buttonLink: link,
+            button: 'Suivre mon dossier',
+            paragraph2: 'Si le bouton ne fonctionne pas, veuillez copier et coller le lien ci-dessous dans votre navigateur :',
+            link
+        }
+        const mailOptions: SendMailOptions = {
+            from: this.getFromAddress(),
+            to: email,
+            encoding: 'UTF-8',
+            subject: `${EMAIL_SENDER_NAME}: Votre dossier est en cours d'examen`,
+            html: this.getEmailTemplate(template)
+        }
+        return this.sendMail(mailOptions)
+    }
+
     public sendMessageInscriptionEnseignant(username: string, tempPassword: string, email: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
         const mailOptions: SendMailOptions = {

@@ -21,6 +21,7 @@ import { PreInscription, EtatPreInscription } from "../models/PreInscription";
 import { DossierEtudiant } from "../models/DossierEtudiant";
 import { DemandeInscriptionDossier } from "../models/DemandeInscriptionDossier";
 import { DossierInscription } from "../models/DossierInscription";
+import { Bordereau } from "../models/Bordereau";
 import { Classe } from "../models/Classe";
 import { PaiementInscription } from "../models/PaiementInscription";
 import { FraisInscription } from "../models/FraisInscription";
@@ -93,7 +94,7 @@ export default class DemandeInscriptionController {
                 ParcoursChoisi.findOne({ where: { demandeInscriptionId: demandeId } }),
                 DossierInscription.findAll({
                     where: { sessionId: demande.sessionId },
-                    attributes: ['id']
+                    attributes: ['id', 'etape', 'profilRequis']
                 }),
                 DemandeInscriptionDossier.findAll({
                     where: { demandeId },
@@ -104,10 +105,19 @@ export default class DemandeInscriptionController {
                 return res.status(400).json({ success: false, message: "Veuillez d'abord choisir une filière." });
             }
 
+            const apprenant = await Apprenant.findOne({
+                where: { utilisateurId: req.utilisateurId },
+                attributes: ['photo', 'statutEtudiant'],
+            });
+            const profilEtudiant = apprenant?.statutEtudiant === 'ancien' ? 'ancien' : 'nouveau'
             const dossiersDeposesIds = new Set(dossiersDeposes.map(dossier => Number(dossier.dossierId)));
-            const documentsManquants = dossiersRequis.filter(
-                dossier => !dossiersDeposesIds.has(Number(dossier.id))
-            );
+            const documentsManquants = dossiersRequis.filter(dossier => {
+                const etape = (dossier as any).etape || 'premiere'
+                const profilRequis = (dossier as any).profilRequis || 'tous'
+                return etape === 'premiere'
+                    && (profilRequis === 'tous' || profilRequis === profilEtudiant)
+                    && !dossiersDeposesIds.has(Number(dossier.id))
+            });
             if (documentsManquants.length > 0) {
                 return res.status(400).json({
                     success: false,
@@ -127,21 +137,33 @@ export default class DemandeInscriptionController {
                 return res.status(409).json({ success: false, message: "Cette demande ne peut plus être soumise à cette étape." });
             }
 
-            const apprenant = await Apprenant.findOne({
-                where: { utilisateurId: req.utilisateurId },
-                attributes: ['photo'],
-            });
             if (!apprenant?.photo) {
                 return res.status(400).json({
                     success: false,
-                    message: "Veuillez ajouter une photo à votre profil avant de soumettre la demande.",
+                    message: "Veuillez ajouter une photo �� votre profil avant de soumettre la demande.",
+                });
+            }
+
+            const bordereauActif = await Bordereau.findOne({
+                where: {
+                    utilisateurId: demande.utilisateurId,
+                    statut: { [Op.in]: ['en_attente', 'en_saisie_comptable', 'valide', 'traite'] },
+                    ...(demande.createdAt ? { createdAt: { [Op.gte]: demande.createdAt } } : {}),
+                },
+                attributes: ['id', 'statut'],
+                order: [['createdAt', 'DESC']],
+            });
+            if (!bordereauActif) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Veuillez déposer votre bordereau de paiement avant de soumettre la demande.",
                 });
             }
 
             const matriculeEtudiant = typeof req.body?.matriculeEtudiant === 'string'
                 ? req.body.matriculeEtudiant.trim()
                 : '';
-            if (demande.typeDemande !== 'reinscription' && (!matriculeEtudiant || matriculeEtudiant.length > 64 || /[\u0000-\u001f]/.test(matriculeEtudiant))) {
+            if (matriculeEtudiant && (matriculeEtudiant.length > 64 || /[\u0000-\u001f]/.test(matriculeEtudiant))) {
                 return res.status(400).json({ success: false, message: "Veuillez saisir un matricule étudiant valide (64 caractères maximum)." });
             }
             if (matriculeEtudiant) {
@@ -172,7 +194,7 @@ export default class DemandeInscriptionController {
             let hikvisionEnrollmentQueued = false;
             let hikvisionEnrollmentWarning: string | undefined;
             const etablissementId = Number(demande.etablissementId);
-            if (Number.isSafeInteger(etablissementId) && etablissementId > 0) {
+            if (matriculeEtudiant && Number.isSafeInteger(etablissementId) && etablissementId > 0) {
                 try {
                     const queuedCount = await HikvisionEnrollmentService.enqueueStudent(
                         Number(demande.utilisateurId),
@@ -200,6 +222,8 @@ export default class DemandeInscriptionController {
                     );
                     hikvisionEnrollmentWarning = "Le dossier est soumis, mais l'enrôlement sur la pointeuse n'a pas pu être planifié.";
                 }
+            } else if (!matriculeEtudiant) {
+                hikvisionEnrollmentWarning = "L'enrôlement sur la pointeuse sera planifié après la validation du paiement.";
             } else {
                 hikvisionEnrollmentWarning = "Le dossier est soumis, mais aucun site n'est associé pour planifier l'enrôlement sur la pointeuse.";
             }
@@ -213,6 +237,99 @@ export default class DemandeInscriptionController {
         } catch (error) {
             console.error('[soumettreDemandeInscription]', error);
             return res.status(500).json({ success: false, message: "La demande n'a pas pu être soumise." });
+        }
+    }
+
+    static async soumettreDocumentsComplementaires(req: Request, res: Response): Promise<Response> {
+        if (req.utilisateurRole !== RolesUtilisateur.APPRENANT) {
+            return res.status(403).json({ success: false, message: "Seul l'apprenant peut compléter sa demande." });
+        }
+
+        try {
+            const demandeId = Number(req.params.id);
+            if (!Number.isSafeInteger(demandeId) || demandeId <= 0) {
+                return res.status(400).json({ success: false, message: "Identifiant de demande invalide." });
+            }
+
+            const demande = await DemandeInscription.findOne({
+                where: { id: demandeId, utilisateurId: req.utilisateurId },
+                include: [{
+                    association: DemandeInscription.associations.utilisateur,
+                    attributes: ['id', 'email', 'nom', 'prenoms'],
+                }],
+            });
+            if (!demande) {
+                return res.status(404).json({ success: false, message: "Demande d'inscription introuvable." });
+            }
+            if (demande.statutPipeline !== 'saisie_validee') {
+                return res.status(409).json({
+                    success: false,
+                    message: "Les documents complémentaires ne sont pas attendus à cette étape.",
+                });
+            }
+            if (demande.typeDemande !== 'reinscription' && !demande.matriculeEtudiant) {
+                return res.status(409).json({
+                    success: false,
+                    message: "Le matricule étudiant doit être renseigné avant de poursuivre.",
+                });
+            }
+
+            const apprenant = await Apprenant.findOne({
+                where: { utilisateurId: req.utilisateurId },
+                attributes: ['statutEtudiant'],
+            });
+            const profilEtudiant = apprenant?.statutEtudiant === 'ancien' ? 'ancien' : 'nouveau'
+
+            const [dossiersRequis, dossiersDeposes] = await Promise.all([
+                DossierInscription.findAll({
+                    where: { sessionId: demande.sessionId, etape: 'complementaire' },
+                    attributes: ['id', 'titre', 'description', 'tailleMax', 'etape', 'profilRequis'],
+                }),
+                DemandeInscriptionDossier.findAll({
+                    where: { demandeId },
+                    attributes: ['dossierId'],
+                }),
+            ])
+
+            const dossiersDeposesIds = new Set(dossiersDeposes.map(dossier => Number(dossier.dossierId)))
+            const documentsManquants = dossiersRequis.filter(dossier => {
+                const profilRequis = (dossier as any).profilRequis || 'tous'
+                return (profilRequis === 'tous' || profilRequis === profilEtudiant)
+                    && !dossiersDeposesIds.has(Number(dossier.id))
+            })
+            if (documentsManquants.length > 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Veuillez téléverser tous les documents complémentaires avant de poursuivre.",
+                    documentsManquants: documentsManquants.map(dossier => dossier.id),
+                    documents: documentsManquants.map(dossier => ({ id: dossier.id, titre: dossier.titre })),
+                })
+            }
+
+            await demande.update({
+                statutPipeline: 'transmis_comite',
+                soumissionComite: true,
+                motifPipeline: null,
+            })
+
+            const utilisateur = (demande as any).utilisateur
+            if (utilisateur?.email) {
+                try {
+                    const nomComplet = `${utilisateur.prenoms || ''} ${utilisateur.nom || ''}`.trim() || 'étudiant(e)'
+                    await EmailSender.getInstance().sendDocumentsComplementairesTransmis(utilisateur.email, nomComplet)
+                } catch (emailError) {
+                    console.error("Erreur envoi email documents complémentaires (non bloquante):", emailError)
+                }
+            }
+
+            return res.status(200).json({
+                success: true,
+                demandeId,
+                statutPipeline: 'transmis_comite',
+            })
+        } catch (error) {
+            console.error('[soumettreDocumentsComplementaires]', error);
+            return res.status(500).json({ success: false, message: "Les documents complémentaires n'ont pas pu être soumis." });
         }
     }
 
@@ -428,6 +545,16 @@ export default class DemandeInscriptionController {
                 session.setDataValue('dossiersInscription', sessionDossiersInscription);
                 session.setDataValue('fraisInscription', sessionFraisInscription);
             }
+
+            const apprenant = (demandeInscription as any).utilisateur?.apprenant;
+            const profilEtudiant = apprenant?.statutEtudiant === 'ancien' ? 'ancien' : 'nouveau';
+            const dossiersComplementairesRequis = sessionDossiersInscription.filter((dossier) => {
+                const etape = (dossier as any).etape || 'premiere';
+                const profilRequis = (dossier as any).profilRequis || 'tous';
+                return etape === 'complementaire'
+                    && (profilRequis === 'tous' || profilRequis === profilEtudiant);
+            });
+            (demandeInscription as any).setDataValue('dossiersRequis', dossiersComplementairesRequis);
 
             return res.status(200).send(demandeInscription);
         } catch (error) {

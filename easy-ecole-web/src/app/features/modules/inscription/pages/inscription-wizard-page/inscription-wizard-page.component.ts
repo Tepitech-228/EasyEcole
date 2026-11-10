@@ -30,12 +30,11 @@ interface FiliereSelection {
  * Wizard d'inscription (1ère inscription) — refonte PHASE par PHASE.
  *
  *  PHASE 1 : choix du parcours (cycle) → grade → filière (arborescence)
- *  PHASE 2 : choix de session + documents requis de la session + bordereau
- *            (la soumission constitue la demande d'autorisation provisoire)
- *  PHASE 3 : saisie manuelle des infos personnelles (l'étudiant complète et
- *            corrige lui-même le formulaire, éventuellement pré-rempli depuis
- *            les informations déjà enregistrées à son profil)
- *  ÉTAPE 4 : récapitulatif + soumission
+ *  PHASE 2 : choix de session + bordereau requis
+ *  PHASE 3 : informations personnelles
+ *  PHASE 4 : récapitulatif et première soumission
+ *  Après validation du bordereau par le recouvrement, l'étudiant dépose les
+ *  documents complémentaires depuis l'étape de suivi.
  *  ÉTAPE 5 : statut d'inscription. Seules les étapes qui concernent l'étudiant
  *            sont affichées (« Demande envoyée » puis « Dossier validé ») ; la
  *            chaîne interne de traitement (authentification/Audit, saisie
@@ -77,7 +76,10 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   niveauEtudeIdFromRoute?: string
 
   // Documents requis par la session (dossiers d'inscription)
-  documentsRequis: Array<{ id: string; titre: string; description?: string; obligatoire?: boolean }> = []
+  documentsRequis: Array<{ id: string; titre: string; description?: string; obligatoire?: boolean; etape?: string }> = []
+  documentsComplementairesRequis: Array<{ id: string; titre: string; description?: string; tailleMax?: number }> = []
+  documentsComplementaires: { [cle: string]: File | null } = {}
+  modeDepotComplementaire = false
   documents: { [cle: string]: File | null } = {}
   bordereau: File | null = null
   readonly PHOTOS_PATH = environment.MEDIAS_PATH.AUTH.PHOTOS
@@ -258,6 +260,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   private chargerDemandeExistante(id: string): void {
     this.loading = true
     this.errorMessage = ''
+    this.successMessage = ''
     this.demandeInscriptionService.get(id).subscribe({
       next: (demande: any) => {
         this.loading = false
@@ -280,6 +283,31 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
         const estCorrectionComite = statutPipeline === 'correction_demandee'
           || (statutPipeline === 'rejete' && piecesCorrection.size > 0)
         const estCorrection = estCorrectionBordereau || estCorrectionComite
+
+        if (statutPipeline === 'saisie_validee') {
+          this.resultat = { statutPipeline }
+          this.documents = {}
+          this.documentsRequis = []
+          this.documentsAReposer = {}
+          this.bordereauAReposer = null
+          this.documentsComplementairesRequis = (Array.isArray(demande.dossiersRequis) ? demande.dossiersRequis : [])
+            .map((d: any) => ({
+              id: String(d.id),
+              titre: d.titre || 'Document',
+              description: d.description,
+              tailleMax: d.tailleMax,
+            }))
+          this.piecesServeur = new Map(
+            (Array.isArray(demande.dossiersDemande) ? demande.dossiersDemande : [])
+              .filter((p: any) => p?.dossierId != null)
+              .map((p: any) => [String(p.dossierId), p.nomFichier || 'Déposé'])
+          )
+          this.documentsComplementaires = {}
+          this.modeDepotComplementaire = false
+          this.etape = 5
+          this.sauvegarder()
+          return
+        }
 
         if (statutPipeline && !estCorrection) {
           // Dossier déjà transmis : suivi, pas de nouvelle saisie.
@@ -326,12 +354,18 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
         const requis = Array.isArray(demande.session?.dossiersInscription)
           ? demande.session.dossiersInscription
           : []
-        this.documentsRequis = requis.map((d: any) => ({
+        const documentsSession = requis.map((d: any) => ({
           id: String(d.id),
           titre: d.titre || 'Document',
           description: d.description,
           obligatoire: d.obligatoire,
+          etape: d.etape,
         }))
+        this.documentsRequis = estCorrectionBordereau
+          ? documentsSession.filter((d: any) => this.estBordereau(d))
+          : estCorrectionComite
+            ? documentsSession.filter((d: any) => piecesCorrection.has(String(d.id)))
+            : documentsSession.filter((d: any) => d.etape === 'premiere' || this.estBordereau(d))
         this.piecesServeur = new Map(
           (Array.isArray(demande.dossiersDemande) ? demande.dossiersDemande : [])
             .filter((p: any) => p?.dossierId != null)
@@ -663,13 +697,14 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
    * (GET /sessions/:id), pas par la liste — on appelle donc le détail.
    */
   private chargerDocumentsSession(session: any): void {
-    const dossiersSession: Array<{ id: string; titre: string; description?: string; obligatoire?: boolean }> =
+    const dossiersSession: Array<{ id: string; titre: string; description?: string; obligatoire?: boolean; etape?: string }> =
       (session?.dossiersInscription || []).map((d: any) => ({
         id: String(d.id),
         titre: d.titre,
         description: d.description,
-        obligatoire: true
-      }))
+        obligatoire: true,
+        etape: d.etape,
+      })).filter((d: any) => d.etape === 'premiere' || this.estBordereau(d))
     this.documents = {}
     this.documentsRequis = dossiersSession
     // Nouvelle session ⇒ les pièces de la précédente ne sont plus attendues.
@@ -701,26 +736,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
 
   surDocument(cle: string, event: any): void {
     const file: File = event?.target?.files?.[0]
-    if (file) {
-      // Contrôle miroir du filtre serveur (DossierInscriptionRouter) : sans cela,
-      // un format refusé n'est signalé qu'après l'envoi, et l'étudiant voit
-      // « L'un des documents n'a pas pu être téléversé » sans savoir pourquoi.
-      const extensionsAutorisees = ['.pdf', '.jpg', '.jpeg', '.png', '.heic', '.heif']
-      const extension = ('.' + (file.name.split('.').pop() || '')).toLowerCase()
-      if (!extensionsAutorisees.includes(extension)) {
-        this.toastService.error(
-          'Formats acceptés : PDF, JPG, JPEG, PNG ou HEIC. '
-          + `Le fichier « ${file.name} » a été refusé.`)
-        // Réinitialise le champ pour permettre une nouvelle sélection du même fichier.
-        if (event?.target) { event.target.value = '' }
-        return
-      }
-      if (file.size > 20 * 1024 * 1024) {
-        this.toastService.error(
-          `Le fichier « ${file.name} » dépasse la taille maximale de 20 Mo.`)
-        if (event?.target) { event.target.value = '' }
-        return
-      }
+    if (file && this.validerFichierDocument(file, event)) {
 
       // Le fichier est envoyé tel quel : le backend accepte nativement le HEIC
       // et redimensionne/convertit les images (NormaliserImage). On évite tout
@@ -738,6 +754,36 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     }
   }
 
+  surDocumentComplementaire(cle: string, event: any): void {
+    const file: File = event?.target?.files?.[0]
+    if (file && this.validerFichierDocument(file, event)) {
+      this.documentsComplementaires[cle] = file
+    }
+  }
+
+  private validerFichierDocument(file: File, event: any): boolean {
+    const extensionsAutorisees = ['.pdf', '.jpg', '.jpeg', '.png', '.heic', '.heif']
+    const extension = ('.' + (file.name.split('.').pop() || '')).toLowerCase()
+    if (!extensionsAutorisees.includes(extension)) {
+      this.toastService.error(
+        'Formats acceptés : PDF, JPG, JPEG, PNG ou HEIC. '
+        + `Le fichier « ${file.name} » a été refusé.`)
+      if (event?.target) event.target.value = ''
+      return false
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      this.toastService.error(
+        `Le fichier « ${file.name} » dépasse la taille maximale de 20 Mo.`)
+      if (event?.target) event.target.value = ''
+      return false
+    }
+    return true
+  }
+
+  nomDocumentComplementaire(cle: string): string {
+    return this.documentsComplementaires[cle]?.name || this.piecesServeur.get(String(cle)) || ''
+  }
+
   nomDocument(cle: string): string {
     return this.documents[cle]?.name || ''
   }
@@ -753,13 +799,79 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     )
   }
 
-  /** Vrai si la session exige un document de type bordereau. */
+  get documentsComplementairesComplets(): boolean {
+    return this.documentsComplementairesRequis.every(
+      d => !!this.documentsComplementaires[d.id] || this.piecesServeur.has(String(d.id))
+    )
+  }
+
+  /** Le bordereau est obligatoire dès la première étape de l'inscription. */
   get aBordereauRequis(): boolean {
-    return this.documentsRequis.some((d) => this.estBordereau(d))
+    return this.documentsRequis.some(d => this.estBordereau(d))
   }
 
   get bordereauPret(): boolean {
-    return !this.aBordereauRequis || !!this.bordereau
+    const bordereauRequis = this.documentsRequis.find(d => this.estBordereau(d))
+    return !!bordereauRequis
+      && (!!this.bordereau || this.piecesServeur.has(String(bordereauRequis.id)))
+  }
+
+  ouvrirDepotComplementaire(): void {
+    this.errorMessage = ''
+    this.modeDepotComplementaire = true
+  }
+
+  fermerDepotComplementaire(): void {
+    this.modeDepotComplementaire = false
+    this.documentsComplementaires = {}
+    this.errorMessage = ''
+  }
+
+  soumettreDocumentsComplementaires(): void {
+    if (this.submitting || !this.documentsComplementairesComplets) return
+    const demandeId = this.route.snapshot.paramMap.get('id')
+    if (!demandeId) {
+      this.errorMessage = 'La demande d’inscription est introuvable. Veuillez rouvrir votre dossier depuis « Mes demandes ».'
+      return
+    }
+    this.submitting = true
+    this.televerserDocumentsComplementaires(demandeId, 0)
+  }
+
+  private televerserDocumentsComplementaires(demandeId: string, index: number): void {
+    if (index >= this.documentsComplementairesRequis.length) {
+      this.demandeInscriptionService.soumettreDocumentsComplementaires(demandeId).subscribe({
+        next: reponse => {
+          this.submitting = false
+          this.modeDepotComplementaire = false
+          this.resultat = { ...this.resultat, statutPipeline: reponse.statutPipeline }
+          this.successMessage = 'Votre demande d’autorisation d’inscription est en cours d’examen. Vous serez notifié dès qu’elle sera prête.'
+        },
+        error: err => this.echouerSoumission(
+          err?.error?.message || 'Les documents complémentaires n’ont pas pu être soumis. Veuillez réessayer.'
+        )
+      })
+      return
+    }
+
+    const dossier = this.documentsComplementairesRequis[index]
+    const fichier = this.documentsComplementaires[dossier.id]
+    if (!fichier || this.piecesServeur.has(String(dossier.id))) {
+      this.televerserDocumentsComplementaires(demandeId, index + 1)
+      return
+    }
+
+    this.dossierInscriptionService.uploadMultiple(demandeId, dossier.id, [fichier]).subscribe({
+      next: event => {
+        if (event.type === HttpEventType.Response) {
+          this.piecesServeur.set(String(dossier.id), fichier.name)
+          this.televerserDocumentsComplementaires(demandeId, index + 1)
+        }
+      },
+      error: err => this.echouerSoumission(
+        err?.error?.message || `Le document « ${dossier.titre} » n’a pas pu être téléversé.`
+      )
+    })
   }
 
   /** Libellé lisible de la session sélectionnée pour le récapitulatif. */

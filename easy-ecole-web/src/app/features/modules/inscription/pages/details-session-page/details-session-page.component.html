@@ -311,7 +311,7 @@
     <div class="w-full mb-8">
         <app-details-section text="Dossiers à fournir">
             <div *ngIf="rolesValue.isInstitution || rolesValue.isAdmin">
-                <button type="button" (click)="showNouveauDossierModal = true"
+                <button type="button" (click)="ouvrirNouveauDossierModal()"
                     class="inline-flex items-center gap-2 rounded-md bg-primary-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2">
                     <img src="assets/icons/add.svg" alt="" class="h-4 w-4 brightness-0 invert">
                     Ajouter un document requis
@@ -333,6 +333,16 @@
                                 <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
                                     <div class="px-2">
                                         Titre
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Étape
+                                    </div>
+                                </th>
+                                <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
+                                    <div class="px-2">
+                                        Profil requis
                                     </div>
                                 </th>
                                 <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-right">
@@ -361,6 +371,16 @@
                                 class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                     <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ dossier.titre }}</div>
                                 </td>
+                                <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        {{ dossier.etape === 'premiere' ? '1re étape — bordereau' : 'Complémentaire' }}
+                                    </div>
+                                </td>
+                                <td class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                    <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
+                                        {{ dossier.profilRequis === 'nouveau' ? 'Nouvel étudiant' : dossier.profilRequis === 'ancien' ? 'Ancien étudiant' : 'Tous les étudiants' }}
+                                    </div>
+                                </td>
                                 <td
                                     class="bg-transparent text-right text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                     <div class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">{{ dossier.tailleMax ?  dossier.tailleMax + ' Ko' : 'Aucune limite' }}</div>
@@ -388,6 +408,7 @@
             <div class="col-span-full">
                 <span class="mb-2 block text-sm text-gray-400">Titre</span>
                 <input type="text" id="titre" formControlName="titre" placeholder="Saisir le titre ici..."
+                    (input)="onTitreDossierChange($any($event.target).value)"
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
     
                 <div
@@ -512,6 +533,22 @@
                 </div>
             </div>
             <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Étape de dépôt</span>
+                <select formControlName="etape" class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm" [disabled]="dossierTitreBordereau">
+                    <option value="premiere" [disabled]="!dossierTitreBordereau">Première étape — bordereau</option>
+                    <option value="complementaire">Documents complémentaires (après validation du bordereau)</option>
+                </select>
+                <small class="text-gray-500">Le bordereau est la seule pièce demandée avant la validation du recouvrement.</small>
+            </div>
+            <div class="col-span-full">
+                <span class="mb-2 block text-sm text-gray-400">Profil concerné</span>
+                <select formControlName="profilRequis" class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm" [disabled]="dossierTitreBordereau">
+                    <option value="tous">Tous les étudiants</option>
+                    <option value="nouveau">Nouvel étudiant</option>
+                    <option value="ancien">Ancien étudiant</option>
+                </select>
+            </div>
+            <div class="col-span-full">
                 <span class="mb-2 block text-sm text-gray-400">Taille max. (en kilo octets)</span>
                 <input type="number" min="0" id="tailleMax" formControlName="tailleMax" placeholder="Saisir le tailleMax ici..."
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
@@ -536,12 +573,29 @@
             <div class="col-span-full">
                 <span class="mb-2 block text-sm text-gray-400">Titre</span>
                 <input type="text" id="titre" formControlName="titre" placeholder="Saisir le titre ici..."
+                    (input)="onTitreDossierChange($any($event.target).value)"
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
     
                 <div
                     *ngIf="dossierForm.get('titre')!.invalid && (dossierForm.get('titre')!.dirty || dossierForm.get('titre')!.touched)">
                     <app-form-message *ngIf="dossierForm.get('titre')!.errors?.['required']"
                         text="Veuillez saisir le titre"></app-form-message>
+                </div>
+                <div class="col-span-full">
+                    <span class="mb-2 block text-sm text-gray-400">Étape de dépôt</span>
+                    <select formControlName="etape" class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm" [disabled]="dossierTitreBordereau">
+                        <option value="premiere" [disabled]="!dossierTitreBordereau">Première étape — bordereau</option>
+                        <option value="complementaire">Documents complémentaires (après validation du bordereau)</option>
+                    </select>
+                    <small class="text-gray-500">Le bordereau est la seule pièce demandée avant la validation du recouvrement.</small>
+                </div>
+                <div class="col-span-full">
+                    <span class="mb-2 block text-sm text-gray-400">Profil concerné</span>
+                    <select formControlName="profilRequis" class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm" [disabled]="dossierTitreBordereau">
+                        <option value="tous">Tous les étudiants</option>
+                        <option value="nouveau">Nouvel étudiant</option>
+                        <option value="ancien">Ancien étudiant</option>
+                    </select>
                 </div>
             </div>
             <div class="col-span-full">

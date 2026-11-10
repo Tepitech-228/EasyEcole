@@ -78,6 +78,7 @@ router
  */
     .post('/', [validerEmail, validerIdentifiantX], DemandeInscriptionController.createDemandeInscription)
     .post('/:id/soumettre', DemandeInscriptionController.soumettreDemande)
+    .post('/:id/soumettre-documents-complementaires', DemandeInscriptionController.soumettreDocumentsComplementaires)
 
 /**
  * @openapi

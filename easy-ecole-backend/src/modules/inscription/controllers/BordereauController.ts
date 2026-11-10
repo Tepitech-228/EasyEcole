@@ -72,6 +72,34 @@ export const getParcoursFinal = <T extends { choixFinal?: any; parcoursId?: numb
     return undefined;
 };
 
+const enrichirBordereauxAvecDemandes = async (bordereaux: Bordereau[]): Promise<void> => {
+    const utilisateurIds = [...new Set(
+        bordereaux
+            .map(bordereau => Number(bordereau.utilisateurId))
+            .filter(id => Number.isSafeInteger(id) && id > 0)
+    )]
+    if (utilisateurIds.length === 0) return
+
+    const demandes = await DemandeInscription.findAll({
+        where: { utilisateurId: { [Op.in]: utilisateurIds } },
+        attributes: ['id', 'utilisateurId', 'matricule', 'matriculeEtudiant', 'statutPipeline', 'typeDemande', 'modeFormation'],
+        order: [['createdAt', 'DESC']],
+    })
+    const derniereDemandeParUtilisateur = new Map<number, DemandeInscription>()
+    for (const demande of demandes) {
+        const utilisateurId = Number(demande.utilisateurId)
+        if (!derniereDemandeParUtilisateur.has(utilisateurId)) {
+            derniereDemandeParUtilisateur.set(utilisateurId, demande)
+        }
+    }
+    for (const bordereau of bordereaux) {
+        const demande = derniereDemandeParUtilisateur.get(Number(bordereau.utilisateurId))
+        if (demande) {
+            bordereau.setDataValue('demandeInscription' as any, demande)
+        }
+    }
+};
+
 export default class BordereauController {
 
     constructor() { }
@@ -151,6 +179,7 @@ export default class BordereauController {
 
         try {
             const { rows, count: total } = await Bordereau.findAndCountAll({ ...options, limit, offset });
+            await enrichirBordereauxAvecDemandes(rows);
 
             return res.status(200).json({
                 data: rows,
@@ -200,6 +229,8 @@ export default class BordereauController {
 
             if (bordereau == null)
                 return res.status(404).json({ success: false, message: "Bordereau non trouvé" });
+
+            await enrichirBordereauxAvecDemandes([bordereau]);
 
             return res.status(200).send(bordereau);
         } catch (error) {

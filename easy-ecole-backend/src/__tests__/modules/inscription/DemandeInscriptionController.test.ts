@@ -42,6 +42,10 @@ jest.mock('../../../modules/inscription/models/DossierEtudiant', () => ({
   DossierEtudiant: { findOne: jest.fn() },
 }))
 
+jest.mock('../../../modules/inscription/models/Bordereau', () => ({
+  Bordereau: { findOne: jest.fn() },
+}))
+
 jest.mock('../../../modules/auth/models/SiteUtilisateur', () => ({
   SiteUtilisateur: { findAll: jest.fn(), findOrCreate: jest.fn() },
 }))
@@ -70,7 +74,10 @@ jest.mock('../../../core/helpers/IDGenerator', () => ({
 
 jest.mock('../../../core/helpers/EmailSender', () => ({
   EmailSender: {
-    getInstance: () => ({ sendConfirmationDemandeInscription: jest.fn() }),
+    getInstance: () => ({
+      sendConfirmationDemandeInscription: jest.fn(),
+      sendDocumentsComplementairesTransmis: jest.fn(),
+    }),
   },
 }))
 
@@ -83,6 +90,7 @@ const { ParcoursChoisi } = require('../../../modules/inscription/models/Parcours
 const { DossierInscription } = require('../../../modules/inscription/models/DossierInscription')
 const { DemandeInscriptionDossier } = require('../../../modules/inscription/models/DemandeInscriptionDossier')
 const { DossierEtudiant } = require('../../../modules/inscription/models/DossierEtudiant')
+const { Bordereau } = require('../../../modules/inscription/models/Bordereau')
 const HikvisionEnrollmentService = require('../../../modules/inscription/services/HikvisionEnrollmentService').default
 
 import Ctrl from '../../../modules/inscription/controllers/DemandeInscriptionController'
@@ -100,7 +108,8 @@ beforeEach(() => {
   ;(DemandeInscription.findAll as jest.Mock).mockResolvedValue([])
   ;(SiteUtilisateur.findAll as jest.Mock).mockResolvedValue([])
   ;(SiteUtilisateur.findOrCreate as jest.Mock).mockResolvedValue([{}, false])
-  ;(Apprenant.findOne as jest.Mock).mockResolvedValue({ photo: 'photo-etudiant.jpg' })
+  ;(Apprenant.findOne as jest.Mock).mockResolvedValue({ photo: 'photo-etudiant.jpg', statutEtudiant: 'nouveau' })
+  ;(Bordereau.findOne as jest.Mock).mockResolvedValue({ id: 1, statut: 'en_attente' })
   ;(Etablissement.findOne as jest.Mock).mockResolvedValue({ id: 4 })
   ;(HikvisionEnrollmentService.enqueueStudent as jest.Mock).mockResolvedValue(1)
 })
@@ -295,14 +304,17 @@ describe('DemandeInscriptionController.soumettreDemande', () => {
     expect(DemandeInscription.findOne).toHaveBeenCalled()
   })
 
-  it('requires a proposed student matricule before submission', async () => {
-    ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue({
+  it('submits without a student matricule and defers Hikvision enrollment', async () => {
+    const demande = {
       id: 10,
       utilisateurId: 7,
+      sessionId: 3,
+      etablissementId: 4,
       modeFormation: 'en_ligne',
       statutPipeline: null,
-      update: jest.fn(),
-    })
+      update: jest.fn().mockResolvedValue(undefined),
+    }
+    ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue(demande)
     const req = mockRequest({
       utilisateurRole: 'apprenant',
       utilisateurId: 7,
@@ -313,8 +325,44 @@ describe('DemandeInscriptionController.soumettreDemande', () => {
 
     await Ctrl.soumettreDemande(req, res)
 
-    expect(res.status).toHaveBeenCalledWith(400)
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      success: true,
+      hikvisionEnrollmentQueued: false,
+      hikvisionEnrollmentWarning: expect.stringContaining('validation du paiement'),
+    }))
+    expect(HikvisionEnrollmentService.enqueueStudent).not.toHaveBeenCalled()
     expect(DossierEtudiant.findOne).not.toHaveBeenCalled()
+  })
+
+  it('refuses to submit without an active payment slip', async () => {
+    const demande = {
+      id: 10,
+      utilisateurId: 7,
+      sessionId: 3,
+      etablissementId: 4,
+      modeFormation: 'en_ligne',
+      statutPipeline: null,
+      update: jest.fn(),
+    }
+    ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue(demande)
+    ;(Bordereau.findOne as jest.Mock).mockResolvedValue(null)
+    const req = mockRequest({
+      utilisateurRole: 'apprenant',
+      utilisateurId: 7,
+      params: { id: '10' },
+      body: { matriculeEtudiant: 'ET-2026-001' },
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.soumettreDemande(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      success: false,
+      message: expect.stringContaining('bordereau'),
+    }))
+    expect(demande.update).not.toHaveBeenCalled()
   })
 
   it('still requires a pathway for presentiel applications', async () => {
@@ -337,6 +385,86 @@ describe('DemandeInscriptionController.soumettreDemande', () => {
 
     expect(res.status).toHaveBeenCalledWith(400)
     expect(ParcoursChoisi.findOne).toHaveBeenCalled()
+  })
+})
+
+describe('DemandeInscriptionController.soumettreDocumentsComplementaires', () => {
+  const demande = {
+    id: 10,
+    utilisateurId: 7,
+    sessionId: 3,
+    typeDemande: 'inscription',
+    matriculeEtudiant: 'ET-2026-001',
+    statutPipeline: 'saisie_validee',
+    utilisateur: { id: 7, email: 'etudiant@example.com', nom: 'Doe', prenoms: 'Jane' },
+    update: jest.fn().mockResolvedValue(undefined),
+  }
+
+  beforeEach(() => {
+    ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue(demande)
+    ;(DossierInscription.findAll as jest.Mock).mockResolvedValue([
+      { id: 11, titre: 'Relevé de notes', etape: 'complementaire', profilRequis: 'tous' },
+    ])
+    ;(DemandeInscriptionDossier.findAll as jest.Mock).mockResolvedValue([{ dossierId: 11 }])
+  })
+
+  it('transmet la demande au comité quand tous les documents complémentaires sont déposés', async () => {
+    const req = mockRequest({
+      utilisateurRole: 'apprenant',
+      utilisateurId: 7,
+      params: { id: '10' },
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.soumettreDocumentsComplementaires(req, res)
+
+    expect(demande.update).toHaveBeenCalledWith({
+      statutPipeline: 'transmis_comite',
+      soumissionComite: true,
+      motifPipeline: null,
+    })
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      success: true,
+      statutPipeline: 'transmis_comite',
+    }))
+  })
+
+  it('refuse la transmission quand un document complémentaire manque', async () => {
+    ;(DemandeInscriptionDossier.findAll as jest.Mock).mockResolvedValue([])
+    const req = mockRequest({
+      utilisateurRole: 'apprenant',
+      utilisateurId: 7,
+      params: { id: '10' },
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.soumettreDocumentsComplementaires(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      success: false,
+      documentsManquants: [11],
+    }))
+    expect(demande.update).not.toHaveBeenCalled()
+  })
+
+  it("refuse la transmission si la demande n'est pas en saisie validée", async () => {
+    ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue({
+      ...demande,
+      statutPipeline: 'soumis',
+    })
+    const req = mockRequest({
+      utilisateurRole: 'apprenant',
+      utilisateurId: 7,
+      params: { id: '10' },
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.soumettreDocumentsComplementaires(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(409)
+    expect(demande.update).not.toHaveBeenCalled()
   })
 })
 

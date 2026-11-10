@@ -61,6 +61,8 @@ export class DetailsSessionPageComponent extends BaseComponentClass implements O
     titre: new FormControl(null, [Validators.required]),
     tailleMax: new FormControl(null, []),
     description: new FormControl(null, []),
+    etape: new FormControl('complementaire', [Validators.required]),
+    profilRequis: new FormControl('tous', [Validators.required]),
   })
 
   fraisScolariteForm: FormGroup = new FormGroup({
@@ -316,13 +318,14 @@ export class DetailsSessionPageComponent extends BaseComponentClass implements O
   }
 
   ajouterDossier(): void {
-    console.log(this.dossierForm.value)
     this.dossierForm.markAllAsTouched()
     if (this.dossierForm.valid && this.session) {
       let dossier: DossierInscription = new DossierInscription()
       dossier.titre = this.dossierForm.get('titre')!.value
       dossier.tailleMax = this.dossierForm.get('tailleMax')!.value
       dossier.description = this.dossierForm.get('description')!.value
+      dossier.etape = this.dossierForm.get('etape')!.value
+      dossier.profilRequis = this.dossierForm.get('profilRequis')!.value
       dossier.sessionId = this.session.id
 
       this.dossierInscriptionService.create(dossier).subscribe({
@@ -347,7 +350,6 @@ export class DetailsSessionPageComponent extends BaseComponentClass implements O
   }
 
   modifierDossier(): void {
-    console.log(this.dossierForm.value)
     this.dossierForm.markAllAsTouched()
     if (this.dossierForm.valid && this.session && this.selectedDossier) {
       let dossier: DossierInscription = new DossierInscription()
@@ -355,6 +357,8 @@ export class DetailsSessionPageComponent extends BaseComponentClass implements O
       dossier.titre = this.dossierForm.get('titre')!.value
       dossier.tailleMax = this.dossierForm.get('tailleMax')!.value
       dossier.description = this.dossierForm.get('description')!.value
+      dossier.etape = this.dossierForm.get('etape')!.value
+      dossier.profilRequis = this.dossierForm.get('profilRequis')!.value
       dossier.sessionId = this.session.id
 
       this.dossierInscriptionService.update(dossier).subscribe({
@@ -435,23 +439,58 @@ export class DetailsSessionPageComponent extends BaseComponentClass implements O
 
   closeNouveauDossierModal(): void {
     this.showNouveauDossierModal = false
-    this.dossierForm.reset()
+    this.reinitialiserDossierForm()
+  }
+
+  ouvrirNouveauDossierModal(): void {
+    this.reinitialiserDossierForm()
+    this.showNouveauDossierModal = true
   }
 
   openEditerDossierModal(dossier: DossierInscription): void {
     this.selectedDossier = dossier
 
-    this.dossierForm.get('titre')!.setValue(this.selectedDossier?.titre)
-    this.dossierForm.get('tailleMax')!.setValue(this.selectedDossier?.tailleMax)
-    this.dossierForm.get('description')!.setValue(this.selectedDossier?.description)
+    this.dossierForm.reset({
+      titre: this.selectedDossier.titre,
+      tailleMax: this.selectedDossier.tailleMax,
+      description: this.selectedDossier.description,
+      etape: this.selectedDossier.etape || (this.estBordereau(this.selectedDossier.titre) ? 'premiere' : 'complementaire'),
+      profilRequis: this.selectedDossier.profilRequis || 'tous',
+    })
 
     this.showEditerDossierModal = true
   }
 
   closeEditerDossierModal(): void {
     this.showEditerDossierModal = false
-    this.dossierForm.reset()
+    this.reinitialiserDossierForm()
     this.selectedDossier = undefined
+  }
+
+  onTitreDossierChange(titre: string): void {
+    const estBordereau = this.estBordereau(titre)
+    this.dossierForm.patchValue({
+      etape: estBordereau ? 'premiere' : 'complementaire',
+      profilRequis: estBordereau ? 'tous' : this.dossierForm.get('profilRequis')?.value || 'tous',
+    })
+  }
+
+  get dossierTitreBordereau(): boolean {
+    return this.estBordereau(this.dossierForm.get('titre')?.value)
+  }
+
+  private estBordereau(titre?: string | null): boolean {
+    return /bordereau/i.test(titre || '')
+  }
+
+  private reinitialiserDossierForm(): void {
+    this.dossierForm.reset({
+      titre: '',
+      tailleMax: null,
+      description: '',
+      etape: 'complementaire',
+      profilRequis: 'tous',
+    })
   }
 
   openSupprimerDossierModal(dossier: DossierInscription): void {

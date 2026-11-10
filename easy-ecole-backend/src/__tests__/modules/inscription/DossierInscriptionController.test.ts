@@ -9,7 +9,13 @@ jest.mock('../../../modules/inscription/models/DossierInscription', () => {
   Mock.create = jest.fn()
   Mock.count = jest.fn()
   Mock.associations = { session: 'session' }
-  return { DossierInscription: Mock }
+  return {
+    DossierInscription: Mock,
+    normaliserProfilRequis: (valeur: any) => ['nouveau', 'ancien'].includes(valeur) ? valeur : 'tous',
+    normaliserEtapeDossier: (etape: any, titre: any) => /bordereau/i.test(titre || '')
+      ? 'premiere'
+      : (etape === 'complementaire' ? 'complementaire' : 'premiere'),
+  }
 })
 
 jest.mock('../../../modules/inscription/models/DemandeInscription', () => ({

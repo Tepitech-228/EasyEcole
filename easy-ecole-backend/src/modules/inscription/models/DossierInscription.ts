@@ -3,10 +3,25 @@ import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { Session } from "./Session";
 
+export type DossierInscriptionEtape = 'premiere' | 'complementaire'
+export type DossierInscriptionProfilRequis = 'tous' | 'nouveau' | 'ancien'
+
+export const normaliserEtapeDossier = (_valeur: unknown, titre?: unknown): DossierInscriptionEtape => {
+  return /bordereau/i.test(String(titre ?? '')) ? 'premiere' : 'complementaire'
+}
+
+export const normaliserProfilRequis = (valeur: unknown, titre?: unknown): DossierInscriptionProfilRequis => {
+  if (/bordereau/i.test(String(titre ?? ''))) return 'tous'
+  if (valeur === 'nouveau' || valeur === 'ancien') return valeur
+  return 'tous'
+}
+
 export class DossierInscription extends Model<InferAttributes<DossierInscription>, InferCreationAttributes<DossierInscription>> {
   declare id: CreationOptional<number>
   declare titre: string
   declare description: CreationOptional<string>
+  declare profilRequis: CreationOptional<DossierInscriptionProfilRequis>
+  declare etape: CreationOptional<DossierInscriptionEtape>
   declare tailleMax: number
   declare sessionId: ForeignKey<Session['id']>
   declare session?: NonAttribute<Session>
@@ -34,6 +49,16 @@ DossierInscription.init({
   description: {
     type: new DataTypes.STRING,
     allowNull: true
+  },
+  profilRequis: {
+    type: DataTypes.STRING(20),
+    allowNull: false,
+    defaultValue: 'tous'
+  },
+  etape: {
+    type: DataTypes.STRING(20),
+    allowNull: false,
+    defaultValue: 'complementaire'
   },
   tailleMax: {
     type: DataTypes.FLOAT.UNSIGNED,

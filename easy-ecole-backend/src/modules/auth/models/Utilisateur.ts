@@ -8,6 +8,8 @@ import { CaissierBanque } from "./CaissierBanque";
 import { Enseignant } from "./Enseignant";
 import { ComiteOrientation } from "./ComiteOrientation";
 import { Etablissement } from "../../etablissement/models/Etablissement";
+import { PersonnelAdministratif } from "./PersonnelAdministratif";
+import { SiteUtilisateur } from "./SiteUtilisateur";
 
 export class Utilisateur extends Model<InferAttributes<Utilisateur>, InferCreationAttributes<Utilisateur>> {
   declare id: CreationOptional<number>
@@ -32,6 +34,8 @@ export class Utilisateur extends Model<InferAttributes<Utilisateur>, InferCreati
   declare enseignant?: NonAttribute<Enseignant>
   declare caissierBanque?: NonAttribute<CaissierBanque>
   declare comiteOrientation?: NonAttribute<ComiteOrientation>
+  declare personnelAdministratif?: NonAttribute<PersonnelAdministratif>
+  declare affectationsSites?: NonAttribute<SiteUtilisateur[]>
 
   declare static associations: {
     apprenant: Association<Utilisateur, Apprenant>
@@ -39,6 +43,8 @@ export class Utilisateur extends Model<InferAttributes<Utilisateur>, InferCreati
     enseignant: Association<Utilisateur, Enseignant>
     caissierBanque: Association<Utilisateur, CaissierBanque>
     comiteOrientation: Association<Utilisateur, ComiteOrientation>
+    personnelAdministratif: Association<Utilisateur, PersonnelAdministratif>
+    affectationsSites: Association<Utilisateur, SiteUtilisateur>
     etablissement: Association<Utilisateur, Etablissement>
   }
 }

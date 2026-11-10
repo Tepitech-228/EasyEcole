@@ -129,7 +129,7 @@
       Retour
     </button>
     <h2>Demande d'autorisation provisoire d'inscription</h2>
-    <p class="muted">Sélectionnez votre session puis déposez les documents liés au parcours et au grade choisis.</p>
+    <p class="muted">Sélectionnez votre session puis déposez le bordereau de paiement. Les autres pièces seront demandées après la validation du recouvrement.</p>
 
     <!-- Le site est choisi au bon moment avant la sélection de la session, puis
          il n'est plus affiché dans cet écran de dépôt des pièces. -->
@@ -170,7 +170,7 @@
       </div>
 
       <p *ngIf="documentsRequis.length === 0" class="muted" role="status">
-        Aucun document n’est requis pour cette session.
+        Le bordereau de paiement obligatoire n’est pas configuré pour cette session. Veuillez contacter l’administration.
       </p>
 
       <div *ngFor="let d of documentsRequis; let i = index"
@@ -202,8 +202,6 @@
           {{ piecesServeur.get(d.id) }} — déjà déposé ✓
         </span>
       </div>
-
-      <!-- Bordereau de paiement inclus dans les documents requis de la session -->
 
       <div class="mt-4">
         <button class="btn btn-primary" [disabled]="!documentsComplets || (modeCorrection !== 'comite' && !bordereauPret)"
@@ -457,7 +455,7 @@
       </div>
     </div>
 
-    <div class="alert mt-4" [ngClass]="{
+    <div *ngIf="resultat?.statutPipeline !== 'saisie_validee'" class="alert mt-4" [ngClass]="{
       'alert-success': statutInscription === 'effectuee',
       'alert-warning': statutInscription === 'correction',
       'alert-info': statutInscription === 'en_attente'
@@ -471,6 +469,57 @@
       <ng-container *ngIf="statutInscription === 'en_attente'">
         <strong>Dossier en attente de traitement.</strong> Vous serez notifié par mail dès qu'une étape avance ou nécessite une correction.
       </ng-container>
+    </div>
+
+    <div *ngIf="resultat?.statutPipeline === 'saisie_validee'" class="mt-4">
+      <div class="alert alert-success" role="status">
+        <strong>Première étape validée avec succès.</strong>
+        Votre matricule et votre bordereau ont été confirmés par le Service Recouvrement.
+      </div>
+
+      <div *ngIf="!modeDepotComplementaire" class="mt-4">
+        <p class="muted">Pour finaliser votre inscription, veuillez soumettre votre demande d’autorisation provisoire et les documents complémentaires requis.</p>
+        <button type="button" class="btn btn-primary" (click)="ouvrirDepotComplementaire()">
+          Continuer et déposer les documents
+        </button>
+      </div>
+
+      <section *ngIf="modeDepotComplementaire" class="mt-5">
+        <h3>Documents complémentaires</h3>
+        <p class="muted">Les documents déposés seront transmis au comité avec votre bordereau.</p>
+
+        <p *ngIf="documentsComplementairesRequis.length === 0" class="muted" role="status">
+          Aucun document complémentaire n’est requis. Vous pouvez soumettre votre demande.
+        </p>
+
+        <div *ngFor="let d of documentsComplementairesRequis; let i = index"
+             class="doc-row"
+             [class.doc-row--complete]="nomDocumentComplementaire(d.id)">
+          <span class="doc-number">{{ i + 1 }}</span>
+          <span class="doc-label">{{ d.titre }}</span>
+          <div class="doc-upload">
+            <div class="doc-upload__btn">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+              </svg>
+              Choisir
+            </div>
+            <input type="file" accept=".pdf,.jpg,.jpeg,.png,.heic,.heif" (change)="surDocumentComplementaire(d.id, $event)" />
+          </div>
+          <span *ngIf="nomDocumentComplementaire(d.id)" class="doc-filename">
+            {{ nomDocumentComplementaire(d.id) }}
+          </span>
+        </div>
+
+        <div class="mt-4 flex flex-wrap gap-3">
+          <button type="button" class="btn btn-secondary" [disabled]="submitting" (click)="fermerDepotComplementaire()">
+            Annuler
+          </button>
+          <button type="button" class="btn btn-primary" [disabled]="submitting || !documentsComplementairesComplets" (click)="soumettreDocumentsComplementaires()">
+            {{ submitting ? 'Envoi en cours…' : 'Soumettre ma demande d’autorisation' }}
+          </button>
+        </div>
+      </section>
     </div>
 
     <div class="mt-4">

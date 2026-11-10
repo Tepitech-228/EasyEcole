@@ -58,6 +58,18 @@ export class DemandeInscriptionService {
     )
   }
 
+  soumettreDocumentsComplementaires(id: string): Observable<{
+    success: boolean
+    demandeId: number
+    statutPipeline: string
+  }> {
+    return this.httpClient.post<{
+      success: boolean
+      demandeId: number
+      statutPipeline: string
+    }>(`${this.SERVICE_URL}/${id}/soumettre-documents-complementaires`, {})
+  }
+
   updateModeFormation(id: string, modeFormation: 'presentiel' | 'en_ligne'): Observable<{ success: boolean; modeFormation: 'presentiel' | 'en_ligne' }> {
     return this.httpClient.put<{ success: boolean; modeFormation: 'presentiel' | 'en_ligne' }>(
       `${this.SERVICE_URL}/${id}/mode-formation`,
