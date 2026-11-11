@@ -1,7 +1,6 @@
 <div class="flex justify-between items-start mb-8">
     <div>
         <app-header-title title="Membres du comité" subtitle="Gestion des membres habilités à valider les dossiers d'inscription (unanimité requise)"></app-header-title>
-        <p class="mt-1 text-xs text-gray-500">Signataires d'autorisation provisoire : {{ nombreSignatairesApi }}/2</p>
     </div>
     <button (click)="ouvrirCreateModal()"
         class="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-md hover:bg-green-700 flex items-center gap-x-2">
@@ -25,7 +24,6 @@
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prescripteur</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Signataire API</th>
                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
             </thead>
@@ -51,25 +49,13 @@
                             {{ estMiseAJour(membre) ? 'En cours...' : (membre.estPrescripteur ? 'Oui' : 'Non') }}
                         </button>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                        <button type="button" (click)="basculerSignataireApi(membre)"
-                            [disabled]="estMiseAJour(membre) || (!membre.estSignataireApi && nombreSignatairesApi >= 2)"
-                            [attr.aria-pressed]="!!membre.estSignataireApi"
-                            [title]="membre.estSignataireApi ? 'Retirer le rôle signataire API' : 'Désigner comme signataire d’autorisation provisoire'"
-                            class="inline-flex items-center gap-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium border disabled:opacity-50"
-                            [ngClass]="membre.estSignataireApi
-                                ? 'bg-indigo-100 text-indigo-800 border-indigo-200 hover:bg-indigo-200'
-                                : 'bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200'">
-                            {{ estMiseAJour(membre) ? 'En cours...' : (membre.estSignataireApi ? 'Oui' : 'Non') }}
-                        </button>
-                    </td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
                         <button (click)="confirmerSuppression(membre)"
                             class="text-red-600 hover:text-red-900 font-medium">Supprimer</button>
                     </td>
                 </tr>
                 <tr *ngIf="membres.length == 0">
-                    <td colspan="8" class="px-6 py-12 text-center text-sm text-gray-500">Aucun membre du comité trouvé</td>
+                    <td colspan="7" class="px-6 py-12 text-center text-sm text-gray-500">Aucun membre du comité trouvé</td>
                 </tr>
             </tbody>
         </table>
@@ -143,19 +129,6 @@
                             Autorise ce membre à ajouter des UE ou ECUE supplémentaires à un élève,
                             en plus des UE de son niveau, parcours et filière. Sans cette habilitation,
                             le rôle reste uniquement consultatif.
-                        </span>
-                    </span>
-                </label>
-            </div>
-            <div class="p-3 bg-indigo-50 border border-indigo-200 rounded-md">
-                <label class="flex items-start gap-x-3 cursor-pointer">
-                    <input type="checkbox" formControlName="estSignataireApi"
-                        [disabled]="!createForm.get('estSignataireApi')?.value && nombreSignatairesApi >= 2"
-                        class="mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                    <span class="text-sm text-gray-700">
-                        <span class="font-medium">Signataire des autorisations provisoires</span>
-                        <span class="block text-xs text-gray-600 mt-0.5">
-                            Après validation unanime du comité, ce membre pourra signer l'autorisation provisoire. Deux signataires maximum.
                         </span>
                     </span>
                 </label>

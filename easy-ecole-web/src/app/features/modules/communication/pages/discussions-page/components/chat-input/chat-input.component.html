@@ -1,20 +1,29 @@
 <div class="composer">
   <div *ngIf="selectedFile" class="file-preview">
-    <img *ngIf="previewUrl && selectedFile?.type?.startsWith('image/')" [src]="previewUrl" class="preview-image" />
-    <div *ngIf="!previewUrl || !selectedFile?.type?.startsWith('image/')" class="file-info-inline">📎 {{ selectedFile.name }}</div>
-    <button class="file-clear" (click)="clearFile()">✕</button>
+    <img *ngIf="isImage" [src]="previewUrl" class="preview-image" alt="Aperçu de l’image à envoyer" />
+    <video *ngIf="isVideo" [src]="previewUrl" class="preview-image" muted controls aria-label="Aperçu de la vidéo"></video>
+    <span *ngIf="!isImage && !isVideo" class="document-icon" [class.pdf-icon]="isPdf">{{ isPdf ? 'PDF' : fileExtension }}</span>
+    <div class="file-details">
+      <strong>{{ selectedFile.name }}</strong>
+      <span>{{ fileKindLabel }} · {{ formattedFileSize }}</span>
+    </div>
+    <button type="button" class="file-clear" (click)="clearFile()" aria-label="Retirer le fichier">✕</button>
   </div>
+  <div class="upload-error" *ngIf="fileError" role="alert">{{ fileError }}</div>
   <div class="composer-row">
-    <button class="composer-btn attach-btn" (click)="fileInput.click()">📎</button>
-    <input #fileInput type="file" hidden (change)="onFileSelected($event)" accept="image/*,video/*,.pdf,.doc,.docx" />
-    <button class="composer-btn sticker-btn" (click)="openStickers.emit()">😊</button>
+    <button type="button" class="composer-btn attach-btn" title="Joindre une photo, vidéo ou un document" aria-label="Joindre une photo, vidéo ou un document" (click)="fileInput.click()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m8.5 12.5 6.8-6.8a3.1 3.1 0 0 1 4.4 4.4l-8.5 8.5a5 5 0 0 1-7.1-7.1l8.2-8.2"/></svg>
+    </button>
+    <input #fileInput type="file" hidden (change)="onFileSelected($event)" accept=".jpg,.jpeg,.png,.webp,.gif,.mp4,.webm,.mov,.pdf,.doc,.docx" />
+    <button type="button" class="composer-btn sticker-btn" title="Choisir un autocollant" aria-label="Choisir un autocollant" (click)="openStickers.emit()">☺</button>
     <input
       class="composer-input"
       [(ngModel)]="messageText"
       (input)="onTyping()"
       (keydown)="onKeydown($event)"
-      placeholder="Écrire un message..."
+      placeholder="Écrire un message…"
+      aria-label="Écrire un message"
     />
-    <button class="send-btn" (click)="onSend()" [disabled]="!messageText.trim() && !selectedFile">➤</button>
+    <button type="button" class="send-btn" (click)="onSend()" [disabled]="!messageText.trim() && !selectedFile" aria-label="Envoyer le message" title="Envoyer">➤</button>
   </div>
 </div>

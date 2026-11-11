@@ -37,8 +37,6 @@ import { TypesPaiement } from "../../../core/enums/TypesPaiement";
 import { DemandeDocument } from "../../scolarite/models/DemandeDocument";
 import { TypeDocument } from "../../scolarite/models/TypeDocument";
 import { DocGenGeneratorService } from "../../docgen/services/DocGenGeneratorService";
-import { DocGenDocument } from "../../docgen/models/DocGenDocument";
-import { ComiteOrientation } from "../../auth/models/ComiteOrientation";
 import path from "path";
 import fs from "fs";
 
@@ -1087,28 +1085,8 @@ export class BordereauDossierService {
             },
             transaction,
         });
-        const profilsSignataires = options.autorisationProvisoire
-            ? await ComiteOrientation.findAll({
-                where: { estSignataireApi: true },
-                include: [{ association: 'utilisateur', attributes: ['id', 'nom', 'prenoms'] }],
-                order: [['id', 'ASC']],
-                transaction,
-            })
-            : [];
-        if (options.autorisationProvisoire && profilsSignataires.length !== 2) {
-            throw new Error("Deux membres doivent être désignés comme signataires API avant de valider une première inscription.");
-        }
-        if (profilsSignataires.some((profil: any) => !profil.utilisateur
-            || !`${profil.utilisateur.nom || ''} ${profil.utilisateur.prenoms || ''}`.trim())) {
-            throw new Error("Le nom complet des deux signataires API doit être renseigné.");
-        }
-        const signatairesAutorisation = profilsSignataires.map((profil: any) => ({
-            id: Number(profil.utilisateurId),
-            nomComplet: `${profil.utilisateur?.nom || ''} ${profil.utilisateur?.prenoms || ''}`.trim(),
-        }));
-        const documentDejaPret = Boolean(autorisationExistante?.numeroDemande && autorisationExistante?.fichierPDF);
         const documentValues = {
-            statut: documentDejaPret ? autorisationExistante!.statut : 'en_preparation',
+            statut: 'en_preparation',
             fraisPayes: true,
             source: 'automatique',
             montant: 0,
@@ -1122,8 +1100,8 @@ export class BordereauDossierService {
             relevesSemestresRecus: options.autorisationProvisoire?.relevesSemestresRecus ?? null,
             relevesSemestresDates: options.autorisationProvisoire?.relevesSemestresDates ?? null,
             semestresAutorises: options.autorisationProvisoire?.semestresAutorises ?? null,
-            signatairesAutorisation: options.autorisationProvisoire ? signatairesAutorisation : null,
-            signaturesAutorisation: options.autorisationProvisoire ? [] : null,
+            signatairesAutorisation: null,
+            signaturesAutorisation: null,
         };
         let autorisationDocument: DemandeDocument;
         if (autorisationExistante) {
@@ -1294,40 +1272,6 @@ export class BordereauDossierService {
             fichierPDF: result.filePath,
             docgenDocumentId: result.documentId,
         }, { where: { id: autorisation.demandeDocumentId } });
-    }
-
-    static async regenererAutorisationProvisoireSignee(
-        demandeDocumentId: number,
-        req: any,
-    ): Promise<void> {
-        const demandeDocument = await DemandeDocument.findByPk(demandeDocumentId);
-        if (!demandeDocument?.docgenDocumentId) {
-            throw new Error(`L'autorisation provisoire ${demandeDocumentId} n'est pas liée à un document DocGen.`);
-        }
-        const documentGenere = await DocGenDocument.findByPk(demandeDocument.docgenDocumentId);
-        if (!documentGenere?.sourceId || !documentGenere.metadata) {
-            throw new Error(`Les métadonnées de l'autorisation provisoire ${demandeDocumentId} sont incomplètes.`);
-        }
-        let metadata: Record<string, unknown>;
-        try {
-            metadata = JSON.parse(documentGenere.metadata);
-        } catch (error) {
-            throw new Error(`Les métadonnées DocGen de l'autorisation ${demandeDocumentId} sont invalides: ${String(error)}`);
-        }
-        const demandeInscriptionId = Number(metadata.demandeInscriptionId);
-        if (!Number.isInteger(demandeInscriptionId) || demandeInscriptionId <= 0) {
-            throw new Error(`La demande d'inscription de l'autorisation ${demandeDocumentId} est introuvable.`);
-        }
-        await BordereauDossierService.genererAutorisationProvisoireDifferee({
-            demandeDocumentId,
-            utilisateurId: Number(demandeDocument.etudiantId),
-            cursusApprenantId: Number(documentGenere.sourceId),
-            demandeInscriptionId,
-            anneeAcademiqueId: demandeDocument.anneeAcademiqueId,
-            parcoursId: demandeDocument.parcoursId,
-            niveauEtudeId: demandeDocument.niveauEtudeId,
-            docgenDocumentId: Number(documentGenere.id),
-        }, req);
     }
 
     /**

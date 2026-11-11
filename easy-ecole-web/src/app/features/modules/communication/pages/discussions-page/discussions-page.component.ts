@@ -33,6 +33,12 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
   hasMoreMessages: boolean = true;
   loadingMessages: boolean = false;
   activeTab: string = 'messagerie';
+  conversationFilter: 'all' | 'unread' = 'all';
+  discussionFilter: 'mine' | 'discover' = 'mine';
+  discoverableSalons: any[] = [];
+  loadingDiscoverableSalons: boolean = false;
+  discoverableLoadError: string = '';
+  joiningPublicSalonId: number | null = null;
   isInCall: boolean = false;
   isCallStarting: boolean = false;
   private localMsgIdCounter: number = 0;
@@ -51,14 +57,106 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
     super();
   }
 
-  switchTab(tab: string): void {
+  switchTab(tab: 'messagerie' | 'discussions'): void {
+    if (this.selectedSalon) {
+      const selectedIsPrivate = this.selectedSalon.type === 'discussion';
+      if ((tab === 'messagerie') !== selectedIsPrivate) {
+        this.closeSelectedSalon();
+      }
+    }
     this.activeTab = tab;
   }
 
+  closeSelectedSalon(): void {
+    if (!this.selectedSalon) return;
+    this.leaveVideoCall();
+    this.socketService.leaveSalon(this.selectedSalon.id);
+    this.selectedSalon = null;
+    this.messages = [];
+    this.members = [];
+  }
+
+  get privateSalons(): any[] {
+    return this.salons.filter(salon => salon.type === 'discussion');
+  }
+
+  get groupSalons(): any[] {
+    return this.salons.filter(salon => salon.type !== 'discussion');
+  }
+
+  get unreadPrivateCount(): number {
+    return this.privateSalons.filter(salon => Number(salon.nonLues) > 0).length;
+  }
+
   get filteredSalons(): any[] {
-    if (!this.searchQuery.trim()) return this.salons;
-    const q = this.searchQuery.toLowerCase();
-    return this.salons.filter(s => s.titre?.toLowerCase().includes(q));
+    const source = this.activeTab === 'messagerie' ? this.privateSalons : this.groupSalons;
+    const query = this.searchQuery.trim().toLocaleLowerCase();
+    return source.filter(salon => {
+      const matchesUnread = this.activeTab !== 'messagerie'
+        || this.conversationFilter !== 'unread'
+        || Number(salon.nonLues) > 0;
+      const matchesSearch = !query || String(salon.titre || '').toLocaleLowerCase().includes(query);
+      return matchesUnread && matchesSearch;
+    });
+  }
+
+  get filteredDiscoverableSalons(): any[] {
+    const memberSalonIds = new Set(this.salons.map(salon => String(salon.id)));
+    const query = this.searchQuery.trim().toLocaleLowerCase();
+    return this.discoverableSalons.filter(salon =>
+      !memberSalonIds.has(String(salon.id))
+      && (!query || String(salon.titre || '').toLocaleLowerCase().includes(query))
+    );
+  }
+
+  setDiscussionFilter(filter: 'mine' | 'discover'): void {
+    this.discussionFilter = filter;
+    if (filter === 'discover') {
+      this.closeSelectedSalon();
+      this.loadDiscoverableSalons();
+    }
+  }
+
+  loadDiscoverableSalons(): void {
+    this.loadingDiscoverableSalons = true;
+    this.discoverableLoadError = '';
+    this.http.get<any[]>(`${this.chatApi}/salons`).subscribe({
+      next: salons => {
+        this.discoverableSalons = salons || [];
+        this.loadingDiscoverableSalons = false;
+      },
+      error: error => {
+        console.error('Impossible de charger les salons ouverts:', error);
+        this.discoverableLoadError = 'Les salons ouverts ne peuvent pas être chargés pour le moment.';
+        this.loadingDiscoverableSalons = false;
+      }
+    });
+  }
+
+  joinPublicSalon(salon: any): void {
+    if (!salon?.codeInvitation || this.joiningPublicSalonId !== null) return;
+    this.joiningPublicSalonId = this.normalizeUserId(salon.id);
+    this.discoverableLoadError = '';
+    this.http.post(`${this.chatApi}/salons/rejoindre/${salon.codeInvitation}`, {}).subscribe({
+      next: (response: any) => {
+        this.joiningPublicSalonId = null;
+        this.discussionFilter = 'mine';
+        this.loadSalons();
+        if (response?.salon) {
+          this.activeTab = 'discussions';
+          this.selectSalon(response.salon);
+        }
+      },
+      error: error => {
+        console.error('Impossible de rejoindre le salon:', error);
+        this.discoverableLoadError = error?.error?.message || 'Impossible de rejoindre ce salon. Réessayez.';
+        this.joiningPublicSalonId = null;
+      }
+    });
+  }
+
+  isJoiningPublicSalon(salonId: number | string): boolean {
+    return this.joiningPublicSalonId !== null && this.joiningPublicSalonId === Number(salonId);
   }
 
   ngOnInit(): void {
@@ -481,36 +579,40 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
       lu: false
     };
     this.messages = [...this.messages, this.enrichMessage(optimisticMessage)];
-    // Émettre via socket avec le _tempId pour faire le lien au retour
-    this.socketService.sendMessage(this.selectedSalon.id, text.trim(), this.currentUserId, tempId);
+    this.http.post(`${this.chatApi}/salons/${this.selectedSalon.id}/messages`, {
+      message: text.trim(),
+      typeMessage: 'text'
+    }).subscribe({
+      next: (message: any) => this.confirmOptimisticMessage(tempId, message),
+      error: error => this.rejectOptimisticMessage(tempId, error)
+    });
   }
 
-  sendMediaMessage(data: { message: string; typeMessage: string; pieceJointe: string | null }): void {
+  sendMediaMessage(data: { message: string; file: File }): void {
     if (!this.selectedSalon) return;
     const tempId = --this.localMsgIdCounter;
     const optimisticMessage = {
       id: tempId,
       _tempId: tempId,
       salonId: this.selectedSalon.id,
-      message: data.message || '',
+      message: data.message || data.file.name,
+      pendingFileName: data.file.name,
       utilisateurId: this.currentUserId,
       utilisateur: { id: this.currentUserId },
       date: new Date().toISOString(),
-      typeMessage: data.typeMessage || 'fichier',
-      pieceJointe: data.pieceJointe || null,
+      typeMessage: data.file.type.startsWith('image/') ? 'image' : data.file.type.startsWith('video/') ? 'video' : 'fichier',
+      pieceJointe: null,
       statut: 'envoye',
       lu: false
     };
     this.messages = [...this.messages, this.enrichMessage(optimisticMessage)];
-    // Envoyer avec _tempId pour faire le lien au retour
-    this.socketService.sendMediaMessage(
-      this.selectedSalon.id,
-      data.message,
-      this.currentUserId,
-      data.typeMessage,
-      data.pieceJointe || null,
-      tempId
-    );
+    const formData = new FormData();
+    formData.append('message', data.message);
+    formData.append('media', data.file, data.file.name);
+    this.http.post(`${this.chatApi}/salons/${this.selectedSalon.id}/messages`, formData).subscribe({
+      next: (message: any) => this.confirmOptimisticMessage(tempId, message),
+      error: error => this.rejectOptimisticMessage(tempId, error)
+    });
   }
 
   sendSticker(emoji: string): void {
@@ -530,15 +632,31 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
       lu: false
     };
     this.messages = [...this.messages, this.enrichMessage(optimisticMessage)];
-    this.socketService.sendMediaMessage(
-      this.selectedSalon.id,
-      emoji,
-      this.currentUserId,
-      'sticker',
-      null,
-      tempId
-    );
+    this.http.post(`${this.chatApi}/salons/${this.selectedSalon.id}/messages`, {
+      message: emoji,
+      typeMessage: 'sticker'
+    }).subscribe({
+      next: (message: any) => this.confirmOptimisticMessage(tempId, message),
+      error: error => this.rejectOptimisticMessage(tempId, error)
+    });
     this.showStickerPicker = false;
+  }
+
+  private confirmOptimisticMessage(tempId: number, persistedMessage: any): void {
+    if (this.messages.some(message => message.id === persistedMessage.id)) return;
+    if (this.messages.some(message => message.id === tempId)) {
+      this.messages = this.messages.map(message =>
+        message.id === tempId ? this.enrichMessage(persistedMessage) : message
+      );
+    } else {
+      this.messages = [...this.messages, this.enrichMessage(persistedMessage)];
+    }
+  }
+
+  private rejectOptimisticMessage(tempId: number, error: unknown): void {
+    this.messages = this.messages.filter(message => message.id !== tempId);
+    console.error('Échec de l’enregistrement du message:', error);
+    alert('Le message n’a pas pu être envoyé. Vérifiez votre connexion puis réessayez.');
   }
 
   notifyTyping(): void {
@@ -546,16 +664,25 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
     this.socketService.notifyTyping(this.selectedSalon.id, this.currentUserId);
   }
 
-  createGroup(event: { titre: string; participants: number[] }): void {
+  createGroup(event: { titre: string; description: string; type: string; estPrive: boolean; photo: string; participants: number[] }): void {
     this.http.post(`${this.chatApi}/salons`, {
       titre: event.titre,
-      type: 'groupe',
-      participants: event.participants
+      description: event.description,
+      type: event.type,
+      estPrive: event.estPrive,
+      photo: event.photo,
+      participants: event.participants,
     }).subscribe({
       next: (salon: any) => {
         this.salons = [salon, ...this.salons];
         this.showCreateModal = false;
+        this.activeTab = 'discussions';
+        this.discussionFilter = 'mine';
         this.selectSalon(salon);
+      },
+      error: error => {
+        console.error('Impossible de créer le salon:', error);
+        alert(error?.error?.message || 'Le salon n’a pas pu être créé. Réessayez.');
       }
     });
   }
@@ -599,10 +726,7 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
     this.http
       .post(`${this.chatApi}/salons/${this.selectedSalon.id}/participants`, { utilisateurId: userId })
       .subscribe({
-        next: () => {
-          this.loadSalonMembers(this.selectedSalon);
-          this.socketService.addMember(this.selectedSalon.id, userId, this.currentUserId);
-        },
+        next: () => this.loadSalonMembers(this.selectedSalon),
         error: (err) => {
           console.error('Erreur ajout membre:', err);
           alert('Erreur lors de l\'ajout du membre');
@@ -725,6 +849,8 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
     this.http.post(`${this.chatApi}/salons/rejoindre/${code}`, {}).subscribe({
         next: (res: any) => {
             if (res.salon) {
+                this.activeTab = 'discussions';
+                this.discussionFilter = 'mine';
                 this.loadSalons();
                 this.selectSalon(res.salon);
             }

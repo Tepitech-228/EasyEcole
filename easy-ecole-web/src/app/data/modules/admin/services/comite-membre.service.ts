@@ -28,17 +28,12 @@ export class ComiteMembreService {
     motDePasse?: string;
     contact?: string;
     estPrescripteur?: boolean;
-    estSignataireApi?: boolean;
   }): Observable<any> {
     return this.httpClient.post(`${this.SERVICE_URL}`, payload)
   }
 
   setPrescripteur(id: number, estPrescripteur: boolean): Observable<any> {
     return this.httpClient.patch(`${this.SERVICE_URL}/${id}/prescripteur`, { estPrescripteur })
-  }
-
-  setSignataireApi(id: number, estSignataireApi: boolean): Observable<any> {
-    return this.httpClient.patch(`${this.SERVICE_URL}/${id}/signataire-api`, { estSignataireApi })
   }
 
   delete(id: number): Observable<any> {

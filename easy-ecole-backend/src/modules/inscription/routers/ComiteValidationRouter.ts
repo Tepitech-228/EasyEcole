@@ -1,6 +1,6 @@
 import express from "express"
 import ComiteValidationController from "../controllers/ComiteValidationController"
-import Authenticate from "../../../core/middlewares/Authenticate"
+import { AuthenticateComite } from "../../../core/middlewares/Authenticate"
 
 /**
  * Routes de validation finale des dossiers d'inscription par le COMITÉ.
@@ -10,13 +10,10 @@ import Authenticate from "../../../core/middlewares/Authenticate"
 const router = express.Router()
 
 router
-    .get('/autorisations-a-signer', [Authenticate], ComiteValidationController.listerAutorisationsASigner)
-    .get('/autorisations-a-signer/:id/pdf', [Authenticate], ComiteValidationController.telechargerAutorisationASigner)
-    .post('/autorisations-a-signer/:id/signature', [Authenticate], ComiteValidationController.signerAutorisation)
-    .get('/dossiers', [Authenticate], ComiteValidationController.listerDossiers)
-    .get('/dossiers/:id/pdf-fusionne', [Authenticate], ComiteValidationController.telechargerPdfFusionne)
-    .get('/dossiers/:id', [Authenticate], ComiteValidationController.detailDossier)
-    .get('/dossiers/:id/votes', [Authenticate], ComiteValidationController.listerVotes)
-    .post('/dossiers/:id/decider', [Authenticate], ComiteValidationController.decider)
+    .get('/dossiers', [AuthenticateComite], ComiteValidationController.listerDossiers)
+    .get('/dossiers/:id/pdf-fusionne', [AuthenticateComite], ComiteValidationController.telechargerPdfFusionne)
+    .get('/dossiers/:id', [AuthenticateComite], ComiteValidationController.detailDossier)
+    .get('/dossiers/:id/votes', [AuthenticateComite], ComiteValidationController.listerVotes)
+    .post('/dossiers/:id/decider', [AuthenticateComite], ComiteValidationController.decider)
 
 export default router

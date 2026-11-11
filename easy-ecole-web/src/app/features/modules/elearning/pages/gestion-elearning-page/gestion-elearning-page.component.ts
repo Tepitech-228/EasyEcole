@@ -12,7 +12,7 @@ export class GestionElearningPageComponent extends BaseComponentClass implements
   coursList: any[] = [];
   enseignants: any[] = [];
   coursPedagogiques: any[] = [];
-  annees: Array<{ id: number; libelle: string; active: boolean }> = [];
+  annees: Array<{ id: number; libelle: string; active: boolean; anneeAcademiqueId: number | null }> = [];
   prixCredit = 0;
   loading = false;
   creating = false;
@@ -40,7 +40,7 @@ export class GestionElearningPageComponent extends BaseComponentClass implements
   }
 
   loadAnneesEtTarif(): void {
-    this.http.get<Array<{ id: number; libelle: string; active: boolean }>>(`${environment.API_URL}/elearning/annees`).subscribe({
+    this.http.get<Array<{ id: number; libelle: string; active: boolean; anneeAcademiqueId: number | null }>>(`${environment.API_URL}/elearning/annees`).subscribe({
       next: annees => {
         this.annees = annees;
         const active = annees.find(annee => annee.active);
@@ -152,7 +152,10 @@ export class GestionElearningPageComponent extends BaseComponentClass implements
       professeurId: cours.professeurId || cours.enseignantId || null,
       chargeSupportId: cours.chargeSupportId || null,
       coursId: cours.ueId || cours.coursId || '',
-      anneeAcademiqueId: cours.anneeAcademiqueId || null,
+      anneeAcademiqueId: (
+        this.annees.find(annee => annee.anneeAcademiqueId === Number(cours.anneeAcademiqueId))
+        || this.annees.find(annee => annee.id === Number(cours.anneeAcademiqueId))
+      )?.id || null,
       nbCredits: Number(cours.nbCredits || 1),
       niveauEtudeId: cours.niveauEtudeId || cours.ue?.parcours?.niveauEtudeId || null
     };

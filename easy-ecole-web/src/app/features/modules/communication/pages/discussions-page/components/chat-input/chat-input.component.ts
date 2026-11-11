@@ -6,23 +6,51 @@ import { Component, Output, EventEmitter, ViewChild, ElementRef } from '@angular
   styleUrls: ['./chat-input.component.scss']
 })
 export class ChatInputComponent {
-  @ViewChild('fileInput') fileInput!: ElementRef;
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   @Output() sendMessage = new EventEmitter<string>();
-  @Output() sendMediaMessage = new EventEmitter<any>();
+  @Output() sendMediaMessage = new EventEmitter<{ message: string; file: File }>();
   @Output() notifyTyping = new EventEmitter<void>();
   @Output() openStickers = new EventEmitter<void>();
 
   messageText: string = '';
   selectedFile: File | null = null;
   previewUrl: string | null = null;
+  fileError: string = '';
+
+  get isImage(): boolean {
+    return !!this.selectedFile?.type.startsWith('image/');
+  }
+
+  get isVideo(): boolean {
+    return !!this.selectedFile?.type.startsWith('video/');
+  }
+
+  get isPdf(): boolean {
+    return this.fileExtension === 'PDF';
+  }
+
+  get fileExtension(): string {
+    return this.selectedFile?.name.split('.').pop()?.toUpperCase() || 'FILE';
+  }
+
+  get fileKindLabel(): string {
+    if (this.isImage) return 'Image';
+    if (this.isVideo) return 'Vidéo';
+    if (this.isPdf) return 'Document PDF';
+    return 'Document';
+  }
+
+  get formattedFileSize(): string {
+    if (!this.selectedFile) return '';
+    const size = this.selectedFile.size;
+    return size < 1024 * 1024
+      ? `${Math.max(1, Math.round(size / 1024))} Ko`
+      : `${(size / (1024 * 1024)).toFixed(1)} Mo`;
+  }
 
   onSend(): void {
     if (this.selectedFile) {
-      this.sendMediaMessage.emit({
-        message: this.messageText,
-        typeMessage: this.selectedFile.type.startsWith('image/') ? 'image' : this.selectedFile.type.startsWith('video/') ? 'video' : 'fichier',
-        pieceJointe: this.previewUrl
-      });
+      this.sendMediaMessage.emit({ message: this.messageText.trim(), file: this.selectedFile });
       this.clearFile();
     } else if (this.messageText.trim()) {
       this.sendMessage.emit(this.messageText.trim());
@@ -30,19 +58,37 @@ export class ChatInputComponent {
     this.messageText = '';
   }
 
-  onFileSelected(event: any): void {
-    const file = event.target.files?.[0];
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
     if (file) {
+      this.clearFile();
+      if (file.size > 50 * 1024 * 1024) {
+        this.fileError = 'Le fichier ne doit pas dépasser 50 Mo.';
+        return;
+      }
+      const extension = file.name.split('.').pop()?.toLowerCase() || '';
+      const supportedExtensions = [
+        'jpg', 'jpeg', 'png', 'webp', 'gif',
+        'mp4', 'webm', 'mov',
+        'pdf', 'doc', 'docx'
+      ];
+      if (!supportedExtensions.includes(extension)) {
+        this.fileError = 'Ce format n’est pas pris en charge. Envoyez une image, une vidéo ou un document PDF, DOC ou DOCX.';
+        return;
+      }
       this.selectedFile = file;
-      const reader = new FileReader();
-      reader.onload = (e) => { this.previewUrl = e.target?.result as string; };
-      reader.readAsDataURL(file);
+      this.previewUrl = file.type.startsWith('image/') || file.type.startsWith('video/')
+        ? URL.createObjectURL(file)
+        : null;
     }
   }
 
   clearFile(): void {
+    if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
     this.selectedFile = null;
     this.previewUrl = null;
+    this.fileError = '';
     if (this.fileInput) this.fileInput.nativeElement.value = '';
   }
 

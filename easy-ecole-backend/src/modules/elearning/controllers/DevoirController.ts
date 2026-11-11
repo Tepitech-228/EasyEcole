@@ -117,12 +117,13 @@ export default class DevoirController {
         if (req.file) await fs.promises.unlink(req.file.path).catch(error => console.error("[E-learning] Fichier temporaire impossible à supprimer:", error));
       };
       const year = await ElearningFinanceService.getActiveYear();
+      const academicYearId = ElearningFinanceService.requireAcademicYearId(year);
       if (!await ElearningAccessService.canManageCourse(userId, role, coursId)) {
         await removeUploadedFile();
         return res.status(403).json({ success: false, message: "Seul le professeur ou le chargé de support du cours peut créer un devoir." });
       }
       const course = await CoursEnLigne.findByPk(coursId);
-      if (!course || Number(course.anneeAcademiqueId) !== Number(year.id)) {
+      if (!course || Number(course.anneeAcademiqueId) !== academicYearId) {
         await removeUploadedFile();
         return res.status(400).json({ success: false, message: "Le cours doit appartenir à l'année e-learning active." });
       }
@@ -137,7 +138,7 @@ export default class DevoirController {
         await removeUploadedFile();
         return res.status(400).json({ success: false, message: "Le titre et la date limite sont requis." });
       }
-      const existing = await Devoir.findOne({ where: { coursId, anneeAcademiqueId: year.id, semestre } });
+      const existing = await Devoir.findOne({ where: { coursId, anneeAcademiqueId: academicYearId, semestre } });
       if (existing) {
         await removeUploadedFile();
         return res.status(409).json({ success: false, message: semestre === 0
@@ -165,7 +166,7 @@ export default class DevoirController {
         coursId,
         enseignantId: Number(course.professeurId || course.enseignantId || userId),
         semestre,
-        anneeAcademiqueId: year.id,
+        anneeAcademiqueId: academicYearId,
         consignes: req.body.consignes || null,
         poids,
         statut,

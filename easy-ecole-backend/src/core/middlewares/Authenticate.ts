@@ -46,64 +46,70 @@ function isQueryTokenAllowed(originalUrl: string): boolean {
     return QUERY_TOKEN_ALLOWED.some(parts => parts.every(part => originalUrl.includes(part)))
 }
 
-export default async (req: Request, res: Response, next: Function) => {
-    if (req.method === 'OPTIONS') {
-        return next()
-    }
-    let accessToken: string | null = null;
-    if (req.headers['authorization']) {
-        accessToken = req.headers.authorization.split(' ')[1];
-    } else if (req.query.token && isQueryTokenAllowed(req.originalUrl)) {
-        accessToken = req.query.token as string;
-    }
-    if (!accessToken) {
-        return res.status(401).json({ success: false, message: 'No access token provided' })
-    }
-
-    try {
-        const decoded = jwt.verify(accessToken, JWT_SECRET) as unknown as EncodePayload
-        const user = await Utilisateur.findByPk(decoded.id, { attributes: ['tokenVersion'] })
-        if (!user || user.tokenVersion !== decoded.tokenVersion) {
-            return res.status(401).json({ success: false, message: 'Token invalide (session expirée)' })
+export function createAuthenticate(options: { ignoreActiveSite?: boolean } = {}) {
+    return async (req: Request, res: Response, next: Function) => {
+        if (req.method === 'OPTIONS') {
+            return next()
         }
-        req.utilisateurId = decoded.id;
-        req.utilisateurIdentifiant = decoded.identifiant;
-        req.utilisateurEmail = decoded.email;
-        req.utilisateurRole = decoded.role;
-        req.etablissementId = (decoded as any).etablissementId || null;
-        if (req.etablissementId) {
-            const site = await Etablissement.findOne({
-                where: { id: req.etablissementId, actif: true },
-                attributes: ['id']
-            })
-            if (!site) {
-                return res.status(403).json({ success: false, message: "Le site actif est inexistant ou désactivé" })
+        let accessToken: string | null = null;
+        if (req.headers['authorization']) {
+            accessToken = req.headers.authorization.split(' ')[1];
+        } else if (req.query.token && isQueryTokenAllowed(req.originalUrl)) {
+            accessToken = req.query.token as string;
+        }
+        if (!accessToken) {
+            return res.status(401).json({ success: false, message: 'No access token provided' })
+        }
+
+        try {
+            const decoded = jwt.verify(accessToken, JWT_SECRET) as unknown as EncodePayload
+            const user = await Utilisateur.findByPk(decoded.id, { attributes: ['tokenVersion'] })
+            if (!user || user.tokenVersion !== decoded.tokenVersion) {
+                return res.status(401).json({ success: false, message: 'Token invalide (session expirée)' })
             }
-            if (decoded.role !== RolesUtilisateur.ADMIN) {
-                const affectation = await SiteUtilisateur.findOne({
-                    where: { utilisateurId: decoded.id, etablissementId: req.etablissementId },
+            req.utilisateurId = decoded.id;
+            req.utilisateurIdentifiant = decoded.identifiant;
+            req.utilisateurEmail = decoded.email;
+            req.utilisateurRole = decoded.role;
+            req.etablissementId = options.ignoreActiveSite ? null : (decoded as any).etablissementId || null;
+            if (req.etablissementId) {
+                const site = await Etablissement.findOne({
+                    where: { id: req.etablissementId, actif: true },
                     attributes: ['id']
                 })
-                if (!affectation && decoded.role !== RolesUtilisateur.APPRENANT) {
-                    return res.status(403).json({ success: false, message: "Vous n’êtes pas affecté au site actif" })
+                if (!site) {
+                    return res.status(403).json({ success: false, message: "Le site actif est inexistant ou désactivé" })
                 }
-                if (!affectation && decoded.role === RolesUtilisateur.APPRENANT) {
-                    const autreAffectation = await SiteUtilisateur.findOne({
-                        where: { utilisateurId: decoded.id },
+                if (decoded.role !== RolesUtilisateur.ADMIN) {
+                    const affectation = await SiteUtilisateur.findOne({
+                        where: { utilisateurId: decoded.id, etablissementId: req.etablissementId },
                         attributes: ['id']
                     })
-                    if (autreAffectation) {
+                    if (!affectation && decoded.role !== RolesUtilisateur.APPRENANT) {
                         return res.status(403).json({ success: false, message: "Vous n’êtes pas affecté au site actif" })
+                    }
+                    if (!affectation && decoded.role === RolesUtilisateur.APPRENANT) {
+                        const autreAffectation = await SiteUtilisateur.findOne({
+                            where: { utilisateurId: decoded.id },
+                            attributes: ['id']
+                        })
+                        if (autreAffectation) {
+                            return res.status(403).json({ success: false, message: "Vous n’êtes pas affecté au site actif" })
+                        }
                     }
                 }
             }
-        }
 
-        return next()
-    } catch (error: any) {
-        return res.status(401).json({ success: false, message: error.message })
+            return next()
+        } catch (error: any) {
+            return res.status(401).json({ success: false, message: error.message })
+        }
     }
 }
+
+const Authenticate = createAuthenticate()
+export const AuthenticateComite = createAuthenticate({ ignoreActiveSite: true })
+export default Authenticate
 
 export interface EncodePayload {
     id: number,

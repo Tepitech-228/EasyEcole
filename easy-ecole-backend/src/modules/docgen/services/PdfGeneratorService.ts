@@ -50,8 +50,6 @@ export interface DocGenPdfParams {
     relevesSemestresDates: Record<string, string>;
     relevesSemestresRecusLibelle: string;
     semestresAutorises: string[];
-    signataire1: { nomComplet: string; signatureData: string };
-    signataire2: { nomComplet: string; signatureData: string };
   };
   options?: PdfGeneratorOptions;
 }

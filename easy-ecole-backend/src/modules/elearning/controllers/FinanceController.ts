@@ -10,6 +10,7 @@ import { SelectionCours } from "../models/SelectionCours";
 import { TarifCredit } from "../models/TarifCredit";
 import { AnneeElearning } from "../models/AnneeElearning";
 import { Utilisateur } from "../../auth/models/Utilisateur";
+import { AnneeAcademique } from "../../inscription/models/AnneeAcademique";
 
 const RECOUVREMENT_ROLES = new Set<string>([
   RolesUtilisateur.ADMIN,
@@ -56,16 +57,23 @@ export default class FinanceController {
     const libelle = String(req.body.libelle || "").trim();
     const dateDebut = String(req.body.dateDebut || "");
     const dateFin = String(req.body.dateFin || "");
+    const anneeAcademiqueId = Number(req.body.anneeAcademiqueId);
     if (!libelle || !/^\d{4}-\d{2}-\d{2}$/.test(dateDebut) || !/^\d{4}-\d{2}-\d{2}$/.test(dateFin) || dateDebut >= dateFin) {
       return res.status(400).json({ success: false, message: "Libellé et dates académiques valides requis." });
     }
+    if (!Number.isSafeInteger(anneeAcademiqueId) || anneeAcademiqueId <= 0) {
+      return res.status(400).json({ success: false, message: "Une année académique de l'établissement doit être associée." });
+    }
     try {
+      if (!await AnneeAcademique.findByPk(anneeAcademiqueId)) {
+        return res.status(400).json({ success: false, message: "L'année académique associée est introuvable." });
+      }
       const year = await AnneeElearning.create({
         libelle,
         dateDebut: new Date(`${dateDebut}T00:00:00.000Z`),
         dateFin: new Date(`${dateFin}T00:00:00.000Z`),
         active: false,
-        anneeAcademiqueId: req.body.anneeAcademiqueId ? Number(req.body.anneeAcademiqueId) : null,
+        anneeAcademiqueId,
       });
       await ElearningFinanceService.recordAudit(current.id, current.role, "annee.cree", "annee", year.id, { libelle });
       return res.status(201).json(year);
@@ -100,6 +108,7 @@ export default class FinanceController {
     try {
       const current = actor(req);
       const year = await ElearningFinanceService.getActiveYear();
+      const academicYearId = ElearningFinanceService.requireAcademicYearId(year);
       const utilisateurId = current.role === RolesUtilisateur.APPRENANT
         ? current.id
         : Number(req.query.utilisateurId || 0);
@@ -111,7 +120,7 @@ export default class FinanceController {
         return res.status(403).json({ success: false, message: "Accès réservé au recouvrement." });
       }
       const envelope = await Enveloppe.findOne({
-        where: { utilisateurId, anneeAcademiqueId: year.id },
+        where: { utilisateurId, anneeAcademiqueId: academicYearId },
       });
       if (!envelope) {
         return res.status(200).json({
@@ -143,7 +152,8 @@ export default class FinanceController {
     if (!canCollect(req)) return res.status(403).json({ success: false, message: "Accès réservé au recouvrement." });
     try {
       const year = await ElearningFinanceService.getActiveYear();
-      const where: Record<string, unknown> = { anneeAcademiqueId: year.id };
+      const academicYearId = ElearningFinanceService.requireAcademicYearId(year);
+      const where: Record<string, unknown> = { anneeAcademiqueId: academicYearId };
       if (req.query.statut && ["saisi", "valide", "annule"].includes(String(req.query.statut))) {
         where.statut = String(req.query.statut);
       }
@@ -174,15 +184,16 @@ export default class FinanceController {
         return res.status(404).json({ success: false, message: "Compte étudiant introuvable." });
       }
       const year = await ElearningFinanceService.getActiveYear();
+      const academicYearId = ElearningFinanceService.requireAcademicYearId(year);
       const sequelize = DatabaseConnection.getInstance().sequelize;
       const payment = await sequelize.transaction(async transaction => {
-        const envelope = await ElearningFinanceService.getOrCreateEnvelope(utilisateurId, year.id, transaction);
+        const envelope = await ElearningFinanceService.getOrCreateEnvelope(utilisateurId, academicYearId, transaction);
         if (envelope.statut !== "ouverte") throw new ElearningFinanceError("L'enveloppe e-learning de cet étudiant n'est pas ouverte.", 409);
         const entry = await Encaissement.create({
           enveloppeId: envelope.id,
           utilisateurId,
           agentId: current.id,
-          anneeAcademiqueId: year.id,
+          anneeAcademiqueId: academicYearId,
           montant,
           reference: req.body.reference ? String(req.body.reference).slice(0, 191) : null,
           statut: "saisi",
@@ -221,8 +232,9 @@ export default class FinanceController {
     }
     try {
       const year = await ElearningFinanceService.getActiveYear();
+      const academicYearId = ElearningFinanceService.requireAcademicYearId(year);
       const selections = await SelectionCours.findAll({
-        where: { utilisateurId, anneeAcademiqueId: year.id },
+        where: { utilisateurId, anneeAcademiqueId: academicYearId },
         include: [{ association: SelectionCours.associations.cours, attributes: ["id", "code", "titre", "nbCredits", "coutTotal"] }],
         order: [["dateProposition", "DESC"]],
       });
@@ -251,9 +263,10 @@ export default class FinanceController {
   static async getTarif(req: Request, res: Response): Promise<Response> {
     try {
       const year = await ElearningFinanceService.getActiveYear();
+      const academicYearId = ElearningFinanceService.requireAcademicYearId(year);
       const today = new Date().toISOString().slice(0, 10);
       const tarif = await TarifCredit.findOne({
-        where: { anneeAcademiqueId: year.id, actif: true, dateEffet: { [Op.lte]: today } },
+        where: { anneeAcademiqueId: academicYearId, actif: true, dateEffet: { [Op.lte]: today } },
         order: [["dateEffet", "DESC"], ["id", "DESC"]],
       });
       return res.status(200).json({ anneeAcademique: year.libelle, prixCredit: Number(tarif?.valeur || 0), dateEffet: tarif?.dateEffet || null });
@@ -274,13 +287,14 @@ export default class FinanceController {
     }
     try {
       const year = await ElearningFinanceService.getActiveYear();
+      const academicYearId = ElearningFinanceService.requireAcademicYearId(year);
       const rate = await TarifCredit.create({
-        cle: `credit_cours_en_ligne_${year.id}_${dateEffet}`,
+        cle: `credit_cours_en_ligne_${academicYearId}_${dateEffet}`,
         libelle: "Tarif du crédit cours en ligne",
         valeur,
         unite: "FCFA",
         dateEffet: new Date(`${dateEffet}T00:00:00.000Z`),
-        anneeAcademiqueId: year.id,
+        anneeAcademiqueId: academicYearId,
         actif: true,
       });
       await ElearningFinanceService.recordAudit(current.id, current.role, "tarif.credit.modifie", "tarif_credit", rate.id, { valeur, dateEffet });

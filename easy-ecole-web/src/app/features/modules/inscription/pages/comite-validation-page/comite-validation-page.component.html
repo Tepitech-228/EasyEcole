@@ -4,53 +4,6 @@
   <div *ngIf="successMessage" class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded mb-4">{{ successMessage }}</div>
   <div *ngIf="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{{ apiErrorMessage }}</div>
 
-  <section *ngIf="afficherAutorisationsApi || chargerAutorisationsApi" class="bg-white rounded-xl border border-indigo-100 shadow-sm mb-6 overflow-hidden">
-    <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-4 bg-indigo-50 border-b border-indigo-100">
-      <div>
-        <h2 class="text-base font-semibold text-indigo-950">Autorisations provisoires à signer</h2>
-        <p class="text-xs text-indigo-700 mt-1">Les documents sont disponibles après la validation unanime du comité.</p>
-      </div>
-      <button type="button" (click)="chargerAutorisationsApiASigner()" [disabled]="chargerAutorisationsApi"
-              class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-indigo-200 bg-white text-indigo-700 hover:bg-indigo-100 disabled:opacity-50">
-        <span class="material-symbols-outlined text-base">refresh</span>
-        Actualiser
-      </button>
-    </div>
-
-    <div *ngIf="erreurSignatureApi" class="px-5 py-3 text-sm text-red-700 bg-red-50 border-b border-red-100">{{ erreurSignatureApi }}</div>
-    <div *ngIf="chargerAutorisationsApi" class="px-5 py-6 text-sm text-gray-500">Chargement des autorisations…</div>
-    <div *ngIf="!chargerAutorisationsApi && !erreurSignatureApi && autorisationsApiASigner.length === 0" class="px-5 py-6 text-sm text-gray-500">
-      Aucune autorisation provisoire n’est disponible pour le moment.
-    </div>
-    <div *ngIf="!chargerAutorisationsApi && autorisationsApiASigner.length > 0" class="divide-y divide-gray-100">
-      <div *ngFor="let autorisation of autorisationsApiASigner" class="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
-        <div class="min-w-0">
-          <p class="font-medium text-gray-900">{{ autorisation.etudiant?.nom }} {{ autorisation.etudiant?.prenoms }}</p>
-          <p class="text-sm text-gray-500">
-            Réf. {{ autorisation.reference || autorisation.id }}
-            <span *ngIf="autorisation.etudiant?.identifiant">· {{ autorisation.etudiant?.identifiant }}</span>
-            <span *ngIf="autorisation.dateGeneration">· générée le {{ autorisation.dateGeneration | date:'dd/MM/yyyy' }}</span>
-          </p>
-        </div>
-        <div class="flex items-center gap-3">
-          <span class="px-2.5 py-1 rounded-full text-xs font-medium"
-                [class.bg-green-100]="autorisation.signe"
-                [class.text-green-800]="autorisation.signe"
-                [class.bg-amber-100]="!autorisation.signe"
-                [class.text-amber-800]="!autorisation.signe">
-            {{ autorisation.signe ? 'Vous avez signé' : 'Votre signature est attendue' }}
-          </span>
-          <span class="text-xs text-gray-500">{{ autorisation.signaturesRecues.length }}/2 signatures</span>
-          <button type="button" (click)="ouvrirAutorisationApiASigner(autorisation)"
-                  class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">
-            <span class="material-symbols-outlined text-base">{{ autorisation.signe ? 'visibility' : 'draw' }}</span>
-            {{ autorisation.signe ? 'Consulter' : 'Consulter et signer' }}
-          </button>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <div class="flex items-center justify-between mb-4">
     <label class="inline-flex items-center gap-x-2 text-sm text-gray-600 cursor-pointer">
       <input type="checkbox" [(ngModel)]="afficherTous" (ngModelChange)="charger()" class="h-4 w-4 rounded border-gray-300 text-indigo-600">
@@ -444,35 +397,6 @@
   </div>
 </app-custom-modal>
 
-<app-custom-modal
-  [title]="'Autorisation provisoire — ' + (autorisationApiActive?.reference || '')"
-  subtitle="Consultez le document officiel et apposez votre signature."
-  (onCloseModal)="fermerAutorisationApiASigner()"
-  [center]="true"
-  [showModal]="afficherSignatureApiModal"
-  [size]="'full'">
-  <div *ngIf="autorisationApiActive">
-    <p *ngIf="autorisationApiActive.signe" class="mb-3 rounded-lg bg-green-50 border border-green-200 px-3 py-2 text-sm text-green-800">
-      Votre signature est déjà enregistrée. Vous pouvez revalider la signature ci-dessous pour relancer la mise à jour du PDF si nécessaire.
-    </p>
-    <p *ngIf="!autorisationApiActive.signe" class="mb-3 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-sm text-blue-800">
-      Votre signature sera apposée sur le formulaire officiel et le PDF sera mis à jour en conservant sa référence.
-    </p>
-    <p *ngIf="erreurSignatureApi" class="mb-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-800">{{ erreurSignatureApi }}</p>
-    <div *ngIf="chargementPdfApi" class="py-8 text-center text-sm text-gray-500">Chargement du PDF…</div>
-    <iframe *ngIf="apercuPdfApi" [src]="apercuPdfApi" title="Autorisation provisoire d’inscription" class="w-full h-[65vh] rounded-lg border border-gray-200 mb-4"></iframe>
-    <app-signature-pad
-      *ngIf="!chargementPdfApi && apercuPdfApi"
-      [label]="autorisationApiActive.signe ? 'Votre signature enregistrée' : 'Signez dans la zone ci-dessous'"
-      [existingSignature]="autorisationApiActive.maSignature"
-      [height]="130"
-      (confirm)="enregistrerSignatureApi($event)"
-      (cancel)="fermerAutorisationApiASigner()">
-    </app-signature-pad>
-    <p *ngIf="signatureApiEnCours" class="mt-3 text-sm text-indigo-700">Enregistrement et mise à jour du PDF…</p>
-  </div>
-</app-custom-modal>
-
 <app-custom-modal title="Confirmation" subtitle="Êtes-vous sûr de vouloir valider cette demande ?" (onCloseModal)="fermerConfirmationValidation()" [center]="true" [showModal]="showValidationConfirmModal">
   <div class="space-y-4">
     <p class="text-sm text-gray-600">
@@ -513,26 +437,32 @@
         </select>
       </label>
       <label class="block text-sm font-medium text-gray-700">
-        Date d'obtention du diplôme
-        <input type="date" [(ngModel)]="dateDiplomeRecu"
+        Année d'obtention du diplôme
+        <input type="text" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="AAAA" [(ngModel)]="dateDiplomeRecu"
           class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2">
       </label>
     </div>
 
     <fieldset>
       <legend class="text-sm font-semibold text-gray-800">Relevés de notes reçus</legend>
-      <p class="text-xs text-gray-500 mb-2">Sélectionnez les relevés reçus et indiquez leur date de réception.</p>
+      <p class="text-xs text-gray-500 mb-2">Sélectionnez les relevés reçus et indiquez leur année de réception.</p>
+      <label class="mb-3 inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+        <input type="checkbox" [checked]="relevesNeant"
+          (change)="toggleRelevesNeant($any($event.target).checked)"
+          class="h-4 w-4 rounded border-gray-300 text-indigo-600">
+        Néant — aucun relevé apporté
+      </label>
       <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
         <div *ngFor="let semestre of semestresAutorisation" class="rounded-md border border-gray-200 p-2">
           <label class="flex items-center gap-2 text-sm text-gray-700">
-            <input type="checkbox" [checked]="relevesSemestresRecus.includes(semestre)"
+            <input type="checkbox" [checked]="relevesSemestresRecus.includes(semestre)" [disabled]="relevesNeant"
               (change)="toggleSemestreRecu(semestre, $any($event.target).checked)"
               class="h-4 w-4 rounded border-gray-300 text-indigo-600">
             {{ semestre }}
           </label>
           <label *ngIf="relevesSemestresRecus.includes(semestre)" class="mt-2 block text-xs text-gray-600">
-            Date de réception
-            <input type="date" [(ngModel)]="relevesSemestresDates[semestre]"
+            Année de réception
+            <input type="text" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="AAAA" [(ngModel)]="relevesSemestresDates[semestre]"
               class="mt-1 block w-full rounded-md border border-gray-300 px-2 py-1 text-sm">
           </label>
         </div>
@@ -559,7 +489,7 @@
         class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700">
         Annuler
       </button>
-      <button (click)="confirmerAutorisationProvisoire()" [disabled]="processingDecision || !diplomeRecu || !dateDiplomeRecu || !datesRelevesCompletes || semestresAutorises.length === 0"
+      <button (click)="confirmerAutorisationProvisoire()" [disabled]="processingDecision || !diplomeRecu || !anneeDiplomeValide || !datesRelevesCompletes || semestresAutorises.length === 0"
         class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">
         {{ processingDecision ? 'Validation...' : 'Enregistrer et valider' }}
       </button>

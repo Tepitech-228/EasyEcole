@@ -39,12 +39,7 @@ export class ComiteMembresPageComponent extends BaseComponentClass implements On
       motDePasse: ['', [Validators.required]],
       contact: ['', []],
       estPrescripteur: [false],
-      estSignataireApi: [false],
     });
-  }
-
-  get nombreSignatairesApi(): number {
-    return this.membres.filter(membre => membre.estSignataireApi).length
   }
 
   ngOnInit(): void {
@@ -68,7 +63,7 @@ export class ComiteMembresPageComponent extends BaseComponentClass implements On
   ouvrirCreateModal(): void {
     // reset() seul met la case à null : on impose explicitement le défaut false
     // pour que la case parte décochée à chaque ouverture.
-    this.createForm.reset({ estPrescripteur: false, estSignataireApi: false });
+    this.createForm.reset({ estPrescripteur: false });
     this.apiErrorMessage = '';
     this.showCreateModal = true;
   }
@@ -145,30 +140,6 @@ export class ComiteMembresPageComponent extends BaseComponentClass implements On
         this.toastService.error(err.error?.message || 'Erreur lors de la modification du rôle prescripteur');
       }
     });
-  }
-
-  basculerSignataireApi(membre: Utilisateur): void {
-    const precedent = Boolean(membre.estSignataireApi)
-    const cible = !precedent
-    const id = Number(membre.id)
-    if (isNaN(id)) return
-
-    membre.estSignataireApi = cible
-    this.updatingId = id
-    this.comiteMembreService.setSignataireApi(id, cible).subscribe({
-      next: () => {
-        this.updatingId = null
-        this.charger()
-        this.toastService.success(cible
-          ? `${membre.nom} ${membre.prenoms} est désigné signataire des autorisations provisoires`
-          : `Rôle de signataire API retiré à ${membre.nom} ${membre.prenoms}`)
-      },
-      error: (err) => {
-        membre.estSignataireApi = precedent
-        this.updatingId = null
-        this.toastService.error(err.error?.message || 'Erreur lors de la modification du rôle signataire')
-      }
-    })
   }
 
   fermerDeleteModal(): void {

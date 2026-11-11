@@ -130,7 +130,7 @@ router
     // Types d'opérations de bordereau
     .use('/types-operations-bordereau', [Authenticate], TypeOperationBordereauRouter)
     // Validation finale des dossiers par le comité (comite-validations/dossiers)
-    .use('/comite-validations', [Authenticate], ComiteValidationRouter)
+    .use('/comite-validations', ComiteValidationRouter)
     // Administration des membres du comité (admin/comite-membres)
     .use('/admin/comite-membres', [Authenticate], ComiteMembreRouter)
     .use('/hierarchy', [Authenticate], HierarchyRouter)

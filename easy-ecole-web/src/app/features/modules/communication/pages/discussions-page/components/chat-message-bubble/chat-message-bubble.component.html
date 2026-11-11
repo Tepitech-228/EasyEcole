@@ -12,17 +12,32 @@
         <img [src]="pieceJointeUrl" alt="Image" class="media-img" />
         <div *ngIf="message.message" class="media-caption">{{ message.message }}</div>
       </div>
+      <div *ngIf="isImage && !hasPieceJointe" class="upload-pending">
+        <span class="pending-icon">↑</span>
+        <span>{{ message.pendingFileName || 'Photo' }} · envoi en cours</span>
+      </div>
       <!-- Video -->
       <div *ngIf="isVideo && hasPieceJointe" class="media-container">
         <video [src]="pieceJointeUrl" controls class="media-video"></video>
         <div *ngIf="message.message" class="media-caption">{{ message.message }}</div>
       </div>
+      <div *ngIf="isVideo && !hasPieceJointe" class="upload-pending">
+        <span class="pending-icon">↑</span>
+        <span>{{ message.pendingFileName || 'Vidéo' }} · envoi en cours</span>
+      </div>
       <!-- File -->
       <div *ngIf="isFile && hasPieceJointe" class="file-container">
-        <div class="file-icon">📎</div>
+        <div class="file-icon" [class.pdf-file-icon]="isPdf">{{ isPdf ? 'PDF' : 'DOC' }}</div>
         <div class="file-info">
-          <span class="file-name">{{ message.message || 'Fichier' }}</span>
-          <button class="file-link" (click)="telechargerOuOuvrirFichier()">Ouvrir</button>
+          <span class="file-name">{{ message.message || (isPdf ? 'Document PDF' : 'Document joint') }}</span>
+          <button type="button" class="file-link" (click)="telechargerOuOuvrirFichier()">Télécharger</button>
+        </div>
+      </div>
+      <div *ngIf="isFile && !hasPieceJointe" class="file-container upload-file-pending">
+        <div class="file-icon" [class.pdf-file-icon]="isPdf">{{ isPdf ? 'PDF' : 'DOC' }}</div>
+        <div class="file-info">
+          <span class="file-name">{{ message.pendingFileName || 'Document joint' }}</span>
+          <span class="upload-status">Envoi en cours…</span>
         </div>
       </div>
       <!-- Text -->

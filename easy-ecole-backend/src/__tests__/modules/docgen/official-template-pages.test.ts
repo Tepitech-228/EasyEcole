@@ -83,12 +83,12 @@ describe("official academic DocGen templates", () => {
       }],
       autorisationProvisoire: {
         diplomeRecu: "LICENCE",
-        dateDiplomeRecu: "12/07/2025",
+        dateDiplomeRecu: "2025",
         diplomeCellules: { BAC: "", LICENCE: "LICENCE", MASTER: "" },
-        dateDiplomeCellules: { BAC: "", LICENCE: "12/07/2025", MASTER: "" },
+        dateDiplomeCellules: { BAC: "", LICENCE: "2025", MASTER: "" },
         relevesDatesCellules: {
-          S1_S2: "S1 : 01/06/2025, S2 : 02/06/2025",
-          S3_S4: "S3 : 03/06/2025",
+          S1_S2: "S1 : 2025, S2 : 2025",
+          S3_S4: "S3 : 2025",
           S5_S6: "",
           S7_S8: "",
           S9_S10: "",
@@ -107,8 +107,6 @@ describe("official academic DocGen templates", () => {
           S7_S8: "",
           S9_S10: "",
         },
-        signataire1: { nomComplet: "Membre A", signatureData: "data:image/png;base64,iVBORw0KGgo=" },
-        signataire2: { nomComplet: "Membre B", signatureData: "" },
       },
     });
     const $ = load(rendered);
@@ -120,25 +118,24 @@ describe("official academic DocGen templates", () => {
     expect($(".data-table").eq(0).find("tr").eq(1).find("td").map((_i, el) => $(el).text()).get())
       .toEqual(["DIPLÔME REÇU", "", "", "", "LICENCE", "", "", ""]);
     expect($(".data-table").eq(0).find("tr").eq(2).find("td").map((_i, el) => $(el).text()).get())
-      .toEqual(["Dates", "", "", "", "12/07/2025", "", "", ""]);
+      .toEqual(["Année d’obtention", "", "", "", "2025", "", "", ""]);
     expect($(".data-table").eq(1).find("tr").eq(1).find("td").map((_i, el) => $(el).text()).get())
       .toEqual(["SEMESTRES REÇUS", "S1, S2", "S3", "", "", ""]);
     expect($(".data-table").eq(1).find("tr").eq(2).find("td").map((_i, el) => $(el).text()).get())
-      .toEqual(["Dates", "S1 : 01/06/2025, S2 : 02/06/2025", "S3 : 03/06/2025", "", "", ""]);
+      .toEqual(["Années de réception", "S1 : 2025, S2 : 2025", "S3 : 2025", "", "", ""]);
     expect($(".data-table").eq(2).find("tr").eq(1).find("td").map((_i, el) => $(el).text()).get())
       .toEqual(["SEMESTRES AUTORISÉS", "", "", "S5, S6", "", ""]);
     expect($(".data-table").find(".check-box")).toHaveLength(0);
     expect(rendered).not.toContain("√");
     for (const tableIndex of [0, 1]) {
       const rows = $(".data-table").eq(tableIndex).find("tr");
-      expect(rows.eq(2).find("td").first().text()).toBe("Dates");
+      expect(rows.eq(2).find("td").first().text()).toBe(tableIndex === 0 ? "Année d’obtention" : "Années de réception");
       expect(rows.eq(2).find("td")).toHaveLength(tableIndex === 0 ? 8 : 6);
     }
     expect($(".authorization-footer .committee-heading").text())
       .toContain("Pour le Comité d’Orientation, d’Equivalence et d’Etude de Dossiers");
-    expect($(".authorization-footer .signatory-name").map((_i, el) => $(el).text()).get())
-      .toEqual(["Membre A", "Membre B"]);
-    expect($(".authorization-footer img").attr("src")).toBe("data:image/png;base64,iVBORw0KGgo=");
+    expect($(".authorization-footer .signatory-name")).toHaveLength(0);
+    expect($(".authorization-footer img")).toHaveLength(0);
     expect(rendered).not.toContain("{{");
   });
 

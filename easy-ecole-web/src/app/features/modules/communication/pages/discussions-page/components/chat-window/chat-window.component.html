@@ -1,21 +1,31 @@
 <div class="thread-pane">
   <!-- Thread Head -->
   <div class="thread-head">
+    <button type="button" class="icon-btn mobile-back" title="Retour aux conversations" aria-label="Retour aux conversations" (click)="backToList.emit()">‹</button>
     <div class="thread-avatar" [style.background]="salon.icone ? 'linear-gradient(135deg, #3B5BFF, #8956E0)' : '#1f3577'">
       <span>{{ salon.icone || (salon.titre || '?').charAt(0).toUpperCase() }}</span>
-      <span class="presence" *ngIf="salon.type === 'discussion'"></span>
+      <span class="presence" *ngIf="salon.type === 'discussion' && otherParticipantIsOnline"></span>
     </div>
     <div class="thread-info">
       <div class="thread-name">{{ salon.titre || 'Discussion' }}</div>
       <div class="thread-sub" *ngIf="salon.type !== 'discussion'">👥 {{ members.length }} membre{{ members.length > 1 ? 's' : '' }}</div>
-      <div class="thread-sub" *ngIf="salon.type === 'discussion'">En ligne</div>
+      <div class="thread-sub private-status" *ngIf="salon.type === 'discussion'">
+        <span class="status-dot" [class.online]="otherParticipantIsOnline"></span>
+        {{ otherParticipantIsOnline ? 'En ligne' : 'Hors ligne' }}
+      </div>
     </div>
-    <div class="icon-btn" title="Rechercher">🔍</div>
-    <div class="icon-btn" title="Appel vidéo" (click)="isInCall ? leaveCall.emit() : startCall.emit()">
+    <button type="button" class="icon-btn" title="Rechercher dans la conversation" aria-label="Rechercher dans la conversation" [class.selected]="showMessageSearch" (click)="toggleMessageSearch()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg>
+    </button>
+    <button type="button" class="icon-btn" [title]="isInCall ? 'Quitter l’appel' : 'Démarrer un appel vidéo'" [attr.aria-label]="isInCall ? 'Quitter l’appel' : 'Démarrer un appel vidéo'" [disabled]="isCallStarting" (click)="isInCall ? leaveCall.emit() : startCall.emit()">
       {{ isInCall ? '📵' : '📹' }}
-    </div>
-    <div class="icon-btn" title="Informations" (click)="toggleInfoPanel.emit()">👥</div>
-    <div class="icon-btn" title="Plus d'options">⋯</div>
+    </button>
+    <button type="button" class="icon-btn" title="Informations sur le salon" aria-label="Informations sur le salon" [class.selected]="showInfoPanel" (click)="toggleInfoPanel.emit()">👥</button>
+  </div>
+
+  <div class="thread-search" *ngIf="showMessageSearch">
+    <input type="search" [(ngModel)]="messageSearchQuery" placeholder="Rechercher dans les messages chargés…" aria-label="Rechercher dans les messages">
+    <span>{{ displayMessages.length }} résultat{{ displayMessages.length > 1 ? 's' : '' }}</span>
   </div>
 
   <!-- Messages -->
@@ -25,7 +35,7 @@
     </div>
     <div class="loading-spinner" *ngIf="loadingMessages">Chargement...</div>
 
-    <ng-container *ngFor="let msg of messages; let i = index">
+    <ng-container *ngFor="let msg of displayMessages; let i = index">
       <div class="day-sep" *ngIf="showDaySeparator(i)">
         {{ formatDate(msg.date) }}
       </div>
@@ -38,6 +48,10 @@
         (edit)="editMessage.emit($event)">
       </app-chat-message-bubble>
     </ng-container>
+
+    <div class="search-empty" *ngIf="messageSearchQuery.trim() && !displayMessages.length">
+      Aucun message chargé ne correspond à cette recherche.
+    </div>
 
     <div class="typing-indicator" *ngIf="typingUsers.length > 0">
       {{ typingUsers.join(', ') }} {{ typingUsers.length > 1 ? 'écrivent' : 'écrit' }}...

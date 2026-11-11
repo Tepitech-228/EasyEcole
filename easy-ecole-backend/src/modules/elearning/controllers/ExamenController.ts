@@ -32,8 +32,9 @@ export default class ExamenController {
     if (!isAdministrator(req)) return res.status(403).json({ success: false, message: "Les examens sont réservés à l'administration." });
     try {
       const year = await ElearningFinanceService.getActiveYear();
+      const academicYearId = ElearningFinanceService.requireAcademicYearId(year);
       const examens = await Examen.findAll({
-        where: { anneeAcademiqueId: year.id },
+        where: { anneeAcademiqueId: academicYearId },
         include: [{ association: Examen.associations.cours }],
         order: [["dateExamen", "ASC"]],
       });
@@ -51,10 +52,9 @@ export default class ExamenController {
     if (!file) return res.status(400).json({ success: false, message: "Le sujet PDF de l'examen est obligatoire." });
     const coursId = Number(req.body.coursId);
     try {
-      const year = req.body.anneeAcademiqueId
-        ? await ElearningFinanceService.getActiveYear()
-        : await ElearningFinanceService.getActiveYear();
-      const course = await CoursEnLigne.findOne({ where: { id: coursId, anneeAcademiqueId: year.id } });
+      const year = await ElearningFinanceService.getActiveYear();
+      const academicYearId = ElearningFinanceService.requireAcademicYearId(year);
+      const course = await CoursEnLigne.findOne({ where: { id: coursId, anneeAcademiqueId: academicYearId } });
       if (!course) {
         await fs.promises.unlink(file.path);
         return res.status(404).json({ success: false, message: "Cours e-learning introuvable pour l'année active." });
@@ -66,7 +66,7 @@ export default class ExamenController {
         return res.status(409).json({ success: false, message: "L'UE doit avoir un semestre défini avant de programmer l'examen." });
       }
       const semestre = evaluationPeriod.examen;
-      const existing = await Examen.findOne({ where: { coursId, anneeAcademiqueId: year.id, semestre } });
+      const existing = await Examen.findOne({ where: { coursId, anneeAcademiqueId: academicYearId, semestre } });
       if (existing) {
         await fs.promises.unlink(file.path);
         return res.status(409).json({ success: false, message: `Un examen ${semestre} existe déjà pour cette UE.` });
@@ -83,7 +83,7 @@ export default class ExamenController {
       }
       const examen = await Examen.create({
         coursId,
-        anneeAcademiqueId: year.id,
+        anneeAcademiqueId: academicYearId,
         semestre,
         dateExamen,
         lieu: req.body.lieu ? String(req.body.lieu).slice(0, 255) : null,
@@ -98,10 +98,13 @@ export default class ExamenController {
         "examen.cree",
         "examen",
         examen.id,
-        { coursId, anneeAcademiqueId: year.id, semestre }
+        { coursId, anneeAcademiqueId: academicYearId, semestre }
       );
       return res.status(201).json(examen);
     } catch (error) {
+      if (error instanceof ElearningFinanceError) {
+        return res.status(error.statusCode).json({ success: false, message: error.message });
+      }
       console.error("[E-learning] Création d'examen impossible:", error);
       return res.status(500).json({ success: false, message: "Impossible d'enregistrer l'examen." });
     }

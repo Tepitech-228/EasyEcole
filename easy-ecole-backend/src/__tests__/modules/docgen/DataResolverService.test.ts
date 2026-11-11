@@ -221,13 +221,13 @@ describe('DataResolverService', () => {
     })
     expect(result.autorisationProvisoire).toEqual({
       diplomeRecu: 'LICENCE',
-      dateDiplomeRecu: '12/07/2025',
+      dateDiplomeRecu: '2025',
       relevesSemestresRecus: ['S1', 'S2', 'S3'],
       relevesSemestresDates: { S1: '2025-06-01', S2: '2025-06-02', S3: '2025-06-03' },
       relevesSemestresRecusLibelle: 'S1, S2, S3',
       semestresAutorises: ['S5', 'S6'],
       diplomeCellules: { BAC: '', LICENCE: 'LICENCE', MASTER: '' },
-      dateDiplomeCellules: { BAC: '', LICENCE: '12/07/2025', MASTER: '' },
+      dateDiplomeCellules: { BAC: '', LICENCE: '2025', MASTER: '' },
       relevesCellules: {
         S1_S2: 'S1, S2',
         S3_S4: 'S3',
@@ -236,8 +236,8 @@ describe('DataResolverService', () => {
         S9_S10: '',
       },
       relevesDatesCellules: {
-        S1_S2: 'S1 : 01/06/2025, S2 : 02/06/2025',
-        S3_S4: 'S3 : 03/06/2025',
+        S1_S2: 'S1 : 2025, S2 : 2025',
+        S3_S4: 'S3 : 2025',
         S5_S6: '',
         S7_S8: '',
         S9_S10: '',
@@ -249,8 +249,38 @@ describe('DataResolverService', () => {
         S7_S8: '',
         S9_S10: '',
       },
-      signataire1: { nomComplet: 'Doe Jane', signatureData: 'data:image/png;base64,iVBORw0KGgo=' },
-      signataire2: { nomComplet: 'Smith John', signatureData: '' },
+    })
+
+    findDocument.mockResolvedValue({
+      diplomeRecu: 'LICENCE',
+      dateDiplomeRecu: '2025-01-01',
+      relevesSemestresRecus: ['NEANT'],
+      relevesSemestresDates: {},
+      semestresAutorises: ['S5', 'S6'],
+      signatairesAutorisation: [],
+      signaturesAutorisation: [],
+    } as any)
+    const sansReleves = await DataResolverService.resolve('API001', {
+      typeCode: 'API001',
+      sourceId: 44,
+      autorisationDocumentId: 123,
+    })
+    expect(sansReleves.autorisationProvisoire).toMatchObject({
+      relevesSemestresRecusLibelle: 'Néant (aucun relevé apporté)',
+      relevesCellules: {
+        S1_S2: 'Néant',
+        S3_S4: '',
+        S5_S6: '',
+        S7_S8: '',
+        S9_S10: '',
+      },
+      relevesDatesCellules: {
+        S1_S2: '',
+        S3_S4: '',
+        S5_S6: '',
+        S7_S8: '',
+        S9_S10: '',
+      },
     })
     findDocument.mockRestore()
   })

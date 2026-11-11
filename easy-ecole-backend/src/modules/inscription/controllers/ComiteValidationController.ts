@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { Op, Transaction } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
-import { resolveStoredDocumentPath } from "../../../core/services/DocumentStorageService";
 import { EmailSender } from "../../../core/helpers/EmailSender";
 import { DemandeInscription } from "../models/DemandeInscription";
 import { Bordereau } from "../models/Bordereau";
@@ -25,7 +24,6 @@ import { PdfMergeService } from "../../../core/services/PdfMergeService";
 import { Quitus } from "../models/Quitus";
 import { RecuCaisse } from "../../scolarite/models/RecuCaisse";
 import { DemandeDocument } from "../../scolarite/models/DemandeDocument";
-import { ComiteOrientation } from "../../auth/models/ComiteOrientation";
 import { DocumentDelivre } from "../../scolarite/models/DocumentDelivre";
 import { DocGenDocument } from "../../docgen/models/DocGenDocument";
 import { DemandeInscriptionDossier } from "../models/DemandeInscriptionDossier";
@@ -67,10 +65,36 @@ function lireSemestresAutorisation(value: unknown): string[] | null {
     return [...new Set(value as string[])]
 }
 
+function lireRelevesSemestresRecus(value: unknown): string[] | null {
+    if (!Array.isArray(value) || value.some(item => typeof item !== 'string')) return null
+    const releves = [...new Set(value as string[])]
+    if (releves.length === 0) return null
+    if (releves.includes('NEANT')) return releves.length === 1 ? releves : null
+    return releves.every(semestre => SEMESTRES_AUTORISATION_VALIDES.has(semestre)) ? releves : null
+}
+
 function dateIsoValide(value: unknown): value is string {
     if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
     const date = new Date(`${value}T00:00:00.000Z`)
     return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
+}
+
+function anneeValide(value: unknown): value is string {
+    return typeof value === 'string'
+        && /^\d{4}$/.test(value)
+        && Number(value) >= 1900
+        && Number(value) <= new Date().getFullYear()
+}
+
+function anneeOuDateIsoValide(value: unknown): value is string {
+    if (anneeValide(value)) return true
+    return dateIsoValide(value)
+        && Number(value.slice(0, 4)) >= 1900
+        && Number(value.slice(0, 4)) <= new Date().getFullYear()
+}
+
+function normaliserAnneePourDateOnly(value: string): string {
+    return anneeValide(value) ? `${value}-01-01` : value
 }
 
 function lireDatesReleves(value: unknown, semestresRecus: string[]): Record<string, string> | null {
@@ -80,14 +104,14 @@ function lireDatesReleves(value: unknown, semestresRecus: string[]): Record<stri
     if (entrees.some(([semestre, date]) =>
         !SEMESTRES_AUTORISATION_VALIDES.has(semestre)
         || !semestresRecus.includes(semestre)
-        || !dateIsoValide(date)
+        || !anneeOuDateIsoValide(date)
     )) {
         return null
     }
-    if (semestresRecus.some((semestre) => !dateIsoValide(dates[semestre]))) return null
+    if (semestresRecus.some((semestre) => !anneeOuDateIsoValide(dates[semestre]))) return null
     const datesValides: Record<string, string> = {}
     for (const semestre of semestresRecus) {
-        datesValides[semestre] = dates[semestre] as string
+        datesValides[semestre] = (dates[semestre] as string).slice(0, 4)
     }
     return datesValides
 }
@@ -130,177 +154,6 @@ const inclureTout = (opts: { sessionInterne?: boolean; parcoursInterne?: boolean
 ]
 
 export default class ComiteValidationController {
-
-    private static async getSignataireApiId(req: Request): Promise<number | null> {
-        const role = (req as any).utilisateurRole
-        const utilisateurId = Number((req as any).utilisateurId)
-        if (role !== RolesUtilisateur.COMITE_ORIENTATION || !Number.isInteger(utilisateurId) || utilisateurId <= 0) {
-            return null
-        }
-        const profil = await ComiteOrientation.findOne({
-            where: { utilisateurId, estSignataireApi: true },
-            attributes: ['utilisateurId'],
-        })
-        return profil ? Number(profil.utilisateurId) : null
-    }
-
-    private static async getAutorisationSignataire(
-        demandeDocumentId: number,
-        signataireId: number,
-    ): Promise<DemandeDocument | null> {
-        const document = await DemandeDocument.findByPk(demandeDocumentId)
-        if (!document || !document.docgenDocumentId || document.statut !== 'document_pret') return null
-        const signataires = Array.isArray(document.signatairesAutorisation) ? document.signatairesAutorisation : []
-        return signataires.some((item) => Number(item.id) === signataireId) ? document : null
-    }
-
-    static async listerAutorisationsASigner(req: Request, res: Response): Promise<Response> {
-        try {
-            const signataireId = await ComiteValidationController.getSignataireApiId(req)
-            if (!signataireId) return res.status(403).json({ success: false, message: 'Accès réservé aux signataires API désignés.' })
-
-            const documents = await DemandeDocument.findAll({
-                where: {
-                    docgenDocumentId: { [Op.ne]: null },
-                    statut: 'document_pret',
-                },
-                attributes: [
-                    'id', 'numeroDemande', 'fichierPDF', 'dateGeneration',
-                    'signatairesAutorisation', 'signaturesAutorisation',
-                ],
-                include: [{
-                    association: DemandeDocument.associations.etudiant,
-                    attributes: ['id', 'nom', 'prenoms', 'identifiant'],
-                }],
-                order: [['dateGeneration', 'DESC']],
-                limit: 500,
-            })
-            const result = documents.flatMap((document) => {
-                const signataires = Array.isArray(document.signatairesAutorisation) ? document.signatairesAutorisation : []
-                if (!signataires.some((item) => Number(item.id) === signataireId)) return []
-                const signatures = Array.isArray(document.signaturesAutorisation) ? document.signaturesAutorisation : []
-                const maSignature = signatures.find((item) => Number(item.signataireId) === signataireId)
-                return [{
-                    id: document.id,
-                    reference: document.numeroDemande,
-                    dateGeneration: document.dateGeneration,
-                    etudiant: document.etudiant
-                        ? {
-                            nom: document.etudiant.nom,
-                            prenoms: document.etudiant.prenoms,
-                            identifiant: document.etudiant.identifiant,
-                        }
-                        : null,
-                    signe: Boolean(maSignature),
-                    maSignature: maSignature?.signatureData || null,
-                    signaturesRecues: signatures.map((signature) => ({
-                        signataireId: signature.signataireId,
-                        signedAt: signature.signedAt,
-                    })),
-                }]
-            })
-            return res.status(200).json({ data: result })
-        } catch (error) {
-            console.error('[Comite] listerAutorisationsASigner:', error)
-            return res.status(500).json({ success: false, message: 'Impossible de charger les autorisations à signer.' })
-        }
-    }
-
-    static async telechargerAutorisationASigner(req: Request, res: Response): Promise<Response> {
-        try {
-            const signataireId = await ComiteValidationController.getSignataireApiId(req)
-            const demandeDocumentId = Number(req.params.id)
-            if (!signataireId) return res.status(403).json({ success: false, message: 'Accès réservé aux signataires API désignés.' })
-            if (!Number.isInteger(demandeDocumentId) || demandeDocumentId <= 0) {
-                return res.status(400).json({ success: false, message: 'Identifiant d’autorisation invalide.' })
-            }
-            const document = await ComiteValidationController.getAutorisationSignataire(demandeDocumentId, signataireId)
-            if (!document?.fichierPDF) return res.status(404).json({ success: false, message: 'Autorisation provisoire introuvable.' })
-
-            const fichier = resolveStoredDocumentPath(
-                document.fichierPDF,
-                [path.resolve(process.cwd(), 'storage', 'docgen')],
-            )
-            const racineDocGen = path.resolve(process.cwd(), 'storage', 'docgen') + path.sep
-            if (!fichier || !path.resolve(fichier).startsWith(racineDocGen)) {
-                return res.status(404).json({ success: false, message: 'Fichier PDF introuvable.' })
-            }
-            res.setHeader('Content-Type', 'application/pdf')
-            const referenceSecurisee = String(document.numeroDemande || document.id).replace(/[^A-Za-z0-9._-]/g, '_')
-            res.setHeader('Content-Disposition', `inline; filename="API-${referenceSecurisee}.pdf"`)
-            res.sendFile(fichier)
-            return res
-        } catch (error) {
-            console.error('[Comite] telechargerAutorisationASigner:', error)
-            return res.status(500).json({ success: false, message: 'Impossible de télécharger l’autorisation provisoire.' })
-        }
-    }
-
-    static async signerAutorisation(req: Request, res: Response): Promise<Response> {
-        try {
-            const signataireId = await ComiteValidationController.getSignataireApiId(req)
-            const demandeDocumentId = Number(req.params.id)
-            if (!signataireId) return res.status(403).json({ success: false, message: 'Accès réservé aux signataires API désignés.' })
-            if (!Number.isInteger(demandeDocumentId) || demandeDocumentId <= 0) {
-                return res.status(400).json({ success: false, message: 'Identifiant d’autorisation invalide.' })
-            }
-            const signatureData = req.body?.signatureData
-            const signatureMatch = typeof signatureData === 'string'
-                ? /^data:image\/png;base64,([A-Za-z0-9+/]+={0,2})$/.exec(signatureData)
-                : null
-            if (!signatureMatch || signatureData.length > 500_000) {
-                return res.status(400).json({ success: false, message: 'La signature doit être une image PNG valide de taille limitée.' })
-            }
-            const signatureBytes = Buffer.from(signatureMatch[1], 'base64')
-            if (
-                signatureBytes.length === 0
-                || !signatureBytes.subarray(0, 8).equals(Buffer.from('89504e470d0a1a0a', 'hex'))
-            ) {
-                return res.status(400).json({ success: false, message: 'Le fichier transmis n’est pas une image PNG valide.' })
-            }
-
-            const sequelize = DatabaseConnection.getInstance().sequelize
-            const transaction = await sequelize.transaction()
-            let transactionCommitted = false
-            let document: DemandeDocument | null = null
-            try {
-                document = await DemandeDocument.findByPk(demandeDocumentId, {
-                    transaction,
-                    lock: transaction.LOCK.UPDATE,
-                })
-                const signataires = Array.isArray(document?.signatairesAutorisation) ? document.signatairesAutorisation : []
-                if (!document || !document.docgenDocumentId || document.statut !== 'document_pret'
-                    || !signataires.some((item) => Number(item.id) === signataireId)) {
-                    await transaction.rollback()
-                    return res.status(404).json({ success: false, message: 'Autorisation provisoire introuvable.' })
-                }
-                const signatures = Array.isArray(document.signaturesAutorisation) ? document.signaturesAutorisation : []
-                const signatureExistante = signatures.find((item) => Number(item.signataireId) === signataireId)
-                if (!signatureExistante) {
-                    await document.update({
-                        signaturesAutorisation: [
-                            ...signatures,
-                            { signataireId, signatureData, signedAt: new Date().toISOString() },
-                        ],
-                    }, { transaction })
-                }
-                await transaction.commit()
-                transactionCommitted = true
-            } catch (error) {
-                if (!transactionCommitted) await transaction.rollback()
-                throw error
-            }
-
-            await BordereauDossierService.regenererAutorisationProvisoireSignee(demandeDocumentId, req)
-            return res.status(200).json({ success: true, message: 'Signature enregistrée et autorisation mise à jour.' })
-        } catch (error) {
-            console.error('[Comite] signerAutorisation:', error)
-            return res.status(500).json({
-                success: false,
-                message: 'La signature a peut-être été enregistrée, mais la génération du PDF a échoué. Réessayez pour finaliser le document.',
-            })
-        }
-    }
 
     /**
      * GET /comite-validations/dossiers
@@ -825,15 +678,18 @@ export default class ComiteValidationController {
                 } | undefined
                 if (demande.typeDemande !== 'reinscription') {
                     const payload = req.body.autorisationProvisoire
-                    const relevesSemestresRecus = lireSemestresAutorisation(payload?.relevesSemestresRecus)
+                    const relevesSemestresRecus = lireRelevesSemestresRecus(payload?.relevesSemestresRecus)
                     const relevesSemestresDates = lireDatesReleves(payload?.relevesSemestresDates, relevesSemestresRecus || [])
                     const semestresAutorises = lireSemestresAutorisation(payload?.semestresAutorises)
-                    const dateDiplomeRecu = typeof payload?.dateDiplomeRecu === 'string'
+                    const anneeDiplomeRecu = typeof payload?.dateDiplomeRecu === 'string'
                         ? payload.dateDiplomeRecu
+                        : ''
+                    const dateDiplomeRecu = anneeOuDateIsoValide(anneeDiplomeRecu)
+                        ? normaliserAnneePourDateOnly(anneeDiplomeRecu)
                         : ''
                     if (
                         !['BAC', 'LICENCE', 'MASTER'].includes(payload?.diplomeRecu)
-                        || !dateIsoValide(dateDiplomeRecu)
+                        || !dateDiplomeRecu
                         || !relevesSemestresRecus
                         || !relevesSemestresDates
                         || !semestresAutorises
@@ -842,7 +698,7 @@ export default class ComiteValidationController {
                         await transaction.rollback()
                         return res.status(400).json({
                             success: false,
-                            message: "Pour la validation finale, renseignez la date du diplôme, une date pour chaque relevé reçu et les semestres autorisés.",
+                            message: "Pour la validation finale, renseignez l’année du diplôme, une année pour chaque relevé reçu et les semestres autorisés.",
                         })
                     }
                     autorisationProvisoire = {

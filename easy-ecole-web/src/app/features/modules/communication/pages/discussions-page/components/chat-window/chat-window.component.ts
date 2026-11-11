@@ -10,6 +10,7 @@ export class ChatWindowComponent {
   @Input() messages: any[] = [];
   @Input() members: any[] = [];
   @Input() typingUsers: string[] = [];
+  @Input() presence: Map<number, boolean> = new Map<number, boolean>();
   @Input() currentUserId: number = 0;
   @Input() currentUserName: string = '';
   @Input() showInfoPanel: boolean = false;
@@ -22,6 +23,8 @@ export class ChatWindowComponent {
   @Input() isCallStarting: boolean = false;
   @Input() localCallStream: MediaStream | null = null;
   @Input() remoteCallStreams: MediaStream[] = [];
+  showMessageSearch: boolean = false;
+  messageSearchQuery: string = '';
   @Output() sendMessage = new EventEmitter<string>();
   @Output() sendMediaMessage = new EventEmitter<any>();
   @Output() sendSticker = new EventEmitter<string>();
@@ -39,11 +42,31 @@ export class ChatWindowComponent {
   @Output() addMember = new EventEmitter<number>();
   @Output() generateInvite = new EventEmitter<void>();
   @Output() leaveGroup = new EventEmitter<void>();
+  @Output() backToList = new EventEmitter<void>();
+
+  get displayMessages(): any[] {
+    const query = this.messageSearchQuery.trim().toLocaleLowerCase();
+    if (!query) return this.messages;
+    return this.messages.filter(message =>
+      String(message.message || '').toLocaleLowerCase().includes(query)
+    );
+  }
+
+  get otherParticipantIsOnline(): boolean {
+    const otherMember = this.members.find(member => Number(member.id) !== Number(this.currentUserId));
+    return !!otherMember && this.presence.get(Number(otherMember.id)) === true;
+  }
+
+  toggleMessageSearch(): void {
+    this.showMessageSearch = !this.showMessageSearch;
+    if (!this.showMessageSearch) this.messageSearchQuery = '';
+  }
 
   showDaySeparator(index: number): boolean {
     if (index === 0) return true;
-    const prev = new Date(this.messages[index - 1]?.date);
-    const curr = new Date(this.messages[index]?.date);
+    const displayedMessages = this.displayMessages;
+    const prev = new Date(displayedMessages[index - 1]?.date);
+    const curr = new Date(displayedMessages[index]?.date);
     return prev.toDateString() !== curr.toDateString();
   }
 

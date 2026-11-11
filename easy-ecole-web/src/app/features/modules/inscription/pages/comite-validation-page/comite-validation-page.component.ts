@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
-import { AutorisationApiASigner, ComiteValidationService, DossierComite, FiltresComite, Quorum } from 'src/app/data/modules/inscription/services/comite-validation.service';
+import { ComiteValidationService, DossierComite, FiltresComite, Quorum } from 'src/app/data/modules/inscription/services/comite-validation.service';
 import { ParcoursService } from 'src/app/data/modules/inscription/services/parcours.service';
 import { Parcours } from 'src/app/data/modules/inscription/models/Parcours.model';
 import { NiveauEtudeService } from 'src/app/data/modules/inscription/services/niveau-etude.service';
@@ -48,6 +48,7 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
   diplomeRecu: '' | 'BAC' | 'LICENCE' | 'MASTER' = ''
   dateDiplomeRecu = ''
   relevesSemestresRecus: string[] = []
+  relevesNeant = false
   relevesSemestresDates: Record<string, string> = {}
   semestresAutorises: string[] = []
   readonly semestresAutorisation = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6']
@@ -70,16 +71,6 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
   docPreviewIsImage: boolean = false
   docPreviewNom: string = ''
   telechargementPdf: boolean = false
-  autorisationsApiASigner: AutorisationApiASigner[] = []
-  chargerAutorisationsApi: boolean = false
-  afficherAutorisationsApi: boolean = false
-  autorisationApiActive: AutorisationApiASigner | null = null
-  afficherSignatureApiModal: boolean = false
-  chargementPdfApi: boolean = false
-  signatureApiEnCours: boolean = false
-  erreurSignatureApi: string = ''
-  apercuPdfApi: SafeResourceUrl | null = null
-  private apercuPdfApiObjectUrl: string | null = null
 
   constructor(
     private comiteService: ComiteValidationService,
@@ -175,7 +166,6 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
 
   ngOnInit(): void {
     this.chargerReferentiels()
-    this.chargerAutorisationsApiASigner()
 
     this.abonnements.push(
       this.changementFiltres.pipe(
@@ -209,81 +199,6 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
   ngOnDestroy(): void {
     this.changementFiltres.complete()
     this.abonnements.forEach(s => s.unsubscribe())
-    this.libererApercuPdfApi()
-  }
-
-  chargerAutorisationsApiASigner(): void {
-    this.chargerAutorisationsApi = true
-    this.comiteService.listerAutorisationsASigner().subscribe({
-      next: (res) => {
-        this.autorisationsApiASigner = res.data || []
-        this.afficherAutorisationsApi = true
-        this.chargerAutorisationsApi = false
-      },
-      error: (err) => {
-        this.autorisationsApiASigner = []
-        this.afficherAutorisationsApi = err?.status !== 403
-        this.chargerAutorisationsApi = false
-        if (err?.status !== 403) {
-          console.error('Erreur de chargement des autorisations à signer', err)
-          this.erreurSignatureApi = err?.error?.message || 'Impossible de charger les autorisations à signer.'
-        }
-      }
-    })
-  }
-
-  ouvrirAutorisationApiASigner(autorisation: AutorisationApiASigner): void {
-    this.autorisationApiActive = autorisation
-    this.afficherSignatureApiModal = true
-    this.chargementPdfApi = true
-    this.erreurSignatureApi = ''
-    this.libererApercuPdfApi()
-    this.comiteService.telechargerAutorisationASigner(autorisation.id).subscribe({
-      next: (blob) => {
-        this.chargementPdfApi = false
-        if (!blob || blob.size === 0) {
-          this.erreurSignatureApi = 'Le document PDF est vide.'
-          return
-        }
-        this.apercuPdfApiObjectUrl = URL.createObjectURL(blob)
-        this.apercuPdfApi = this.sanitizer.bypassSecurityTrustResourceUrl(this.apercuPdfApiObjectUrl)
-      },
-      error: (err) => {
-        this.chargementPdfApi = false
-        this.erreurSignatureApi = err?.error?.message || 'Impossible de charger le document PDF.'
-      }
-    })
-  }
-
-  fermerAutorisationApiASigner(): void {
-    this.afficherSignatureApiModal = false
-    this.autorisationApiActive = null
-    this.erreurSignatureApi = ''
-    this.libererApercuPdfApi()
-  }
-
-  enregistrerSignatureApi(signatureData: string): void {
-    if (!this.autorisationApiActive || this.signatureApiEnCours) return
-    this.signatureApiEnCours = true
-    this.erreurSignatureApi = ''
-    this.comiteService.signerAutorisation(this.autorisationApiActive.id, signatureData).subscribe({
-      next: (res) => {
-        this.signatureApiEnCours = false
-        this.fermerAutorisationApiASigner()
-        this.successMessage = res.message || 'Signature enregistrée.'
-        this.chargerAutorisationsApiASigner()
-      },
-      error: (err) => {
-        this.signatureApiEnCours = false
-        this.erreurSignatureApi = err?.error?.message || 'La signature n’a pas pu être enregistrée.'
-      }
-    })
-  }
-
-  private libererApercuPdfApi(): void {
-    if (this.apercuPdfApiObjectUrl) URL.revokeObjectURL(this.apercuPdfApiObjectUrl)
-    this.apercuPdfApiObjectUrl = null
-    this.apercuPdfApi = null
   }
 
   /** Recharge la liste en conservant les filtres actifs (toggle « afficher tous »). */
@@ -294,7 +209,19 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
   getParcoursFinal(d: any): string {
     const pFinal = d?.parcoursChoisis?.find((pc: any) => pc.choixFinal === true || pc.choixFinal === 1 || pc.choixFinal === '1')
     const p = pFinal || d?.parcoursChoisis?.[0]
-    return p?.parcours ? `${p.parcours.titre || ''} (${p.parcours.type || ''})` : '---'
+    if (!p?.parcours) return '---'
+
+    const parcours = p.parcours
+    const type = String(parcours.type || '').trim().toUpperCase()
+    const niveau = String(parcours.niveauEtude?.libelle || '').trim()
+    const numeroNiveau = niveau.match(/(\d+)\s*$/)?.[1] || niveau.match(/^[LM]\s*(\d+)/i)?.[1]
+    const libelleNiveau = numeroNiveau
+      ? `${type || niveau.replace(/\s*\d+\s*$/, '').trim().toUpperCase()} ${numeroNiveau}`.trim()
+      : niveau || type
+    const titre = String(parcours.titre || '').trim()
+
+    if (!titre) return libelleNiveau || '---'
+    return libelleNiveau ? `${titre} (${libelleNiveau})` : titre
   }
 
   getAnnee(d: any): string {
@@ -527,6 +454,7 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
     this.diplomeRecu = ''
     this.dateDiplomeRecu = ''
     this.relevesSemestresRecus = []
+    this.relevesNeant = false
     this.relevesSemestresDates = {}
 
     const dossier = this.detailComplet || this.selectedDossier
@@ -552,7 +480,17 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
     }
   }
 
+  private anneeValide(annee: string): boolean {
+    const valeur = Number(annee)
+    return /^\d{4}$/.test(annee) && valeur >= 1900 && valeur <= new Date().getFullYear()
+  }
+
+  get anneeDiplomeValide(): boolean {
+    return this.anneeValide(this.dateDiplomeRecu)
+  }
+
   toggleSemestreRecu(semestre: string, checked: boolean): void {
+    if (this.relevesNeant) return
     this.relevesSemestresRecus = checked
       ? [...new Set([...this.relevesSemestresRecus, semestre])]
       : this.relevesSemestresRecus.filter(item => item !== semestre)
@@ -563,8 +501,18 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
     }
   }
 
+  toggleRelevesNeant(checked: boolean): void {
+    this.relevesNeant = checked
+    if (checked) {
+      this.relevesSemestresRecus = []
+      this.relevesSemestresDates = {}
+    }
+  }
+
   get datesRelevesCompletes(): boolean {
-    return this.relevesSemestresRecus.every(semestre => Boolean(this.relevesSemestresDates[semestre]))
+    if (this.relevesNeant) return this.relevesSemestresRecus.length === 0
+    if (this.relevesSemestresRecus.length === 0) return false
+    return this.relevesSemestresRecus.every(semestre => this.anneeValide(this.relevesSemestresDates[semestre] || ''))
   }
 
   toggleSemestreAutorise(semestre: string, checked: boolean): void {
@@ -578,8 +526,8 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
   }
 
   confirmerAutorisationProvisoire(): void {
-    if (!this.diplomeRecu || !this.dateDiplomeRecu || !this.datesRelevesCompletes || this.semestresAutorises.length === 0) {
-      this.apiErrorMessage = 'Renseignez le diplôme et sa date, une date pour chaque relevé reçu, puis au moins un semestre autorisé.'
+    if (!this.diplomeRecu || !this.anneeValide(this.dateDiplomeRecu) || !this.datesRelevesCompletes || this.semestresAutorises.length === 0) {
+      this.apiErrorMessage = 'Renseignez le diplôme et son année, indiquez les relevés reçus ou cochez « Néant », puis au moins un semestre autorisé.'
       this.error = true
       return
     }
@@ -587,7 +535,7 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
     this.executerDecision({
       diplomeRecu: this.diplomeRecu,
       dateDiplomeRecu: this.dateDiplomeRecu,
-      relevesSemestresRecus: this.relevesSemestresRecus,
+      relevesSemestresRecus: this.relevesNeant ? ['NEANT'] : this.relevesSemestresRecus,
       relevesSemestresDates: this.relevesSemestresDates,
       semestresAutorises: this.semestresAutorises,
     })

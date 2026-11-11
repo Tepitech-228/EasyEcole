@@ -9,6 +9,9 @@ import { Mouvement } from "../models/Mouvement";
 import { SelectionCours } from "../models/SelectionCours";
 import { TarifCredit } from "../models/TarifCredit";
 import { DemandeInscription } from "../../inscription/models/DemandeInscription";
+import { Cours } from "../../inscription/models/Cours";
+
+const MAX_CREDITS_PER_SEMESTER = 30;
 
 export class ElearningFinanceError extends Error {
   constructor(message: string, readonly statusCode: number) {
@@ -155,7 +158,7 @@ export default class ElearningFinanceService {
       if (envelope.statut !== "ouverte") throw new ElearningFinanceError("Votre budget e-learning n'est pas ouvert.", 409);
 
       const course = await CoursEnLigne.findOne({
-        where: { id: coursId, statut: "publie", anneeAcademiqueId: year.id },
+        where: { id: coursId, statut: "publie", anneeAcademiqueId: academicYearId },
         transaction,
         lock: transaction.LOCK.UPDATE,
       });
@@ -167,8 +170,19 @@ export default class ElearningFinanceService {
       if (academicYearId && session?.anneeAcademiqueId && Number(academicYearId) !== Number(session.anneeAcademiqueId)) {
         throw new ElearningFinanceError("Cette demande ne correspond pas à l'année e-learning active.", 409);
       }
+      const currentUe = course.ueId
+        ? await Cours.findByPk(course.ueId, { attributes: ["id", "semestre"], transaction })
+        : null;
+      const semester = currentUe?.semestre;
+      if (typeof semester !== "string" || !/^semestre[1-6]$/.test(semester)) {
+        throw new ElearningFinanceError("Ce cours n'est pas rattaché à une UE avec un semestre défini.", 409);
+      }
       const cost = Number(course.coutTotal);
       if (!Number.isFinite(cost) || cost <= 0) throw new ElearningFinanceError("Le tarif de ce cours n'est pas valide.", 409);
+      const credits = Number(course.nbCredits);
+      if (!Number.isSafeInteger(credits) || credits <= 0) {
+        throw new ElearningFinanceError("Le nombre de crédits de ce cours n'est pas valide.", 409);
+      }
 
       const existing = await SelectionCours.findOne({
         where: { utilisateurId, coursId, anneeAcademiqueId: academicYearId },
@@ -176,6 +190,41 @@ export default class ElearningFinanceService {
         lock: transaction.LOCK.UPDATE,
       });
       if (existing) throw new ElearningFinanceError("Ce cours figure déjà dans vos sélections.", 409);
+
+      const semesterSelections = await SelectionCours.findAll({
+        where: { utilisateurId, anneeAcademiqueId: academicYearId, statut: "acces_ouvert" },
+        attributes: ["coursId", "credits"],
+        transaction,
+      });
+      const selectedCourses = semesterSelections.length
+        ? await CoursEnLigne.findAll({
+          where: { id: { [Op.in]: semesterSelections.map(selection => Number(selection.coursId)) } },
+          attributes: ["id", "ueId"],
+          transaction,
+        })
+        : [];
+      const selectedUeIds = selectedCourses
+        .map(selectedCourse => Number(selectedCourse.ueId))
+        .filter(ueId => Number.isSafeInteger(ueId) && ueId > 0);
+      const selectedUes = selectedUeIds.length
+        ? await Cours.findAll({
+          where: { id: { [Op.in]: selectedUeIds } },
+          attributes: ["id", "semestre"],
+          transaction,
+        })
+        : [];
+      const semesterByUe = new Map(selectedUes.map(ue => [Number(ue.id), ue.semestre]));
+      const selectedCredits = semesterSelections.reduce((total, selection) => {
+        const selectedCourse = selectedCourses.find(item => Number(item.id) === Number(selection.coursId));
+        if (!selectedCourse || semesterByUe.get(Number(selectedCourse.ueId)) !== semester) return total;
+        return total + Number(selection.credits);
+      }, 0);
+      if (selectedCredits + credits > MAX_CREDITS_PER_SEMESTER) {
+        throw new ElearningFinanceError(
+          `La limite de ${MAX_CREDITS_PER_SEMESTER} crédits pour le ${semester} serait dépassée.`,
+          409
+        );
+      }
 
       const available = this.available(envelope);
       if (cost > available) {
@@ -191,7 +240,7 @@ export default class ElearningFinanceService {
         coursId: course.id,
         ueId: course.ueId ?? null,
         anneeAcademiqueId: academicYearId,
-        credits: Number(course.nbCredits),
+        credits,
         coutFige: cost,
         statut: "acces_ouvert",
         dateValidation: new Date(),

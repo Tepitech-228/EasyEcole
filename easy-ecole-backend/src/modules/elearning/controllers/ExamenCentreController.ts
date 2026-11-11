@@ -216,19 +216,19 @@ export default class ExamenCentreController {
     try {
       const admission = await ElearningFinanceService.getApprovedOnlineAdmission(current.id);
       const year = await ElearningFinanceService.getActiveYear();
+      const academicYearId = ElearningFinanceService.requireAcademicYearId(year);
       const session = admission.session as any;
-      if (year.anneeAcademiqueId && session?.anneeAcademiqueId
-        && Number(year.anneeAcademiqueId) !== Number(session.anneeAcademiqueId)) {
+      if (session?.anneeAcademiqueId && academicYearId !== Number(session.anneeAcademiqueId)) {
         return reply(res, 409, "L'année e-learning active ne correspond pas à votre demande.");
       }
       const selections = await SelectionCours.findAll({
-        where: { utilisateurId: current.id, anneeAcademiqueId: year.id, statut: "acces_ouvert" },
+        where: { utilisateurId: current.id, anneeAcademiqueId: academicYearId, statut: "acces_ouvert" },
         attributes: ["coursId"],
       });
       const coursIds = selections.map(item => Number(item.coursId));
       if (!coursIds.length) return res.status(200).json([]);
       const examens = await Examen.findAll({
-        where: { anneeAcademiqueId: year.id, statut: "publie", coursId: { [Op.in]: coursIds } },
+        where: { anneeAcademiqueId: academicYearId, statut: "publie", coursId: { [Op.in]: coursIds } },
         include: [{ association: Examen.associations.cours, attributes: ["id", "code", "titre"] }],
         order: [["dateExamen", "ASC"]],
       });

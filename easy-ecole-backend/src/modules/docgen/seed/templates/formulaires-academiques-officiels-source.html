@@ -386,7 +386,7 @@
                         <td></td>
                     </tr>
                     <tr>
-                        <td><strong>Dates</strong></td>
+                        <td><strong>Année d’obtention</strong></td>
                         <td>{{autorisationProvisoire.dateDiplomeCellules.BAC}}</td>
                         <td></td><td></td>
                         <td>{{autorisationProvisoire.dateDiplomeCellules.LICENCE}}</td>
@@ -415,7 +415,7 @@
                         <td>{{autorisationProvisoire.relevesCellules.S9_S10}}</td>
                     </tr>
                     <tr>
-                        <td><strong>Dates</strong></td>
+                        <td><strong>Années de réception</strong></td>
                         <td>{{autorisationProvisoire.relevesDatesCellules.S1_S2}}</td>
                         <td>{{autorisationProvisoire.relevesDatesCellules.S3_S4}}</td>
                         <td>{{autorisationProvisoire.relevesDatesCellules.S5_S6}}</td>
@@ -461,22 +461,6 @@
             <tr>
                 <td class="committee-heading" colspan="2">
                     <strong>Pour le Comité d’Orientation, d’Equivalence et d’Etude de Dossiers</strong>
-                </td>
-            </tr>
-            <tr>
-                <td class="sign-cell" style="width: 50%;">
-                    <strong class="signatory-name">{{autorisationProvisoire.signataire1.nomComplet}}</strong><br>
-                    <span class="sign-sub">Membre signataire</span><br>
-                    {{#if autorisationProvisoire.signataire1.signatureData}}
-                    <img alt="Signature du premier membre" style="height: 16mm; max-width: 55mm;" src="{{autorisationProvisoire.signataire1.signatureData}}">
-                    {{/if}}
-                </td>
-                <td class="sign-cell" style="width: 50%;">
-                    <strong class="signatory-name">{{autorisationProvisoire.signataire2.nomComplet}}</strong><br>
-                    <span class="sign-sub">Membre signataire</span><br>
-                    {{#if autorisationProvisoire.signataire2.signatureData}}
-                    <img alt="Signature du deuxième membre" style="height: 16mm; max-width: 55mm;" src="{{autorisationProvisoire.signataire2.signatureData}}">
-                    {{/if}}
                 </td>
             </tr>
             <tr>

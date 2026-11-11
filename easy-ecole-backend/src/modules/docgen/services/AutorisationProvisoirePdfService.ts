@@ -13,8 +13,6 @@ interface AutorisationProvisoirePdfData {
     relevesSemestresDates: Record<string, string>;
     relevesSemestresRecusLibelle: string;
     semestresAutorises: string[];
-    signataire1: { nomComplet: string; signatureData: string };
-    signataire2: { nomComplet: string; signatureData: string };
   };
 }
 
@@ -83,7 +81,8 @@ export class AutorisationProvisoirePdfService {
         const relevesAvecDates = autorisation.relevesSemestresRecus
           .map((semestre) => {
             const date = autorisation.relevesSemestresDates[semestre];
-            return date ? `${semestre} (${date})` : semestre;
+            const annee = typeof date === 'string' ? date.slice(0, 4) : '';
+            return annee ? `${semestre} (${annee})` : semestre;
           })
           .join(', ');
         y += 6;
@@ -91,7 +90,7 @@ export class AutorisationProvisoirePdfService {
           .text('Pièces académiques reçues', 56, y);
         y += 18;
         doc.fillColor('#222222').font('Helvetica').fontSize(9)
-          .text(`Diplôme reçu : ${autorisation.diplomeRecu} — Date : ${autorisation.dateDiplomeRecu}`, 56, y, { width: 500 });
+          .text(`Diplôme reçu : ${autorisation.diplomeRecu} — Année : ${autorisation.dateDiplomeRecu}`, 56, y, { width: 500 });
         y += 16;
         doc.text(
           `Relevés de notes reçus : ${relevesAvecDates || autorisation.relevesSemestresRecusLibelle}`,
@@ -104,19 +103,6 @@ export class AutorisationProvisoirePdfService {
           .text(`Semestres autorisés : ${autorisation.semestresAutorises.join(', ')}`, 56, y, { width: 500 });
         y += 12;
       }
-
-        const signataires = [data.autorisationProvisoire?.signataire1, data.autorisationProvisoire?.signataire2];
-        signataires.forEach((signataire, index) => {
-          const x = index === 0 ? 56 : 316;
-          doc.fillColor(navy).font('Helvetica-Bold').fontSize(9)
-            .text(decodeHtmlText(signataire?.nomComplet) || 'Membre signataire', x, 690, { width: 240, align: 'center' });
-          if (signataire?.signatureData) {
-            const match = /^data:image\/png;base64,([A-Za-z0-9+/]+={0,2})$/.exec(signataire.signatureData);
-            if (match) {
-              doc.image(Buffer.from(match[1], 'base64'), x + 20, 704, { fit: [200, 42], align: 'center', valign: 'center' });
-            }
-          }
-        });
 
         doc.roundedRect(56, y + 8, 500, 70, 5).lineWidth(1).strokeColor(navy).stroke();
       doc.fillColor(navy).font('Helvetica-Bold').fontSize(9)
@@ -131,8 +117,6 @@ export class AutorisationProvisoirePdfService {
 
       doc.fillColor('#333333').font('Helvetica').fontSize(9)
         .text("Pour le Comité d'Orientation et d'Équivalence", 56, 700, { width: 500, align: 'center' });
-      doc.fillColor(navy).font('Helvetica-Bold').fontSize(10)
-        .text(data.initialesComite || 'Comité d’orientation', 56, 725, { width: 500, align: 'center' });
       doc.fillColor('#777777').font('Helvetica').fontSize(8)
         .text(`Document généré le ${data.dateGeneration} — Réf : ${data.reference}`, 52, 780, { width: 508, align: 'center' });
 

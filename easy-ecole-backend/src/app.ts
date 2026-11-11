@@ -359,6 +359,7 @@ if (SSL_KEY && SSL_CERT && fs.existsSync(SSL_KEY) && fs.existsSync(SSL_CERT)) {
 const io = new SocketIOServer(server, {
     cors: { origin: corsOrigin }
 })
+app.set('io', io)
 PointageRealtimeService.initialize(io)
 setupChatSocket(io)
 

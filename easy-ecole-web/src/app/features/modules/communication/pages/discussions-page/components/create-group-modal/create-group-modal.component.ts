@@ -9,7 +9,14 @@ export class CreateGroupModalComponent {
   @Input() availableUsers: any[] = [];
   @Input() currentUserId: number = 0;
   @Output() close = new EventEmitter<void>();
-  @Output() create = new EventEmitter<{ titre: string; participants: number[] }>();
+  @Output() create = new EventEmitter<{
+    titre: string;
+    description: string;
+    type: string;
+    estPrive: boolean;
+    photo: string;
+    participants: number[];
+  }>();
 
   groupName: string = '';
   groupDescription: string = '';
@@ -49,6 +56,10 @@ export class CreateGroupModalComponent {
     if (!this.groupName.trim()) return;
     this.create.emit({
       titre: this.groupName.trim(),
+      description: this.groupDescription.trim(),
+      type: this.groupType,
+      estPrive: this.visibility === 'prive',
+      photo: this.selectedIcon,
       participants: [...this.selectedUserIds]
     });
   }

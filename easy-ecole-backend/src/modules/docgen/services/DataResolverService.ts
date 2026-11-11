@@ -82,8 +82,6 @@ interface ResolvedData {
     relevesCellules: Record<'S1_S2' | 'S3_S4' | 'S5_S6' | 'S7_S8' | 'S9_S10', string>;
     relevesDatesCellules: Record<'S1_S2' | 'S3_S4' | 'S5_S6' | 'S7_S8' | 'S9_S10', string>;
     semestresAutorisesCellules: Record<'S1_S2' | 'S3_S4' | 'S5_S6' | 'S7_S8' | 'S9_S10', string>;
-    signataire1: { nomComplet: string; signatureData: string };
-    signataire2: { nomComplet: string; signatureData: string };
   };
 }
 
@@ -548,10 +546,14 @@ async function resolveDecision(params: GenerateParams): Promise<ResolvedData> {
   return resolveDefault();
 }
 
-function formatApiDate(value: unknown): string {
+function formatApiYear(value: unknown): string {
   if (typeof value !== 'string' || !value) return ''
-  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
-  return dateOnly ? `${dateOnly[3]}/${dateOnly[2]}/${dateOnly[1]}` : value
+  const yearOnly = /^(\d{4})$/.exec(value)
+  if (yearOnly) return yearOnly[1]
+  const isoDate = /^(\d{4})-\d{2}-\d{2}$/.exec(value)
+  if (isoDate) return isoDate[1]
+  const localizedDate = /^(?:\d{2}\/\d{2}\/)?(\d{4})$/.exec(value)
+  return localizedDate ? localizedDate[1] : value
 }
 
 function getApiSemesterCells(semesters: string[]): Record<'S1_S2' | 'S3_S4' | 'S5_S6' | 'S7_S8' | 'S9_S10', string> {
@@ -574,11 +576,11 @@ function getApiSemesterDateCells(dates: Record<string, string>): Record<'S1_S2' 
     { key: 'S9_S10', semesters: ['S9', 'S10'] },
   ] as const
   return {
-    S1_S2: groups[0].semesters.filter((semester) => dates[semester]).map((semester) => `${semester} : ${formatApiDate(dates[semester])}`).join(', '),
-    S3_S4: groups[1].semesters.filter((semester) => dates[semester]).map((semester) => `${semester} : ${formatApiDate(dates[semester])}`).join(', '),
-    S5_S6: groups[2].semesters.filter((semester) => dates[semester]).map((semester) => `${semester} : ${formatApiDate(dates[semester])}`).join(', '),
-    S7_S8: groups[3].semesters.filter((semester) => dates[semester]).map((semester) => `${semester} : ${formatApiDate(dates[semester])}`).join(', '),
-    S9_S10: groups[4].semesters.filter((semester) => dates[semester]).map((semester) => `${semester} : ${formatApiDate(dates[semester])}`).join(', '),
+    S1_S2: groups[0].semesters.filter((semester) => dates[semester]).map((semester) => `${semester} : ${formatApiYear(dates[semester])}`).join(', '),
+    S3_S4: groups[1].semesters.filter((semester) => dates[semester]).map((semester) => `${semester} : ${formatApiYear(dates[semester])}`).join(', '),
+    S5_S6: groups[2].semesters.filter((semester) => dates[semester]).map((semester) => `${semester} : ${formatApiYear(dates[semester])}`).join(', '),
+    S7_S8: groups[3].semesters.filter((semester) => dates[semester]).map((semester) => `${semester} : ${formatApiYear(dates[semester])}`).join(', '),
+    S9_S10: groups[4].semesters.filter((semester) => dates[semester]).map((semester) => `${semester} : ${formatApiYear(dates[semester])}`).join(', '),
   }
 }
 
@@ -646,30 +648,10 @@ async function resolveAutorisationProvisoire(params: GenerateParams): Promise<Re
     })
     : null;
   const diplomeRecu = demandeDocument?.diplomeRecu || ''
-  const dateDiplomeRecu = formatApiDate(demandeDocument?.dateDiplomeRecu)
+  const dateDiplomeRecu = formatApiYear(demandeDocument?.dateDiplomeRecu)
   const relevesSemestresRecus = demandeDocument?.relevesSemestresRecus || []
   const relevesSemestresDates = demandeDocument?.relevesSemestresDates || {}
   const semestresAutorises = demandeDocument?.semestresAutorises || []
-  const signataires = Array.isArray(demandeDocument?.signatairesAutorisation)
-    ? demandeDocument.signatairesAutorisation
-    : []
-  const signatures = Array.isArray(demandeDocument?.signaturesAutorisation)
-    ? demandeDocument.signaturesAutorisation
-    : []
-  const construireCelluleSignataire = (index: number) => {
-    const signataire = signataires[index]
-    if (!signataire) return { nomComplet: '', signatureData: '' }
-    const signature = signatures.find((item: any) => Number(item.signataireId) === Number(signataire.id))
-    const signatureData = typeof signature?.signatureData === 'string'
-      && signature.signatureData.length <= 500_000
-      && /^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/.test(signature.signatureData)
-      ? signature.signatureData
-      : ''
-    return {
-      nomComplet: escapeHtmlText(signataire.nomComplet),
-      signatureData,
-    }
-  }
   const diplomeCellules = {
     BAC: diplomeRecu === 'BAC' ? diplomeRecu : '',
     LICENCE: diplomeRecu === 'LICENCE' ? diplomeRecu : '',
@@ -680,22 +662,25 @@ async function resolveAutorisationProvisoire(params: GenerateParams): Promise<Re
     LICENCE: diplomeRecu === 'LICENCE' ? dateDiplomeRecu : '',
     MASTER: diplomeRecu === 'MASTER' ? dateDiplomeRecu : '',
   }
+  const relevesCellules = relevesSemestresRecus.includes('NEANT')
+    ? { S1_S2: 'Néant', S3_S4: '', S5_S6: '', S7_S8: '', S9_S10: '' }
+    : getApiSemesterCells(relevesSemestresRecus)
   const autorisationProvisoire = {
     diplomeRecu,
     dateDiplomeRecu,
     relevesSemestresRecus,
     relevesSemestresDates,
-    relevesSemestresRecusLibelle: demandeDocument?.relevesSemestresRecus?.length
+    relevesSemestresRecusLibelle: relevesSemestresRecus.includes('NEANT')
+      ? 'Néant (aucun relevé apporté)'
+      : demandeDocument?.relevesSemestresRecus?.length
       ? demandeDocument.relevesSemestresRecus.join(', ')
       : 'Aucun relevé déclaré',
     semestresAutorises,
     diplomeCellules,
     dateDiplomeCellules,
-    relevesCellules: getApiSemesterCells(relevesSemestresRecus),
+    relevesCellules,
     relevesDatesCellules: getApiSemesterDateCells(relevesSemestresDates),
     semestresAutorisesCellules: getApiSemesterCells(semestresAutorises),
-    signataire1: construireCelluleSignataire(0),
-    signataire2: construireCelluleSignataire(1),
   };
 
   let initialesComite = params.initialesComite || '';

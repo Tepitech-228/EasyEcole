@@ -1,159 +1,230 @@
 <div class="main-content">
-  <!-- Top Bar -->
   <div class="topbar">
     <div class="topbar-tabs">
-      <span class="topbar-tab" [class.active]="activeTab === 'messagerie'" (click)="switchTab('messagerie')">✉️ Messagerie</span>
-      <span class="topbar-tab" [class.active]="activeTab === 'discussions'" (click)="switchTab('discussions')">💬 Discussions</span>
+      <button type="button" class="topbar-tab" [class.active]="activeTab === 'messagerie'" (click)="switchTab('messagerie')">
+        <span class="tab-icon">✉</span> Messagerie
+      </button>
+      <button type="button" class="topbar-tab" [class.active]="activeTab === 'discussions'" (click)="switchTab('discussions')">
+        <span class="tab-icon">◎</span> Salons
+      </button>
     </div>
-    <div class="topbar-icons">
-      <span class="icon-btn">🔔</span>
-      <span class="icon-btn">👤</span>
+    <div class="topbar-user" *ngIf="currentUserName">
+      <span class="user-status"></span>
+      <span class="user-name">{{ currentUserName }}</span>
+      <span class="user-avatar">{{ currentUserName.charAt(0).toUpperCase() }}</span>
     </div>
   </div>
 
-    <!-- Page: Messagerie -->
-    <div class="page" [class.visible]="activeTab === 'messagerie'">
-      <div class="conv-pane">
-        <div class="conv-pane-head">
-          <h2>Messagerie</h2>
-          <div class="sub">Conversations privées — élève, professeur, administration</div>
-          <button class="new-msg-btn" (click)="showNewMessageModal = true">＋ Nouveau message</button>
-          <div class="search-box">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-            <input type="text" [(ngModel)]="searchQuery" placeholder="Rechercher une conversation...">
+  <div class="page" [class.visible]="activeTab === 'messagerie'" [class.has-selection]="!!selectedSalon">
+    <div class="conv-pane">
+      <div class="conv-pane-head">
+        <div class="pane-heading">
+          <div>
+            <p class="eyebrow">VOS ÉCHANGES</p>
+            <h2>Messagerie</h2>
           </div>
+          <span class="heading-count">{{ privateSalons.length }}</span>
         </div>
-        <div class="tabs">
-          <span class="tab active">Tous <span class="count">{{ salons.length }}</span></span>
-          <span class="tab">Non lus</span>
-        </div>
-        <div class="conv-list">
-          <app-chat-conversation-item
-            *ngFor="let salon of filteredSalons"
-            [salon]="salon"
-            [isSelected]="selectedSalon?.id === salon.id"
-            [presence]="presence"
-            [currentUserId]="currentUserId"
-            (select)="selectSalon($event)">
-          </app-chat-conversation-item>
-        </div>
+        <div class="sub">Conversations privées avec vos contacts</div>
+        <button type="button" class="new-msg-btn" (click)="showNewMessageModal = true">
+          <span class="plus-icon">＋</span> Nouveau message
+        </button>
+        <label class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+          <input type="search" [(ngModel)]="searchQuery" placeholder="Rechercher une conversation..." aria-label="Rechercher une conversation">
+        </label>
       </div>
-      <div class="thread-pane">
-        <app-chat-window
-          *ngIf="selectedSalon"
-          [salon]="selectedSalon"
-          [messages]="messages"
-          [members]="members"
-          [typingUsers]="typingUsers"
+      <div class="tabs" role="tablist" aria-label="Filtrer les conversations">
+        <button type="button" class="tab" [class.active]="conversationFilter === 'all'" (click)="conversationFilter = 'all'">
+          Toutes <span class="count">{{ privateSalons.length }}</span>
+        </button>
+        <button type="button" class="tab" [class.active]="conversationFilter === 'unread'" (click)="conversationFilter = 'unread'">
+          Non lues <span class="count unread-count">{{ unreadPrivateCount }}</span>
+        </button>
+      </div>
+      <div class="conv-list">
+        <app-chat-conversation-item
+          *ngFor="let salon of filteredSalons"
+          [salon]="salon"
+          [isSelected]="selectedSalon?.id === salon.id"
+          [presence]="presence"
           [currentUserId]="currentUserId"
-          [currentUserName]="currentUserName"
-          [showInfoPanel]="showInfoPanel"
-          [showStickerPicker]="showStickerPicker"
-          [hasMoreMessages]="hasMoreMessages"
-          [loadingMessages]="loadingMessages"
-          [availableUsers]="availableUsers"
-          [estAdmin]="estAdmin"
-          [isInCall]="isInCall"
-          [isCallStarting]="isCallStarting"
-          [localCallStream]="localCallStream"
-          [remoteCallStreams]="remoteCallStreamsList"
-          (sendMessage)="sendMessage($event)"
-          (sendMediaMessage)="sendMediaMessage($event)"
-          (sendSticker)="sendSticker($event)"
-          (startCall)="startVideoCall()"
-          (leaveCall)="leaveVideoCall()"
-          (notifyTyping)="notifyTyping()"
-          (loadMoreMessages)="loadMoreMessages()"
-          (deleteMessage)="deleteMessage($event)"
-          (editMessage)="editMessage($event)"
-          (toggleInfoPanel)="showInfoPanel = !showInfoPanel"
-          (toggleStickerPicker)="showStickerPicker = !showStickerPicker"
-          (promoteMember)="promoteMember($event)"
-          (demoteMember)="demoteMember($event)"
-          (removeMember)="removeMember($event)"
-          (addMember)="addMember($event)"
-          (generateInvite)="generateInvite()"
-          (leaveGroup)="leaveGroup()">
-        </app-chat-window>
-        <div class="empty-state" *ngIf="!selectedSalon">
-          <div class="emoji">💬</div>
-          <h3>Sélectionnez une conversation</h3>
-          <p>Choisissez une discussion dans la liste de gauche pour commencer à échanger.</p>
+          (select)="selectSalon($event)">
+        </app-chat-conversation-item>
+        <div class="list-state" *ngIf="loading">Chargement des conversations…</div>
+        <div class="list-state" *ngIf="!loading && filteredSalons.length === 0">
+          <span class="list-state-icon">✦</span>
+          <strong>{{ conversationFilter === 'unread' ? 'Tout est à jour' : 'Aucune conversation' }}</strong>
+          <span>{{ conversationFilter === 'unread' ? 'Vous n’avez pas de message non lu.' : 'Commencez un échange avec un membre de l’établissement.' }}</span>
+          <button type="button" *ngIf="conversationFilter === 'all'" (click)="showNewMessageModal = true">Écrire un message</button>
         </div>
       </div>
     </div>
+    <div class="thread-pane">
+      <app-chat-window
+        *ngIf="selectedSalon"
+        [salon]="selectedSalon"
+        [messages]="messages"
+        [members]="members"
+        [typingUsers]="typingUsers"
+        [presence]="presence"
+        [currentUserId]="currentUserId"
+        [currentUserName]="currentUserName"
+        [showInfoPanel]="showInfoPanel"
+        [showStickerPicker]="showStickerPicker"
+        [hasMoreMessages]="hasMoreMessages"
+        [loadingMessages]="loadingMessages"
+        [availableUsers]="availableUsers"
+        [estAdmin]="estAdmin"
+        [isInCall]="isInCall"
+        [isCallStarting]="isCallStarting"
+        [localCallStream]="localCallStream"
+        [remoteCallStreams]="remoteCallStreamsList"
+        (sendMessage)="sendMessage($event)"
+        (sendMediaMessage)="sendMediaMessage($event)"
+        (sendSticker)="sendSticker($event)"
+        (startCall)="startVideoCall()"
+        (leaveCall)="leaveVideoCall()"
+        (notifyTyping)="notifyTyping()"
+        (loadMoreMessages)="loadMoreMessages()"
+        (deleteMessage)="deleteMessage($event)"
+        (editMessage)="editMessage($event)"
+        (toggleInfoPanel)="showInfoPanel = !showInfoPanel"
+        (toggleStickerPicker)="showStickerPicker = !showStickerPicker"
+        (promoteMember)="promoteMember($event)"
+        (demoteMember)="demoteMember($event)"
+        (removeMember)="removeMember($event)"
+        (addMember)="addMember($event)"
+        (generateInvite)="generateInvite()"
+        (leaveGroup)="leaveGroup()"
+        (backToList)="closeSelectedSalon()">
+      </app-chat-window>
+      <div class="empty-state" *ngIf="!selectedSalon">
+        <div class="empty-illustration"><span>✉</span><i></i><b></b></div>
+        <p class="eyebrow">ESPACE DE MESSAGERIE</p>
+        <h3>Vos échanges, au même endroit</h3>
+        <p>Sélectionnez une conversation ou démarrez un nouvel échange avec un membre.</p>
+        <button type="button" (click)="showNewMessageModal = true">＋ Nouveau message</button>
+      </div>
+    </div>
+  </div>
 
-    <!-- Page: Discussions -->
-    <div class="page" [class.visible]="activeTab === 'discussions'">
-      <div class="conv-pane">
-        <div class="conv-pane-head">
-          <h2>Discussions</h2>
-          <div class="sub">Salons de classe, clubs et projets de groupe</div>
-          <button class="new-msg-btn" (click)="showCreateModal = true">＋ Créer un salon</button>
-          <div class="search-box">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-            <input type="text" [(ngModel)]="searchQuery" placeholder="Rechercher un salon...">
+  <div class="page" [class.visible]="activeTab === 'discussions'" [class.has-selection]="!!selectedSalon">
+    <div class="conv-pane">
+      <div class="conv-pane-head">
+        <div class="pane-heading">
+          <div>
+            <p class="eyebrow">COLLABORATION</p>
+            <h2>Salons</h2>
           </div>
+          <span class="heading-count">{{ groupSalons.length }}</span>
         </div>
-        <div class="tabs">
-          <span class="tab active">Mes salons <span class="count">{{ salons.length }}</span></span>
-          <span class="tab">À découvrir</span>
-        </div>
-        <div class="conv-list">
-          <app-chat-conversation-item
-            *ngFor="let salon of filteredSalons"
-            [salon]="salon"
-            [isSelected]="selectedSalon?.id === salon.id"
-            [presence]="presence"
-            [currentUserId]="currentUserId"
-            (select)="selectSalon($event)">
-          </app-chat-conversation-item>
+        <div class="sub">Échangez autour des cours, clubs et projets</div>
+        <button type="button" class="new-msg-btn" (click)="showCreateModal = true">
+          <span class="plus-icon">＋</span> Créer un salon
+        </button>
+        <label class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+          <input type="search" [(ngModel)]="searchQuery" placeholder="Rechercher un salon..." aria-label="Rechercher un salon">
+        </label>
+      </div>
+      <div class="tabs" role="tablist" aria-label="Afficher les salons">
+        <button type="button" class="tab" [class.active]="discussionFilter === 'mine'" (click)="setDiscussionFilter('mine')">
+          Mes salons <span class="count">{{ groupSalons.length }}</span>
+        </button>
+        <button type="button" class="tab" [class.active]="discussionFilter === 'discover'" (click)="setDiscussionFilter('discover')">
+          À découvrir
+        </button>
+      </div>
+      <div class="conv-list" *ngIf="discussionFilter === 'mine'">
+        <app-chat-conversation-item
+          *ngFor="let salon of filteredSalons"
+          [salon]="salon"
+          [isSelected]="selectedSalon?.id === salon.id"
+          [presence]="presence"
+          [currentUserId]="currentUserId"
+          (select)="selectSalon($event)">
+        </app-chat-conversation-item>
+        <div class="list-state" *ngIf="!loading && filteredSalons.length === 0">
+          <span class="list-state-icon">◎</span>
+          <strong>Aucun salon pour le moment</strong>
+          <span>Créez un espace pour votre classe, votre club ou votre projet.</span>
+          <button type="button" (click)="showCreateModal = true">Créer un salon</button>
         </div>
       </div>
-      <div class="thread-pane">
-        <app-chat-window
-          *ngIf="selectedSalon"
-          [salon]="selectedSalon"
-          [messages]="messages"
-          [members]="members"
-          [typingUsers]="typingUsers"
-          [currentUserId]="currentUserId"
-          [currentUserName]="currentUserName"
-          [showInfoPanel]="showInfoPanel"
-          [showStickerPicker]="showStickerPicker"
-          [hasMoreMessages]="hasMoreMessages"
-          [loadingMessages]="loadingMessages"
-          [availableUsers]="availableUsers"
-          [estAdmin]="estAdmin"
-          [isInCall]="isInCall"
-          [isCallStarting]="isCallStarting"
-          [localCallStream]="localCallStream"
-          [remoteCallStreams]="remoteCallStreamsList"
-          (sendMessage)="sendMessage($event)"
-          (sendMediaMessage)="sendMediaMessage($event)"
-          (sendSticker)="sendSticker($event)"
-          (startCall)="startVideoCall()"
-          (leaveCall)="leaveVideoCall()"
-          (notifyTyping)="notifyTyping()"
-          (loadMoreMessages)="loadMoreMessages()"
-          (deleteMessage)="deleteMessage($event)"
-          (editMessage)="editMessage($event)"
-          (toggleInfoPanel)="showInfoPanel = !showInfoPanel"
-          (toggleStickerPicker)="showStickerPicker = !showStickerPicker"
-          (promoteMember)="promoteMember($event)"
-          (demoteMember)="demoteMember($event)"
-          (removeMember)="removeMember($event)"
-          (addMember)="addMember($event)"
-          (generateInvite)="generateInvite()"
-          (leaveGroup)="leaveGroup()">
-        </app-chat-window>
-        <div class="empty-state" *ngIf="!selectedSalon">
-          <div class="emoji">💬</div>
-          <h3>Sélectionnez un salon</h3>
-          <p>Choisissez un salon de discussion dans la liste de gauche.</p>
+      <div class="conv-list discovery-list" *ngIf="discussionFilter === 'discover'">
+        <div class="discovery-card" *ngFor="let salon of filteredDiscoverableSalons">
+          <div class="discovery-avatar">{{ salon.icone || (salon.titre || 'S').charAt(0).toUpperCase() }}</div>
+          <div class="discovery-copy">
+            <strong>{{ salon.titre }}</strong>
+            <span>{{ salon.description || 'Un salon ouvert aux membres de l’établissement.' }}</span>
+            <small>{{ salon.type || 'Salon' }}</small>
+          </div>
+          <button type="button" class="join-btn" [disabled]="!salon.codeInvitation || joiningPublicSalonId !== null" (click)="joinPublicSalon(salon)">
+            {{ isJoiningPublicSalon(salon.id) ? 'En cours…' : 'Rejoindre' }}
+          </button>
         </div>
+        <div class="list-error" *ngIf="discoverableLoadError" role="alert">
+          <span>{{ discoverableLoadError }}</span>
+          <button type="button" (click)="loadDiscoverableSalons()">Réessayer</button>
+        </div>
+        <div class="list-state" *ngIf="!loadingDiscoverableSalons && !discoverableLoadError && filteredDiscoverableSalons.length === 0">
+          <span class="list-state-icon">✦</span>
+          <strong>Aucun salon à découvrir</strong>
+          <span>Les salons ouverts apparaîtront ici.</span>
+        </div>
+        <div class="list-state" *ngIf="loadingDiscoverableSalons">Recherche des salons ouverts…</div>
       </div>
     </div>
+    <div class="thread-pane">
+      <app-chat-window
+        *ngIf="selectedSalon"
+        [salon]="selectedSalon"
+        [messages]="messages"
+        [members]="members"
+        [typingUsers]="typingUsers"
+        [presence]="presence"
+        [currentUserId]="currentUserId"
+        [currentUserName]="currentUserName"
+        [showInfoPanel]="showInfoPanel"
+        [showStickerPicker]="showStickerPicker"
+        [hasMoreMessages]="hasMoreMessages"
+        [loadingMessages]="loadingMessages"
+        [availableUsers]="availableUsers"
+        [estAdmin]="estAdmin"
+        [isInCall]="isInCall"
+        [isCallStarting]="isCallStarting"
+        [localCallStream]="localCallStream"
+        [remoteCallStreams]="remoteCallStreamsList"
+        (sendMessage)="sendMessage($event)"
+        (sendMediaMessage)="sendMediaMessage($event)"
+        (sendSticker)="sendSticker($event)"
+        (startCall)="startVideoCall()"
+        (leaveCall)="leaveVideoCall()"
+        (notifyTyping)="notifyTyping()"
+        (loadMoreMessages)="loadMoreMessages()"
+        (deleteMessage)="deleteMessage($event)"
+        (editMessage)="editMessage($event)"
+        (toggleInfoPanel)="showInfoPanel = !showInfoPanel"
+        (toggleStickerPicker)="showStickerPicker = !showStickerPicker"
+        (promoteMember)="promoteMember($event)"
+        (demoteMember)="demoteMember($event)"
+        (removeMember)="removeMember($event)"
+        (addMember)="addMember($event)"
+        (generateInvite)="generateInvite()"
+        (leaveGroup)="leaveGroup()"
+        (backToList)="closeSelectedSalon()">
+      </app-chat-window>
+      <div class="empty-state" *ngIf="!selectedSalon">
+        <div class="empty-illustration"><span>◎</span><i></i><b></b></div>
+        <p class="eyebrow">VOS ESPACES</p>
+        <h3>Les idées se partagent ici</h3>
+        <p>Choisissez un salon pour suivre les échanges et documents de votre groupe.</p>
+        <button type="button" (click)="showCreateModal = true">＋ Créer un salon</button>
+      </div>
+    </div>
+  </div>
+
 <!-- Modals -->
 <app-create-group-modal
   *ngIf="showCreateModal"

@@ -55,16 +55,6 @@ export interface DossierComite {
   membres?: MembreComite[]
 }
 
-export interface AutorisationApiASigner {
-  id: number
-  reference: string | null
-  dateGeneration: string | null
-  etudiant: { nom: string; prenoms: string; identifiant: string } | null
-  signe: boolean
-  maSignature: string | null
-  signaturesRecues: Array<{ signataireId: number; signedAt: string }>
-}
-
 /** Filtres combinables du tableau des dossiers comité. */
 export interface FiltresComite {
   anneeId?: string | null
@@ -143,18 +133,4 @@ export class ComiteValidationService {
     return this.httpClient.get(`${this.SERVICE_URL}/dossiers/${id}/pdf-fusionne`, { responseType: 'blob' })
   }
 
-  listerAutorisationsASigner(): Observable<{ data: AutorisationApiASigner[] }> {
-    return this.httpClient.get<{ data: AutorisationApiASigner[] }>(`${this.SERVICE_URL}/autorisations-a-signer`)
-  }
-
-  telechargerAutorisationASigner(id: number): Observable<Blob> {
-    return this.httpClient.get(`${this.SERVICE_URL}/autorisations-a-signer/${id}/pdf`, { responseType: 'blob' })
-  }
-
-  signerAutorisation(id: number, signatureData: string): Observable<{ success: boolean; message: string }> {
-    return this.httpClient.post<{ success: boolean; message: string }>(
-      `${this.SERVICE_URL}/autorisations-a-signer/${id}/signature`,
-      { signatureData },
-    ).pipe(timeout(120_000))
-  }
 }

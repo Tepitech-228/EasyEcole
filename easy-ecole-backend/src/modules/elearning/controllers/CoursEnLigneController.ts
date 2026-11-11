@@ -28,10 +28,11 @@ export default class CoursEnLigneController {
             }
             if (role === RolesUtilisateur.APPRENANT) {
                 const year = await ElearningFinanceService.getActiveYear();
+                const academicYearId = ElearningFinanceService.requireAcademicYearId(year);
                 whereClause.statut = "publie";
-                whereClause.anneeAcademiqueId = year.id;
+                whereClause.anneeAcademiqueId = academicYearId;
                 const accessible = await SelectionCours.findAll({
-                    where: { utilisateurId: Number(userId), anneeAcademiqueId: year.id, statut: "acces_ouvert" },
+                    where: { utilisateurId: Number(userId), anneeAcademiqueId: academicYearId, statut: "acces_ouvert" },
                     attributes: ["coursId"],
                 });
                 whereClause.id = { [Op.in]: accessible.map(selection => Number(selection.coursId)) };
@@ -86,13 +87,14 @@ export default class CoursEnLigneController {
     static async catalogue(req: Request, res: Response): Promise<Response> {
         try {
             const year = await ElearningFinanceService.getActiveYear();
-            const where: Record<string, unknown> = { statut: "publie", anneeAcademiqueId: year.id };
+            const academicYearId = ElearningFinanceService.requireAcademicYearId(year);
+            const where: Record<string, unknown> = { statut: "publie", anneeAcademiqueId: academicYearId };
             let admission: any = null;
             if ((req as any).utilisateurRole === RolesUtilisateur.APPRENANT) {
                 admission = await ElearningFinanceService.getApprovedOnlineAdmission(Number((req as any).utilisateurId));
                 const session = admission.session as any;
-                if (year.anneeAcademiqueId && session?.anneeAcademiqueId
-                    && Number(year.anneeAcademiqueId) !== Number(session.anneeAcademiqueId)) {
+                if (session?.anneeAcademiqueId
+                    && academicYearId !== Number(session.anneeAcademiqueId)) {
                     throw new ElearningFinanceError("Aucune année e-learning active ne correspond à votre demande d'inscription.", 409);
                 }
                 if (session?.niveauEtudeId) where.niveauEtudeId = Number(session.niveauEtudeId);
@@ -114,7 +116,7 @@ export default class CoursEnLigneController {
                 return res.status(200).json(cours);
             }
             const selections = await SelectionCours.findAll({
-                where: { utilisateurId: Number((req as any).utilisateurId), anneeAcademiqueId: year.id },
+                where: { utilisateurId: Number((req as any).utilisateurId), anneeAcademiqueId: academicYearId },
                 attributes: ["coursId", "statut", "coutFige"],
             });
             const selectedByCourse = new Map(selections.map(item => [Number(item.coursId), item]));
@@ -292,14 +294,15 @@ export default class CoursEnLigneController {
             }
             const year = await AnneeElearning.findByPk(yearId);
             if (!year) return res.status(400).json({ success: false, message: "Année académique e-learning introuvable." });
-            const duplicate = await CoursEnLigne.findOne({ where: { code, anneeAcademiqueId: year.id } });
+            const academicYearId = ElearningFinanceService.requireAcademicYearId(year);
+            const duplicate = await CoursEnLigne.findOne({ where: { code, anneeAcademiqueId: academicYearId } });
             if (duplicate) return res.status(409).json({ success: false, message: "Un cours porte déjà ce code pour cette année." });
-            const rate = await ElearningFinanceService.getCurrentRate(year.id);
+            const rate = await ElearningFinanceService.getCurrentRate(academicYearId);
             const cours = await CoursEnLigne.create({
                 coursId: req.body.coursId ? String(req.body.coursId) : null,
                 ueId: req.body.ueId ? Number(req.body.ueId) : null,
                 niveauEtudeId: req.body.niveauEtudeId ? Number(req.body.niveauEtudeId) : null,
-                anneeAcademiqueId: year.id,
+                anneeAcademiqueId: academicYearId,
                 code,
                 nbCredits,
                 coutUnitaire: rate,
@@ -346,6 +349,13 @@ export default class CoursEnLigneController {
                     }
                     updates[field] = value;
                 }
+            }
+            if (updates.anneeAcademiqueId !== undefined && updates.anneeAcademiqueId !== null) {
+                const year = await AnneeElearning.findByPk(Number(updates.anneeAcademiqueId));
+                if (!year) {
+                    return res.status(400).json({ success: false, message: "Année académique e-learning introuvable." });
+                }
+                updates.anneeAcademiqueId = ElearningFinanceService.requireAcademicYearId(year);
             }
             if (req.body.nbCredits !== undefined) {
                 const credits = Number(req.body.nbCredits);
