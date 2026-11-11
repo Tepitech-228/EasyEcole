@@ -201,7 +201,7 @@
            </div>
            <div>
              <span class="text-gray-500">Matricule :</span>
-             <strong>{{ selectedBordereau.echeance?.dossierEtudiant?.matricule || '—' }}</strong>
+             <strong>{{ selectedBordereau.demandeInscription?.matriculeEtudiant || selectedBordereau.echeance?.dossierEtudiant?.matricule || '—' }}</strong>
            </div>
 
            <!-- Année académique -->

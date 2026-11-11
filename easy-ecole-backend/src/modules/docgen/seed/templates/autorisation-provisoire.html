@@ -127,6 +127,30 @@
             </tr>
         </table>
 
+        <div class="prescription-section">
+            <h3>Pièces académiques reçues et inscription autorisée</h3>
+            <table class="info-table">
+                <tr>
+                    <td>Diplôme reçu</td>
+                    <td>{{autorisationProvisoire.diplomeRecu}}</td>
+                </tr>
+                <tr>
+                    <td>Date de réception du diplôme</td>
+                    <td>{{autorisationProvisoire.dateDiplomeRecu}}</td>
+                </tr>
+                <tr>
+                    <td>Relevés de notes reçus</td>
+                    <td>{{autorisationProvisoire.relevesSemestresRecusLibelle}}</td>
+                </tr>
+                <tr>
+                    <td>Semestres autorisés à l'inscription</td>
+                    <td>
+                        {{#each autorisationProvisoire.semestresAutorises}}{{this}} {{/each}}
+                    </td>
+                </tr>
+            </table>
+        </div>
+
         <p>Cette autorisation est valable jusqu'à la délivrance de l'autorisation définitive d'inscription.</p>
 
         <div class="signature">

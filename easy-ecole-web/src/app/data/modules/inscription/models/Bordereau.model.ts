@@ -1,4 +1,5 @@
 import { Utilisateur } from "../../auth/models/Utilisateur.model"
+import { DemandeInscription } from "./DemandeInscription.model"
 import { Echeance } from "./Echeance.model"
 import { Quitus } from "./Quitus.model"
 import { TypeOperationBordereau } from "./TypeOperationBordereau.model"
@@ -27,6 +28,7 @@ export class Bordereau {
   declare banque?: 'ib_bank' | 'ecobank' | 'orabank' | null
   declare echeance?: Echeance
   declare utilisateur?: Utilisateur
+  declare demandeInscription?: DemandeInscription
   declare validePar?: Utilisateur
   declare quitus?: Quitus
 

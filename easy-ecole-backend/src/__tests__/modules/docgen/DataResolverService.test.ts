@@ -124,7 +124,7 @@ describe('DataResolverService', () => {
     expect(result.initialesComite).toBe('JD, JD-1, JS')
   })
 
-  it('résout les diplômes, relevés et niveau du parcours pour l’autorisation', async () => {
+  it('ne déduit pas les pièces reçues du profil ou des noms de fichiers', async () => {
     const { Etablissement } = require('../../../modules/etablissement/models/Etablissement')
     const { DemandeInscription } = require('../../../modules/inscription/models/DemandeInscription')
     const { ComiteVote } = require('../../../modules/inscription/models/ComiteVote')
@@ -170,19 +170,89 @@ describe('DataResolverService', () => {
       sourceId: 43,
     })
 
-    expect(result.etudiants[0]).toMatchObject({
-      diplomeBac: true,
-      diplomeBts: true,
-      diplomeDtsDut: false,
-      specialiteDiplome: 'D',
-      specialiteParcours: 'Gestion commerciale',
-      relevesSem12: true,
-      relevesSem34: false,
-      parcoursLicence12: false,
-      parcoursLicence34: false,
-      parcoursLicence56: true,
-      parcoursMaster12: false,
+    expect(result.autorisationProvisoire).toMatchObject({
+      diplomeCellules: { BAC: '', LICENCE: '', MASTER: '' },
+      relevesCellules: { S1_S2: '', S3_S4: '', S5_S6: '', S7_S8: '', S9_S10: '' },
+      semestresAutorisesCellules: { S1_S2: '', S3_S4: '', S5_S6: '', S7_S8: '', S9_S10: '' },
     })
+  })
+
+  it('résout les données saisies par le dernier membre pour l’autorisation provisoire', async () => {
+    const { Etablissement } = require('../../../modules/etablissement/models/Etablissement')
+    const { DemandeInscription } = require('../../../modules/inscription/models/DemandeInscription')
+    const { ComiteVote } = require('../../../modules/inscription/models/ComiteVote')
+    const { CoursParticipant } = require('../../../modules/inscription/models/CoursParticipant')
+    const { DemandeDocument } = require('../../../modules/scolarite/models/DemandeDocument')
+    const findDocument = jest.spyOn(DemandeDocument, 'findOne').mockResolvedValue({
+      diplomeRecu: 'LICENCE',
+      dateDiplomeRecu: '2025-07-12',
+      relevesSemestresRecus: ['S1', 'S2', 'S3'],
+      relevesSemestresDates: { S1: '2025-06-01', S2: '2025-06-02', S3: '2025-06-03' },
+      semestresAutorises: ['S5', 'S6'],
+      signatairesAutorisation: [
+        { id: 21, nomComplet: 'Doe Jane' },
+        { id: 22, nomComplet: 'Smith John' },
+      ],
+      signaturesAutorisation: [
+        { signataireId: 21, signatureData: 'data:image/png;base64,iVBORw0KGgo=', signedAt: '2025-06-04T10:00:00.000Z' },
+      ],
+    } as any)
+
+    Etablissement.findOne.mockResolvedValue(null)
+    DemandeInscription.findByPk.mockResolvedValue({
+      id: 44,
+      utilisateurId: 14,
+      matricule: 'MAT-14',
+      utilisateur: { nom: 'Doe', prenoms: 'Jane', identifiant: 'MAT-14' },
+      parcoursChoisis: [{ parcours: { titre: 'Gestion', type: 'LICENCE' } }],
+      session: { anneeAcademique: { libelle: '2026-2027' } },
+    })
+    ComiteVote.findAll.mockResolvedValue([])
+    CoursParticipant.findAll.mockResolvedValue([])
+
+    const result = await DataResolverService.resolve('API001', {
+      typeCode: 'API001',
+      sourceId: 44,
+      autorisationDocumentId: 123,
+    })
+
+    expect(findDocument).toHaveBeenCalledWith({
+      where: { id: 123, etudiantId: 14 },
+    })
+    expect(result.autorisationProvisoire).toEqual({
+      diplomeRecu: 'LICENCE',
+      dateDiplomeRecu: '12/07/2025',
+      relevesSemestresRecus: ['S1', 'S2', 'S3'],
+      relevesSemestresDates: { S1: '2025-06-01', S2: '2025-06-02', S3: '2025-06-03' },
+      relevesSemestresRecusLibelle: 'S1, S2, S3',
+      semestresAutorises: ['S5', 'S6'],
+      diplomeCellules: { BAC: '', LICENCE: 'LICENCE', MASTER: '' },
+      dateDiplomeCellules: { BAC: '', LICENCE: '12/07/2025', MASTER: '' },
+      relevesCellules: {
+        S1_S2: 'S1, S2',
+        S3_S4: 'S3',
+        S5_S6: '',
+        S7_S8: '',
+        S9_S10: '',
+      },
+      relevesDatesCellules: {
+        S1_S2: 'S1 : 01/06/2025, S2 : 02/06/2025',
+        S3_S4: 'S3 : 03/06/2025',
+        S5_S6: '',
+        S7_S8: '',
+        S9_S10: '',
+      },
+      semestresAutorisesCellules: {
+        S1_S2: '',
+        S3_S4: '',
+        S5_S6: 'S5, S6',
+        S7_S8: '',
+        S9_S10: '',
+      },
+      signataire1: { nomComplet: 'Doe Jane', signatureData: 'data:image/png;base64,iVBORw0KGgo=' },
+      signataire2: { nomComplet: 'Smith John', signatureData: '' },
+    })
+    findDocument.mockRestore()
   })
 
   it('getResolver retourne une fonction pour un code enregistré', () => {

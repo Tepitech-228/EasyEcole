@@ -9,9 +9,15 @@ describe("EtudiantUploadStorageService", () => {
     const { EtudiantUploadStorageService } = require(
         "../../../modules/inscription/services/EtudiantUploadStorageService",
     ) as typeof import("../../../modules/inscription/services/EtudiantUploadStorageService");
-    const { getOriginRoot } = require(
+    const { currentAcademicYear, getOriginRoot } = require(
         "../../../core/services/DocumentStorageService",
     ) as typeof import("../../../core/services/DocumentStorageService");
+    const { Etablissement } = require(
+        "../../../modules/etablissement/models/Etablissement",
+    ) as typeof import("../../../modules/etablissement/models/Etablissement");
+    const { CursusApprenant } = require(
+        "../../../modules/inscription/models/CursusApprenant",
+    ) as typeof import("../../../modules/inscription/models/CursusApprenant");
     const temporaryDirectories: string[] = [];
     const studentRoot = path.resolve(
         getOriginRoot("uploads"),
@@ -23,6 +29,7 @@ describe("EtudiantUploadStorageService", () => {
     );
 
     afterEach(() => {
+        jest.restoreAllMocks();
         fs.rmSync(studentRoot, { recursive: true, force: true });
         for (const directory of temporaryDirectories.splice(0)) {
             fs.rmSync(directory, { recursive: true, force: true });
@@ -69,6 +76,19 @@ describe("EtudiantUploadStorageService", () => {
         expect(fs.existsSync(path.join(studentRoot, "Bordereaux"))).toBe(true);
         expect(fs.readFileSync(path.resolve(process.cwd(), reference), "utf8")).toBe("document");
         expect(fs.existsSync(temporaryPath)).toBe(false);
+    });
+
+    it("uses the current academic year when a generic upload has no session or cursus", async () => {
+        jest.spyOn(CursusApprenant, "findOne").mockResolvedValue(null);
+        jest.spyOn(Etablissement, "findByPk").mockResolvedValue({ nom: "Site" } as never);
+
+        const folders = await EtudiantUploadStorageService.resolveTreeFolders({
+            etablissementId: 2,
+            utilisateurId: 90,
+        });
+
+        expect(folders[0]).toBe(currentAcademicYear());
+        expect(folders[1]).toBe("Site");
     });
 
     it("stores a replacement in the next numbered version folder", () => {

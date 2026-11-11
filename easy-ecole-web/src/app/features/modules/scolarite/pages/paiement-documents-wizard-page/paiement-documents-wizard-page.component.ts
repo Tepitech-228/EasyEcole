@@ -9,7 +9,7 @@ interface EtudiantPaiement {
   matricule: string;
 }
 
-interface TypeDocumentPayant {
+interface TypeDocumentEncaissement {
   id: number;
   libelle: string;
   frais: number;
@@ -17,14 +17,15 @@ interface TypeDocumentPayant {
 
 @Component({
   selector: 'app-paiement-documents-wizard-page',
-  templateUrl: './paiement-documents-wizard-page.component.html'
+  templateUrl: './paiement-documents-wizard-page.component.html',
+  styleUrls: ['./paiement-documents-wizard-page.component.scss']
 })
 export class PaiementDocumentsWizardPageComponent extends BaseComponentClass implements OnInit {
   etape = 1;
   recherche = '';
   etudiants: EtudiantPaiement[] = [];
   etudiant: EtudiantPaiement | null = null;
-  typesDocuments: TypeDocumentPayant[] = [];
+  typesDocuments: TypeDocumentEncaissement[] = [];
   typeDocumentId: number | null = null;
   modePaiement: 'especes' | 'mobile_money' | 'autre' = 'especes';
   referencePaiement = '';
@@ -32,6 +33,7 @@ export class PaiementDocumentsWizardPageComponent extends BaseComponentClass imp
   loading = false;
   loadingTypes = false;
   searching = false;
+  hasSearched = false;
   errorMessage = '';
   successMessage = '';
 
@@ -41,9 +43,12 @@ export class PaiementDocumentsWizardPageComponent extends BaseComponentClass imp
 
   ngOnInit(): void {
     this.loadingTypes = true;
-    this.recuService.getTypesDocumentsPayants().subscribe({
+    this.recuService.getTypesDocumentsEncaissement().subscribe({
       next: types => {
-        this.typesDocuments = types;
+        this.typesDocuments = (types || []).map(type => ({
+          ...type,
+          frais: Number(type.frais) || 0
+        }));
         this.loadingTypes = false;
       },
       error: err => {
@@ -53,8 +58,12 @@ export class PaiementDocumentsWizardPageComponent extends BaseComponentClass imp
     });
   }
 
-  get typeSelectionne(): TypeDocumentPayant | undefined {
+  get typeSelectionne(): TypeDocumentEncaissement | undefined {
     return this.typesDocuments.find(type => type.id === this.typeDocumentId);
+  }
+
+  get typesAvecTarif(): boolean {
+    return this.typesDocuments.some(type => type.frais > 0);
   }
 
   rechercherEtudiants(): void {
@@ -64,12 +73,13 @@ export class PaiementDocumentsWizardPageComponent extends BaseComponentClass imp
       return;
     }
     this.searching = true;
+    this.hasSearched = false;
     this.errorMessage = '';
     this.recuService.rechercherEtudiants(search).subscribe({
       next: result => {
         this.etudiants = result.data || [];
         this.searching = false;
-        if (this.etudiants.length === 0) this.errorMessage = 'Aucun étudiant trouvé.';
+        this.hasSearched = true;
       },
       error: err => {
         this.searching = false;
@@ -81,13 +91,18 @@ export class PaiementDocumentsWizardPageComponent extends BaseComponentClass imp
   selectionnerEtudiant(etudiant: EtudiantPaiement): void {
     this.etudiant = etudiant;
     this.etudiants = [];
+    this.hasSearched = false;
     this.etape = 2;
     this.errorMessage = '';
   }
 
   continuerVersPaiement(): void {
-    if (!this.typeDocumentId || !this.modePaiement) {
+    if (!this.typeDocumentId || !this.modePaiement || !this.typeSelectionne) {
       this.errorMessage = 'Sélectionnez le document à payer.';
+      return;
+    }
+    if (this.typeSelectionne.frais <= 0) {
+      this.errorMessage = 'Le tarif de ce document doit être défini avant l’encaissement.';
       return;
     }
     if (this.modePaiement !== 'especes' && !this.referencePaiement.trim()) {
@@ -151,6 +166,7 @@ export class PaiementDocumentsWizardPageComponent extends BaseComponentClass imp
     this.etape = 1;
     this.recherche = '';
     this.etudiants = [];
+    this.hasSearched = false;
     this.etudiant = null;
     this.typeDocumentId = null;
     this.modePaiement = 'especes';

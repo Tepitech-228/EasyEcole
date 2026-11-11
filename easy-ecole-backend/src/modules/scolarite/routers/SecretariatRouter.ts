@@ -93,7 +93,7 @@ router.get('/recusCaisse/:id/print', [AuthRecouvrement], RecuCaisseController.pr
 router.get('/recusCaisse/:id/download', RecuCaisseController.download)
 router.post('/recusCaisse/collecter', [AuthRecouvrement], RecuCaisseController.paiementApresCreationDesactive)
 router.get('/recusCaisse/demandes-documents/etudiants', [AuthRecouvrement], RecuCaisseController.getEtudiantsPourPaiement)
-router.get('/recusCaisse/demandes-documents/types', [AuthRecouvrement], RecuCaisseController.getTypesDocumentsPayants)
+router.get('/recusCaisse/demandes-documents/types', [AuthRecouvrement], RecuCaisseController.getTypesDocumentsEncaissement)
 router.post('/recusCaisse/demandes-documents/encaisser', [AuthRecouvrement], RecuCaisseController.collecterPaiementDemandeDocument)
 router.get('/recusCaisse/demandes-documents/:id/download', [AuthRecouvrement], RecuCaisseController.download)
 router.get('/journalCaisse', [AuthRecouvrement], RecuCaisseController.getJournalCaisse)

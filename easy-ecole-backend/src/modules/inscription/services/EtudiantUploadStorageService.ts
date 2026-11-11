@@ -7,7 +7,7 @@ import { NiveauEtude } from "../models/NiveauEtude";
 import { ParcoursChoisi } from "../models/ParcoursChoisi";
 import { Session } from "../models/Session";
 import { AnneeAcademique } from "../models/AnneeAcademique";
-import { getOriginRoot } from "../../../core/services/DocumentStorageService";
+import { currentAcademicYear, getOriginRoot } from "../../../core/services/DocumentStorageService";
 
 export interface EtudiantUploadIdentity {
     id: number;
@@ -80,7 +80,7 @@ export class EtudiantUploadStorageService {
             academicYearLabel = cursus?.anneeAcademique?.libelle?.trim();
         }
         if (!academicYearLabel) {
-            throw new Error(`Année académique introuvable pour l'étudiant ${options.utilisateurId}`);
+            academicYearLabel = currentAcademicYear();
         }
 
         const siteId = options.etablissementId || session?.etablissementId || cursus?.etablissementId;

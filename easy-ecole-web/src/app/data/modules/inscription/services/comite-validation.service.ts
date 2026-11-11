@@ -55,6 +55,16 @@ export interface DossierComite {
   membres?: MembreComite[]
 }
 
+export interface AutorisationApiASigner {
+  id: number
+  reference: string | null
+  dateGeneration: string | null
+  etudiant: { nom: string; prenoms: string; identifiant: string } | null
+  signe: boolean
+  maSignature: string | null
+  signaturesRecues: Array<{ signataireId: number; signedAt: string }>
+}
+
 /** Filtres combinables du tableau des dossiers comité. */
 export interface FiltresComite {
   anneeId?: string | null
@@ -103,6 +113,13 @@ export class ComiteValidationService {
     dossierIdsAReposer?: number[],
     matriculeConfirme?: string,
     matriculeEtudiant?: string,
+    autorisationProvisoire?: {
+      diplomeRecu: 'BAC' | 'LICENCE' | 'MASTER'
+      dateDiplomeRecu: string
+      relevesSemestresRecus: string[]
+      relevesSemestresDates: Record<string, string>
+      semestresAutorises: string[]
+    },
   ): Observable<any> {
     return this.httpClient.post(`${this.SERVICE_URL}/dossiers/${id}/decider`, {
       decision,
@@ -110,6 +127,7 @@ export class ComiteValidationService {
       dossierIdsAReposer,
       matriculeConfirme,
       matriculeEtudiant,
+      autorisationProvisoire,
     }).pipe(timeout(120_000))
   }
 
@@ -123,5 +141,20 @@ export class ComiteValidationService {
    */
   telechargerPdfFusionne(id: number | string): Observable<Blob> {
     return this.httpClient.get(`${this.SERVICE_URL}/dossiers/${id}/pdf-fusionne`, { responseType: 'blob' })
+  }
+
+  listerAutorisationsASigner(): Observable<{ data: AutorisationApiASigner[] }> {
+    return this.httpClient.get<{ data: AutorisationApiASigner[] }>(`${this.SERVICE_URL}/autorisations-a-signer`)
+  }
+
+  telechargerAutorisationASigner(id: number): Observable<Blob> {
+    return this.httpClient.get(`${this.SERVICE_URL}/autorisations-a-signer/${id}/pdf`, { responseType: 'blob' })
+  }
+
+  signerAutorisation(id: number, signatureData: string): Observable<{ success: boolean; message: string }> {
+    return this.httpClient.post<{ success: boolean; message: string }>(
+      `${this.SERVICE_URL}/autorisations-a-signer/${id}/signature`,
+      { signatureData },
+    ).pipe(timeout(120_000))
   }
 }

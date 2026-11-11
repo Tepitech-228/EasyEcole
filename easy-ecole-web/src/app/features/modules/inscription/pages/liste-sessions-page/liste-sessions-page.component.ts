@@ -59,7 +59,13 @@ export class ListeSessionsPageComponent extends BaseComponentClass implements On
   ]
 
   nouveauxFrais: Array<{ titre: string, montant: number, description: string, fraisDesCours: boolean }> = []
-  nouveauxDossiers: Array<{ titre: string, tailleMax: number | null, description: string }> = []
+  nouveauxDossiers: Array<{
+    titre: string
+    tailleMax: number | null
+    description: string
+    etape: 'premiere' | 'complementaire'
+    profilRequis: 'tous' | 'nouveau' | 'ancien'
+  }> = []
 
   fraisScolariteMontant: number | null = null
   fraisScolariteModalite: ModaliteFraisScolarite = '10x'
@@ -323,6 +329,8 @@ export class ListeSessionsPageComponent extends BaseComponentClass implements On
       titre: '',
       tailleMax: null,
       description: '',
+      etape: 'complementaire',
+      profilRequis: 'tous',
     })
   }
 

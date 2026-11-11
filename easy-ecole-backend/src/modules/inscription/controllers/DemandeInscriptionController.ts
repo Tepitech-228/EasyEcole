@@ -93,8 +93,8 @@ export default class DemandeInscriptionController {
             const [parcoursChoisi, dossiersRequis, dossiersDeposes] = await Promise.all([
                 ParcoursChoisi.findOne({ where: { demandeInscriptionId: demandeId } }),
                 DossierInscription.findAll({
-                    where: { sessionId: demande.sessionId },
-                    attributes: ['id', 'titre']
+                    where: { sessionId: demande.sessionId, etape: 'premiere' },
+                    attributes: ['id', 'titre', 'etape', 'profilRequis']
                 }),
                 DemandeInscriptionDossier.findAll({
                     where: { demandeId },
@@ -107,18 +107,22 @@ export default class DemandeInscriptionController {
 
             const apprenant = await Apprenant.findOne({
                 where: { utilisateurId: req.utilisateurId },
-                attributes: ['photo'],
+                attributes: ['photo', 'statutEtudiant'],
             });
+            const profilEtudiant = apprenant?.statutEtudiant === 'ancien' ? 'ancien' : 'nouveau'
             const dossiersDeposesIds = new Set(dossiersDeposes.map(dossier => Number(dossier.dossierId)));
             const documentsManquants = dossiersRequis.filter(dossier => {
+                const profilRequis = (dossier as any).profilRequis || 'tous'
                 return /bordereau/i.test(dossier.titre)
+                    && (profilRequis === 'tous' || profilRequis === profilEtudiant)
                     && !dossiersDeposesIds.has(Number(dossier.id))
             });
             if (documentsManquants.length > 0) {
                 return res.status(400).json({
                     success: false,
                     message: "Veuillez téléverser le bordereau de paiement avant de soumettre la demande.",
-                    documentsManquants: documentsManquants.map(dossier => dossier.id)
+                    documentsManquants: documentsManquants.map(dossier => dossier.id),
+                    documents: documentsManquants.map(dossier => ({ id: dossier.id, titre: dossier.titre })),
                 });
             }
 

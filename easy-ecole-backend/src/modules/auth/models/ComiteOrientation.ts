@@ -7,6 +7,7 @@ export class ComiteOrientation extends Model<InferAttributes<ComiteOrientation>,
   declare id: CreationOptional<string>
   declare fonction: CreationOptional<string>
   declare estPrescripteur: CreationOptional<boolean>
+  declare estSignataireApi: CreationOptional<boolean>
   declare utilisateurId: ForeignKey<Utilisateur['id']>
   declare utilisateur?: NonAttribute<Utilisateur>
 
@@ -32,6 +33,11 @@ ComiteOrientation.init({
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: false
+  },
+  estSignataireApi: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

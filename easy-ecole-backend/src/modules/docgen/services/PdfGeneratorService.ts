@@ -43,6 +43,16 @@ export interface DocGenPdfParams {
   reference: string;
   dateGeneration: string;
   initialesComite?: string;
+  autorisationProvisoire?: {
+    diplomeRecu: string;
+    dateDiplomeRecu: string;
+    relevesSemestresRecus: string[];
+    relevesSemestresDates: Record<string, string>;
+    relevesSemestresRecusLibelle: string;
+    semestresAutorises: string[];
+    signataire1: { nomComplet: string; signatureData: string };
+    signataire2: { nomComplet: string; signatureData: string };
+  };
   options?: PdfGeneratorOptions;
 }
 
@@ -79,6 +89,7 @@ export class PdfGeneratorService {
           reference: params.reference,
           dateGeneration: params.dateGeneration,
           initialesComite: params.initialesComite,
+          autorisationProvisoire: params.autorisationProvisoire,
         });
       }
     }

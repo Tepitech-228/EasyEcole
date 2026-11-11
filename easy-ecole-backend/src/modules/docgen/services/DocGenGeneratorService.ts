@@ -20,6 +20,7 @@ export interface DocGenGenerateOptions {
   typeCode: string;
   sourceType?: string;
   sourceId?: number | string;
+  documentId?: number;
   metadata?: Record<string, any>;
   utilisateurId?: number;
   params?: Record<string, any>;
@@ -34,13 +35,29 @@ export interface DocGenResult {
 
 export class DocGenGeneratorService {
   static async generer(options: DocGenGenerateOptions, req?: Request): Promise<DocGenResult> {
-    const { typeCode, sourceType, sourceId, metadata, utilisateurId, params = {} } = options;
+    const { typeCode, sourceType, sourceId, documentId, metadata, utilisateurId, params = {} } = options;
 
     const type = await DocGenType.findOne({ where: { code: typeCode } });
     if (!type) throw new Error(`Type de document non trouvé: ${typeCode}`);
 
     const template = await DocGenTemplate.findOne({ where: { typeId: type.id, isDefault: true } });
     if (!template) throw new Error(`Template par défaut non trouvé pour: ${typeCode}`);
+
+    const documentExistant = documentId
+      ? await DocGenDocument.findByPk(documentId)
+      : null;
+    if (documentId && !documentExistant) {
+      throw new Error(`Document DocGen introuvable: ${documentId}`);
+    }
+    if (documentExistant && Number(documentExistant.typeId) !== Number(type.id)) {
+      throw new Error(`Le document DocGen ${documentId} n'est pas de type ${typeCode}`);
+    }
+    if (documentExistant && (
+      documentExistant.sourceType !== sourceType
+      || Number(documentExistant.sourceId) !== Number(sourceId)
+    )) {
+      throw new Error(`Le document DocGen ${documentId} ne correspond pas à la source demandée.`);
+    }
 
     if (!fs.existsSync(STORAGE_DIR)) {
       fs.mkdirSync(STORAGE_DIR, { recursive: true });
@@ -59,7 +76,7 @@ export class DocGenGeneratorService {
     }
 
     const etudiant = resolved.etudiants?.[0] || resolved.sujet!;
-    const reference = await ReferenceService.generer(type.id);
+    const reference = documentExistant?.reference || await ReferenceService.generer(type.id);
 
     const host = req?.get('host') || 'localhost:3000';
     const protocol = req?.protocol || 'http';
@@ -91,6 +108,7 @@ export class DocGenGeneratorService {
       reference,
       dateGeneration,
       initialesComite: resolved.initialesComite,
+      autorisationProvisoire: resolved.autorisationProvisoire,
       options: {
         ecoleNom: (resolved.etablissement as any).nom || 'ESA',
         orientation: params.orientation,
@@ -105,7 +123,7 @@ export class DocGenGeneratorService {
     const filePath = path.join(STORAGE_DIR, fileName);
     fs.writeFileSync(filePath, pdfBuffer);
 
-    const doc = await DocGenDocument.create({
+    const documentValues = {
       typeId: type.id,
       templateId: template.id,
       reference,
@@ -118,64 +136,75 @@ export class DocGenGeneratorService {
       // ne sont pas persistés dans cette colonne ; ils restent consultables via metadata si besoin.
       sourceId: typeof sourceId === 'number' ? sourceId : undefined,
       metadata: metadata ? JSON.stringify(metadata) : undefined,
-      generatedById: utilisateurId || req?.utilisateurId || 1,
-      etablissementId: req?.etablissementId || undefined,
-    });
+      ...(documentExistant ? {} : {
+        generatedById: utilisateurId || req?.utilisateurId || 1,
+        etablissementId: req?.etablissementId || undefined,
+      }),
+    };
+    const doc = documentExistant
+      ? await documentExistant.update(documentValues)
+      : await DocGenDocument.create({
+        ...documentValues,
+        generatedById: utilisateurId || req?.utilisateurId || 1,
+        etablissementId: req?.etablissementId || undefined,
+      });
 
-    try {
-      const codePrefix = typeCode.substring(0, 3);
-      const anneeAcademiqueId = Number(params.anneeAcademiqueId) || undefined;
-      const semestre = params.semestre || undefined;
-      let parcoursId: number | undefined;
-      let niveauEtudeId: number | undefined;
-      let classeId: number | undefined = Number(params.classeId) || undefined;
-      let cursusApprenantId: number | undefined = Number(params.cursusApprenantId) || undefined;
+    if (!documentExistant) {
+      try {
+        const codePrefix = typeCode.substring(0, 3);
+        const anneeAcademiqueId = Number(params.anneeAcademiqueId) || undefined;
+        const semestre = params.semestre || undefined;
+        let parcoursId: number | undefined;
+        let niveauEtudeId: number | undefined;
+        let classeId: number | undefined = Number(params.classeId) || undefined;
+        let cursusApprenantId: number | undefined = Number(params.cursusApprenantId) || undefined;
 
-      if (params.cursusApprenantId || params.etudiantId || sourceId) {
-        const cursusWhere: any = {};
-        if (params.cursusApprenantId) cursusWhere.id = params.cursusApprenantId;
-        else if (params.etudiantId) cursusWhere.utilisateurId = params.etudiantId;
-        else if (sourceId) cursusWhere.id = sourceId;
-        const cursus = await CursusApprenant.findOne({
-          where: cursusWhere,
-          include: [{ association: 'parcours' }, { association: 'niveauEtude' }]
-        }) as any;
-        if (cursus) {
-          parcoursId = Number(cursus.parcoursId) || undefined;
-          niveauEtudeId = Number(cursus.niveauEtudeId) || undefined;
-          classeId = classeId || Number(cursus.classeId) || undefined;
-          cursusApprenantId = cursusApprenantId || cursus.id;
+        if (params.cursusApprenantId || params.etudiantId || sourceId) {
+          const cursusWhere: any = {};
+          if (params.cursusApprenantId) cursusWhere.id = params.cursusApprenantId;
+          else if (params.etudiantId) cursusWhere.utilisateurId = params.etudiantId;
+          else if (sourceId) cursusWhere.id = sourceId;
+          const cursus = await CursusApprenant.findOne({
+            where: cursusWhere,
+            include: [{ association: 'parcours' }, { association: 'niveauEtude' }]
+          }) as any;
+          if (cursus) {
+            parcoursId = Number(cursus.parcoursId) || undefined;
+            niveauEtudeId = Number(cursus.niveauEtudeId) || undefined;
+            classeId = classeId || Number(cursus.classeId) || undefined;
+            cursusApprenantId = cursusApprenantId || cursus.id;
+          }
         }
-      }
 
-      if (codePrefix === 'DIP' && anneeAcademiqueId && parcoursId && niveauEtudeId) {
-        await ArchiveGedService.archiverDocumentDiplome({
-          titre: `Diplôme - ${etudiant.nom} ${etudiant.prenom}`,
-          fichier: fileName,
-          pdfBuffer,
-          anneeAcademiqueId,
-          parcoursId,
-          niveauEtudeId,
-          cursusApprenantId: cursusApprenantId!,
-          uploaderId: utilisateurId || req?.utilisateurId || undefined,
-        });
-      } else if (['SCO', 'INS', 'CER', 'API', 'PRE', 'ADM', 'MEM'].includes(codePrefix) && anneeAcademiqueId && parcoursId && niveauEtudeId) {
-        await ArchiveGedService.archiverDocumentScolarite({
-          titre: `${type?.libelle || 'Document'} - ${etudiant.nom} ${etudiant.prenom}`,
-          documentTypeCode: 'attestation',
-          fichier: fileName,
-          pdfBuffer,
-          anneeAcademiqueId,
-          parcoursId,
-          niveauEtudeId,
-          classeId: classeId!,
-          semestre,
-          cursusApprenantId: cursusApprenantId!,
-          uploaderId: utilisateurId || req?.utilisateurId || undefined,
-        });
+        if (codePrefix === 'DIP' && anneeAcademiqueId && parcoursId && niveauEtudeId) {
+          await ArchiveGedService.archiverDocumentDiplome({
+            titre: `Diplôme - ${etudiant.nom} ${etudiant.prenom}`,
+            fichier: fileName,
+            pdfBuffer,
+            anneeAcademiqueId,
+            parcoursId,
+            niveauEtudeId,
+            cursusApprenantId: cursusApprenantId!,
+            uploaderId: utilisateurId || req?.utilisateurId || undefined,
+          });
+        } else if (['SCO', 'INS', 'CER', 'API', 'PRE', 'ADM', 'MEM'].includes(codePrefix) && anneeAcademiqueId && parcoursId && niveauEtudeId) {
+          await ArchiveGedService.archiverDocumentScolarite({
+            titre: `${type?.libelle || 'Document'} - ${etudiant.nom} ${etudiant.prenom}`,
+            documentTypeCode: 'attestation',
+            fichier: fileName,
+            pdfBuffer,
+            anneeAcademiqueId,
+            parcoursId,
+            niveauEtudeId,
+            classeId: classeId!,
+            semestre,
+            cursusApprenantId: cursusApprenantId!,
+            uploaderId: utilisateurId || req?.utilisateurId || undefined,
+          });
+        }
+      } catch (archivalErr) {
+        console.warn('[GED][non-bloquant]', 'DocGenGeneratorService', archivalErr);
       }
-    } catch (archivalErr) {
-      console.warn('[GED][non-bloquant]', 'DocGenGeneratorService', archivalErr);
     }
 
     return {

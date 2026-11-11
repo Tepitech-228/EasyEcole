@@ -10,6 +10,9 @@ import Authenticate from "../../../core/middlewares/Authenticate"
 const router = express.Router()
 
 router
+    .get('/autorisations-a-signer', [Authenticate], ComiteValidationController.listerAutorisationsASigner)
+    .get('/autorisations-a-signer/:id/pdf', [Authenticate], ComiteValidationController.telechargerAutorisationASigner)
+    .post('/autorisations-a-signer/:id/signature', [Authenticate], ComiteValidationController.signerAutorisation)
     .get('/dossiers', [Authenticate], ComiteValidationController.listerDossiers)
     .get('/dossiers/:id/pdf-fusionne', [Authenticate], ComiteValidationController.telechargerPdfFusionne)
     .get('/dossiers/:id', [Authenticate], ComiteValidationController.detailDossier)

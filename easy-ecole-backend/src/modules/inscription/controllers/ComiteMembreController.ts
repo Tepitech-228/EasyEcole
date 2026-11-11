@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
+import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import * as bcrypt from 'bcrypt';
 import { ComiteOrientation } from "../../auth/models/ComiteOrientation";
@@ -32,20 +33,25 @@ export default class ComiteMembreController {
             // pas dépendre d'une association inverse.
             const utilisateurIds = membres.map((m: any) => m.id)
             let prescripteurs: Map<number, boolean> = new Map()
+            let signataires: Map<number, boolean> = new Map()
 
             if (utilisateurIds.length > 0) {
                 const profils = await ComiteOrientation.findAll({
                     where: { utilisateurId: { [Op.in]: utilisateurIds } },
-                    attributes: ['utilisateurId', 'estPrescripteur']
+                    attributes: ['utilisateurId', 'estPrescripteur', 'estSignataireApi']
                 })
                 prescripteurs = new Map(
                     profils.map((p: any) => [Number(p.utilisateurId), Boolean(p.estPrescripteur)])
+                )
+                signataires = new Map(
+                    profils.map((p: any) => [Number(p.utilisateurId), Boolean(p.estSignataireApi)])
                 )
             }
 
             const data = membres.map((m: any) => ({
                 ...m.toJSON(),
                 estPrescripteur: prescripteurs.get(Number(m.id)) ?? false,
+                estSignataireApi: signataires.get(Number(m.id)) ?? false,
             }))
 
             return res.status(200).json({ data })
@@ -58,7 +64,7 @@ export default class ComiteMembreController {
     /**
      * POST /admin/comite-membres
      * Crée un nouveau membre du comité (role = comite_orientation).
-     * Body : { nom, prenoms, email, identifiant, motDePasse, contact?, estPrescripteur? }
+     * Body : { nom, prenoms, email, identifiant, motDePasse, contact?, estPrescripteur?, estSignataireApi? }
      */
     static async creerMembre(req: Request, res: Response): Promise<Response> {
         try {
@@ -67,7 +73,7 @@ export default class ComiteMembreController {
                 return res.status(403).json({ success: false })
             }
 
-            const { nom, prenoms, email, identifiant, motDePasse, contact, estPrescripteur } = req.body
+            const { nom, prenoms, email, identifiant, motDePasse, contact, estPrescripteur, estSignataireApi } = req.body
 
             if (!nom || !prenoms || !email || !identifiant) {
                 return res.status(400).json({ success: false, message: "Nom, prénoms, email et identifiant sont requis" })
@@ -77,6 +83,9 @@ export default class ComiteMembreController {
                 return res.status(400).json({ success: false, message: "Mot de passe requis (min 6 caractères)" })
             }
 
+            if (estSignataireApi !== undefined && typeof estSignataireApi !== 'boolean') {
+                return res.status(400).json({ success: false, message: "estSignataireApi doit être un booléen" })
+            }
             // Vérifier l'unicité de l'email, de l'identifiant et du nom+prénoms
             const existe = await Utilisateur.findOne({
                 where: {
@@ -94,29 +103,47 @@ export default class ComiteMembreController {
                 return res.status(409).json({ success: false, message: `${champConflit} est déjà utilisé par un autre compte.` })
             }
 
-            const utilisateur = await Utilisateur.create({
-                nom,
-                prenoms,
-                email,
-                identifiant,
-                motDePasse: bcrypt.hashSync(motDePasse, 12),
-                role: RolesUtilisateur.COMITE_ORIENTATION,
-                contact: contact || null,
-                tokenVersion: 0,
-            })
-
-            // Créer le profil ComiteOrientation lié
+            const transaction = await DatabaseConnection.getInstance().sequelize.transaction()
+            let transactionFinished = false
             try {
+                if (estSignataireApi === true) {
+                    const signataires = await ComiteOrientation.findAll({
+                        where: { estSignataireApi: true },
+                        attributes: ['id'],
+                        transaction,
+                        lock: transaction.LOCK.UPDATE,
+                    })
+                    if (signataires.length >= 2) {
+                        await transaction.rollback()
+                        transactionFinished = true
+                        return res.status(409).json({ success: false, message: "Deux membres sont déjà désignés comme signataires API." })
+                    }
+                }
+
+                const utilisateur = await Utilisateur.create({
+                    nom,
+                    prenoms,
+                    email,
+                    identifiant,
+                    motDePasse: bcrypt.hashSync(motDePasse, 12),
+                    role: RolesUtilisateur.COMITE_ORIENTATION,
+                    contact: contact || null,
+                    tokenVersion: 0,
+                }, { transaction })
+
                 await ComiteOrientation.create({
                     utilisateurId: utilisateur.id,
                     fonction: "Comité d'Orientation",
                     estPrescripteur: Boolean(estPrescripteur),
-                })
-            } catch (profileError: any) {
-                console.error('Erreur création profil ComiteOrientation:', profileError?.message)
+                    estSignataireApi: Boolean(estSignataireApi),
+                }, { transaction })
+                await transaction.commit()
+                transactionFinished = true
+                return res.status(201).json({ success: true, message: "Membre du comité créé", utilisateur })
+            } catch (error) {
+                if (!transactionFinished) await transaction.rollback()
+                throw error
             }
-
-            return res.status(201).json({ success: true, message: "Membre du comité créé", utilisateur })
         } catch (error: any) {
             console.error('[ComiteMembre] creerMembre:', error?.name, error?.message, error?.parent?.sqlMessage || "")
             if (error?.name === "SequelizeUniqueConstraintError" || error?.parent?.code === "ER_DUP_ENTRY") {
@@ -181,6 +208,75 @@ export default class ComiteMembreController {
             })
         } catch (error) {
             console.error('[ComiteMembre] definirPrescripteur:', error)
+            return res.status(500).json({ success: false, message: 'Erreur interne' })
+        }
+    }
+
+    static async definirSignataireApi(req: Request, res: Response): Promise<Response> {
+        try {
+            if ((req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
+                return res.status(403).json({ success: false })
+            }
+
+            const membreId = Number(req.params.id)
+            if (!Number.isInteger(membreId) || membreId <= 0) {
+                return res.status(400).json({ success: false, message: "Identifiant membre invalide" })
+            }
+            if (typeof req.body?.estSignataireApi !== 'boolean') {
+                return res.status(400).json({ success: false, message: "estSignataireApi doit être un booléen" })
+            }
+
+            const membre = await Utilisateur.findByPk(membreId)
+            if (!membre || membre.role !== RolesUtilisateur.COMITE_ORIENTATION) {
+                return res.status(404).json({ success: false, message: "Membre du comité non trouvé" })
+            }
+
+            const transaction = await DatabaseConnection.getInstance().sequelize.transaction()
+            let transactionFinished = false
+            try {
+                const profilExistant = await ComiteOrientation.findOne({
+                    where: { utilisateurId: membreId },
+                    transaction,
+                    lock: transaction.LOCK.UPDATE,
+                })
+                if (req.body.estSignataireApi && !profilExistant?.estSignataireApi) {
+                    const signataires = await ComiteOrientation.findAll({
+                        where: { estSignataireApi: true },
+                        attributes: ['id'],
+                        transaction,
+                        lock: transaction.LOCK.UPDATE,
+                    })
+                    if (signataires.length >= 2) {
+                        await transaction.rollback()
+                        transactionFinished = true
+                        return res.status(409).json({ success: false, message: "Deux membres sont déjà désignés comme signataires API." })
+                    }
+                }
+
+                const [profil, cree] = await ComiteOrientation.findOrCreate({
+                    where: { utilisateurId: membreId },
+                    defaults: {
+                        utilisateurId: membreId,
+                        fonction: "Comité d'Orientation",
+                        estPrescripteur: false,
+                        estSignataireApi: false,
+                    },
+                    transaction,
+                })
+                await profil.update({ estSignataireApi: req.body.estSignataireApi }, { transaction })
+                await transaction.commit()
+                transactionFinished = true
+                return res.status(200).json({
+                    success: true,
+                    estSignataireApi: req.body.estSignataireApi,
+                    profilCree: cree,
+                })
+            } catch (error) {
+                if (!transactionFinished) await transaction.rollback()
+                throw error
+            }
+        } catch (error) {
+            console.error('[ComiteMembre] definirSignataireApi:', error)
             return res.status(500).json({ success: false, message: 'Erreur interne' })
         }
     }

@@ -42,6 +42,7 @@ export class DossierViewComponent {
   @Input() totalPages: number = 1;
   @Input() pageSize: number = 20;
   @Input() renderItemActions: boolean = false;
+  @Input() selectionEnabled: boolean = true;
   @Input() itemActions: BatchAction[] = [];
   @Input() actionsNoWrap: boolean = false;
   @Input() level: number = 0;

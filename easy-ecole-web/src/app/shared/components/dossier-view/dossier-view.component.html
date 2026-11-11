@@ -10,7 +10,7 @@
 
   <div *ngIf="!loading">
     <app-batch-toolbar
-      *ngIf="selectedIds.size > 0"
+      *ngIf="selectionEnabled && selectedIds.size > 0"
       [selectedCount]="selectedIds.size"
       [actions]="batchActions"
       (action)="onBatchAction($event)"
@@ -49,6 +49,7 @@
 
           <!-- Checkbox -->
            <input
+             *ngIf="selectionEnabled"
              type="checkbox"
              [checked]="node.selected"
              (change)="toggleSelect(node)"
@@ -94,6 +95,7 @@
           <app-dossier-view
             [nodes]="node.children || []"
             [columns]="columns"
+            [selectionEnabled]="selectionEnabled"
             [batchActions]="batchActions"
             [itemActions]="itemActions"
             [renderItemActions]="renderItemActions"
@@ -112,7 +114,7 @@
             <table class="min-w-full divide-y divide-gray-200">
               <thead class="bg-gray-100">
                 <tr>
-                  <th class="w-10 px-3 py-2">
+                  <th *ngIf="selectionEnabled" class="w-10 px-3 py-2">
                     <input
                       type="checkbox"
                       [checked]="isAllItemsSelected(node)"
@@ -129,7 +131,7 @@
               </thead>
               <tbody class="divide-y divide-gray-200 bg-white">
                 <tr *ngFor="let item of node.items" class="hover:bg-gray-50 transition">
-                  <td class="px-3 py-2">
+                  <td *ngIf="selectionEnabled" class="px-3 py-2">
                     <input
                       type="checkbox"
                       [checked]="isItemSelected(item)"

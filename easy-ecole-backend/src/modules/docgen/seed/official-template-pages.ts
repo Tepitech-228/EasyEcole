@@ -126,46 +126,9 @@ export function extractOfficialTemplatePages(source: string): OfficialTemplatePa
         {{/each}}`);
     }
     if (pageNumber === 1) {
-      const diplomaTable = page.find(".data-table").eq(0);
-      const transcriptTable = page.find(".data-table").eq(1);
-      const pathwayTable = page.find(".data-table").eq(2);
-      const diplomaRows = [
-        "diplomeBac",
-        "diplomeDtsDut",
-        "diplomeBts",
-        "diplomeLicence",
-        "diplomeMaitrise",
-        "diplomeMaster",
-        "diplomeAutres",
-      ];
-      const transcriptRows = [
-        "relevesSem12",
-        "relevesSem34",
-        "relevesSem56",
-        "relevesSem78",
-        "relevesSem910",
-      ];
-      const pathwayRows = [
-        "parcoursLicence12",
-        "parcoursLicence34",
-        "parcoursLicence56",
-        "parcoursMaster12",
-        "parcoursMaster34",
-      ];
-
-      for (const [table, checks, speciality] of [
-        [diplomaTable, diplomaRows, "{{etudiant.specialiteDiplome}}"],
-        [transcriptTable, transcriptRows, "{{etudiant.specialiteReleves}}"],
-        [pathwayTable, pathwayRows, "{{etudiant.specialiteParcours}}"],
-      ] as const) {
-        const row = table.find("tr").eq(1);
-        row.find("td").first().append(` ${speciality}`);
-        row.find(".check-box").each((index, element) => {
-          const field = checks[index];
-          if (field) {
-            $(element).text(`{{#if etudiant.${field}}}√{{/if}}`);
-          }
-        });
+      const tables = page.find(".data-table");
+      if (tables.length < 3 || tables.eq(0).find("tr").length < 3) {
+        throw new Error("Les tableaux de pièces de l'autorisation provisoire sont absents du document source.");
       }
     }
     if (pageNumber === 16) {

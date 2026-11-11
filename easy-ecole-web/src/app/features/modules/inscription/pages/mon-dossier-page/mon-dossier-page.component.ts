@@ -4,7 +4,9 @@ import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { ToastService } from 'src/app/core/services/toast.service';
 import { DocGenDocument } from 'src/app/data/modules/docgen/models/DocGenDocument.model';
 import { DocGenDocumentService } from 'src/app/data/modules/docgen/services/docgen-document.service';
+import { DemandeInscription } from 'src/app/data/modules/inscription/models/DemandeInscription.model';
 import { DossierEtudiant } from 'src/app/data/modules/inscription/models/DossierEtudiant.model';
+import { DemandeInscriptionService } from 'src/app/data/modules/inscription/services/demande-inscription.service';
 import { DossierEtudiantService } from 'src/app/data/modules/inscription/services/dossier-etudiant.service';
 import { PointageService } from 'src/app/data/modules/inscription/services/pointage.service';
 import { environment } from 'src/environments/environment';
@@ -31,6 +33,7 @@ export class MonDossierPageComponent extends BaseComponentClass implements OnIni
 
   error: boolean = false
   dossier?: DossierEtudiant
+  demandeActive?: DemandeInscription
   qrImageUrl: string = ''
 
   readonly attestationTypes: AttestationType[] = ATTESTATION_TYPES
@@ -38,6 +41,7 @@ export class MonDossierPageComponent extends BaseComponentClass implements OnIni
 
   constructor(
     private dossierEtudiantService: DossierEtudiantService,
+    private demandeInscriptionService: DemandeInscriptionService,
     private docgenDocumentService: DocGenDocumentService,
     private pointageService: PointageService,
     private toastService: ToastService,
@@ -59,12 +63,30 @@ export class MonDossierPageComponent extends BaseComponentClass implements OnIni
       next: (res) => {
         this.dossier = res
         this.chargerQrImage()
+        this.chargerDemandeActive()
       },
       error: (err) => {
         console.log(err)
         this.error = true
       }
     })
+  }
+
+  private chargerDemandeActive(): void {
+    this.demandeInscriptionService.getAll({ limit: 20 }).subscribe({
+      next: (res) => {
+        const demandes = (res?.data || []).filter(d => d.typeDemande !== 'reinscription')
+        this.demandeActive = demandes.find(d => d.statutPipeline === 'saisie_validee') || demandes[0]
+      },
+      error: (err) => {
+        console.error('Impossible de charger la demande d\'inscription', err)
+      }
+    })
+  }
+
+  continuerDemande(): void {
+    if (!this.demandeActive?.id) return
+    this.router.navigate(['/inscription/demandes', this.demandeActive.id])
   }
 
   /**

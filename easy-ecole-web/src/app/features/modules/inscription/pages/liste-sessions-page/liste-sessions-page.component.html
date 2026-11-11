@@ -198,6 +198,21 @@
                             <span class="mb-1 block text-xs text-gray-400">Taille max. (Ko)</span>
                             <app-form-input inputType="number" [(ngModel)]="dossier.tailleMax" [ngModelOptions]="{standalone: true}" placeholder="Ex: 2048"></app-form-input>
                         </div>
+                        <div class="col-span-3">
+                            <span class="mb-1 block text-xs text-gray-400">Étape de dépôt</span>
+                            <select [(ngModel)]="dossier.etape" [ngModelOptions]="{standalone: true}" class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm">
+                                <option value="complementaire">Documents complémentaires (après validation du bordereau)</option>
+                                <option value="premiere" [disabled]="!dossier.titre?.toLowerCase()?.includes('bordereau')">Première étape - bordereau</option>
+                            </select>
+                        </div>
+                        <div class="col-span-3">
+                            <span class="mb-1 block text-xs text-gray-400">Profil concerné</span>
+                            <select [(ngModel)]="dossier.profilRequis" [ngModelOptions]="{standalone: true}" class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm">
+                                <option value="tous">Tous les étudiants</option>
+                                <option value="nouveau">Nouvel étudiant</option>
+                                <option value="ancien">Ancien étudiant</option>
+                            </select>
+                        </div>
                         <div class="col-span-6">
                             <span class="mb-1 block text-xs text-gray-400">Description (facultative)</span>
                             <app-form-input inputType="text" [(ngModel)]="dossier.description" [ngModelOptions]="{standalone: true}" placeholder="Description du dossier"></app-form-input>

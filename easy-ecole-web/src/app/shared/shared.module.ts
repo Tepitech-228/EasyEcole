@@ -35,6 +35,7 @@ import { FiltersAnneeNiveauParcoursComponent } from './components/filters-annee-
 import { BatchToolbarComponent } from './components/batch-toolbar/batch-toolbar.component';
 import { CourseStatusBadgeComponent } from './components/course-status-badge/course-status-badge.component';
 import { ExcelImportDialogComponent } from './components/excel-import-dialog/excel-import-dialog.component';
+import { SignaturePadComponent } from '../features/modules/bulletins/components/signature-pad/signature-pad.component';
 
 @NgModule({
   declarations: [
@@ -63,6 +64,7 @@ import { ExcelImportDialogComponent } from './components/excel-import-dialog/exc
     BatchToolbarComponent,
     CourseStatusBadgeComponent,
     ExcelImportDialogComponent,
+    SignaturePadComponent,
 
     // Pipes
     SafeUrlPipe,
@@ -120,6 +122,7 @@ import { ExcelImportDialogComponent } from './components/excel-import-dialog/exc
     BatchToolbarComponent,
     CourseStatusBadgeComponent,
     ExcelImportDialogComponent,
+    SignaturePadComponent,
 
     // Pipes
     SafeUrlPipe,

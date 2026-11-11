@@ -1,116 +1,266 @@
-<div class="page-container">
-  <app-header-title title="Encaissement des documents" subtitle="Wizard de paiement et émission du reçu officiel"></app-header-title>
+<div class="page-container payment-page">
+  <header class="payment-heading">
+    <div class="heading-mark" aria-hidden="true">
+      <span class="material-symbols-outlined">account_balance_wallet</span>
+    </div>
+    <div class="heading-copy">
+      <p class="eyebrow">Secrétariat · Recouvrement</p>
+      <h1>Encaissement des documents</h1>
+      <p>Enregistrez le paiement d’un document et remettez immédiatement son reçu à l’étudiant.</p>
+    </div>
+    <a routerLink="/scolarite/secretariat/tarifs-documents" class="outline-action heading-link">
+      <span class="material-symbols-outlined">price_change</span>
+      Gérer les tarifs
+    </a>
+  </header>
 
   <app-custom-alert *ngIf="errorMessage" [show]="true" [title]="errorMessage" type="danger" [inline]="true"></app-custom-alert>
   <app-custom-alert *ngIf="successMessage" [show]="true" [title]="successMessage" type="success" [inline]="true"></app-custom-alert>
 
-  <nav class="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Étapes de l'encaissement">
+  <nav class="stepper" aria-label="Étapes de l'encaissement">
     <div *ngFor="let label of ['Étudiant', 'Document', 'Paiement', 'Reçu']; index as i"
-      class="rounded-lg border px-3 py-3 text-sm"
-      [class.border-indigo-600]="etape === i + 1"
-      [class.bg-indigo-50]="etape === i + 1"
-      [class.text-indigo-700]="etape === i + 1"
-      [class.text-gray-500]="etape !== i + 1">
-      <span class="font-semibold">{{ i + 1 }}.</span> {{ label }}
+      class="stepper-step"
+      [class.is-active]="etape === i + 1"
+      [class.is-complete]="etape > i + 1"
+      [attr.aria-current]="etape === i + 1 ? 'step' : null">
+      <span class="step-number">
+        <span *ngIf="etape <= i + 1">{{ i + 1 }}</span>
+        <span *ngIf="etape > i + 1" class="material-symbols-outlined">check</span>
+      </span>
+      <span class="step-label">{{ label }}</span>
     </div>
   </nav>
 
-  <section class="card p-5" *ngIf="etape === 1">
-    <h2 class="mb-1 text-lg font-semibold">1. Rechercher l'étudiant</h2>
-    <p class="mb-4 text-sm text-gray-500">Recherchez par nom, prénom, matricule ou identifiant.</p>
-    <div class="flex flex-col gap-3 sm:flex-row">
-      <input class="form-input flex-1" [(ngModel)]="recherche" (keyup.enter)="rechercherEtudiants()"
-        placeholder="Nom, matricule ou identifiant" [disabled]="searching">
-      <button type="button" class="primary-action" (click)="rechercherEtudiants()" [disabled]="searching || recherche.trim().length < 2">
-        {{ searching ? 'Recherche…' : 'Rechercher' }}
-      </button>
-    </div>
-    <div *ngIf="etudiants.length" class="mt-4 divide-y rounded-lg border">
-      <button *ngFor="let item of etudiants" type="button" (click)="selectionnerEtudiant(item)"
-        class="flex w-full items-center justify-between p-4 text-left hover:bg-indigo-50">
-        <span>
-          <strong class="block text-gray-800">{{ item.nom }} {{ item.prenoms }}</strong>
-          <small class="text-gray-500">Matricule : {{ item.matricule || 'Non renseigné' }}</small>
+  <main>
+    <section class="wizard-panel" *ngIf="etape === 1">
+      <div class="panel-heading">
+        <div>
+          <p class="step-caption">Étape 1 sur 4</p>
+          <h2>Rechercher un étudiant</h2>
+          <p>Utilisez son nom, son prénom, son matricule ou son identifiant.</p>
+        </div>
+        <span class="panel-icon material-symbols-outlined" aria-hidden="true">person_search</span>
+      </div>
+
+      <div class="search-bar">
+        <span class="material-symbols-outlined" aria-hidden="true">search</span>
+        <input type="search" [(ngModel)]="recherche" (keyup.enter)="rechercherEtudiants()"
+          placeholder="Ex. Koffi, MAT-2026 ou identifiant"
+          aria-label="Rechercher un étudiant" [disabled]="searching">
+        <button type="button" class="primary-action" (click)="rechercherEtudiants()"
+          [disabled]="searching || recherche.trim().length < 2">
+          {{ searching ? 'Recherche…' : 'Rechercher' }}
+        </button>
+      </div>
+
+      <div *ngIf="searching" class="inline-loading">
+        <span class="material-symbols-outlined">progress_activity</span>
+        Recherche des étudiants…
+      </div>
+
+      <div *ngIf="!searching && etudiants.length" class="student-results" aria-live="polite">
+        <p class="results-label">{{ etudiants.length }} résultat(s)</p>
+        <button *ngFor="let item of etudiants" type="button" (click)="selectionnerEtudiant(item)" class="student-result">
+          <span class="student-avatar">{{ item.prenoms?.charAt(0) }}{{ item.nom?.charAt(0) }}</span>
+          <span class="student-copy">
+            <strong>{{ item.nom }} {{ item.prenoms }}</strong>
+            <small>Matricule : {{ item.matricule || 'Non renseigné' }}</small>
+          </span>
+          <span class="result-action">Sélectionner <span class="material-symbols-outlined">arrow_forward</span></span>
+        </button>
+      </div>
+
+      <div *ngIf="hasSearched && !searching && !etudiants.length && !errorMessage"
+        class="empty-state" aria-live="polite">
+        <span class="material-symbols-outlined">person_off</span>
+        <strong>Aucun étudiant trouvé</strong>
+        <span>Vérifiez l’orthographe ou recherchez avec un autre identifiant.</span>
+      </div>
+      <p class="search-hint">
+        <span class="material-symbols-outlined">info</span>
+        La recherche commence à partir de deux caractères.
+      </p>
+    </section>
+
+    <section class="wizard-panel" *ngIf="etape === 2">
+      <div class="panel-heading">
+        <div>
+          <p class="step-caption">Étape 2 sur 4</p>
+          <h2>Choisir le document et le mode de paiement</h2>
+          <p>Seuls les documents actifs sont proposés. Un tarif doit être enregistré pour encaisser.</p>
+        </div>
+        <span class="panel-icon material-symbols-outlined" aria-hidden="true">description</span>
+      </div>
+
+      <div class="selected-student">
+        <span class="student-avatar">{{ etudiant?.prenoms?.charAt(0) }}{{ etudiant?.nom?.charAt(0) }}</span>
+        <span class="student-copy">
+          <small>Étudiant sélectionné</small>
+          <strong>{{ etudiant?.nom }} {{ etudiant?.prenoms }}</strong>
+          <small>Matricule : {{ etudiant?.matricule || 'Non renseigné' }}</small>
         </span>
-        <span class="text-indigo-600">Choisir →</span>
-      </button>
-    </div>
-  </section>
+        <button type="button" class="text-action" (click)="etape = 1">Changer</button>
+      </div>
 
-  <section class="card p-5" *ngIf="etape === 2">
-    <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
-      <h2 class="text-lg font-semibold">2. Choisir le document et le mode de paiement</h2>
-      <a routerLink="/scolarite/secretariat/tarifs-documents" class="secondary-action">Configurer les tarifs</a>
-    </div>
-    <div class="mb-5 rounded-lg bg-gray-50 p-4">
-      <p class="text-xs uppercase tracking-wide text-gray-500">Étudiant sélectionné</p>
-      <p class="font-semibold text-gray-800">{{ etudiant?.nom }} {{ etudiant?.prenoms }}</p>
-      <p class="text-sm text-gray-500">Matricule : {{ etudiant?.matricule || 'Non renseigné' }}</p>
-    </div>
-    <div class="grid gap-4 md:grid-cols-2">
-      <label class="form-group">
-        <span class="form-label">Document à payer</span>
-        <select class="form-select" [(ngModel)]="typeDocumentId" [disabled]="loadingTypes">
-          <option [ngValue]="null" disabled>Sélectionner un type de document</option>
-          <option *ngFor="let type of typesDocuments" [ngValue]="type.id">{{ type.libelle }} — {{ type.frais | number }} FCFA</option>
-        </select>
+      <div class="subsection-heading">
+        <div>
+          <h3>Document à encaisser</h3>
+          <p>Sélectionnez un document dont le tarif est défini.</p>
+        </div>
+        <a routerLink="/scolarite/secretariat/tarifs-documents" class="text-action">Configurer les tarifs</a>
+      </div>
+
+      <div *ngIf="loadingTypes" class="inline-loading">
+        <span class="material-symbols-outlined">progress_activity</span>
+        Chargement des types de documents…
+      </div>
+
+      <div *ngIf="!loadingTypes && typesDocuments.length === 0" class="empty-state">
+        <span class="material-symbols-outlined">inventory_2</span>
+        <strong>Aucun type de document actif</strong>
+        <span>Créez ou activez un type avant de procéder à l’encaissement.</span>
+        <a routerLink="/scolarite/secretariat/types-documents" class="primary-action">Gérer les types de documents</a>
+      </div>
+
+      <div *ngIf="!loadingTypes && typesDocuments.length > 0 && !typesAvecTarif" class="tariff-notice">
+        <span class="material-symbols-outlined">info</span>
+        <div>
+          <strong>Aucun tarif n’est encore défini</strong>
+          <p>Les types existent, mais aucun ne peut être encaissé tant qu’un tarif n’a pas été enregistré.</p>
+        </div>
+        <a routerLink="/scolarite/secretariat/tarifs-documents" class="outline-action">Définir les tarifs</a>
+      </div>
+
+      <div *ngIf="!loadingTypes && typesDocuments.length > 0" class="document-options">
+        <button *ngFor="let type of typesDocuments" type="button"
+          class="document-option"
+          [class.is-selected]="typeDocumentId === type.id"
+          [class.is-unpriced]="type.frais <= 0"
+          [disabled]="type.frais <= 0"
+          [attr.aria-pressed]="typeDocumentId === type.id"
+          (click)="typeDocumentId = type.id">
+          <span class="option-icon material-symbols-outlined">description</span>
+          <span class="option-copy">
+            <strong>{{ type.libelle }}</strong>
+            <small *ngIf="type.frais > 0">Document disponible à l’encaissement</small>
+            <small *ngIf="type.frais <= 0">Tarif à définir</small>
+          </span>
+          <span class="option-price" *ngIf="type.frais > 0">{{ type.frais | number:'1.0-0' }} <small>FCFA</small></span>
+          <span class="option-price unpriced-label" *ngIf="type.frais <= 0">Non tarifé</span>
+          <span *ngIf="typeDocumentId === type.id" class="material-symbols-outlined selected-check">check_circle</span>
+        </button>
+      </div>
+
+      <div class="subsection-heading payment-heading">
+        <div>
+          <h3>Mode de paiement</h3>
+          <p>Choisissez le mode constaté par le caissier.</p>
+        </div>
+      </div>
+      <div class="payment-methods">
+        <label class="payment-method" [class.is-selected]="modePaiement === 'especes'">
+          <input type="radio" name="modePaiement" value="especes" [(ngModel)]="modePaiement">
+          <span class="material-symbols-outlined">payments</span>
+          <span><strong>Espèces</strong><small>Paiement au guichet</small></span>
+        </label>
+        <label class="payment-method" [class.is-selected]="modePaiement === 'mobile_money'">
+          <input type="radio" name="modePaiement" value="mobile_money" [(ngModel)]="modePaiement">
+          <span class="material-symbols-outlined">phone_iphone</span>
+          <span><strong>Mobile Money</strong><small>Transaction électronique</small></span>
+        </label>
+        <label class="payment-method" [class.is-selected]="modePaiement === 'autre'">
+          <input type="radio" name="modePaiement" value="autre" [(ngModel)]="modePaiement">
+          <span class="material-symbols-outlined">account_balance</span>
+          <span><strong>Autre</strong><small>Autre justificatif</small></span>
+        </label>
+      </div>
+
+      <label class="form-group reference-field" *ngIf="modePaiement !== 'especes'">
+        <span class="form-label">Référence du paiement</span>
+        <input class="form-input" [(ngModel)]="referencePaiement" maxlength="100"
+          placeholder="Référence de transaction ou pièce">
       </label>
-      <label class="form-group">
-        <span class="form-label">Mode de paiement</span>
-        <select class="form-select" [(ngModel)]="modePaiement">
-          <option value="especes">Espèces</option>
-          <option value="mobile_money">Mobile Money</option>
-          <option value="autre">Autre</option>
-        </select>
-      </label>
-    </div>
-    <label class="form-group mt-4" *ngIf="modePaiement !== 'especes'">
-      <span class="form-label">Référence du paiement</span>
-      <input class="form-input" [(ngModel)]="referencePaiement" maxlength="100" placeholder="Référence de transaction ou pièce">
-    </label>
-    <div *ngIf="typeSelectionne" class="mt-5 rounded-lg border border-indigo-100 bg-indigo-50 p-4">
-      <p class="text-sm text-indigo-700">Montant à encaisser</p>
-      <p class="text-2xl font-bold text-indigo-900">{{ typeSelectionne.frais | number }} FCFA</p>
-    </div>
-    <div class="mt-6 flex justify-between border-t pt-4">
-      <button type="button" class="secondary-action" (click)="etape = 1">Changer d'étudiant</button>
-      <button type="button" class="primary-action" (click)="continuerVersPaiement()" [disabled]="!typeDocumentId">
-        Vérifier le paiement
-      </button>
-    </div>
-  </section>
 
-  <section class="card p-5" *ngIf="etape === 3">
-    <h2 class="mb-1 text-lg font-semibold">3. Vérifier et encaisser</h2>
-    <p class="mb-5 text-sm text-gray-500">Vérifiez les informations avec l'étudiant avant de valider l'encaissement.</p>
-    <dl class="grid gap-4 rounded-lg bg-gray-50 p-4 text-sm sm:grid-cols-2">
-      <div><dt class="text-gray-500">Étudiant</dt><dd class="font-semibold">{{ etudiant?.nom }} {{ etudiant?.prenoms }}</dd></div>
-      <div><dt class="text-gray-500">Matricule</dt><dd class="font-semibold">{{ etudiant?.matricule || 'Non renseigné' }}</dd></div>
-      <div><dt class="text-gray-500">Document</dt><dd class="font-semibold">{{ typeSelectionne?.libelle }}</dd></div>
-      <div><dt class="text-gray-500">Mode de paiement</dt><dd class="font-semibold">{{ modePaiement === 'mobile_money' ? 'Mobile Money' : modePaiement === 'especes' ? 'Espèces' : 'Autre' }}</dd></div>
-      <div *ngIf="referencePaiement"><dt class="text-gray-500">Référence</dt><dd class="font-semibold">{{ referencePaiement }}</dd></div>
-      <div><dt class="text-gray-500">Montant exact</dt><dd class="text-lg font-bold text-indigo-700">{{ typeSelectionne?.frais | number }} FCFA</dd></div>
-    </dl>
-    <div class="mt-6 flex justify-between border-t pt-4">
-      <button type="button" class="secondary-action" (click)="etape = 2" [disabled]="loading">Modifier</button>
-      <button type="button" class="primary-action" (click)="encaisser()" [disabled]="loading">
-        {{ loading ? 'Enregistrement…' : 'Confirmer l’encaissement' }}
-      </button>
-    </div>
-  </section>
+      <div class="wizard-footer">
+        <button type="button" class="outline-action" (click)="etape = 1">Retour à la recherche</button>
+        <button type="button" class="primary-action" (click)="continuerVersPaiement()"
+          [disabled]="loadingTypes || !typeSelectionne || typeSelectionne.frais <= 0">
+          Vérifier le paiement
+          <span class="material-symbols-outlined">arrow_forward</span>
+        </button>
+      </div>
+    </section>
 
-  <section class="card p-5" *ngIf="etape === 4 && recu">
-    <h2 class="mb-4 text-lg font-semibold">4. Reçu de paiement</h2>
-    <div class="rounded-lg border border-green-200 bg-green-50 p-5">
-      <p class="font-semibold text-green-800">Paiement enregistré</p>
-      <p class="mt-2 text-sm text-green-800">Reçu n° <strong>{{ recu.numero || recu.id }}</strong></p>
-      <p class="text-sm text-green-800">Étudiant : {{ etudiant?.nom }} {{ etudiant?.prenoms }}</p>
-      <p class="text-lg font-bold text-green-900">{{ recu.montant | number }} FCFA</p>
-      <p class="mt-3 text-sm text-green-800">Le reçu PDF sert de bordereau pour la demande de document. L'étudiant le joindra depuis son espace.</p>
-    </div>
-    <div class="mt-5 flex flex-wrap justify-end gap-3">
-      <button type="button" class="secondary-action" (click)="nouvelleOperation()">Nouvel encaissement</button>
-      <button type="button" class="primary-action" (click)="telechargerRecu()">Télécharger le reçu PDF</button>
-    </div>
-  </section>
+    <section class="wizard-panel" *ngIf="etape === 3">
+      <div class="panel-heading">
+        <div>
+          <p class="step-caption">Étape 3 sur 4</p>
+          <h2>Vérifier et encaisser</h2>
+          <p>Confirmez les informations avant d’enregistrer définitivement le paiement.</p>
+        </div>
+        <span class="panel-icon material-symbols-outlined" aria-hidden="true">fact_check</span>
+      </div>
+
+      <div class="confirmation-card">
+        <div class="confirmation-row">
+          <span class="material-symbols-outlined">person</span>
+          <span><small>Étudiant</small><strong>{{ etudiant?.nom }} {{ etudiant?.prenoms }}</strong></span>
+        </div>
+        <div class="confirmation-row">
+          <span class="material-symbols-outlined">badge</span>
+          <span><small>Matricule</small><strong>{{ etudiant?.matricule || 'Non renseigné' }}</strong></span>
+        </div>
+        <div class="confirmation-row">
+          <span class="material-symbols-outlined">description</span>
+          <span><small>Document</small><strong>{{ typeSelectionne?.libelle }}</strong></span>
+        </div>
+        <div class="confirmation-row">
+          <span class="material-symbols-outlined">payments</span>
+          <span><small>Mode de paiement</small><strong>{{ modePaiement === 'mobile_money' ? 'Mobile Money' : modePaiement === 'especes' ? 'Espèces' : 'Autre' }}</strong></span>
+        </div>
+        <div class="confirmation-row" *ngIf="referencePaiement">
+          <span class="material-symbols-outlined">tag</span>
+          <span><small>Référence</small><strong>{{ referencePaiement }}</strong></span>
+        </div>
+        <div class="amount-due">
+          <small>Montant à encaisser</small>
+          <strong>{{ typeSelectionne?.frais | number:'1.0-0' }} <span>FCFA</span></strong>
+        </div>
+      </div>
+
+      <div class="wizard-footer">
+        <button type="button" class="outline-action" (click)="etape = 2" [disabled]="loading">Modifier</button>
+        <button type="button" class="primary-action" (click)="encaisser()" [disabled]="loading">
+          <span class="material-symbols-outlined">{{ loading ? 'progress_activity' : 'check' }}</span>
+          {{ loading ? 'Enregistrement…' : 'Confirmer l’encaissement' }}
+        </button>
+      </div>
+    </section>
+
+    <section class="wizard-panel receipt-panel" *ngIf="etape === 4 && recu">
+      <div class="receipt-success-icon material-symbols-outlined">check_circle</div>
+      <p class="step-caption">Étape 4 sur 4</p>
+      <h2>Encaissement enregistré</h2>
+      <p class="receipt-intro">Le paiement a été enregistré. Le reçu officiel est prêt à être téléchargé.</p>
+
+      <div class="receipt-summary">
+        <div><small>Numéro du reçu</small><strong>{{ recu.numero || recu.id }}</strong></div>
+        <div><small>Étudiant</small><strong>{{ etudiant?.nom }} {{ etudiant?.prenoms }}</strong></div>
+        <div><small>Document</small><strong>{{ typeSelectionne?.libelle }}</strong></div>
+        <div class="receipt-amount"><small>Montant payé</small><strong>{{ recu.montant | number:'1.0-0' }} FCFA</strong></div>
+      </div>
+
+      <div class="receipt-note">
+        <span class="material-symbols-outlined">info</span>
+        Le reçu PDF sert de justificatif de paiement pour la demande de document. L’étudiant pourra le joindre depuis son espace.
+      </div>
+      <div class="receipt-actions">
+        <button type="button" class="outline-action" (click)="nouvelleOperation()">Nouvel encaissement</button>
+        <button type="button" class="primary-action" (click)="telechargerRecu()">
+          <span class="material-symbols-outlined">download</span>
+          Télécharger le reçu PDF
+        </button>
+      </div>
+    </section>
+  </main>
 </div>

@@ -7,6 +7,7 @@ import { TarifTypeDocument, TypeDocument } from '../models/TypeDocument.model';
 @Injectable({ providedIn: 'root' })
 export class TypeDocumentService {
   private readonly SERVICE_URL: string = `${environment.API_MODULES.SCOLARITE}/typesDocument`
+  private readonly SECRETARIAT_TYPES_URL: string = `${environment.API_MODULES.SCOLARITE}/secretariat/typesDocument`
 
   constructor(private httpClient: HttpClient) { }
 
@@ -15,11 +16,11 @@ export class TypeDocumentService {
   }
 
   getTarifs(): Observable<TarifTypeDocument[]> {
-    return this.httpClient.get<TarifTypeDocument[]>(`${this.SERVICE_URL}/tarifs`)
+    return this.httpClient.get<TarifTypeDocument[]>(`${this.SECRETARIAT_TYPES_URL}/tarifs`)
   }
 
   updateFrais(id: string | number, frais: number): Observable<TarifTypeDocument> {
-    return this.httpClient.put<TarifTypeDocument>(`${this.SERVICE_URL}/${id}/frais`, { frais })
+    return this.httpClient.put<TarifTypeDocument>(`${this.SECRETARIAT_TYPES_URL}/${id}/frais`, { frais })
   }
 
   get(id: string): Observable<TypeDocument> {

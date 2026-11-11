@@ -24,6 +24,14 @@ export class DemandeDocument extends Model<InferAttributes<DemandeDocument>, Inf
   declare classeId: CreationOptional<number | null>
   declare anneeAcademiqueId: CreationOptional<number | null>
   declare semestre: CreationOptional<string | null>
+  declare diplomeRecu: CreationOptional<'BAC' | 'LICENCE' | 'MASTER' | null>
+  declare dateDiplomeRecu: CreationOptional<string | null>
+  declare relevesSemestresRecus: CreationOptional<string[] | null>
+  declare relevesSemestresDates: CreationOptional<Record<string, string> | null>
+  declare semestresAutorises: CreationOptional<string[] | null>
+  declare docgenDocumentId: CreationOptional<number | null>
+  declare signatairesAutorisation: CreationOptional<Array<{ id: number; nomComplet: string }> | null>
+  declare signaturesAutorisation: CreationOptional<Array<{ signataireId: number; signatureData: string; signedAt: string }> | null>
   declare numeroDemande: CreationOptional<string | null>
   declare datePaiement: CreationOptional<Date | null>
   declare modePaiement: CreationOptional<'especes' | 'mobile_money' | 'autre' | null>
@@ -127,6 +135,46 @@ DemandeDocument.init({
   semestre: {
     type: DataTypes.STRING(30),
     allowNull: true
+  },
+  diplomeRecu: {
+    type: DataTypes.ENUM('BAC', 'LICENCE', 'MASTER'),
+    allowNull: true,
+    defaultValue: null,
+  },
+  dateDiplomeRecu: {
+    type: DataTypes.DATEONLY,
+    allowNull: true,
+    defaultValue: null,
+  },
+  relevesSemestresRecus: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: null,
+  },
+  relevesSemestresDates: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: null,
+  },
+  semestresAutorises: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: null,
+  },
+  docgenDocumentId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true,
+    defaultValue: null,
+  },
+  signatairesAutorisation: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: null,
+  },
+  signaturesAutorisation: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: null,
   },
   numeroDemande: {
     type: new DataTypes.STRING(40),

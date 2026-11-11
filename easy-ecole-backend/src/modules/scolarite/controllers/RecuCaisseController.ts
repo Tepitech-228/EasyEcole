@@ -212,13 +212,13 @@ export default class RecuCaisseController {
       }
     }
 
-    static async getTypesDocumentsPayants(req: Request, res: Response): Promise<Response> {
+    static async getTypesDocumentsEncaissement(req: Request, res: Response): Promise<Response> {
       if (!ROLES_RECOUVREMENT.includes((req as any).utilisateurRole)) {
         return res.status(403).json({ success: false, message: "Accès réservé au service de recouvrement" });
       }
       try {
         const types = await TypeDocument.findAll({
-          where: { actif: true, frais: { [Op.gt]: 0 } },
+          where: { actif: true },
           attributes: ['id', 'libelle', 'frais'],
           order: [['libelle', 'ASC']]
         });

@@ -17,12 +17,14 @@ import { RhContratEnseignant } from '../../rh/models/RhContratEnseignant';
 import { RhFicheEvaluation } from '../../rh/models/RhFicheEvaluation';
 import { RhPrestationEnseignant } from '../../rh/models/RhPrestationEnseignant';
 import { Bordereau } from '../../inscription/models/Bordereau';
+import { DemandeDocument } from '../../scolarite/models/DemandeDocument';
 import { genererInitialesUniquesComite } from '../../inscription/services/ComiteInitialesService';
 import { Op } from 'sequelize';
 
 interface GenerateParams {
   typeCode: string;
   initialesComite?: string;
+  autorisationDocumentId?: number;
   sourceId?: number | string;
   classeId?: number;
   semestre?: string;
@@ -68,6 +70,21 @@ interface ResolvedData {
   conge?: Record<string, any>;
   evaluation?: Record<string, any>;
   prestations?: Array<Record<string, any>>;
+  autorisationProvisoire?: {
+    diplomeRecu: string;
+    dateDiplomeRecu: string;
+    relevesSemestresRecus: string[];
+    relevesSemestresDates: Record<string, string>;
+    relevesSemestresRecusLibelle: string;
+    semestresAutorises: string[];
+    diplomeCellules: Record<'BAC' | 'LICENCE' | 'MASTER', string>;
+    dateDiplomeCellules: Record<'BAC' | 'LICENCE' | 'MASTER', string>;
+    relevesCellules: Record<'S1_S2' | 'S3_S4' | 'S5_S6' | 'S7_S8' | 'S9_S10', string>;
+    relevesDatesCellules: Record<'S1_S2' | 'S3_S4' | 'S5_S6' | 'S7_S8' | 'S9_S10', string>;
+    semestresAutorisesCellules: Record<'S1_S2' | 'S3_S4' | 'S5_S6' | 'S7_S8' | 'S9_S10', string>;
+    signataire1: { nomComplet: string; signatureData: string };
+    signataire2: { nomComplet: string; signatureData: string };
+  };
 }
 
 type ResolverFn = (params: GenerateParams) => Promise<ResolvedData>;
@@ -531,20 +548,47 @@ async function resolveDecision(params: GenerateParams): Promise<ResolvedData> {
   return resolveDefault();
 }
 
-function normalizeApiDocumentText(value: unknown): string {
-  return String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
+function formatApiDate(value: unknown): string {
+  if (typeof value !== 'string' || !value) return ''
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  return dateOnly ? `${dateOnly[3]}/${dateOnly[2]}/${dateOnly[1]}` : value
 }
 
-function getApiSemesterGroup(semester: number): string | null {
-  if (semester >= 1 && semester <= 2) return 'relevesSem12'
-  if (semester >= 3 && semester <= 4) return 'relevesSem34'
-  if (semester >= 5 && semester <= 6) return 'relevesSem56'
-  if (semester >= 7 && semester <= 8) return 'relevesSem78'
-  if (semester >= 9 && semester <= 10) return 'relevesSem910'
-  return null
+function getApiSemesterCells(semesters: string[]): Record<'S1_S2' | 'S3_S4' | 'S5_S6' | 'S7_S8' | 'S9_S10', string> {
+  const selected = new Set(semesters)
+  return {
+    S1_S2: ['S1', 'S2'].filter((semester) => selected.has(semester)).join(', '),
+    S3_S4: ['S3', 'S4'].filter((semester) => selected.has(semester)).join(', '),
+    S5_S6: ['S5', 'S6'].filter((semester) => selected.has(semester)).join(', '),
+    S7_S8: ['S7', 'S8'].filter((semester) => selected.has(semester)).join(', '),
+    S9_S10: ['S9', 'S10'].filter((semester) => selected.has(semester)).join(', '),
+  }
+}
+
+function getApiSemesterDateCells(dates: Record<string, string>): Record<'S1_S2' | 'S3_S4' | 'S5_S6' | 'S7_S8' | 'S9_S10', string> {
+  const groups = [
+    { key: 'S1_S2', semesters: ['S1', 'S2'] },
+    { key: 'S3_S4', semesters: ['S3', 'S4'] },
+    { key: 'S5_S6', semesters: ['S5', 'S6'] },
+    { key: 'S7_S8', semesters: ['S7', 'S8'] },
+    { key: 'S9_S10', semesters: ['S9', 'S10'] },
+  ] as const
+  return {
+    S1_S2: groups[0].semesters.filter((semester) => dates[semester]).map((semester) => `${semester} : ${formatApiDate(dates[semester])}`).join(', '),
+    S3_S4: groups[1].semesters.filter((semester) => dates[semester]).map((semester) => `${semester} : ${formatApiDate(dates[semester])}`).join(', '),
+    S5_S6: groups[2].semesters.filter((semester) => dates[semester]).map((semester) => `${semester} : ${formatApiDate(dates[semester])}`).join(', '),
+    S7_S8: groups[3].semesters.filter((semester) => dates[semester]).map((semester) => `${semester} : ${formatApiDate(dates[semester])}`).join(', '),
+    S9_S10: groups[4].semesters.filter((semester) => dates[semester]).map((semester) => `${semester} : ${formatApiDate(dates[semester])}`).join(', '),
+  }
+}
+
+function escapeHtmlText(value: unknown): string {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 }
 
 async function resolveAutorisationProvisoire(params: GenerateParams): Promise<ResolvedData> {
@@ -593,6 +637,67 @@ async function resolveAutorisationProvisoire(params: GenerateParams): Promise<Re
 
   if (!demande) return { etablissement, etudiants: [] };
 
+  const demandeDocument = params.autorisationDocumentId
+    ? await DemandeDocument.findOne({
+      where: {
+        id: params.autorisationDocumentId,
+        etudiantId: demande.utilisateurId,
+      },
+    })
+    : null;
+  const diplomeRecu = demandeDocument?.diplomeRecu || ''
+  const dateDiplomeRecu = formatApiDate(demandeDocument?.dateDiplomeRecu)
+  const relevesSemestresRecus = demandeDocument?.relevesSemestresRecus || []
+  const relevesSemestresDates = demandeDocument?.relevesSemestresDates || {}
+  const semestresAutorises = demandeDocument?.semestresAutorises || []
+  const signataires = Array.isArray(demandeDocument?.signatairesAutorisation)
+    ? demandeDocument.signatairesAutorisation
+    : []
+  const signatures = Array.isArray(demandeDocument?.signaturesAutorisation)
+    ? demandeDocument.signaturesAutorisation
+    : []
+  const construireCelluleSignataire = (index: number) => {
+    const signataire = signataires[index]
+    if (!signataire) return { nomComplet: '', signatureData: '' }
+    const signature = signatures.find((item: any) => Number(item.signataireId) === Number(signataire.id))
+    const signatureData = typeof signature?.signatureData === 'string'
+      && signature.signatureData.length <= 500_000
+      && /^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/.test(signature.signatureData)
+      ? signature.signatureData
+      : ''
+    return {
+      nomComplet: escapeHtmlText(signataire.nomComplet),
+      signatureData,
+    }
+  }
+  const diplomeCellules = {
+    BAC: diplomeRecu === 'BAC' ? diplomeRecu : '',
+    LICENCE: diplomeRecu === 'LICENCE' ? diplomeRecu : '',
+    MASTER: diplomeRecu === 'MASTER' ? diplomeRecu : '',
+  }
+  const dateDiplomeCellules = {
+    BAC: diplomeRecu === 'BAC' ? dateDiplomeRecu : '',
+    LICENCE: diplomeRecu === 'LICENCE' ? dateDiplomeRecu : '',
+    MASTER: diplomeRecu === 'MASTER' ? dateDiplomeRecu : '',
+  }
+  const autorisationProvisoire = {
+    diplomeRecu,
+    dateDiplomeRecu,
+    relevesSemestresRecus,
+    relevesSemestresDates,
+    relevesSemestresRecusLibelle: demandeDocument?.relevesSemestresRecus?.length
+      ? demandeDocument.relevesSemestresRecus.join(', ')
+      : 'Aucun relevé déclaré',
+    semestresAutorises,
+    diplomeCellules,
+    dateDiplomeCellules,
+    relevesCellules: getApiSemesterCells(relevesSemestresRecus),
+    relevesDatesCellules: getApiSemesterDateCells(relevesSemestresDates),
+    semestresAutorisesCellules: getApiSemesterCells(semestresAutorises),
+    signataire1: construireCelluleSignataire(0),
+    signataire2: construireCelluleSignataire(1),
+  };
+
   let initialesComite = params.initialesComite || '';
   if (!initialesComite) {
     const { ComiteVote } = await import('../../inscription/models/ComiteVote');
@@ -618,57 +723,6 @@ async function resolveAutorisationProvisoire(params: GenerateParams): Promise<Re
   const parcoursChoisi = demande.parcoursChoisis?.[0];
   const parcours = parcoursChoisi?.parcours;
   const anneeAcademique = (demande.session as any)?.anneeAcademique;
-  const uploadedDocuments = (demande.dossiersDemande || [])
-    .filter((document: any) => document.nomFichier && !document.correctionDemandee)
-    .map((document: any) => ({
-      text: normalizeApiDocumentText([
-        document.dossierInscription?.titre,
-        document.nomFichier,
-      ].filter(Boolean).join(' ')),
-    }))
-  const transcriptDocuments = uploadedDocuments.filter(({ text }: { text: string }) =>
-    /\b(releve|notes?)\b/.test(text))
-  const hasDiplomaDocument = (pattern: RegExp): boolean =>
-    uploadedDocuments.some(({ text }: { text: string }) =>
-      !/\b(releve|notes?)\b/.test(text) && pattern.test(text))
-  const transcriptSemesters = new Set<string>()
-
-  for (const { text } of transcriptDocuments) {
-    const semesterMatches = [...text.matchAll(/\b(?:sem(?:estre)?|s)\s*(10|[1-9])\b/g)]
-    if (semesterMatches.length > 0) {
-      for (const match of semesterMatches) {
-        const group = getApiSemesterGroup(Number(match[1]))
-        if (group) transcriptSemesters.add(group)
-      }
-      continue
-    }
-
-    const licenceMatch = text.match(/\b(?:licence|lic|l)\s*([1-3])\b/)
-    const masterMatch = text.match(/\b(?:master|mas|m)\s*([1-2])\b/)
-    const level = Number(licenceMatch?.[1] || masterMatch?.[1])
-    const firstSemester = licenceMatch ? (level - 1) * 2 + 1 : level * 2 + 5
-    const firstGroup = getApiSemesterGroup(firstSemester)
-    const secondGroup = getApiSemesterGroup(firstSemester + 1)
-    if (firstGroup) transcriptSemesters.add(firstGroup)
-    if (secondGroup) transcriptSemesters.add(secondGroup)
-  }
-
-  const niveauParcours = normalizeApiDocumentText(parcours?.niveauEtude?.libelle)
-  const niveauLicence = niveauParcours.match(/\b(?:licence|lic|l)\s*([1-3])\b/)
-  const niveauMaster = niveauParcours.match(/\b(?:master|mas|m)\s*([1-2])\b/)
-  const niveau = Number(niveauLicence?.[1] || niveauMaster?.[1])
-  const diplomesConnus = [
-    /\bbac\b|\bbaccalaureat\b/,
-    /\bdts\b|\bdut\b/,
-    /\bbts\b/,
-    /\blicence\b/,
-    /\bmaitrise\b/,
-    /\bmaster\b/,
-  ]
-  const hasOtherDiploma = uploadedDocuments.some(({ text }: { text: string }) =>
-    !/\b(releve|notes?)\b/.test(text)
-    && /\b(diplome|certificat)\b/.test(text)
-    && !diplomesConnus.some((pattern) => pattern.test(text)))
 
   // Récupérer les UE prescrites (si l'étudiant a une prescription du comité)
   let uesPrescrites: any[] = [];
@@ -711,38 +765,14 @@ async function resolveAutorisationProvisoire(params: GenerateParams): Promise<Re
   }
 
   const etudiant = {
-    nom: utilisateur?.nom || '',
-    prenom: utilisateur?.prenoms || '',
+    nom: escapeHtmlText(utilisateur?.nom || ''),
+    prenom: escapeHtmlText(utilisateur?.prenoms || ''),
     matricule: demande.matricule || utilisateur?.identifiant || '',
-    dateNaissance: apprenant?.dateNaissance ? new Date(apprenant.dateNaissance).toLocaleDateString('fr-FR') : '',
-    lieuNaissance: apprenant?.lieuNaissance || '',
-    nationalite: apprenant?.nationalite || '',
-    diplomeBac: Boolean(
-      apprenant?.serieBac
-      || apprenant?.anneeObtentionBac
-      || hasDiplomaDocument(/\bbac\b|\bbaccalaureat\b/),
-    ),
-    diplomeDtsDut: hasDiplomaDocument(/\bdts\b|\bdut\b/),
-    diplomeBts: hasDiplomaDocument(/\bbts\b/),
-    diplomeLicence: hasDiplomaDocument(/\blicence\b/),
-    diplomeMaitrise: hasDiplomaDocument(/\bmaitrise\b/),
-    diplomeMaster: hasDiplomaDocument(/\bmaster\b/),
-    diplomeAutres: hasOtherDiploma,
-    specialiteDiplome: apprenant?.serieBac || '',
-    specialiteReleves: '',
-    specialiteParcours: parcours?.titre || '',
-    relevesSem12: transcriptSemesters.has('relevesSem12'),
-    relevesSem34: transcriptSemesters.has('relevesSem34'),
-    relevesSem56: transcriptSemesters.has('relevesSem56'),
-    relevesSem78: transcriptSemesters.has('relevesSem78'),
-    relevesSem910: transcriptSemesters.has('relevesSem910'),
-    parcoursLicence12: Boolean(niveauLicence && niveau === 1),
-    parcoursLicence34: Boolean(niveauLicence && niveau === 2),
-    parcoursLicence56: Boolean(niveauLicence && niveau === 3),
-    parcoursMaster12: Boolean(niveauMaster && niveau === 1),
-    parcoursMaster34: Boolean(niveauMaster && niveau === 2),
-    filiere: parcours?.titre || '',
-    niveau: parcours?.niveauEtude?.libelle || '',
+    dateNaissance: escapeHtmlText(apprenant?.dateNaissance ? new Date(apprenant.dateNaissance).toLocaleDateString('fr-FR') : ''),
+    lieuNaissance: escapeHtmlText(apprenant?.lieuNaissance || ''),
+    nationalite: escapeHtmlText(apprenant?.nationalite || ''),
+    filiere: escapeHtmlText(parcours?.titre || ''),
+    niveau: escapeHtmlText(parcours?.niveauEtude?.libelle || ''),
     diplomeVise: parcours?.type === 'LICENCE' ? 'Licence' : parcours?.type === 'MASTER' ? 'Master' : parcours?.type || '',
     anneeAcademique: anneeAcademique?.libelle || '',
     classe: '',
@@ -753,6 +783,7 @@ async function resolveAutorisationProvisoire(params: GenerateParams): Promise<Re
     etablissement,
     etudiants: [etudiant],
     anneeAcademique: etudiant.anneeAcademique,
+    autorisationProvisoire,
     initialesComite,
     initialesValidateur: initialesComite,
     nomValidateur: '',

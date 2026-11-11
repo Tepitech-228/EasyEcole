@@ -470,7 +470,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                 roleRestricted: true,
                 items: [
                     { label: 'Profils d’accès', route: '/administration/roles', icon: 'manage_accounts', permissionKey: 'menu.administration.roles', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
-                    { label: 'Pôles & menus', route: '/administration/poles-menus', icon: 'workspaces', permissionKey: 'menu.administration.poles-menus', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Pôles & menus', route: '/administration/poles-menus', icon: 'groups', permissionKey: 'menu.administration.poles-menus', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                     { label: 'Permissions directes', route: '/parametres/permissions', icon: 'security', permissionKey: 'menu.administration.permissions', allowedRoles: [RolesUtilisateur.ADMIN], roleRestricted: true },
                 ]
             },
@@ -583,7 +583,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                     { label: 'Encaissement documents', route: '/scolarite/secretariat/encaissement-documents', icon: 'receipt_long', permissionKey: 'menu.recouvrement.encaissement-documents', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN], roleRestricted: true },
                     { label: 'Caisse', route: '/scolarite/secretariat/caisse', icon: 'payments', permissionKey: 'menu.recouvrement.caisse', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN], roleRestricted: true },
                     { label: 'Clôture caisse', route: '/scolarite/secretariat/cloture-caisse', icon: 'security', permissionKey: 'menu.recouvrement.cloture', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN], roleRestricted: true },
-                    { label: 'Tarifs des documents', route: '/scolarite/secretariat/tarifs-documents', icon: 'price_change', permissionKey: 'menu.recouvrement.tarifs-documents', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN], roleRestricted: true },
+                    { label: 'Tarifs des documents', route: '/scolarite/secretariat/tarifs-documents', icon: 'request_quote', permissionKey: 'menu.recouvrement.tarifs-documents', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN], roleRestricted: true },
                     { label: 'Journal caisse', route: '/scolarite/secretariat/journal-caisse', icon: 'book', permissionKey: 'menu.recouvrement.journal', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN], roleRestricted: true },
                     { label: 'Paiements rattrapage', route: '/inscription/rattrapage/paiements', icon: 'fact_check', permissionKey: 'menu.recouvrement.caisse', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN], roleRestricted: true },
                 ]

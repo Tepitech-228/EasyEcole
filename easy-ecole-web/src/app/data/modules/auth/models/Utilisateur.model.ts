@@ -15,6 +15,8 @@ export class Utilisateur {
   declare contact?: string
   /** Habilitation à prescrire des UE/ECUE supplémentaires (profil comité). */
   declare estPrescripteur?: boolean
+  /** Signataire de l'autorisation provisoire d'inscription ESA. */
+  declare estSignataireApi?: boolean
   declare photoDeProfil?: string
   declare dateVerificationEmail?: Date
 

@@ -8,10 +8,15 @@ import { PaiementInscription } from "./PaiementInscription.model";
 import { DemandeInscriptionDossier } from "./DemandeInscriptionDossier.model";
 import { DemandeInscriptionCours } from "./DemandeInscriptionCours.model";
 import { PreInscription } from "./PreInscription.model";
+import { DossierInscription } from "./DossierInscription.model";
 
 export class DemandeInscription {
   declare id?: string
   declare matricule?: string
+  declare matriculeEtudiant?: string | null
+  declare statutPipeline?: 'soumis' | 'authentifie' | 'saisie_validee' | 'transmis_comite' | 'correction_demandee' | 'valide' | 'rejete' | null
+  declare motifPipeline?: string | null
+  declare consentementHikvisionAt?: Date | null
   declare dateDemande?: Date
   declare dateValidation?: Date
   declare sessionId?: string
@@ -25,6 +30,7 @@ export class DemandeInscription {
   declare cours?: Cours[]
   declare paiementsInscription?: PaiementInscription[]
   declare dossiersDemande?: DemandeInscriptionDossier[]
+  declare dossiersRequis?: DossierInscription[]
   declare coursChoisis?: DemandeInscriptionCours[]
   /** Vrai si l'étudiant déclare être boursier. */
   declare estBoursier?: boolean

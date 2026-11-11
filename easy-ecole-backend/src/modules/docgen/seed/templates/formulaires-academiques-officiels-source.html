@@ -358,7 +358,10 @@
             <div class="content-body">
                 <p>Je soussigné <strong>Dr Charles BIRREGAH</strong>, Fondateur-Président Directeur Général de l’Ecole Supérieure des Affaires (ESA),</p>
                 <p>Vu la demande d’inscription introduite par :<br>
-                <strong>M./Mlle/Mme :</strong> <span class="dotted-line" style="width: 55%;"></span> <strong>né(e) le :</strong> <span class="dotted-line" style="width: 12%;"></span> <strong>à :</strong> <span class="dotted-line" style="width: 12%;"></span> <strong>PAYS :</strong> <span class="dotted-line" style="width: 12%;"></span></p>
+                <strong>M./Mlle/Mme :</strong> {{etudiants.0.nom}} {{etudiants.0.prenom}} &nbsp;
+                <strong>né(e) le :</strong> {{etudiants.0.dateNaissance}} &nbsp;
+                <strong>à :</strong> {{etudiants.0.lieuNaissance}} &nbsp;
+                <strong>PAYS :</strong> {{etudiants.0.nationalite}}</p>
 
                 <p style="margin-bottom: 3px;">Vu les copies légalisées des diplômes (ci-dessous) dont l’authentification a été demandée avec accusé de réception :</p>
                 <table class="data-table">
@@ -373,18 +376,23 @@
                         <th class="center">AUTRES</th>
                     </tr>
                     <tr>
-                        <td><strong>SPÉCIALITÉ</strong></td>
-                        <td><span class="check-box">{{#if etudiant.diplomeBac}}√{{/if}}</span></td>
-                        <td><span class="check-box">{{#if etudiant.diplomeDtsDut}}√{{/if}}</span></td>
-                        <td><span class="check-box">{{#if etudiant.diplomeBts}}√{{/if}}</span></td>
-                        <td><span class="check-box">{{#if etudiant.diplomeLicence}}√{{/if}}</span></td>
-                        <td><span class="check-box">{{#if etudiant.diplomeMaitrise}}√{{/if}}</span></td>
-                        <td><span class="check-box">{{#if etudiant.diplomeMaster}}√{{/if}}</span></td>
-                        <td><span class="check-box">{{#if etudiant.diplomeAutres}}√{{/if}}</span></td>
+                        <td><strong>DIPLÔME REÇU</strong></td>
+                        <td>{{autorisationProvisoire.diplomeCellules.BAC}}</td>
+                        <td></td>
+                        <td></td>
+                        <td>{{autorisationProvisoire.diplomeCellules.LICENCE}}</td>
+                        <td></td>
+                        <td>{{autorisationProvisoire.diplomeCellules.MASTER}}</td>
+                        <td></td>
                     </tr>
                     <tr>
                         <td><strong>Dates</strong></td>
-                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                        <td>{{autorisationProvisoire.dateDiplomeCellules.BAC}}</td>
+                        <td></td><td></td>
+                        <td>{{autorisationProvisoire.dateDiplomeCellules.LICENCE}}</td>
+                        <td></td>
+                        <td>{{autorisationProvisoire.dateDiplomeCellules.MASTER}}</td>
+                        <td></td>
                     </tr>
                 </table>
 
@@ -399,21 +407,25 @@
                         <th class="center">SEM 9-10</th>
                     </tr>
                     <tr>
-                        <td><strong>SPÉCIALITÉ</strong></td>
-                        <td><span class="check-box">{{#if etudiant.relevesSem12}}√{{/if}}</span></td>
-                        <td><span class="check-box">{{#if etudiant.relevesSem34}}√{{/if}}</span></td>
-                        <td><span class="check-box">{{#if etudiant.relevesSem56}}√{{/if}}</span></td>
-                        <td><span class="check-box">{{#if etudiant.relevesSem78}}√{{/if}}</span></td>
-                        <td><span class="check-box">{{#if etudiant.relevesSem910}}√{{/if}}</span></td>
+                        <td><strong>SEMESTRES REÇUS</strong></td>
+                        <td>{{autorisationProvisoire.relevesCellules.S1_S2}}</td>
+                        <td>{{autorisationProvisoire.relevesCellules.S3_S4}}</td>
+                        <td>{{autorisationProvisoire.relevesCellules.S5_S6}}</td>
+                        <td>{{autorisationProvisoire.relevesCellules.S7_S8}}</td>
+                        <td>{{autorisationProvisoire.relevesCellules.S9_S10}}</td>
                     </tr>
                     <tr>
                         <td><strong>Dates</strong></td>
-                        <td></td><td></td><td></td><td></td><td></td>
+                        <td>{{autorisationProvisoire.relevesDatesCellules.S1_S2}}</td>
+                        <td>{{autorisationProvisoire.relevesDatesCellules.S3_S4}}</td>
+                        <td>{{autorisationProvisoire.relevesDatesCellules.S5_S6}}</td>
+                        <td>{{autorisationProvisoire.relevesDatesCellules.S7_S8}}</td>
+                        <td>{{autorisationProvisoire.relevesDatesCellules.S9_S10}}</td>
                     </tr>
                 </table>
 
-                <p><strong>Autorise</strong> M./Mlle/Mme : <span class="dotted-line" style="width: 70%;"></span><br>
-                à s’inscrire pour l’année académique <span class="dotted-line" style="width: 20%;"></span> en :</p>
+                <p><strong>Autorise</strong> M./Mlle/Mme : {{etudiants.0.nom}} {{etudiants.0.prenom}}<br>
+                à s’inscrire pour l’année académique {{anneeAcademique}} en :</p>
 
                 <table class="data-table">
                     <tr>
@@ -425,19 +437,17 @@
                         <th class="center">MAS 3-4</th>
                     </tr>
                     <tr>
-                        <td><strong>SPÉCIALITÉ</strong></td>
-                        <td><span class="check-box">{{#if etudiant.parcoursLicence12}}√{{/if}}</span></td>
-                        <td><span class="check-box">{{#if etudiant.parcoursLicence34}}√{{/if}}</span></td>
-                        <td><span class="check-box">{{#if etudiant.parcoursLicence56}}√{{/if}}</span></td>
-                        <td><span class="check-box">{{#if etudiant.parcoursMaster12}}√{{/if}}</span></td>
-                        <td><span class="check-box">{{#if etudiant.parcoursMaster34}}√{{/if}}</span></td>
+                        <td><strong>SEMESTRES AUTORISÉS</strong></td>
+                        <td>{{autorisationProvisoire.semestresAutorisesCellules.S1_S2}}</td>
+                        <td>{{autorisationProvisoire.semestresAutorisesCellules.S3_S4}}</td>
+                        <td>{{autorisationProvisoire.semestresAutorisesCellules.S5_S6}}</td>
+                        <td>{{autorisationProvisoire.semestresAutorisesCellules.S7_S8}}</td>
+                        <td>{{autorisationProvisoire.semestresAutorisesCellules.S9_S10}}</td>
                     </tr>
                 </table>
 
-                <p style="font-size: 8pt; margin: 4px 0;"><strong>Légende :</strong> √ : Pièce présentée / Inscription validée &nbsp;&nbsp;|&nbsp;&nbsp; × : Pièce Non Présentée / Inscription non validée</p>
-
                 <p>Le cas échéant, M./Mlle/Mme <span class="dotted-line" style="width: 35%;"></span> devra valider les UE prescrites sur la fiche annexe (page suivante).<br>
-                <strong>Filière :</strong> <span class="dotted-line" style="width: 80%;"></span></p>
+                <strong>Filière :</strong> {{etudiants.0.filiere}}</p>
 
                 <div class="notice-box">
                     <strong>NB :</strong><br>
@@ -455,12 +465,18 @@
             </tr>
             <tr>
                 <td class="sign-cell" style="width: 50%;">
-                    <strong class="signatory-name">Steve BARRIGAH-BENISSAN.</strong><br>
-                    <span class="sign-sub">Secrétaire Général / ESA</span>
+                    <strong class="signatory-name">{{autorisationProvisoire.signataire1.nomComplet}}</strong><br>
+                    <span class="sign-sub">Membre signataire</span><br>
+                    {{#if autorisationProvisoire.signataire1.signatureData}}
+                    <img alt="Signature du premier membre" style="height: 16mm; max-width: 55mm;" src="{{autorisationProvisoire.signataire1.signatureData}}">
+                    {{/if}}
                 </td>
                 <td class="sign-cell" style="width: 50%;">
-                    <strong class="signatory-name">GNOHOE-KPADE Jeannot</strong><br>
-                    <span class="sign-sub">Chargé de la communication</span>
+                    <strong class="signatory-name">{{autorisationProvisoire.signataire2.nomComplet}}</strong><br>
+                    <span class="sign-sub">Membre signataire</span><br>
+                    {{#if autorisationProvisoire.signataire2.signatureData}}
+                    <img alt="Signature du deuxième membre" style="height: 16mm; max-width: 55mm;" src="{{autorisationProvisoire.signataire2.signatureData}}">
+                    {{/if}}
                 </td>
             </tr>
             <tr>

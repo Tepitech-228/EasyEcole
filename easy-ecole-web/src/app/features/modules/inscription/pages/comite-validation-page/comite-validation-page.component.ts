@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
-import { ComiteValidationService, DossierComite, FiltresComite, Quorum } from 'src/app/data/modules/inscription/services/comite-validation.service';
+import { AutorisationApiASigner, ComiteValidationService, DossierComite, FiltresComite, Quorum } from 'src/app/data/modules/inscription/services/comite-validation.service';
 import { ParcoursService } from 'src/app/data/modules/inscription/services/parcours.service';
 import { Parcours } from 'src/app/data/modules/inscription/models/Parcours.model';
 import { NiveauEtudeService } from 'src/app/data/modules/inscription/services/niveau-etude.service';
@@ -40,10 +40,17 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
   showDetailModal: boolean = false
   loadingDetail: boolean = false
   showValidationConfirmModal = false
+  showAutorisationProvisoireModal = false
 
   decisionEnCours: 'valide' | 'correction_demandee' | 'rejete' | null = null
   matriculeConfirme = false
   matriculeEtudiantSaisi: string = ''
+  diplomeRecu: '' | 'BAC' | 'LICENCE' | 'MASTER' = ''
+  dateDiplomeRecu = ''
+  relevesSemestresRecus: string[] = []
+  relevesSemestresDates: Record<string, string> = {}
+  semestresAutorises: string[] = []
+  readonly semestresAutorisation = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6']
   motifDecision: string = ''
   processingDecision: boolean = false
   successMessage: string = ''
@@ -63,6 +70,16 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
   docPreviewIsImage: boolean = false
   docPreviewNom: string = ''
   telechargementPdf: boolean = false
+  autorisationsApiASigner: AutorisationApiASigner[] = []
+  chargerAutorisationsApi: boolean = false
+  afficherAutorisationsApi: boolean = false
+  autorisationApiActive: AutorisationApiASigner | null = null
+  afficherSignatureApiModal: boolean = false
+  chargementPdfApi: boolean = false
+  signatureApiEnCours: boolean = false
+  erreurSignatureApi: string = ''
+  apercuPdfApi: SafeResourceUrl | null = null
+  private apercuPdfApiObjectUrl: string | null = null
 
   constructor(
     private comiteService: ComiteValidationService,
@@ -158,6 +175,7 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
 
   ngOnInit(): void {
     this.chargerReferentiels()
+    this.chargerAutorisationsApiASigner()
 
     this.abonnements.push(
       this.changementFiltres.pipe(
@@ -191,6 +209,81 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
   ngOnDestroy(): void {
     this.changementFiltres.complete()
     this.abonnements.forEach(s => s.unsubscribe())
+    this.libererApercuPdfApi()
+  }
+
+  chargerAutorisationsApiASigner(): void {
+    this.chargerAutorisationsApi = true
+    this.comiteService.listerAutorisationsASigner().subscribe({
+      next: (res) => {
+        this.autorisationsApiASigner = res.data || []
+        this.afficherAutorisationsApi = true
+        this.chargerAutorisationsApi = false
+      },
+      error: (err) => {
+        this.autorisationsApiASigner = []
+        this.afficherAutorisationsApi = err?.status !== 403
+        this.chargerAutorisationsApi = false
+        if (err?.status !== 403) {
+          console.error('Erreur de chargement des autorisations à signer', err)
+          this.erreurSignatureApi = err?.error?.message || 'Impossible de charger les autorisations à signer.'
+        }
+      }
+    })
+  }
+
+  ouvrirAutorisationApiASigner(autorisation: AutorisationApiASigner): void {
+    this.autorisationApiActive = autorisation
+    this.afficherSignatureApiModal = true
+    this.chargementPdfApi = true
+    this.erreurSignatureApi = ''
+    this.libererApercuPdfApi()
+    this.comiteService.telechargerAutorisationASigner(autorisation.id).subscribe({
+      next: (blob) => {
+        this.chargementPdfApi = false
+        if (!blob || blob.size === 0) {
+          this.erreurSignatureApi = 'Le document PDF est vide.'
+          return
+        }
+        this.apercuPdfApiObjectUrl = URL.createObjectURL(blob)
+        this.apercuPdfApi = this.sanitizer.bypassSecurityTrustResourceUrl(this.apercuPdfApiObjectUrl)
+      },
+      error: (err) => {
+        this.chargementPdfApi = false
+        this.erreurSignatureApi = err?.error?.message || 'Impossible de charger le document PDF.'
+      }
+    })
+  }
+
+  fermerAutorisationApiASigner(): void {
+    this.afficherSignatureApiModal = false
+    this.autorisationApiActive = null
+    this.erreurSignatureApi = ''
+    this.libererApercuPdfApi()
+  }
+
+  enregistrerSignatureApi(signatureData: string): void {
+    if (!this.autorisationApiActive || this.signatureApiEnCours) return
+    this.signatureApiEnCours = true
+    this.erreurSignatureApi = ''
+    this.comiteService.signerAutorisation(this.autorisationApiActive.id, signatureData).subscribe({
+      next: (res) => {
+        this.signatureApiEnCours = false
+        this.fermerAutorisationApiASigner()
+        this.successMessage = res.message || 'Signature enregistrée.'
+        this.chargerAutorisationsApiASigner()
+      },
+      error: (err) => {
+        this.signatureApiEnCours = false
+        this.erreurSignatureApi = err?.error?.message || 'La signature n’a pas pu être enregistrée.'
+      }
+    })
+  }
+
+  private libererApercuPdfApi(): void {
+    if (this.apercuPdfApiObjectUrl) URL.revokeObjectURL(this.apercuPdfApiObjectUrl)
+    this.apercuPdfApiObjectUrl = null
+    this.apercuPdfApi = null
   }
 
   /** Recharge la liste en conservant les filtres actifs (toggle « afficher tous »). */
@@ -414,7 +507,90 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
       setTimeout(() => { this.error = false; this.apiErrorMessage = '' }, 6000)
       return
     }
+    if (this.estDernierVotePourPremiereInscription()) {
+      this.initialiserAutorisationProvisoire()
+      this.showAutorisationProvisoireModal = true
+      return
+    }
     this.showValidationConfirmModal = true
+  }
+
+  private estDernierVotePourPremiereInscription(): boolean {
+    const quorum = this.getQuorum(this.detailComplet)
+    return this.decisionEnCours === 'valide'
+      && !this.estReinscription(this.detailComplet || this.selectedDossier)
+      && !quorum.aVote
+      && quorum.restants === 1
+  }
+
+  private initialiserAutorisationProvisoire(): void {
+    this.diplomeRecu = ''
+    this.dateDiplomeRecu = ''
+    this.relevesSemestresRecus = []
+    this.relevesSemestresDates = {}
+
+    const dossier = this.detailComplet || this.selectedDossier
+    const parcoursChoisi = dossier?.parcoursChoisis?.find((choix: any) =>
+      choix.choixFinal === true || choix.choixFinal === 1 || choix.choixFinal === '1',
+    ) || dossier?.parcoursChoisis?.[0]
+    const niveau = String(parcoursChoisi?.parcours?.niveauEtude?.libelle || '').toUpperCase()
+    const niveauMatch = niveau.match(/(?:LICENCE|MASTER|L|M)\s*([1-3])/)
+    const niveauNumero = Number(niveauMatch?.[1])
+
+    if (niveau.includes('LICENCE') || /^L\s*\d/.test(niveau)) {
+      const premierSemestre = (niveauNumero - 1) * 2 + 1
+      this.semestresAutorises = Number.isInteger(niveauNumero) && niveauNumero >= 1 && niveauNumero <= 3
+        ? [`S${premierSemestre}`, `S${premierSemestre + 1}`]
+        : []
+    } else if (niveau.includes('MASTER') || /^M\s*\d/.test(niveau)) {
+      const premierSemestre = (niveauNumero - 1) * 2 + 1
+      this.semestresAutorises = Number.isInteger(niveauNumero) && niveauNumero >= 1 && niveauNumero <= 2
+        ? [`S${premierSemestre}`, `S${premierSemestre + 1}`]
+        : []
+    } else {
+      this.semestresAutorises = []
+    }
+  }
+
+  toggleSemestreRecu(semestre: string, checked: boolean): void {
+    this.relevesSemestresRecus = checked
+      ? [...new Set([...this.relevesSemestresRecus, semestre])]
+      : this.relevesSemestresRecus.filter(item => item !== semestre)
+    if (!checked) {
+      const datesRestantes = { ...this.relevesSemestresDates }
+      delete datesRestantes[semestre]
+      this.relevesSemestresDates = datesRestantes
+    }
+  }
+
+  get datesRelevesCompletes(): boolean {
+    return this.relevesSemestresRecus.every(semestre => Boolean(this.relevesSemestresDates[semestre]))
+  }
+
+  toggleSemestreAutorise(semestre: string, checked: boolean): void {
+    this.semestresAutorises = checked
+      ? [...new Set([...this.semestresAutorises, semestre])]
+      : this.semestresAutorises.filter(item => item !== semestre)
+  }
+
+  fermerAutorisationProvisoire(): void {
+    this.showAutorisationProvisoireModal = false
+  }
+
+  confirmerAutorisationProvisoire(): void {
+    if (!this.diplomeRecu || !this.dateDiplomeRecu || !this.datesRelevesCompletes || this.semestresAutorises.length === 0) {
+      this.apiErrorMessage = 'Renseignez le diplôme et sa date, une date pour chaque relevé reçu, puis au moins un semestre autorisé.'
+      this.error = true
+      return
+    }
+    this.showAutorisationProvisoireModal = false
+    this.executerDecision({
+      diplomeRecu: this.diplomeRecu,
+      dateDiplomeRecu: this.dateDiplomeRecu,
+      relevesSemestresRecus: this.relevesSemestresRecus,
+      relevesSemestresDates: this.relevesSemestresDates,
+      semestresAutorises: this.semestresAutorises,
+    })
   }
 
   fermerConfirmationValidation(): void {
@@ -426,7 +602,13 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
     this.executerDecision()
   }
 
-  private executerDecision(): void {
+  private executerDecision(autorisationProvisoire?: {
+    diplomeRecu: 'BAC' | 'LICENCE' | 'MASTER'
+    dateDiplomeRecu: string
+    relevesSemestresRecus: string[]
+    relevesSemestresDates: Record<string, string>
+    semestresAutorises: string[]
+  }): void {
     if (!this.selectedDossier?.id || !this.decisionEnCours) return
     if (this.decisionEnCours !== 'valide' && !this.motifDecision.trim()) return
     if (this.decisionEnCours !== 'valide' && this.documentsAReposer.length === 0) {
@@ -452,7 +634,8 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
       this.motifDecision,
       dossierIdsAReposer,
       this.decisionEnCours === 'valide' && doitConfirmerMatricule ? matriculeEtudiant : undefined,
-      this.decisionEnCours === 'valide' && doitConfirmerMatricule ? matriculeEtudiant : undefined
+      this.decisionEnCours === 'valide' && doitConfirmerMatricule ? matriculeEtudiant : undefined,
+      autorisationProvisoire,
     ).subscribe({
       next: (res) => {
         this.processingDecision = false

@@ -42,7 +42,7 @@ export class RecuCaisseService {
     );
   }
 
-  getTypesDocumentsPayants(): Observable<Array<{ id: number; libelle: string; frais: number }>> {
+  getTypesDocumentsEncaissement(): Observable<Array<{ id: number; libelle: string; frais: number }>> {
     return this.httpClient.get<Array<{ id: number; libelle: string; frais: number }>>(
       `${this.DOCUMENT_PAYMENT_URL}/types`
     );

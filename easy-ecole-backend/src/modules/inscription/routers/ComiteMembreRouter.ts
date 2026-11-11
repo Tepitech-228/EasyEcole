@@ -13,6 +13,7 @@ router
     .get('/', [Authenticate], ComiteMembreController.listerMembres)
     .post('/', [Authenticate], ComiteMembreController.creerMembre)
     .patch('/:id/prescripteur', [Authenticate], ComiteMembreController.definirPrescripteur)
+    .patch('/:id/signataire-api', [Authenticate], ComiteMembreController.definirSignataireApi)
     .delete('/:id', [Authenticate], ComiteMembreController.supprimerMembre)
 
 export default router

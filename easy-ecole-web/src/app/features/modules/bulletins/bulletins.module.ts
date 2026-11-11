@@ -28,7 +28,6 @@ import { ListeRattrapagesPageComponent } from './pages/liste-rattrapages-page/li
 import { MesRattrapagesPageComponent } from './pages/mes-rattrapages-page/mes-rattrapages-page.component';
 import { RattrapageFormPageComponent } from './pages/rattrapage-form-page/rattrapage-form-page.component';
 import { DetailRattrapagePageComponent } from './pages/detail-rattrapage-page/detail-rattrapage-page.component';
-import { SignaturePadComponent } from './components/signature-pad/signature-pad.component';
 import { FeuillePresencePageComponent } from './pages/feuille-presence-page/feuille-presence-page.component';
 import { AbsencesCoursPageComponent } from './pages/absences-cours-page/absences-cours-page.component';
 import { DettesAcademiquesPageComponent } from './pages/dettes-academiques-page/dettes-academiques-page.component';
@@ -37,7 +36,6 @@ import { FormsModule } from '@angular/forms';
 
 @NgModule({
   declarations: [
-    SignaturePadComponent,
     ListeBulletinsPageComponent,
     GenererBulletinsPageComponent,
     DetailBulletinPageComponent,
