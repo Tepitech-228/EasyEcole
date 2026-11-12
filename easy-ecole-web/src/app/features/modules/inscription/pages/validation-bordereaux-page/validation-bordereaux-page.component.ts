@@ -63,6 +63,8 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   niveauxFiltres: NiveauEtude[] = []
   parcoursFiltres: Parcours[] = []
   dataLoaded: boolean = false
+  private presenceHeartbeat?: ReturnType<typeof setInterval>
+  private bordereauxRequest?: Subscription
 
   // Pagination
   currentPage: number = 1;
@@ -96,7 +98,8 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
    * avec Rejeter / Valider en bas.
    */
   itemActions: BatchAction[] = [
-    { label: 'Authentifier', color: 'green', action: 'authentifier', icon: 'verified_user' }
+    { label: 'Authentifier', color: 'green', action: 'authentifier', icon: 'verified_user' },
+    { label: 'Libérer', color: 'gray', action: 'liberer', icon: 'lock_open' }
   ];
 
   /**
@@ -171,6 +174,7 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
     })
 
     this.getBordereauxEnAttente()
+    this.presenceHeartbeat = setInterval(() => this.getBordereauxEnAttente(), 30_000)
   }
 
   onAnneeChange(): void {
@@ -265,15 +269,18 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
     if (this.selectedNiveauId) params.niveauEtudeId = this.selectedNiveauId
     if (this.selectedParcoursId) params.parcoursId = this.selectedParcoursId
 
-    this.bordereauService.getAll(params).subscribe({
+    this.bordereauxRequest?.unsubscribe()
+    this.bordereauxRequest = this.bordereauService.getAll(params).subscribe({
       next: (res: any) => {
         this.bordereauxEnAttente = res.data || res
         this.totalItems = res.pagination?.total || this.bordereauxEnAttente.length
         this.totalPages = res.pagination?.totalPages || 1
         this.buildTreeNodes()
+        this.bordereauxRequest = undefined
       },
       error: (err) => {
-        console.log(err)
+        this.bordereauxRequest = undefined
+        console.error('Erreur chargement des bordereaux à auditer:', err)
       }
     })
   }
@@ -302,7 +309,7 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
       this.bordereauService.valider(bordereauId!, payload).subscribe({
         next: () => {
           this.getBordereauxEnAttente()
-          this.closePdfModal()
+          this.closePdfModal(false)
 
           this.successResult = { type: type || 'scolarite' }
           this.showSuccessModal = true
@@ -371,7 +378,7 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
       next: () => {
         this.successMessage = 'Bordereau rejeté. L\'étudiant sera notifié par e-mail et devra re-téléverser une pièce valide.'
         this.getBordereauxEnAttente()
-        this.closePdfModal()
+        this.closePdfModal(false)
         setTimeout(() => { this.successMessage = '' }, 5000)
       },
       error: (err) => {
@@ -460,6 +467,9 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   onItemAction(event: { item: any; action: string }): void {
     if (event.action === 'authentifier') {
       this.openAuthentificationModal(event.item);
+    } else if (event.action === 'liberer') {
+      const bordereau = event.item as Bordereau;
+      if (bordereau.id) this.libererBordereau(String(bordereau.id));
     }
   }
 
@@ -476,16 +486,25 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
    * ce qui limite la ressaisie de l'Audit.
    */
   openAuthentificationModal(bordereau: Bordereau): void {
-    this.selectedBordereau = bordereau
-    this.error = false
-    this.apiErrorMessage = ''
-    this.validationForm.reset({
-      referenceBancaire: bordereau.referenceBancaire || '',
-      numeroBordereau: bordereau.numeroBordereau || '',
-      datePaiement: bordereau.datePaiement ? new Date(bordereau.datePaiement).toISOString().split('T')[0] : '',
-      commentaire: bordereau.commentaire || ''
+    if (!bordereau.id) return;
+    this.bordereauService.prendreEnChargeAudit(String(bordereau.id)).subscribe({
+      next: () => {
+        this.selectedBordereau = bordereau
+        this.error = false
+        this.apiErrorMessage = ''
+        this.validationForm.reset({
+          referenceBancaire: bordereau.referenceBancaire || '',
+          numeroBordereau: bordereau.numeroBordereau || '',
+          datePaiement: bordereau.datePaiement ? new Date(bordereau.datePaiement).toISOString().split('T')[0] : '',
+          commentaire: bordereau.commentaire || ''
+        })
+        this.openPdfModal(bordereau)
+      },
+      error: (err) => {
+        this.toastService.warning(err?.error?.message || "Ce bordereau n'est plus disponible. Actualisez la file.")
+        this.getBordereauxEnAttente()
+      }
     })
-    this.openPdfModal(bordereau)
   }
 
   closeRejetModal(): void {
@@ -537,7 +556,11 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
     })
   }
 
-  closePdfModal(): void {
+  closePdfModal(release = true): void {
+    const bordereauId = this.selectedBordereau?.id
+    if (release && this.showPdfModal && bordereauId) {
+      this.libererBordereau(String(bordereauId))
+    }
     this.showPdfModal = false
     this.pdfBordereau = undefined
     this.selectedBordereau = undefined
@@ -546,7 +569,24 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   }
 
   ngOnDestroy(): void {
+    if (this.presenceHeartbeat) clearInterval(this.presenceHeartbeat)
+    this.bordereauxRequest?.unsubscribe()
+    if (this.showPdfModal && this.selectedBordereau?.id) {
+      this.bordereauService.libererAudit(String(this.selectedBordereau.id)).subscribe({
+        error: err => console.error('Erreur libération bordereau à la fermeture de la file:', err)
+      })
+    }
     this.clearPdfPreview()
+  }
+
+  private libererBordereau(id: string): void {
+    this.bordereauService.libererAudit(id).subscribe({
+      next: () => this.getBordereauxEnAttente(),
+      error: (err) => {
+        if (err?.status !== 409) console.error('Erreur libération du bordereau:', err)
+        this.getBordereauxEnAttente()
+      }
+    })
   }
 
   private clearPdfPreview(): void {

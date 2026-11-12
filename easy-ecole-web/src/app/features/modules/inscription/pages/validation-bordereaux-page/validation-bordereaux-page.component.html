@@ -7,6 +7,11 @@
     <div class="cabinet-workspace-status"><span></span> Contrôle en cours</div>
 </div>
 
+<div class="mb-6 flex items-start gap-3 rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+    <span class="material-symbols-outlined text-indigo-600">groups</span>
+    <p>Les bordereaux en attente sont répartis entre les agents actifs. L'ouverture d'un bordereau le réserve à votre compte jusqu'à sa décision ou sa libération.</p>
+</div>
+
 <div *ngIf="successMessage" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
     {{ successMessage }}
 </div>
@@ -346,4 +351,3 @@
         <app-custom-button (click)="closeSuccessModal()" text="Fermer"></app-custom-button>
     </div>
 </app-custom-modal>
-

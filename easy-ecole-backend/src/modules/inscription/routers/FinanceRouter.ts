@@ -31,6 +31,8 @@ import { NiveauEtude } from "../models/NiveauEtude";
 import { Parcours } from "../models/Parcours";
 import { ParcoursChoisi } from "../models/ParcoursChoisi";
 import { BordereauDossierService } from "../services/BordereauDossierService";
+import { BordereauAffectationService } from "../services/BordereauAffectationService";
+import { creerHandlersAffectationBordereau } from "../controllers/BordereauAffectationController";
 import HikvisionEnrollmentService from "../services/HikvisionEnrollmentService";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { EmailSender } from "../../../core/helpers/EmailSender";
@@ -62,6 +64,11 @@ const canAccessFinanceWithoutSite = (req: Request): boolean => {
   const role = (req as any).utilisateurRole;
   return role === RolesUtilisateur.ADMIN || role === RolesUtilisateur.ESA_COMPTA;
 };
+
+const affectationRecouvrementHandlers = creerHandlersAffectationBordereau(
+  "recouvrement",
+  req => getFinanceSiteScopeId(req),
+);
 
 const dateOnlyUtc = (date: Date): string => date.toISOString().slice(0, 10);
 
@@ -226,6 +233,37 @@ router.get('/bordereaux-a-traiter', [AuthEsacompta, CheckPermission('action.fina
     options.where = {
       statut: statutsRecherches as any,
       ...(siteScopeId ? { etablissementId: siteScopeId } : {})
+    }
+
+    const statutsComptablesActifs = statutsRecherches.filter(statut =>
+      statut === 'valide' || statut === 'en_saisie_comptable'
+    );
+    if (statutsComptablesActifs.length > 0) {
+      const utilisateurId = Number((req as any).utilisateurId);
+      await BordereauAffectationService.actualiserPresenceEtRepartir(
+        'recouvrement',
+        utilisateurId,
+        siteScopeId,
+      );
+      const statutsArchives = statutsRecherches.filter(statut =>
+        statut !== 'valide' && statut !== 'en_saisie_comptable'
+      );
+      const filtresExistants = options.where as Record<string | symbol, unknown>;
+      if (statutsArchives.length === 0) {
+        options.where = { ...filtresExistants, recouvrementAssigneAId: utilisateurId } as any;
+      } else {
+        const { statut: _statut, ...autresFiltres } = filtresExistants as any;
+        options.where = {
+          ...autresFiltres,
+          [Op.or]: [
+            { statut: { [Op.in]: statutsArchives } },
+            {
+              statut: { [Op.in]: statutsComptablesActifs },
+              recouvrementAssigneAId: utilisateurId,
+            },
+          ],
+        } as any;
+      }
     }
 
     if (req.query.anneeAcademiqueId || req.query.niveauEtudeId || req.query.parcoursId) {
@@ -547,6 +585,18 @@ router.post('/bordereaux/:id/composition-preview', [AuthEsacompta, CheckPermissi
   }
 })
 
+router.post(
+  '/bordereaux/:id/prise-en-charge',
+  [AuthEsacompta, CheckPermission('action.finance.bordereau.saisir')],
+  affectationRecouvrementHandlers.prendreEnCharge,
+);
+
+router.post(
+  '/bordereaux/:id/liberer',
+  [AuthEsacompta, CheckPermission('action.finance.bordereau.saisir')],
+  affectationRecouvrementHandlers.liberer,
+);
+
 /**
  * @openapi
  * /inscription/finance/bordereaux/{id}/saisir:
@@ -644,6 +694,17 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       await transaction.rollback()
       console.log(_rid, 'ERREUR 400: Bordereau déjà traité')
       return res.status(400).json({ success: false, message: "Bordereau déjà traité", details: { statut: bordereau.statut } })
+    }
+    if (!BordereauAffectationService.estPrisEnChargePar(
+      bordereau,
+      'recouvrement',
+      Number((req as any).utilisateurId),
+    )) {
+      await transaction.rollback();
+      return res.status(409).json({
+        success: false,
+        message: "Prenez en charge ce bordereau depuis la file avant de le traiter.",
+      });
     }
 
     const montantRecu = req.body?.montantPaiement
@@ -956,6 +1017,7 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
     bordereau.datePaiement = datePaiement
     bordereau.commentaire = (req.body.commentaire || '').trim() || null
     bordereau.statut = 'traite'
+    BordereauAffectationService.effacerAffectation(bordereau, 'recouvrement')
     bordereau.dateValidation = bordereau.dateValidation || new Date()
     bordereau.valideParId = bordereau.valideParId || (req as any).utilisateurId
 

@@ -37,6 +37,12 @@ export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAt
   declare valideParId: CreationOptional<ForeignKey<Utilisateur['id']> | null>
   declare saisiParId: CreationOptional<ForeignKey<Utilisateur['id']> | null>
   declare dateSaisieComptable: CreationOptional<Date | null>
+  declare auditAssigneAId: CreationOptional<ForeignKey<Utilisateur['id']> | null>
+  declare auditAssigneLe: CreationOptional<Date | null>
+  declare auditPrisEnChargeLe: CreationOptional<Date | null>
+  declare recouvrementAssigneAId: CreationOptional<ForeignKey<Utilisateur['id']> | null>
+  declare recouvrementAssigneLe: CreationOptional<Date | null>
+  declare recouvrementPrisEnChargeLe: CreationOptional<Date | null>
   declare commentaire: CreationOptional<string>
   declare quitusId: CreationOptional<ForeignKey<Quitus['id']>>
   declare typeOperationId: CreationOptional<ForeignKey<TypeOperationBordereau['id']> | null>
@@ -153,6 +159,36 @@ Bordereau.init({
     type: DataTypes.DATE,
     allowNull: true,
     defaultValue: null
+  },
+  auditAssigneAId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true,
+    defaultValue: null,
+  },
+  auditAssigneLe: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    defaultValue: null,
+  },
+  auditPrisEnChargeLe: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    defaultValue: null,
+  },
+  recouvrementAssigneAId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true,
+    defaultValue: null,
+  },
+  recouvrementAssigneLe: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    defaultValue: null,
+  },
+  recouvrementPrisEnChargeLe: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    defaultValue: null,
   },
   commentaire: {
     type: DataTypes.TEXT,

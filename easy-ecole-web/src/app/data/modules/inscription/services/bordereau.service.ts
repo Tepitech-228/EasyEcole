@@ -69,6 +69,22 @@ export class BordereauService {
     return this.httpClient.put<any>(`${environment.API_MODULES.INSCRIPTION}/finance/bordereaux/${id}/saisir`, payload)
   }
 
+  prendreEnChargeAudit(id: string): Observable<{ success: boolean }> {
+    return this.httpClient.post<{ success: boolean }>(`${this.SERVICE_URL}/${id}/prise-en-charge`, {})
+  }
+
+  libererAudit(id: string): Observable<{ success: boolean; assigneAId: number | null }> {
+    return this.httpClient.post<{ success: boolean; assigneAId: number | null }>(`${this.SERVICE_URL}/${id}/liberer`, {})
+  }
+
+  prendreEnChargeRecouvrement(id: string): Observable<{ success: boolean }> {
+    return this.httpClient.post<{ success: boolean }>(`${environment.API_MODULES.INSCRIPTION}/finance/bordereaux/${id}/prise-en-charge`, {})
+  }
+
+  libererRecouvrement(id: string): Observable<{ success: boolean; assigneAId: number | null }> {
+    return this.httpClient.post<{ success: boolean; assigneAId: number | null }>(`${environment.API_MODULES.INSCRIPTION}/finance/bordereaux/${id}/liberer`, {})
+  }
+
   get(id: string): Observable<Bordereau> {
     return this.httpClient.get<Bordereau>(`${this.SERVICE_URL}/${id}`)
   }

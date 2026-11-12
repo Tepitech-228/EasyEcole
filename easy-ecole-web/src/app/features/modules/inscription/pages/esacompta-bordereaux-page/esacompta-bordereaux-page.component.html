@@ -25,6 +25,11 @@
     </div>
   </div>
 
+  <div *ngIf="activeStatut === 'valide,en_saisie_comptable'" class="mb-6 flex items-start gap-3 rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+    <span class="material-symbols-outlined text-emerald-600">groups</span>
+    <p>Les bordereaux à imputer sont répartis entre les agents actifs. L'ouverture d'un bordereau le réserve à votre compte jusqu'à son traitement ou sa libération.</p>
+  </div>
+
   <div class="esa-home-actions grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
     <a routerLink="/inscription/finance/bordereaux" class="esa-home-action-card esa-home-action-card--green">
       <span class="material-symbols-outlined">receipt_long</span>

@@ -41,6 +41,7 @@ import { TarifService } from "../services/TarifService";
 import { DocGenGeneratorService } from "../../docgen/services/DocGenGeneratorService";
 import { BordereauDossierService } from "../services/BordereauDossierService";
 import { EtudiantUploadStorageService } from "../services/EtudiantUploadStorageService";
+import { BordereauAffectationService } from "../services/BordereauAffectationService";
 
 export const isChoixFinalValue = (value: unknown): boolean => {
     if (typeof value === 'boolean') return value;
@@ -133,8 +134,52 @@ export default class BordereauController {
             options.where = { ...options.where, etablissementId };
         }
 
-        if (req.query.statut) {
-            options.where = { ...options.where, statut: req.query.statut as string }
+        const role = (req as any).utilisateurRole;
+        const statutsDemandes = (Array.isArray(req.query.statut)
+            ? req.query.statut
+            : [req.query.statut])
+            .flatMap(statut => String(statut || '').split(','))
+            .map(statut => statut.trim())
+            .filter(Boolean);
+        if (statutsDemandes.length > 0) {
+            options.where = {
+                ...options.where,
+                statut: statutsDemandes.length === 1
+                    ? statutsDemandes[0]
+                    : { [Op.in]: statutsDemandes },
+            };
+        }
+        if (
+            (role === RolesUtilisateur.CABINET_COMPTABLE || role === RolesUtilisateur.ADMIN)
+            && statutsDemandes.includes('en_attente')
+        ) {
+            const utilisateurId = Number((req as any).utilisateurId);
+            const siteScope = role === RolesUtilisateur.ADMIN && hasActiveSite
+                ? etablissementId
+                : undefined;
+            try {
+                await BordereauAffectationService.actualiserPresenceEtRepartir(
+                    'audit',
+                    utilisateurId,
+                    siteScope,
+                );
+            } catch (error) {
+                console.error('[BORDEREAU][affectation audit]', error);
+                return res.status(500).json({ success: false, message: "Impossible de répartir les bordereaux d'audit." });
+            }
+            const statutsArchives = statutsDemandes.filter(statut => statut !== 'en_attente');
+            if (statutsArchives.length === 0) {
+                options.where = { ...options.where, auditAssigneAId: utilisateurId };
+            } else {
+                const { statut: _statut, ...autresFiltres } = options.where as any;
+                options.where = {
+                    ...autresFiltres,
+                    [Op.or]: [
+                        { statut: { [Op.in]: statutsArchives } },
+                        { statut: 'en_attente', auditAssigneAId: utilisateurId },
+                    ],
+                };
+            }
         }
 
         if (req.query.echeanceId) {
@@ -455,6 +500,17 @@ export default class BordereauController {
                 await transaction.rollback();
                 return res.status(400).json({ success: false, message: "Bordereau déjà traité" });
             }
+            if (!BordereauAffectationService.estPrisEnChargePar(
+                bordereau,
+                'audit',
+                Number((req as any).utilisateurId),
+            )) {
+                await transaction.rollback();
+                return res.status(409).json({
+                    success: false,
+                    message: "Prenez en charge ce bordereau depuis la file d'audit avant de le valider.",
+                });
+            }
 
             const bordereauType = bordereau.type
 
@@ -514,6 +570,7 @@ export default class BordereauController {
             bordereau.dateValidation = new Date()
             bordereau.valideParId = (req as any).utilisateurId
             bordereau.commentaire = req.body.commentaire ?? null
+            BordereauAffectationService.effacerAffectation(bordereau, 'audit')
 
             // ── Persistance des 3 champs bancaires (pré-remplissage ESA-COMPTA) ──
             bordereau.referenceBancaire = refBancaire
@@ -593,6 +650,17 @@ export default class BordereauController {
                 await transaction.rollback();
                 return res.status(400).json({ success: false, message: "Bordereau déjà traité" });
             }
+            if (!BordereauAffectationService.estPrisEnChargePar(
+                bordereau,
+                'audit',
+                Number((req as any).utilisateurId),
+            )) {
+                await transaction.rollback();
+                return res.status(409).json({
+                    success: false,
+                    message: "Prenez en charge ce bordereau depuis la file d'audit avant de le rejeter.",
+                });
+            }
 
             const motif = typeof req.body.commentaire === 'string' ? req.body.commentaire.trim() : '';
             if (!motif) {
@@ -604,6 +672,7 @@ export default class BordereauController {
             bordereau.dateValidation = new Date()
             bordereau.valideParId = (req as any).utilisateurId
             bordereau.commentaire = motif
+            BordereauAffectationService.effacerAffectation(bordereau, 'audit')
 
             await bordereau.save({ transaction })
 
@@ -684,13 +753,26 @@ export default class BordereauController {
             for (const id of ids) {
                 const bordereau = await Bordereau.findByPk(id, {
                     transaction,
+                    lock: transaction.LOCK.UPDATE,
                     include: [Bordereau.associations.utilisateur]
                 });
                 if (!bordereau || bordereau.statut !== 'en_attente') continue;
+                if (!BordereauAffectationService.estAffecteA(
+                    bordereau,
+                    'audit',
+                    Number((req as any).utilisateurId),
+                )) {
+                    await transaction.rollback();
+                    return res.status(409).json({
+                        success: false,
+                        message: `Le bordereau ${id} n'est plus attribué à votre compte. Actualisez la file.`,
+                    });
+                }
 
                 bordereau.statut = statut;
                 bordereau.dateValidation = new Date();
                 bordereau.valideParId = (req as any).utilisateurId;
+                BordereauAffectationService.effacerAffectation(bordereau, 'audit');
 
                 const motif = statut === 'rejete' ? (typeof commentaire === 'string' ? commentaire.trim() : '') || null : null;
                 if (statut === 'rejete') {
@@ -824,6 +906,17 @@ export default class BordereauController {
                 await transaction.rollback()
                 return res.status(400).json({ success: false, message: "Bordereau déjà traité" })
             }
+            if (!BordereauAffectationService.estPrisEnChargePar(
+                bordereau,
+                'audit',
+                Number((req as any).utilisateurId),
+            )) {
+                await transaction.rollback();
+                return res.status(409).json({
+                    success: false,
+                    message: "Prenez en charge ce bordereau depuis la file d'audit avant de le traiter.",
+                });
+            }
 
             const typeConstate = req.body.type
             if (!typeConstate || !['inscription', 'scolarite', 'rattrapage'].includes(typeConstate)) {
@@ -884,6 +977,7 @@ export default class BordereauController {
             bordereau.dateValidation = new Date()
             bordereau.valideParId = (req as any).utilisateurId
             bordereau.commentaire = req.body.commentaire ?? bordereau.commentaire
+            BordereauAffectationService.effacerAffectation(bordereau, 'audit')
 
             await bordereau.save({ transaction })
 

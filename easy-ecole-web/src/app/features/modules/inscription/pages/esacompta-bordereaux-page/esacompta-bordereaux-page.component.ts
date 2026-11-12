@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -33,7 +33,7 @@ const montantPaiementValide = (control: AbstractControl): ValidationErrors | nul
   templateUrl: './esacompta-bordereaux-page.component.html',
   styleUrls: ['./esacompta-bordereaux-page.component.scss']
 })
-export class EsacomptaBordereauxPageComponent extends BaseComponentClass implements OnInit {
+export class EsacomptaBordereauxPageComponent extends BaseComponentClass implements OnInit, OnDestroy {
   bordereaux: Bordereau[] = []
   typesOperations: TypeOperationBordereau[] = []
   annees: AnneeAcademique[] = []
@@ -78,6 +78,10 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   private selectedBordereauSafeUrl: SafeResourceUrl | null = null
 
   /** Type d'opération actuellement sélectionné dans le formulaire de saisie */
+  private presenceHeartbeat?: ReturnType<typeof setInterval>
+  private dataRequestId = 0
+  private dataRequestInFlight = false
+
   get typeSelectionne(): TypeOperationBordereau | undefined {
     const id = this.saisieForm.get('typeOperationId')?.value
     return this.typesOperations.find(t => String(t.id) === String(id))
@@ -148,6 +152,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     if (this.activeStatut === 'valide,en_saisie_comptable') {
       return [
         { label: 'Traitement', color: 'green', action: 'traitement', icon: 'fact_check' },
+        { label: 'Libérer', color: 'gray', action: 'liberer', icon: 'lock_open' },
         { label: 'Voir état traitement', color: 'blue', action: 'voir-imputation', icon: 'account_tree' },
       ]
     }
@@ -230,14 +235,29 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     this.activeStatut = this.route.snapshot.data['statut'] || 'valide,en_saisie_comptable'
     this.loadData()
     this.loadSelects()
+    if (this.activeStatut === 'valide,en_saisie_comptable') {
+      this.presenceHeartbeat = setInterval(() => this.loadData(false), 30_000)
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.presenceHeartbeat) clearInterval(this.presenceHeartbeat)
+    if (this.showSaisieModal && this.selectedBordereau?.id) {
+      this.bordereauService.libererRecouvrement(String(this.selectedBordereau.id)).subscribe({
+        error: err => console.error('Erreur libération du bordereau à la fermeture de la file:', err)
+      })
+    }
   }
 
   private calculateKPIs(): void {
     this.enAttenteCount = this.bordereaux.length
   }
 
-  private loadData(): void {
-    this.loading = true
+  private loadData(showSpinner = true): void {
+    if (!showSpinner && this.dataRequestInFlight) return
+    const requestId = ++this.dataRequestId
+    this.dataRequestInFlight = true
+    if (showSpinner) this.loading = true
     this.error = false
     this.apiErrorMessage = ''
     const params: any = { page: 1, limit: 50, statut: this.activeStatut }
@@ -248,14 +268,18 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
 
     this.bordereauService.getAImputer(params).subscribe({
       next: (res: any) => {
+        if (requestId !== this.dataRequestId) return
         this.bordereaux = res.data || res
         this.calculateKPIs()
         this.loading = false
         this.dataLoaded = true
+        this.dataRequestInFlight = false
       },
       error: (err) => {
+        if (requestId !== this.dataRequestId) return
         this.loading = false
         this.dataLoaded = true
+        this.dataRequestInFlight = false
         this.error = true
         this.apiErrorMessage = err?.error?.message || 'Impossible de charger les bordereaux. Vérifiez vos droits puis réessayez.'
       }
@@ -414,9 +438,21 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     if (!b) return
     if (event.action === 'traitement') this.openSaisieModal(b)
     else if (event.action === 'voir-imputation') this.openImputationPreview(b)
+    else if (event.action === 'liberer' && b.id) this.libererBordereau(String(b.id))
   }
 
   openSaisieModal(bordereau: Bordereau): void {
+    if (!bordereau.id) return
+    this.bordereauService.prendreEnChargeRecouvrement(String(bordereau.id)).subscribe({
+      next: () => this.initialiserSaisieModal(bordereau),
+      error: (err) => {
+        this.toastService.warning(err?.error?.message || "Ce bordereau n'est plus disponible. Actualisez la file.")
+        this.loadData()
+      }
+    })
+  }
+
+  private initialiserSaisieModal(bordereau: Bordereau): void {
     this.selectedBordereau = bordereau
     this.selectedBordereauSafeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.getDocUrl(bordereau))
     const demande = (bordereau as any).demandeInscription
@@ -456,7 +492,11 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     })
   }
 
-  closeSaisieModal(): void {
+  closeSaisieModal(release = true): void {
+    const bordereauId = this.selectedBordereau?.id
+    if (release && this.showSaisieModal && bordereauId) {
+      this.libererBordereau(String(bordereauId))
+    }
     this.showSaisieModal = false
     this.showMatriculeConfirmationModal = false
     this.selectedBordereau = undefined
@@ -465,6 +505,16 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     this.apiErrorMessage = ''
     this.compositionPreviewResult = null
     this.bourseInfo = null
+  }
+
+  private libererBordereau(id: string): void {
+    this.bordereauService.libererRecouvrement(id).subscribe({
+      next: () => this.loadData(),
+      error: (err) => {
+        if (err?.status !== 409) console.error('Erreur libération du bordereau:', err)
+        this.loadData()
+      }
+    })
   }
 
   /**
@@ -600,7 +650,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
         console.log('[ESA-COMPTA] Saisie réussie:', res)
         // Alerte « double mixte » (non bloquante) remontée par le backend
         this.avertissements = Array.isArray(res?.avertissements) ? res.avertissements : []
-        this.closeSaisieModal()
+        this.closeSaisieModal(false)
         this.showPreviewModal = false
         this.loadData()
       },

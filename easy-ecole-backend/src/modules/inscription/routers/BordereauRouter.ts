@@ -8,6 +8,17 @@ import { AuthCabinetComptable } from "../../../core/middlewares/AuthCabinetCompt
 import CheckPermission from "../../../core/middlewares/CheckPermission";
 import { Bordereau } from "../models/Bordereau";
 import { normaliserImages } from "../../../core/helpers/NormaliserImage";
+import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
+import { creerHandlersAffectationBordereau } from "../controllers/BordereauAffectationController";
+
+const affectationAuditHandlers = creerHandlersAffectationBordereau(
+  "audit",
+  req => {
+    if ((req as any).utilisateurRole !== RolesUtilisateur.ADMIN) return undefined;
+    const siteId = Number((req as any).etablissementId);
+    return Number.isSafeInteger(siteId) && siteId > 0 ? siteId : undefined;
+  },
+);
 
 const storage = multer.diskStorage({
     destination: "public/inscription/bordereaux/",
@@ -60,6 +71,16 @@ router
      */
     .get('/', BordereauController.getAllBordereaux)
     .put('/batch/statut', [AuthCabinetComptable, CheckPermission('action.inscription.bordereau.valider')], BordereauController.batchStatut)
+    .post(
+      '/:id/prise-en-charge',
+      [AuthCabinetComptable, CheckPermission('action.inscription.bordereau.valider')],
+      affectationAuditHandlers.prendreEnCharge,
+    )
+    .post(
+      '/:id/liberer',
+      [AuthCabinetComptable, CheckPermission('action.inscription.bordereau.valider')],
+      affectationAuditHandlers.liberer,
+    )
      /**
       * @openapi
       * /inscription/bordereaux/verifier-unicite:

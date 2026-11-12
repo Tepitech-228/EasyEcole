@@ -19,6 +19,12 @@ export class Bordereau {
   declare dateValidation?: Date | null
   declare datePaiement?: Date | null
   declare valideParId?: string | null
+  declare auditAssigneAId?: number | null
+  declare auditAssigneLe?: Date | null
+  declare auditPrisEnChargeLe?: Date | null
+  declare recouvrementAssigneAId?: number | null
+  declare recouvrementAssigneLe?: Date | null
+  declare recouvrementPrisEnChargeLe?: Date | null
   declare commentaire?: string
   declare quitusId?: string | null
   declare typeOperationId?: number | null
