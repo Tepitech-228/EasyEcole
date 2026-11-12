@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
-import { ComiteValidationService, DossierComite, FiltresComite, Quorum } from 'src/app/data/modules/inscription/services/comite-validation.service';
+import { AutorisationProvisoireInput, ComiteValidationService, DossierComite, FiltresComite, Quorum } from 'src/app/data/modules/inscription/services/comite-validation.service';
 import { ParcoursService } from 'src/app/data/modules/inscription/services/parcours.service';
 import { Parcours } from 'src/app/data/modules/inscription/models/Parcours.model';
 import { NiveauEtudeService } from 'src/app/data/modules/inscription/services/niveau-etude.service';
@@ -486,7 +486,7 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
   }
 
   get anneeDiplomeValide(): boolean {
-    return this.anneeValide(this.dateDiplomeRecu)
+    return !this.dateDiplomeRecu.trim() || this.anneeValide(this.dateDiplomeRecu.trim())
   }
 
   toggleSemestreRecu(semestre: string, checked: boolean): void {
@@ -511,8 +511,10 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
 
   get datesRelevesCompletes(): boolean {
     if (this.relevesNeant) return this.relevesSemestresRecus.length === 0
-    if (this.relevesSemestresRecus.length === 0) return false
-    return this.relevesSemestresRecus.every(semestre => this.anneeValide(this.relevesSemestresDates[semestre] || ''))
+    return this.relevesSemestresRecus.every(semestre => {
+      const annee = (this.relevesSemestresDates[semestre] || '').trim()
+      return !annee || this.anneeValide(annee)
+    })
   }
 
   toggleSemestreAutorise(semestre: string, checked: boolean): void {
@@ -526,19 +528,39 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
   }
 
   confirmerAutorisationProvisoire(): void {
-    if (!this.diplomeRecu || !this.anneeValide(this.dateDiplomeRecu) || !this.datesRelevesCompletes || this.semestresAutorises.length === 0) {
-      this.apiErrorMessage = 'Renseignez le diplôme et son année, indiquez les relevés reçus ou cochez « Néant », puis au moins un semestre autorisé.'
+    if (!this.anneeDiplomeValide || !this.datesRelevesCompletes) {
+      this.apiErrorMessage = 'Les années renseignées doivent être valides. Les informations laissées vides sont facultatives.'
       this.error = true
       return
     }
     this.showAutorisationProvisoireModal = false
-    this.executerDecision({
-      diplomeRecu: this.diplomeRecu,
-      dateDiplomeRecu: this.dateDiplomeRecu,
-      relevesSemestresRecus: this.relevesNeant ? ['NEANT'] : this.relevesSemestresRecus,
-      relevesSemestresDates: this.relevesSemestresDates,
-      semestresAutorises: this.semestresAutorises,
-    })
+    const autorisationProvisoire: AutorisationProvisoireInput = {}
+    if (this.diplomeRecu) autorisationProvisoire.diplomeRecu = this.diplomeRecu
+    if (this.dateDiplomeRecu.trim()) autorisationProvisoire.dateDiplomeRecu = this.dateDiplomeRecu.trim()
+
+    const relevesSemestresRecus = this.relevesNeant ? ['NEANT'] : this.relevesSemestresRecus
+    if (relevesSemestresRecus.length > 0) {
+      autorisationProvisoire.relevesSemestresRecus = relevesSemestresRecus
+    }
+
+    const relevesSemestresDates = Object.entries(this.relevesSemestresDates).reduce(
+      (dates, [semestre, annee]) => {
+        const valeur = (annee || '').trim()
+        if (valeur) dates[semestre] = valeur
+        return dates
+      },
+      {} as Record<string, string>,
+    )
+    if (Object.keys(relevesSemestresDates).length > 0) {
+      autorisationProvisoire.relevesSemestresDates = relevesSemestresDates
+    }
+    if (this.semestresAutorises.length > 0) {
+      autorisationProvisoire.semestresAutorises = this.semestresAutorises
+    }
+
+    this.executerDecision(
+      Object.keys(autorisationProvisoire).length > 0 ? autorisationProvisoire : undefined,
+    )
   }
 
   fermerConfirmationValidation(): void {
@@ -550,13 +572,7 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
     this.executerDecision()
   }
 
-  private executerDecision(autorisationProvisoire?: {
-    diplomeRecu: 'BAC' | 'LICENCE' | 'MASTER'
-    dateDiplomeRecu: string
-    relevesSemestresRecus: string[]
-    relevesSemestresDates: Record<string, string>
-    semestresAutorises: string[]
-  }): void {
+  private executerDecision(autorisationProvisoire?: AutorisationProvisoireInput): void {
     if (!this.selectedDossier?.id || !this.decisionEnCours) return
     if (this.decisionEnCours !== 'valide' && !this.motifDecision.trim()) return
     if (this.decisionEnCours !== 'valide' && this.documentsAReposer.length === 0) {

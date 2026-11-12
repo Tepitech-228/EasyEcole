@@ -12,7 +12,7 @@ import { Apprenant } from "../../auth/models/Apprenant";
 import { Session } from "../models/Session";
 import { ParcoursChoisi } from "../models/ParcoursChoisi";
 import { Parcours } from "../models/Parcours";
-import { BordereauDossierService, FichiersDossierDiffere } from "../services/BordereauDossierService";
+import { AutorisationProvisoireDetails, BordereauDossierService, FichiersDossierDiffere } from "../services/BordereauDossierService";
 import { EtatPreInscription, PreInscription } from "../models/PreInscription";
 import { ComiteVote } from "../models/ComiteVote";
 import { genererInitialesUniquesComite } from "../services/ComiteInitialesService";
@@ -57,6 +57,8 @@ const LISTER_DOSSIERS_MAX = 100
 const SEMESTRES_AUTORISATION_VALIDES = new Set(['S1', 'S2', 'S3', 'S4', 'S5', 'S6'])
 
 function lireSemestresAutorisation(value: unknown): string[] | null {
+    if (value === undefined || value === null) return []
+    if (Array.isArray(value) && value.length === 0) return []
     if (!Array.isArray(value) || value.some(item =>
         typeof item !== 'string' || !SEMESTRES_AUTORISATION_VALIDES.has(item)
     )) {
@@ -66,9 +68,10 @@ function lireSemestresAutorisation(value: unknown): string[] | null {
 }
 
 function lireRelevesSemestresRecus(value: unknown): string[] | null {
+    if (value === undefined || value === null) return []
     if (!Array.isArray(value) || value.some(item => typeof item !== 'string')) return null
     const releves = [...new Set(value as string[])]
-    if (releves.length === 0) return null
+    if (releves.length === 0) return []
     if (releves.includes('NEANT')) return releves.length === 1 ? releves : null
     return releves.every(semestre => SEMESTRES_AUTORISATION_VALIDES.has(semestre)) ? releves : null
 }
@@ -98,20 +101,21 @@ function normaliserAnneePourDateOnly(value: string): string {
 }
 
 function lireDatesReleves(value: unknown, semestresRecus: string[]): Record<string, string> | null {
-    if (value === null || typeof value !== 'object' || Array.isArray(value)) return null
+    if (value === undefined || value === null) return {}
+    if (typeof value !== 'object' || Array.isArray(value)) return null
     const dates = value as Record<string, unknown>
     const entrees = Object.entries(dates)
-    if (entrees.some(([semestre, date]) =>
-        !SEMESTRES_AUTORISATION_VALIDES.has(semestre)
-        || !semestresRecus.includes(semestre)
-        || !anneeOuDateIsoValide(date)
-    )) {
-        return null
-    }
-    if (semestresRecus.some((semestre) => !anneeOuDateIsoValide(dates[semestre]))) return null
     const datesValides: Record<string, string> = {}
-    for (const semestre of semestresRecus) {
-        datesValides[semestre] = (dates[semestre] as string).slice(0, 4)
+    for (const [semestre, date] of entrees) {
+        if (
+            !SEMESTRES_AUTORISATION_VALIDES.has(semestre)
+            || !semestresRecus.includes(semestre)
+        ) {
+            return null
+        }
+        if (date === undefined || date === null || (typeof date === 'string' && !date.trim())) continue
+        if (!anneeOuDateIsoValide(date)) return null
+        datesValides[semestre] = date.slice(0, 4)
     }
     return datesValides
 }
@@ -669,44 +673,70 @@ export default class ComiteValidationController {
 
             if (votesValides === totalMembres) {
                 // Unanimité atteinte → finalisation
-                let autorisationProvisoire: {
-                    diplomeRecu: 'BAC' | 'LICENCE' | 'MASTER';
-                    dateDiplomeRecu: string;
-                    relevesSemestresRecus: string[];
-                    relevesSemestresDates: Record<string, string>;
-                    semestresAutorises: string[];
-                } | undefined
+                let autorisationProvisoire: AutorisationProvisoireDetails | undefined
                 if (demande.typeDemande !== 'reinscription') {
                     const payload = req.body.autorisationProvisoire
+                    if (payload !== undefined && payload !== null && (typeof payload !== 'object' || Array.isArray(payload))) {
+                        await transaction.rollback()
+                        return res.status(400).json({
+                            success: false,
+                            message: "Les informations complémentaires du dossier sont invalides.",
+                        })
+                    }
+
+                    const diplomeSaisi = payload?.diplomeRecu
+                    const diplomeRecu = ['BAC', 'LICENCE', 'MASTER'].includes(diplomeSaisi)
+                        ? diplomeSaisi as 'BAC' | 'LICENCE' | 'MASTER'
+                        : undefined
+                    const dateDiplomeSaisie = payload?.dateDiplomeRecu
+                    const anneeDiplomeSaisie = typeof dateDiplomeSaisie === 'string'
+                        ? dateDiplomeSaisie.trim()
+                        : ''
+                    const dateDiplomeRecu = anneeDiplomeSaisie && anneeOuDateIsoValide(anneeDiplomeSaisie)
+                        ? normaliserAnneePourDateOnly(anneeDiplomeSaisie)
+                        : undefined
                     const relevesSemestresRecus = lireRelevesSemestresRecus(payload?.relevesSemestresRecus)
-                    const relevesSemestresDates = lireDatesReleves(payload?.relevesSemestresDates, relevesSemestresRecus || [])
+                    const relevesSemestresDates = lireDatesReleves(
+                        payload?.relevesSemestresDates,
+                        relevesSemestresRecus || [],
+                    )
                     const semestresAutorises = lireSemestresAutorisation(payload?.semestresAutorises)
-                    const anneeDiplomeRecu = typeof payload?.dateDiplomeRecu === 'string'
-                        ? payload.dateDiplomeRecu
-                        : ''
-                    const dateDiplomeRecu = anneeOuDateIsoValide(anneeDiplomeRecu)
-                        ? normaliserAnneePourDateOnly(anneeDiplomeRecu)
-                        : ''
+                    const diplomeInvalide = diplomeSaisi !== undefined
+                        && diplomeSaisi !== null
+                        && diplomeSaisi !== ''
+                        && !diplomeRecu
+                    const dateDiplomeInvalide = dateDiplomeSaisie !== undefined
+                        && dateDiplomeSaisie !== null
+                        && !(typeof dateDiplomeSaisie === 'string' && !dateDiplomeSaisie.trim())
+                        && !dateDiplomeRecu
                     if (
-                        !['BAC', 'LICENCE', 'MASTER'].includes(payload?.diplomeRecu)
-                        || !dateDiplomeRecu
+                        diplomeInvalide
+                        || dateDiplomeInvalide
                         || !relevesSemestresRecus
                         || !relevesSemestresDates
                         || !semestresAutorises
-                        || semestresAutorises.length === 0
                     ) {
                         await transaction.rollback()
                         return res.status(400).json({
                             success: false,
-                            message: "Pour la validation finale, renseignez l’année du diplôme, une année pour chaque relevé reçu et les semestres autorisés.",
+                            message: "Les informations complémentaires renseignées doivent être valides.",
                         })
                     }
-                    autorisationProvisoire = {
-                        diplomeRecu: payload.diplomeRecu,
-                        dateDiplomeRecu,
-                        relevesSemestresRecus,
-                        relevesSemestresDates,
-                        semestresAutorises,
+
+                    const detailsAutorisation: AutorisationProvisoireDetails = {}
+                    if (diplomeRecu) detailsAutorisation.diplomeRecu = diplomeRecu
+                    if (dateDiplomeRecu) detailsAutorisation.dateDiplomeRecu = dateDiplomeRecu
+                    if (relevesSemestresRecus.length > 0) {
+                        detailsAutorisation.relevesSemestresRecus = relevesSemestresRecus
+                    }
+                    if (Object.keys(relevesSemestresDates).length > 0) {
+                        detailsAutorisation.relevesSemestresDates = relevesSemestresDates
+                    }
+                    if (semestresAutorises.length > 0) {
+                        detailsAutorisation.semestresAutorises = semestresAutorises
+                    }
+                    if (Object.keys(detailsAutorisation).length > 0) {
+                        autorisationProvisoire = detailsAutorisation
                     }
                 }
 

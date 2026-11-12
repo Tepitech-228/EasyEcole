@@ -66,7 +66,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                 label: 'Admission & Inscription',
                 icon: 'assignment',
                 items: [
-                    { label: 'Sessions', route: '/inscription/sessions', icon: 'cycle', permissionKey: 'menu.inscription.sessions', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
+                    { label: 'Niveau académique', route: '/inscription/sessions', icon: 'cycle', permissionKey: 'menu.inscription.sessions', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
                     { label: 'Parcours', route: '/inscription/parcours', icon: 'school', permissionKey: 'menu.inscription.parcours', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
                     { label: 'Salles de classe', route: '/inscription/salles-de-classe', icon: 'meeting_room', permissionKey: 'menu.inscription.salles', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.SUPERVISEUR_GENERAL] },
                     { label: 'Frais par parcours', route: '/inscription/frais-parcours', icon: 'payments', permissionKey: 'menu.inscription.frais-parcours', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },

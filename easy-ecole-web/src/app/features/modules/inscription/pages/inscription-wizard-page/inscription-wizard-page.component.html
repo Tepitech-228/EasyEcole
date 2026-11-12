@@ -73,7 +73,7 @@
 
     <ng-container *ngIf="modeFormation === 'presentiel'">
     <h3>Choix de la filière</h3>
-    <p class="muted">Sélectionnez la filière correspondant à votre session d'inscription.</p>
+    <p class="muted">Sélectionnez la filière correspondant à votre niveau académique.</p>
 
     <!-- Dropdown filière : select natif stylé (sélection fiable) -->
     <div class="field-wrapper mt-3">
@@ -129,29 +129,29 @@
       Retour
     </button>
     <h2>Demande d'autorisation provisoire d'inscription</h2>
-    <p class="muted">Sélectionnez votre session puis déposez le bordereau de paiement. Les autres pièces seront demandées après la validation du recouvrement.</p>
+    <p class="muted">Sélectionnez votre niveau académique puis déposez le bordereau de paiement. Les autres pièces seront demandées après la validation du recouvrement.</p>
 
     <!-- Le site est choisi au bon moment avant la sélection de la session, puis
          il n'est plus affiché dans cet écran de dépôt des pièces. -->
 
     <!-- Session dropdown : select natif stylé (sélection fiable) -->
     <div class="field-wrapper">
-      <label>Session d'inscription *</label>
+      <label>Niveau académique *</label>
       <select
         class="form-control native-select"
         [ngModel]="sessionSelectionneeId"
         [disabled]="sessionVerrouillee"
         (change)="surChoixSession($event)">
-        <option value="">— Choisir une session —</option>
+        <option value="">— Choisir un niveau académique —</option>
         <option *ngFor="let s of sessionsDuSite" [value]="s.id">
           {{ nomSiteSelectionne() }} · {{ s.dateDebut | date:'dd/MM/yyyy' }} au {{ s.dateFin | date:'dd/MM/yyyy' }}
         </option>
       </select>
       <p *ngIf="infos.etablissementId && sessionsDuSite.length === 0" class="text-amber-700" role="status">
-        Aucune session n’est disponible pour ce site.
+        Aucun niveau académique n’est disponible pour ce site.
       </p>
       <small *ngIf="sessionVerrouillee" class="text-gray-500" role="status">
-        Cette session est déjà associée à votre demande. Pour en choisir une autre, revenez à la liste des sessions et démarrez une nouvelle demande.
+        Ce niveau académique est déjà associé à votre demande. Pour en choisir un autre, revenez à la liste des niveaux académiques et démarrez une nouvelle demande.
       </small>
       <p *ngIf="motifCorrection" class="muted mt-2" style="font-size: 0.85rem;">
         {{ libelleCorrectionNote }}
@@ -170,7 +170,7 @@
       </div>
 
       <p *ngIf="documentsRequis.length === 0" class="muted" role="status">
-        Le bordereau de paiement obligatoire n’est pas configuré pour cette session. Veuillez contacter l’administration.
+        Le bordereau de paiement obligatoire n’est pas configuré pour ce niveau académique. Veuillez contacter l’administration.
       </p>
 
       <div *ngFor="let d of documentsRequis; let i = index"
@@ -325,11 +325,11 @@
             required
             [disabled]="sitesLoading || sitesDisponibles.length === 0 || !!sessionSelectionneeId"
             class="form-control">
-          <option value="">Choisir le site correspondant à la session</option>
+          <option value="">Choisir le site correspondant au niveau académique</option>
           <option *ngFor="let site of sitesDisponibles" [value]="site.id">{{ site.nom }}</option>
         </select>
           <small *ngIf="sessionSelectionneeId" class="text-gray-500">
-            Site associé à la session choisie ci-dessus.
+            Site associé au niveau académique choisi ci-dessus.
           </small>
         <small *ngIf="sitesLoading" role="status">Chargement des sites autorisés…</small>
         <small *ngIf="sitesError" class="text-red-600" role="alert">{{ sitesError }}</small>
@@ -337,7 +337,7 @@
           Aucun site actif n’est disponible pour votre inscription. Contactez l’administration.
         </small>
         <small *ngIf="infos.etablissementId && !siteSelectionValide" class="text-amber-700" role="status">
-          Le site choisi doit être actif et correspondre à la session sélectionnée.
+          Le site choisi doit être actif et correspondre au niveau académique sélectionné.
         </small>
       </div>
       <button class="btn btn-primary"
@@ -368,7 +368,7 @@
         <tr *ngIf="modeFormation === 'presentiel'"><th>Parcours</th><td>{{ typeChoisi }}</td></tr>
         <tr *ngIf="modeFormation === 'presentiel'"><th>Grade</th><td>{{ gradeChoisi }}</td></tr>
         <tr *ngIf="modeFormation === 'presentiel'"><th>Filière</th><td>{{ filiereChoisie?.titre }}</td></tr>
-        <tr><th>Session</th><td>{{ sessionRecapLabel }}</td></tr>
+        <tr><th>Niveau académique</th><td>{{ sessionRecapLabel }}</td></tr>
         <tr>
           <th>Pièces déposées</th>
           <td>
@@ -381,7 +381,7 @@
                 <span class="recap-doc-fichier">{{ nomDocumentAffiche(d.id) }}</span>
               </li>
             </ul>
-            <span *ngIf="!documentsRequis.length" class="muted">Aucune pièce requise pour cette session.</span>
+            <span *ngIf="!documentsRequis.length" class="muted">Aucune pièce requise pour ce niveau académique.</span>
           </td>
         </tr>
         <tr>

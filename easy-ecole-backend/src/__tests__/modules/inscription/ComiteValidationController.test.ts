@@ -59,6 +59,9 @@ const { DemandeInscription } = require('../../../modules/inscription/models/Dema
 const { DemandeInscriptionDossier } = require('../../../modules/inscription/models/DemandeInscriptionDossier')
 const { ComiteVote } = require('../../../modules/inscription/models/ComiteVote')
 const { Utilisateur } = require('../../../modules/auth/models/Utilisateur')
+const { DossierEtudiant } = require('../../../modules/inscription/models/DossierEtudiant')
+const { Bordereau } = require('../../../modules/inscription/models/Bordereau')
+const { BordereauDossierService } = require('../../../modules/inscription/services/BordereauDossierService')
 
 import Ctrl from '../../../modules/inscription/controllers/ComiteValidationController'
 
@@ -213,6 +216,91 @@ describe('ComiteValidationController.decider — correction demandée', () => {
 })
 
 describe('ComiteValidationController.decider — garde-fous', () => {
+  function preparerFinalisationComite() {
+    const demande = {
+      id: 11,
+      utilisateurId: 90,
+      typeDemande: 'inscription',
+      matriculeEtudiant: 'ESA-2026-001',
+      statutPipeline: 'transmis_comite',
+      save: jest.fn().mockResolvedValue(undefined),
+    }
+    ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue(demande)
+    ;(Utilisateur.count as jest.Mock).mockResolvedValue(3)
+    ;(ComiteVote.count as jest.Mock).mockResolvedValue(3)
+    ;(ComiteVote.findAll as jest.Mock).mockResolvedValue([
+      { matriculeConfirme: 'ESA-2026-001', membre: { nom: 'Alpha', prenoms: 'Alice' } },
+      { matriculeConfirme: 'ESA-2026-001', membre: { nom: 'Beta', prenoms: 'Benoit' } },
+      { matriculeConfirme: 'ESA-2026-001', membre: { nom: 'Gamma', prenoms: 'Claire' } },
+    ])
+    const dossierFindOne = jest.spyOn(DossierEtudiant, 'findOne').mockResolvedValue(null)
+    const bordereauFindOne = jest.spyOn(Bordereau, 'findOne').mockResolvedValue(null)
+    const finaliser = jest.spyOn(BordereauDossierService, 'finaliserAffectationPedagogique')
+      .mockResolvedValue({ matricule: 'ESA-2026-001' })
+
+    return {
+      finaliser,
+      restaurer: () => {
+        finaliser.mockRestore()
+        dossierFindOne.mockRestore()
+        bordereauFindOne.mockRestore()
+      },
+    }
+  }
+
+  function reqDernierVote(autorisationProvisoire?: Record<string, unknown>) {
+    return reqComite({
+      decision: 'valide',
+      matriculeEtudiant: 'ESA-2026-001',
+      matriculeConfirme: 'ESA-2026-001',
+      ...(autorisationProvisoire ? { autorisationProvisoire } : {}),
+    })
+  }
+
+  it('finalise une première inscription sans renseignements académiques facultatifs', async () => {
+    const res = mockResponse()
+    const { finaliser, restaurer } = preparerFinalisationComite()
+
+    try {
+      await Ctrl.decider(reqDernierVote(), res)
+
+      expect(res.status).toHaveBeenCalledWith(200)
+      expect(finaliser).toHaveBeenCalledWith(
+        90,
+        expect.anything(),
+        mockTransaction,
+        expect.objectContaining({ autorisationProvisoire: undefined }),
+      )
+      expect(mockTransaction.commit).toHaveBeenCalled()
+    } finally {
+      restaurer()
+    }
+  })
+
+  it('n’exige pas l’année d’un relevé reçu', async () => {
+    const res = mockResponse()
+    const { finaliser, restaurer } = preparerFinalisationComite()
+
+    try {
+      await Ctrl.decider(reqDernierVote({
+        relevesSemestresRecus: ['S1'],
+      }), res)
+
+      expect(res.status).toHaveBeenCalledWith(200)
+      expect(finaliser).toHaveBeenCalledWith(
+        90,
+        expect.anything(),
+        mockTransaction,
+        expect.objectContaining({
+          autorisationProvisoire: { relevesSemestresRecus: ['S1'] },
+        }),
+      )
+      expect(mockTransaction.commit).toHaveBeenCalled()
+    } finally {
+      restaurer()
+    }
+  })
+
   it('fonctionne lorsque Express appelle le handler sans contexte de classe', async () => {
     const res = mockResponse()
     const handler = Ctrl.decider

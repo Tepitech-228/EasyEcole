@@ -63,6 +63,14 @@ export interface FiltresComite {
   niveauId?: string | null
 }
 
+export interface AutorisationProvisoireInput {
+  diplomeRecu?: 'BAC' | 'LICENCE' | 'MASTER'
+  dateDiplomeRecu?: string
+  relevesSemestresRecus?: string[]
+  relevesSemestresDates?: Record<string, string>
+  semestresAutorises?: string[]
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -103,13 +111,7 @@ export class ComiteValidationService {
     dossierIdsAReposer?: number[],
     matriculeConfirme?: string,
     matriculeEtudiant?: string,
-    autorisationProvisoire?: {
-      diplomeRecu: 'BAC' | 'LICENCE' | 'MASTER'
-      dateDiplomeRecu: string
-      relevesSemestresRecus: string[]
-      relevesSemestresDates: Record<string, string>
-      semestresAutorises: string[]
-    },
+    autorisationProvisoire?: AutorisationProvisoireInput,
   ): Observable<any> {
     return this.httpClient.post(`${this.SERVICE_URL}/dossiers/${id}/decider`, {
       decision,

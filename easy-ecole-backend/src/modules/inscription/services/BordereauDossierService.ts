@@ -102,11 +102,11 @@ export interface AutorisationProvisoireDifferee {
 }
 
 export interface AutorisationProvisoireDetails {
-    diplomeRecu: 'BAC' | 'LICENCE' | 'MASTER';
-    dateDiplomeRecu: string;
-    relevesSemestresRecus: string[];
-    relevesSemestresDates: Record<string, string>;
-    semestresAutorises: string[];
+    diplomeRecu?: 'BAC' | 'LICENCE' | 'MASTER';
+    dateDiplomeRecu?: string;
+    relevesSemestresRecus?: string[];
+    relevesSemestresDates?: Record<string, string>;
+    semestresAutorises?: string[];
 }
 
 export interface FichiersDossierDiffere {
