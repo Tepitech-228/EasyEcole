@@ -57,7 +57,7 @@ router
  *       201:
  *         description: Salle de classe créée
  */
-    .post('/', [AuthPilotagePedagogique, CheckPermission('action.inscription.salle.creer')], SalleDeClasseController.createSalleDeClasse)
+    .post('/', [AuthPilotagePedagogique, CheckPermission('action.inscription.salle.creer'), cache(300)], SalleDeClasseController.createSalleDeClasse)
 /**
  * @openapi
  * /inscription/sallesDeClasse/{id}:
@@ -98,7 +98,7 @@ router
  *       404:
  *         description: Salle de classe non trouvée
  */
-    .put('/:id', [AuthPilotagePedagogique, CheckPermission('action.inscription.salle.modifier')], SalleDeClasseController.updateSalleDeClasse)
+    .put('/:id', [AuthPilotagePedagogique, CheckPermission('action.inscription.salle.modifier'), cache(300)], SalleDeClasseController.updateSalleDeClasse)
 /**
  * @openapi
  * /inscription/sallesDeClasse/{id}:
@@ -113,7 +113,7 @@ router
  *       404:
  *         description: Salle de classe non trouvée
  */
-    .delete('/:id', [AuthPilotagePedagogique, CheckPermission('action.inscription.salle.supprimer')], SalleDeClasseController.deleteSalleDeClasse)
+    .delete('/:id', [AuthPilotagePedagogique, CheckPermission('action.inscription.salle.supprimer'), cache(300)], SalleDeClasseController.deleteSalleDeClasse)
 /**
  * @openapi
  * /inscription/sallesDeClasse/statistics/count:

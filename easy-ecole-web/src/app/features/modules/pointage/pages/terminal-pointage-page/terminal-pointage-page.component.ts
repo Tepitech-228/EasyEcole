@@ -13,6 +13,7 @@ import { Pointage } from 'src/app/data/modules/inscription/models/Pointage.model
 import { AuthService, SiteUtilisateur } from 'src/app/data/modules/auth/services/auth.service';
 import { SocketService, TerminalAttendanceEvent } from 'src/app/core/services/socket.service';
 import { PointageSituationFinanciere } from 'src/app/shared/models/PointageSituationFinanciere.model';
+import { RolesUtilisateur } from 'src/app/data/enums/RolesUtilisateur';
 import { environment } from 'src/environments/environment';
 
 interface PendingDepartureConfirmation {
@@ -26,6 +27,21 @@ interface PendingDepartureConfirmation {
   displayRole: string;
   matricule: string;
   photoUrl: string;
+  seancePointage?: NonNullable<TerminalAttendanceEvent['seancePointage']>;
+}
+
+interface DepartureResultPopup {
+  titre: string;
+  cours: string | null;
+  nomComplet: string;
+  role: string;
+  matricule: string;
+  photoUrl: string;
+  heureArrivee: string;
+  heureDepart: string;
+  minutesTotales: number | null;
+  minutesNormales: number | null;
+  minutesSupplementaires: number | null;
 }
 
 @Component({
@@ -34,6 +50,12 @@ interface PendingDepartureConfirmation {
   styleUrls: ['./terminal-pointage-page.component.scss']
 })
 export class TerminalPointagePageComponent extends BaseComponentClass implements OnDestroy {
+  private static readonly PERSONNEL_ROLES = new Set<string>(
+    Object.values(RolesUtilisateur).filter(role =>
+      role !== RolesUtilisateur.APPRENANT && role !== RolesUtilisateur.PARENT
+    )
+  )
+
   todayPointage: any = null
   loading: boolean = true
   loadError: string = ''
@@ -49,6 +71,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   /** Départ personnel en attente de double confirmation (2e scan du jour). */
   departureConfirmation: PendingDepartureConfirmation | null = null
   departureConfirmationSaving: boolean = false
+  departureResultPopup: DepartureResultPopup | null = null
   scanTimeout: boolean = false
   selfSuccess: string = ''
   selfError: string = ''
@@ -61,9 +84,15 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   voiceError: string = ''
   lastAttendanceName: string = ''
   lastAttendanceRole: string = ''
+  lastAttendanceRoleCode: string = ''
   lastAttendanceMatricule: string = ''
   lastAttendancePhotoUrl: string = ''
   lastAttendanceSituationFinanciere: PointageSituationFinanciere | null = null
+  lastAttendanceMode: 'arrivee' | 'depart' | 'passage' | 'refuse' = 'arrivee'
+  lastAttendanceEventTime = ''
+  lastAttendanceEventDate = ''
+  lastAttendanceHeureArrivee = ''
+  lastAttendanceHeureDepart = ''
   manualId: string = ''
   showManualInput: boolean = false
   readonly isAdmin: boolean
@@ -123,6 +152,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   private toviFlushTimer: any = null
   private readonly readerQueue: Array<{ codeQR: string, mode: 'arrivee' | 'depart' }> = []
   private readonly recentReaderScans = new Map<string, number>()
+  private readonly pendingTerminalDepartureEvents: TerminalAttendanceEvent[] = []
+  private terminalDepartureRequestUserId: string | null = null
   private readerScanInProgress: boolean = false
   private static readonly READER_DUPLICATE_WINDOW_MS = 2500
 
@@ -439,11 +470,26 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   }
 
   private afficherPointageHikvision(event: TerminalAttendanceEvent): void {
+    const memePersonneMemeJour = this.lastAttendanceMatricule === event.employeeNoString
+      && this.lastAttendanceEventDate === event.date
+    if (!memePersonneMemeJour) {
+      this.lastAttendanceHeureArrivee = ''
+      this.lastAttendanceHeureDepart = ''
+    }
     this.lastAttendanceName = this.formatPersonName(event)
     this.lastAttendanceRole = this.roleLabel(event.role)
+    this.lastAttendanceRoleCode = String(event.role || '').toLowerCase()
     this.lastAttendanceMatricule = event.employeeNoString
     this.lastAttendancePhotoUrl = this.buildPhotoUrl(event.photo, event.photoType)
     this.lastAttendanceSituationFinanciere = event.situationFinanciere || null
+    this.lastAttendanceMode = event.mode
+    this.lastAttendanceEventTime = this.formatHeureCourte(event.time)
+    this.lastAttendanceEventDate = event.date
+    if (event.mode === 'arrivee') this.lastAttendanceHeureArrivee = this.formatHeureCourte(event.time)
+    if (event.mode === 'depart') this.lastAttendanceHeureDepart = this.formatHeureCourte(event.time)
+    if (event.heureArrivee) this.lastAttendanceHeureArrivee = this.formatHeureCourte(event.heureArrivee)
+    if (event.heureDepart) this.lastAttendanceHeureDepart = this.formatHeureCourte(event.heureDepart)
+    if (event.seancePointage?.action === 'debut') this.lastAttendanceHeureDepart = ''
     this.scanError = ''
     this.scanWarning = event.avertissementPaiement || ''
 
@@ -451,7 +497,25 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       this.scanSuccess = ''
       this.scanError = event.motifRefus || 'Accès refusé'
       this.playBeepRefus()
-      this.announceAttendance(event, 'refuse', event.time)
+      this.announceAttendance(event, 'refuse', event.time, event.motifRefus, null, undefined, event.enseignantNonProgramme)
+      return
+    }
+
+    if (event.seancePointage?.action === 'fin') {
+      this.demanderConfirmationDepartTerminal(event)
+      return
+    }
+
+    if (event.seancePointage) {
+      const { action, cours, heureReelle } = event.seancePointage
+      this.scanSuccess = `Début du cours « ${cours} » enregistré à ${heureReelle}.`
+      this.playBeepSucces()
+      this.announceAttendance(event, event.mode, heureReelle, event.avertissementPaiement, null, event.seancePointage)
+      return
+    }
+
+    if (event.mode === 'passage' && this.isPersonnelRole(event.role)) {
+      this.demanderConfirmationDepartTerminal(event)
       return
     }
 
@@ -464,6 +528,104 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     }
     this.playBeepSucces()
     this.announceAttendance(event, event.mode, event.time, event.avertissementPaiement)
+  }
+
+  private isPersonnelRole(role: string | undefined): boolean {
+    return !!role && TerminalPointagePageComponent.PERSONNEL_ROLES.has(role.toLowerCase())
+  }
+
+  private demanderConfirmationDepartTerminal(event: TerminalAttendanceEvent): void {
+    const userId = String(event.utilisateurId)
+    if (
+      this.departureConfirmation?.userId === userId ||
+      this.terminalDepartureRequestUserId === userId ||
+      this.pendingTerminalDepartureEvents.some(item => String(item.utilisateurId) === userId)
+    ) {
+      return
+    }
+
+    if (this.departureConfirmation || this.departureConfirmationSaving || this.departureResultPopup) {
+      this.pendingTerminalDepartureEvents.push(event)
+      return
+    }
+
+    if (event.seancePointage?.action === 'fin') {
+      const seancePointage = event.seancePointage
+      if (!seancePointage.confirmationToken) {
+        this.scanError = 'La confirmation de fin de cours est manquante. Recommencez le pointage.'
+        this.playBeepRefus()
+        return
+      }
+      this.departureConfirmation = {
+        codeQR: null,
+        userId,
+        confirmationToken: seancePointage.confirmationToken,
+        heure: seancePointage.heureReelle,
+        nom: event.nom,
+        prenoms: event.prenoms,
+        role: event.role,
+        displayRole: this.roleLabel(event.role),
+        matricule: event.employeeNoString,
+        photoUrl: this.buildPhotoUrl(event.photo, event.photoType),
+        seancePointage
+      }
+      this.departureConfirmationSaving = false
+      this.scanSuccess = ''
+      const nomComplet = this.formatPersonName(event)
+      const heure = this.formatHeureCourte(seancePointage.heureReelle)
+      this.speak(
+        `Fin du cours ${seancePointage.cours}${heure ? ' à ' + heure : ''}.`
+        + ` Voulez-vous confirmer la fin du cours pour ${nomComplet} ?`
+      )
+      return
+    }
+
+    this.terminalDepartureRequestUserId = userId
+    this.departureConfirmationSaving = true
+    this.pointageService.pointerDepartByScan(userId).subscribe({
+      next: response => {
+        this.terminalDepartureRequestUserId = null
+        this.departureConfirmationSaving = false
+        if (!this.isDepartureConfirmation(response)) {
+          this.scanWarning = 'Le départ de cette personne n’a pas pu être confirmé.'
+          this.traiterProchainDepartTerminal()
+          return
+        }
+
+        this.departureConfirmation = {
+          codeQR: null,
+          userId,
+          confirmationToken: response.confirmationToken,
+          heure: response.heureDepart,
+          nom: event.nom,
+          prenoms: event.prenoms,
+          role: event.role,
+          displayRole: this.roleLabel(event.role),
+          matricule: event.employeeNoString,
+          photoUrl: this.buildPhotoUrl(event.photo, event.photoType)
+        }
+        this.scanSuccess = ''
+        const nomComplet = this.formatPersonName(event)
+        const heure = this.formatHeureCourte(response.heureDepart)
+        this.speak(
+          `Deuxième pointage détecté. Voulez-vous pointer le départ de ${nomComplet}`
+          + `${heure ? ' à ' + heure : ''} ?`
+        )
+      },
+      error: err => {
+        this.terminalDepartureRequestUserId = null
+        this.departureConfirmationSaving = false
+        this.scanError = err.error?.message || 'Impossible de vérifier le départ de cette personne.'
+        this.playBeepRefus()
+        this.traiterProchainDepartTerminal()
+      }
+    })
+  }
+
+  private traiterProchainDepartTerminal(): void {
+    if (this.departureConfirmation || this.departureConfirmationSaving || this.departureResultPopup) return
+    const next = this.pendingTerminalDepartureEvents.shift()
+    if (next) this.demanderConfirmationDepartTerminal(next)
   }
 
   ngOnDestroy(): void {
@@ -626,16 +788,31 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
             const pointage = result.pointage
             this.lastAttendanceName = this.formatPersonName(this.scannedUser)
             this.lastAttendanceRole = this.roleLabel(this.scannedUser?.role)
+            this.lastAttendanceRoleCode = String(this.scannedUser?.role || '').toLowerCase()
             this.lastAttendanceMatricule = this.scannedUser?.matricule || ''
             this.lastAttendancePhotoUrl = this.scannedUser?.photoUrl || ''
             this.lastAttendanceSituationFinanciere = result.situationFinanciere || null
-            const heure = result.mode === 'passage'
-              ? pointage.heureArrivee
-              : (result.mode === 'depart' ? pointage.heureDepart : pointage.heureArrivee)
+            this.lastAttendanceMode = result.mode
+            const heure = result.heureEvenement || (
+              result.mode === 'depart' ? pointage.heureDepart : pointage.heureArrivee
+            )
+            this.lastAttendanceEventTime = this.formatHeureCourte(heure)
+            this.lastAttendanceEventDate = ''
+            this.lastAttendanceHeureArrivee = this.formatHeureCourte(pointage.heureArrivee)
+            this.lastAttendanceHeureDepart = this.formatHeureCourte(pointage.heureDepart)
             this.scanWarning = result.avertissementPaiement || ''
-            this.announceAttendance(this.scannedUser, result.mode, heure || undefined, result.avertissementPaiement, pointage)
+            this.announceAttendance(
+              this.scannedUser,
+              result.mode,
+              heure || undefined,
+              result.avertissementPaiement,
+              pointage,
+              result.seancePointage
+            )
             this.playBeepSucces()
-            this.scanSuccess = result.mode === 'depart'
+            this.scanSuccess = result.seancePointage?.action === 'debut'
+              ? `Début du cours « ${result.seancePointage.cours} » enregistré à ${this.formatHeureCourte(result.seancePointage.heureReelle)}.`
+              : result.mode === 'depart'
               ? 'Départ enregistré à ' + pointage.heureDepart + this.tempsPointageMessage(pointage)
               : (result.mode === 'passage'
                 ? 'Passage enregistré à ' + pointage.heureArrivee
@@ -649,6 +826,9 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
               this.scanWarning = err.error?.message || 'Arrivée et départ déjà pointées aujourd’hui. Aucun nouveau pointage n’a été ajouté.'
             } else {
               this.scanError = err.error?.message || 'Le pointage n’a pas pu être enregistré. Réessayez.'
+              if (err.error?.code === 'NOT_PROGRAMMED') {
+                this.announceAttendance(this.scannedUser || {}, 'refuse', undefined, null, null, undefined, true)
+              }
               this.playBeepRefus()
             }
             this.finishReaderScan()
@@ -822,6 +1002,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
         this.todayPointage = res
         this.selfSuccess = 'Départ pointé à ' + res.heureDepart
           + this.tempsPointageMessage(res)
+        this.afficherResultatDepart(res, BaseComponentClass.utilisateur)
         this.playBeepSucces()
         this.announceAttendance(BaseComponentClass.utilisateur, 'depart', res.heureDepart, null, res)
         setTimeout(() => this.selfSuccess = '', 4000)
@@ -837,6 +1018,34 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   get utilisateurCourantLabel(): string {
     const utilisateur = BaseComponentClass.utilisateur
     return this.formatPersonName({ nom: utilisateur?.nom, prenoms: utilisateur?.prenoms })
+  }
+
+  get estDernierPointageEtudiant(): boolean {
+    return this.lastAttendanceRoleCode.toLowerCase() === String(RolesUtilisateur.APPRENANT).toLowerCase()
+  }
+
+  get statutFinancierDernierPointage(): 'non-a-jour' | 'a-jour' | 'solde' {
+    const situation = this.lastAttendanceSituationFinanciere
+    if (!situation) return 'non-a-jour'
+    if (situation.sommeGlobale > 0 && situation.resteAPayer <= 0) return 'solde'
+    return situation.estAJour ? 'a-jour' : 'non-a-jour'
+  }
+
+  get libelleStatutFinancierDernierPointage(): string {
+    if (this.statutFinancierDernierPointage === 'solde') return 'Soldé'
+    return this.statutFinancierDernierPointage === 'a-jour' ? 'À jour' : 'Non à jour'
+  }
+
+  get dureeDernierPointagePersonnel(): string {
+    if (!this.lastAttendanceHeureArrivee) return '—'
+    if (!this.lastAttendanceHeureDepart) return 'En cours'
+    const durees = this.calculerDureesPointage({
+      heureArrivee: this.lastAttendanceHeureArrivee,
+      heureDepart: this.lastAttendanceHeureDepart
+    })
+    return durees
+      ? this.formaterDuree(durees.minutesNormales + durees.minutesSupplementaires)
+      : 'Indisponible'
   }
 
   demanderConfirmationDepartPerso(): void {
@@ -870,6 +1079,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
         this.selfDepartureStep = 'choix'
         this.selfSuccess = 'Départ enregistré à ' + res.heureDepart
           + this.tempsPointageMessage(res)
+        this.afficherResultatDepart(res, BaseComponentClass.utilisateur)
         this.playBeepSucces()
         this.announceAttendance(BaseComponentClass.utilisateur, 'depart', res.heureDepart, null, res)
         setTimeout(() => this.selfSuccess = '', 4000)
@@ -1220,17 +1430,30 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
           : mode
         this.lastAttendanceName = this.formatPersonName(this.scannedUser)
         this.lastAttendanceRole = this.roleLabel(this.scannedUser?.role)
+        this.lastAttendanceRoleCode = String(this.scannedUser?.role || '').toLowerCase()
         this.lastAttendanceMatricule = this.scannedUser?.matricule || ''
         this.lastAttendancePhotoUrl = this.scannedUser?.photoUrl || ''
         this.lastAttendanceSituationFinanciere = 'situationFinanciere' in response
           ? response.situationFinanciere || null
           : this.scannedUser?.situationFinanciere || null
-        const heure = actualMode === 'depart' ? pointage.heureDepart : pointage.heureArrivee
+        this.lastAttendanceMode = actualMode
+        const heureEvenement = 'heureEvenement' in response && typeof response.heureEvenement === 'string'
+          ? response.heureEvenement
+          : ''
+        const heure = heureEvenement
+          || (actualMode === 'depart' ? pointage.heureDepart : pointage.heureArrivee)
+        this.lastAttendanceEventTime = this.formatHeureCourte(heure)
+        this.lastAttendanceEventDate = ''
+        this.lastAttendanceHeureArrivee = this.formatHeureCourte(pointage.heureArrivee)
+        this.lastAttendanceHeureDepart = this.formatHeureCourte(pointage.heureDepart)
         const avertissementPaiement = 'avertissementPaiement' in response ? response.avertissementPaiement : null
         this.scanWarning = avertissementPaiement || ''
-        this.announceAttendance(this.scannedUser, actualMode, heure || undefined, avertissementPaiement, pointage)
+        const seancePointage = 'seancePointage' in response ? response.seancePointage : undefined
+        this.announceAttendance(this.scannedUser, actualMode, heure || undefined, avertissementPaiement, pointage, seancePointage)
         this.playBeepSucces()
-        this.scanSuccess = actualMode === 'depart'
+        this.scanSuccess = seancePointage?.action === 'debut'
+          ? `Début du cours « ${seancePointage.cours} » enregistré à ${this.formatHeureCourte(seancePointage.heureReelle)}.`
+          : actualMode === 'depart'
           ? 'Départ pointé à ' + pointage.heureDepart + this.tempsPointageMessage(pointage)
           : (actualMode === 'passage'
             ? 'Passage enregistré à ' + pointage.heureArrivee
@@ -1246,6 +1469,9 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
             : 'Départ déjà pointé aujourd\'hui')
         } else {
           this.scanError = err.error?.message || 'Erreur lors du pointage'
+          if (err.error?.code === 'NOT_PROGRAMMED') {
+            this.announceAttendance(this.scannedUser || {}, 'refuse', undefined, null, null, undefined, true)
+          }
           this.playBeepRefus()
         }
         this.scannedUser = null
@@ -1287,7 +1513,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       role: this.scannedUser?.role || '',
       displayRole: this.roleLabel(this.scannedUser?.role),
       matricule: this.scannedUser?.matricule || '',
-      photoUrl: this.scannedUser?.photoUrl || ''
+      photoUrl: this.scannedUser?.photoUrl || '',
+      seancePointage: confirmation.seancePointage
     }
     this.departureConfirmationSaving = false
     this.scanError = ''
@@ -1295,10 +1522,17 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     this.scanSuccess = ''
     const nomComplet = this.formatPersonName(this.departureConfirmation)
     const heure = this.formatHeureCourte(this.departureConfirmation.heure)
-    this.speak(
-      `Deuxième pointage détecté. Voulez-vous pointer le départ de ${nomComplet}`
-      + `${heure ? ' à ' + heure : ''} ?`
-    )
+    if (confirmation.seancePointage) {
+      this.speak(
+        `Fin du cours ${confirmation.seancePointage.cours}${heure ? ' à ' + heure : ''}.`
+        + ` Voulez-vous confirmer la fin du cours pour ${nomComplet} ?`
+      )
+    } else {
+      this.speak(
+        `Deuxième pointage détecté. Voulez-vous pointer le départ de ${nomComplet}`
+        + `${heure ? ' à ' + heure : ''} ?`
+      )
+    }
     this.scannedUser = null
   }
 
@@ -1308,6 +1542,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     this.departureConfirmationSaving = false
     this.resetScan()
     this.resumeReaderQueue()
+    this.traiterProchainDepartTerminal()
   }
 
   /** « Oui » : enregistre le départ définitivement avec le jeton signé. */
@@ -1315,9 +1550,11 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     const pending = this.departureConfirmation
     if (!pending || this.departureConfirmationSaving) return
     this.departureConfirmationSaving = true
-    const request$: Observable<Pointage | PointageScanResponse> = pending.codeQR
-      ? this.pointageService.pointerParQR(pending.codeQR, pending.confirmationToken)
-      : this.pointageService.pointerDepartByScan(pending.userId, pending.confirmationToken)
+    const request$: Observable<Pointage | PointageScanResponse> = pending.seancePointage
+      ? this.pointageService.pointerFinCoursByScan(pending.confirmationToken)
+      : pending.codeQR
+        ? this.pointageService.pointerParQR(pending.codeQR, pending.confirmationToken)
+        : this.pointageService.pointerDepartByScan(pending.userId, pending.confirmationToken)
     request$.subscribe({
       next: (response) => {
         this.departureConfirmationSaving = false
@@ -1332,19 +1569,34 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
           return
         }
         const pointage = this.extractPointage(response)
-        const personne = { nom: pending.nom, prenoms: pending.prenoms, role: pending.role }
+        const personne = {
+          nom: pending.nom,
+          prenoms: pending.prenoms,
+          role: pending.role,
+          matricule: pending.matricule,
+          photoUrl: pending.photoUrl
+        }
         const heure = pointage.heureDepart || pending.heure
         this.lastAttendanceName = this.formatPersonName(personne)
         this.lastAttendanceRole = this.roleLabel(pending.role)
+        this.lastAttendanceRoleCode = String(pending.role || '').toLowerCase()
         this.lastAttendanceMatricule = pending.matricule
         this.lastAttendancePhotoUrl = pending.photoUrl
-        this.announceAttendance(personne, 'depart', heure, null, pointage)
+        this.lastAttendanceMode = 'depart'
+        this.lastAttendanceEventTime = this.formatHeureCourte(heure)
+        this.lastAttendanceHeureArrivee = this.formatHeureCourte(pointage.heureArrivee)
+        this.lastAttendanceHeureDepart = this.formatHeureCourte(pointage.heureDepart || heure)
+        this.announceAttendance(personne, 'depart', heure, null, pointage, pending.seancePointage)
         this.playBeepSucces()
-        this.scanSuccess = 'Départ enregistré à ' + heure + this.tempsPointageMessage(pointage)
+        this.scanSuccess = pending.seancePointage
+          ? `Fin du cours « ${pending.seancePointage.cours} » enregistrée à ${heure}.`
+          : 'Départ enregistré à ' + heure + this.tempsPointageMessage(pointage)
+        this.afficherResultatDepart(pointage, personne, pending.seancePointage)
         this.departureConfirmation = null
         this.scannedUser = null
         this.scannedCodeQR = null
         this.resumeReaderQueue()
+        this.traiterProchainDepartTerminal()
       },
       error: (err) => {
         this.departureConfirmationSaving = false
@@ -1352,8 +1604,15 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
         this.scanError = err.error?.message || 'Le départ n’a pas pu être enregistré. Réessayez.'
         this.playBeepRefus()
         this.resumeReaderQueue()
+        this.traiterProchainDepartTerminal()
       }
     })
+  }
+
+  fermerResultatDepart(): void {
+    this.departureResultPopup = null
+    this.resetScan()
+    this.traiterProchainDepartTerminal()
   }
 
   private resumeReaderQueue(): void {
@@ -1400,7 +1659,9 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     mode: 'arrivee' | 'depart' | 'passage' | 'refuse',
     time?: string,
     avertissementPaiement?: string | null,
-    pointage?: Pick<Pointage, 'heureArrivee' | 'heureDepart'> | null
+    pointage?: Pick<Pointage, 'heureArrivee' | 'heureDepart'> | null,
+    seancePointage?: TerminalAttendanceEvent['seancePointage'],
+    enseignantNonProgramme = false
   ): void {
     if (!this.voiceAnnouncementsEnabled) return
     const prenom = (user?.prenoms || '').trim() || this.formatPersonName(user)
@@ -1409,7 +1670,20 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     const estApprenant = String(user?.role || '').toLowerCase() === 'apprenant'
 
     if (mode === 'refuse') {
+      if (enseignantNonProgramme) {
+        this.speak('Vous n’êtes pas programmé à cette heure. Aucun pointage n’a été enregistré.')
+        return
+      }
       this.speak('Accès refusé. Veuillez vous adresser à l’administration.')
+      return
+    }
+
+    if (seancePointage) {
+      const heureCours = this.formatHeureCourte(seancePointage.heureReelle)
+      const annonce = seancePointage.action === 'debut'
+        ? `Début du cours ${seancePointage.cours}${heureCours ? ' à ' + heureCours : ''}.`
+        : `Fin du cours ${seancePointage.cours}${heureCours ? ' à ' + heureCours : ''}.`
+      this.speak(`${prenom}. ${annonce}`)
       return
     }
 
@@ -1475,6 +1749,33 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     if (!durees) return ''
     return ` · Temps normal : ${this.formaterDuree(durees.minutesNormales)}`
       + ` · Heures supplémentaires : ${this.formaterDuree(durees.minutesSupplementaires)}`
+  }
+
+  private afficherResultatDepart(
+    pointage: Pick<Pointage, 'heureArrivee' | 'heureDepart'>,
+    personne: any,
+    seancePointage?: NonNullable<TerminalAttendanceEvent['seancePointage']>
+  ): void {
+    const heureArrivee = seancePointage?.heureDebutReelle || pointage.heureArrivee
+    const heureDepart = seancePointage?.heureReelle || pointage.heureDepart
+    const durees = this.calculerDureesPointage({ heureArrivee, heureDepart })
+    this.departureResultPopup = {
+      titre: seancePointage ? 'Fin du cours enregistrée' : 'Départ enregistré',
+      cours: seancePointage?.cours || null,
+      nomComplet: this.formatPersonName(personne),
+      role: this.roleLabel(personne?.role),
+      matricule: personne?.matricule || '',
+      photoUrl: personne?.photoUrl || this.buildPhotoUrl(personne?.photo, personne?.photoType),
+      heureArrivee: heureArrivee ? this.formatHeureCourte(heureArrivee) : '—',
+      heureDepart: heureDepart ? this.formatHeureCourte(heureDepart) : '—',
+      minutesTotales: durees ? durees.minutesNormales + durees.minutesSupplementaires : null,
+      minutesNormales: durees?.minutesNormales ?? null,
+      minutesSupplementaires: durees?.minutesSupplementaires ?? null
+    }
+  }
+
+  formaterDureeAffichee(minutes: number | null): string {
+    return minutes === null ? 'Indisponible' : this.formaterDuree(minutes)
   }
 
   private formaterDuree(minutes: number): string {

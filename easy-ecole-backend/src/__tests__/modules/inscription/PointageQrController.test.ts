@@ -7,6 +7,15 @@ jest.mock('../../../core/services/QrTokenService', () => ({
 jest.mock('../../../modules/auth/models/Utilisateur', () => ({
   Utilisateur: { findByPk: jest.fn(), findAll: jest.fn() }
 }))
+jest.mock('../../../modules/auth/models/Apprenant', () => ({
+  Apprenant: { findOne: jest.fn() }
+}))
+jest.mock('../../../modules/auth/models/Enseignant', () => ({
+  Enseignant: { findOne: jest.fn() }
+}))
+jest.mock('../../../modules/auth/models/PersonnelAdministratif', () => ({
+  PersonnelAdministratif: { findOne: jest.fn() }
+}))
 jest.mock('../../../modules/auth/models/SiteUtilisateur', () => ({
   SiteUtilisateur: { findAll: jest.fn() }
 }))
@@ -27,6 +36,16 @@ jest.mock('../../../modules/inscription/models/Pointage', () => ({
 jest.mock('../../../modules/inscription/models/PointageScan', () => ({
   PointageScan: { create: jest.fn() }
 }))
+jest.mock('../../../modules/inscription/models/SeancePointage', () => ({
+  SeancePointage: { findOne: jest.fn(), findAll: jest.fn(), create: jest.fn() }
+}))
+jest.mock('../../../modules/inscription/models/Seance', () => ({
+  Seance: {
+    findOne: jest.fn(),
+    findAll: jest.fn(),
+    associations: { cours: 'cours' }
+  }
+}))
 jest.mock('../../../modules/inscription/models/DossierEtudiant', () => ({
   DossierEtudiant: {
     findOne: jest.fn(),
@@ -38,14 +57,21 @@ jest.mock('../../../modules/inscription/services/VerificationPaiementService', (
 }))
 
 import PointageController from '../../../modules/inscription/controllers/PointageController'
+import SeancePointageConfirmationService from '../../../modules/inscription/services/SeancePointageConfirmationService'
 const { QrTokenService } = require('../../../core/services/QrTokenService')
 const { Utilisateur } = require('../../../modules/auth/models/Utilisateur')
+const { Apprenant } = require('../../../modules/auth/models/Apprenant')
+const { Enseignant } = require('../../../modules/auth/models/Enseignant')
+const { PersonnelAdministratif } = require('../../../modules/auth/models/PersonnelAdministratif')
 const { SiteUtilisateur } = require('../../../modules/auth/models/SiteUtilisateur')
 const { getSurveillantSiteId } = require('../../../core/helpers/SurveillantSiteScope')
 const { Pointage } = require('../../../modules/inscription/models/Pointage')
 const { PointageScan } = require('../../../modules/inscription/models/PointageScan')
+const { SeancePointage } = require('../../../modules/inscription/models/SeancePointage')
+const { Seance } = require('../../../modules/inscription/models/Seance')
 const { DossierEtudiant } = require('../../../modules/inscription/models/DossierEtudiant')
 const { VerificationPaiementService } = require('../../../modules/inscription/services/VerificationPaiementService')
+let transaction: any
 
 const validCode = 'CARTE|v=1|signed-payload|0123456789abcdef'
 
@@ -58,7 +84,7 @@ function request(body: any = {}) {
 
 beforeEach(() => {
   jest.clearAllMocks()
-  const transaction = {
+  transaction = {
     LOCK: { UPDATE: 'UPDATE' },
     commit: jest.fn().mockResolvedValue(undefined),
     rollback: jest.fn().mockResolvedValue(undefined)
@@ -71,8 +97,63 @@ beforeEach(() => {
   PointageScan.create.mockResolvedValue({ id: 1 })
   Pointage.update.mockResolvedValue([1])
   Pointage.findByPk.mockResolvedValue({ id: 7, heureArrivee: '08:00:00', heureDepart: '17:00:00' })
+  SeancePointage.findOne.mockResolvedValue(null)
+  SeancePointage.findAll.mockResolvedValue([])
+  SeancePointage.create.mockResolvedValue({ id: 9 })
+  Seance.findOne.mockResolvedValue(null)
+  Seance.findAll.mockResolvedValue([])
   DossierEtudiant.findOne.mockResolvedValue({ statut: 'actif', echeances: [] })
   VerificationPaiementService.verifierDossier.mockReturnValue({ statut: 'vert', message: 'Accès autorisé' })
+})
+
+describe('PointageController.pointerFinCoursByScan', () => {
+  it('updates the active course and daily departure only after validating its confirmation token', async () => {
+    const courseUpdate = jest.fn().mockResolvedValue(undefined)
+    const dailyUpdate = jest.fn().mockResolvedValue(undefined)
+    SeancePointage.findOne.mockResolvedValue({
+      heureDebutReelle: '08:15:00',
+      heureFinReelle: null,
+      update: courseUpdate
+    })
+    const pointage = { heureArrivee: '08:15:00', heureDepart: null, update: dailyUpdate }
+    Pointage.findOne.mockResolvedValue(pointage)
+    const confirmationToken = SeancePointageConfirmationService.creer({
+      seancePointageId: 12,
+      utilisateurId: 42,
+      etablissementId: 3,
+      date: '2026-10-17',
+      heureFin: '08:55:00'
+    })
+    const res = mockResponse()
+
+    await PointageController.pointerFinCoursByScan(request({ confirmationToken }), res)
+
+    expect(SeancePointage.findOne).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        id: 12,
+        utilisateurId: 42,
+        etablissementId: 3,
+        date: '2026-10-17',
+        heureFinReelle: null
+      }),
+      transaction
+    }))
+    expect(courseUpdate).toHaveBeenCalledWith({ heureFinReelle: '08:55:00' }, { transaction })
+    expect(dailyUpdate).toHaveBeenCalledWith({ heureDepart: '08:55:00' }, { transaction })
+    expect(transaction.commit).toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.send).toHaveBeenCalledWith(pointage)
+  })
+
+  it('rejects a missing or invalid course-end confirmation token', async () => {
+    const res = mockResponse()
+
+    await PointageController.pointerFinCoursByScan(request({}), res)
+
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(SeancePointage.findOne).not.toHaveBeenCalled()
+    expect(Pointage.sequelize.transaction).not.toHaveBeenCalled()
+  })
 })
 
 describe('PointageController.pointerParQR', () => {
@@ -156,6 +237,70 @@ describe('PointageController.pointerParQR', () => {
     })
   })
 
+  describe('PointageController.verifierStatutByQR', () => {
+    it('returns the student matricule and photo details for a signed QR', async () => {
+      DossierEtudiant.findOne.mockResolvedValue({
+        utilisateurId: 42,
+        matricule: 'MAT-2026-042',
+        photo: 'student-photo.jpg',
+        utilisateur: {
+          id: 42,
+          nom: 'Doe',
+          prenoms: 'Jane',
+          role: 'apprenant'
+        },
+        echeances: []
+      })
+      Apprenant.findOne.mockResolvedValue({ photo: 'fallback-photo.jpg' })
+      const req = mockRequest({
+        utilisateurRole: 'institution',
+        params: { codeQR: validCode }
+      } as any)
+      const res = mockResponse()
+
+      await PointageController.verifierStatutByQR(req, res)
+
+      expect(res.status).toHaveBeenCalledWith(200)
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+        statut: 'vert',
+        utilisateurId: 42,
+        matricule: 'MAT-2026-042',
+        nom: 'Doe',
+        prenoms: 'Jane',
+        role: 'apprenant',
+        photo: 'student-photo.jpg',
+        photoType: 'apprenant'
+      }))
+    })
+
+    it('uses the teacher profile photo when no dedicated teacher photo exists', async () => {
+      DossierEtudiant.findOne.mockResolvedValue(null)
+      Enseignant.findOne.mockResolvedValue({ matricule: 'ETB-GEN-ST-0002', photo: null })
+      PersonnelAdministratif.findOne.mockResolvedValue(null)
+      Utilisateur.findByPk.mockResolvedValue({
+        id: 42,
+        role: 'enseignant',
+        nom: 'Yawo',
+        prenoms: 'Kossi',
+        photoDeProfil: 'teacher-profile.jpg'
+      })
+      const req = mockRequest({
+        utilisateurRole: 'institution',
+        params: { codeQR: validCode }
+      } as any)
+      const res = mockResponse()
+
+      await PointageController.verifierStatutByQR(req, res)
+
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+        statut: 'vert',
+        matricule: 'ETB-GEN-ST-0002',
+        photo: 'teacher-profile.jpg',
+        photoType: 'profile'
+      }))
+    })
+  })
+
   it('rejects an invalid signed QR', async () => {
     QrTokenService.verifier.mockReturnValue(null)
     const res = mockResponse()
@@ -188,6 +333,125 @@ describe('PointageController.pointerParQR', () => {
       mode: 'arrivee',
       pointage: expect.objectContaining({ id: 7 })
     }))
+  })
+
+  it('refuses an unprogrammed teacher QR without creating a daily attendance', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-11-13T10:00:00.000Z'))
+    Utilisateur.findByPk.mockResolvedValue({ id: 42, role: 'enseignant' })
+    Enseignant.findOne.mockResolvedValue({ id: 9 })
+    const req = mockRequest({
+      utilisateurRole: 'institution',
+      etablissementId: 3,
+      body: { codeQR: validCode }
+    } as any)
+    const res = mockResponse()
+
+    await PointageController.pointerParQR(req, res)
+
+    expect(Seance.findAll).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        enseignantId: 9,
+        etablissementId: 3,
+        jourSemaine: '5',
+        publieeLe: expect.any(Object)
+      })
+    }))
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      code: 'NOT_PROGRAMMED',
+      message: expect.stringContaining('Aucun pointage n’a été enregistré')
+    }))
+    expect(SeancePointage.create).not.toHaveBeenCalled()
+    expect(Pointage.create).not.toHaveBeenCalled()
+    expect(transaction.rollback).toHaveBeenCalled()
+    jest.useRealTimers()
+  })
+
+  it('records a teacher QR scan against the scheduled lesson', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-11-13T10:00:00.000Z'))
+    Utilisateur.findByPk.mockResolvedValue({ id: 42, role: 'enseignant' })
+    Enseignant.findOne.mockResolvedValue({ id: 9 })
+    Seance.findAll.mockResolvedValue([{
+      id: 81,
+      titre: 'Cours planifié',
+      heureDebut: '09:00:00',
+      heureFin: '11:00:00',
+      cours: { intitule: 'Mathématiques' }
+    }])
+    const req = mockRequest({
+      utilisateurRole: 'institution',
+      etablissementId: 3,
+      body: { codeQR: validCode }
+    } as any)
+    const res = mockResponse()
+
+    await PointageController.pointerParQR(req, res)
+
+    expect(SeancePointage.create).toHaveBeenCalledWith(expect.objectContaining({
+      seanceId: 81,
+      date: '2026-11-13',
+      enseignantId: '9',
+      utilisateurId: 42,
+      etablissementId: 3,
+      heureDebutReelle: '10:00:00',
+      heureFinReelle: null
+    }), expect.objectContaining({ transaction }))
+    expect(Pointage.create).toHaveBeenCalled()
+    expect(transaction.commit).toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      mode: 'arrivee',
+      seancePointage: expect.objectContaining({
+        action: 'debut',
+        cours: 'Mathématiques',
+        heureReelle: '10:00:00'
+      })
+    }))
+    jest.useRealTimers()
+  })
+
+  it('asks for confirmation before ending an active teacher lesson by QR', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-11-13T10:00:00.000Z'))
+    Utilisateur.findByPk.mockResolvedValue({ id: 42, role: 'enseignant' })
+    Enseignant.findOne.mockResolvedValue({ id: 9 })
+    SeancePointage.findAll.mockResolvedValue([{
+      id: 11,
+      seanceId: 81,
+      heureDebutReelle: '09:05:00'
+    }])
+    Seance.findOne.mockResolvedValue({
+      id: 81,
+      titre: 'Cours planifié',
+      heureDebut: '09:00:00',
+      heureFin: '11:00:00',
+      cours: { intitule: 'Mathématiques' }
+    })
+    const req = mockRequest({
+      utilisateurRole: 'institution',
+      etablissementId: 3,
+      body: { codeQR: validCode }
+    } as any)
+    const res = mockResponse()
+
+    await PointageController.pointerParQR(req, res)
+
+    const response = (res.json as jest.Mock).mock.calls[0][0]
+    expect(response).toEqual(expect.objectContaining({
+      requiresConfirmation: true,
+      mode: 'depart',
+      heureDepart: '10:00:00',
+      seancePointage: expect.objectContaining({
+        action: 'fin',
+        seanceId: 81,
+        cours: 'Mathématiques',
+        heureDebutReelle: '09:05:00'
+      })
+    }))
+    expect(response.confirmationToken).toEqual(expect.any(String))
+    expect(transaction.rollback).toHaveBeenCalled()
+    expect(Pointage.create).not.toHaveBeenCalled()
+    expect(SeancePointage.create).not.toHaveBeenCalled()
+    jest.useRealTimers()
   })
 
   it('rejects an authenticated but unknown QR identity', async () => {
@@ -283,7 +547,11 @@ describe('PointageController.pointerParQR', () => {
       expect.any(Object)
     )
     expect(res.status).toHaveBeenCalledWith(200)
-    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ mode: 'passage' }))
+    const heureScan = PointageScan.create.mock.calls[0][0].heure
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      mode: 'passage',
+      heureEvenement: heureScan
+    }))
     jest.useRealTimers()
   })
 

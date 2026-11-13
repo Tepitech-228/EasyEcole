@@ -3,6 +3,7 @@ import { FindOptions, InferAttributes, Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Pointage } from "../models/Pointage";
 import { PointageScan } from "../models/PointageScan";
+import { SeancePointage } from "../models/SeancePointage";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { DossierEtudiant } from "../models/DossierEtudiant";
 import { QrTokenService } from "../../../core/services/QrTokenService";
@@ -10,10 +11,12 @@ import { VerificationPaiementService } from "../services/VerificationPaiementSer
 import SituationFinanciereService from "../services/SituationFinanciereService";
 import { SituationFinanciere } from "../services/SituationFinanciereService";
 import { calculerDureesPointage, formaterDureePointage } from "../services/PointageDureeService";
+import SeancePointageConfirmationService from "../services/SeancePointageConfirmationService";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { Apprenant } from "../../auth/models/Apprenant";
 import { PersonnelAdministratif } from "../../auth/models/PersonnelAdministratif";
 import { DemandeInscription } from "../models/DemandeInscription";
+import { Seance } from "../models/Seance";
 import { SiteUtilisateur } from "../../auth/models/SiteUtilisateur";
 import { getSurveillantSiteId } from "../../../core/helpers/SurveillantSiteScope";
 import QRCode from 'qrcode';
@@ -67,6 +70,17 @@ function verifyDepartureConfirmation(token: unknown, userId: number, date: strin
     }
 }
 
+function heurePointage(value: unknown): string {
+    const text = value instanceof Date ? value.toISOString() : String(value ?? "");
+    const match = text.match(/(?:^|T)(\d{2}):(\d{2})(?::(\d{2}))?/);
+    return match ? `${match[1]}:${match[2]}:${match[3] || "00"}` : "";
+}
+
+function minutesHeure(value: unknown): number {
+    const heure = heurePointage(value);
+    return heure ? Number(heure.slice(0, 2)) * 60 + Number(heure.slice(3, 5)) : -1;
+}
+
 export default class PointageController {
 
     constructor() { }
@@ -77,14 +91,19 @@ export default class PointageController {
                 where: { utilisateurId: utilisateur.id },
                 attributes: ['photo']
             });
-            return { photo: photoDossier || apprenant?.photo || '', photoType: 'apprenant' };
+            const photoApprenant = photoDossier || apprenant?.photo;
+            return photoApprenant
+                ? { photo: photoApprenant, photoType: 'apprenant' }
+                : { photo: utilisateur.photoDeProfil || '', photoType: 'profile' };
         }
         if (utilisateur.role === RolesUtilisateur.ENSEIGNANT) {
             const enseignant = await Enseignant.findOne({
                 where: { utilisateurId: utilisateur.id },
                 attributes: ['photo']
             });
-            return { photo: enseignant?.photo || '', photoType: 'enseignant' };
+            return enseignant?.photo
+                ? { photo: enseignant.photo, photoType: 'enseignant' }
+                : { photo: utilisateur.photoDeProfil || '', photoType: 'profile' };
         }
         return { photo: utilisateur.photoDeProfil || '', photoType: 'profile' };
     }
@@ -1037,6 +1056,295 @@ export default class PointageController {
         return null
     }
 
+    static async pointerFinCoursByScan(req: Request, res: Response): Promise<Response> {
+        const role = (req as any).utilisateurRole;
+        if (!ROLES_POINTAGE_SCAN.includes(role)) {
+            return res.status(403).json({ success: false, message: "Rôle non autorisé" })
+        }
+
+        const confirmation = SeancePointageConfirmationService.verifier(req.body?.confirmationToken);
+        if (!confirmation) {
+            return res.status(400).json({
+                success: false,
+                code: "INVALID_COURSE_END_CONFIRMATION",
+                message: "La confirmation de fin de cours a expiré. Recommencez le pointage."
+            });
+        }
+
+        const transaction = await Pointage.sequelize!.transaction();
+        try {
+            const pointageSeance = await SeancePointage.findOne({
+                where: {
+                    id: confirmation.seancePointageId,
+                    utilisateurId: confirmation.utilisateurId,
+                    etablissementId: confirmation.etablissementId,
+                    date: confirmation.date,
+                    heureDebutReelle: { [Op.ne]: null },
+                    heureFinReelle: null
+                },
+                transaction,
+                lock: transaction.LOCK.UPDATE
+            });
+            if (!pointageSeance?.heureDebutReelle || confirmation.heureFin < pointageSeance.heureDebutReelle) {
+                await transaction.rollback();
+                return res.status(409).json({
+                    success: false,
+                    code: "COURSE_END_NOT_AVAILABLE",
+                    message: "Ce cours n’est plus en attente de confirmation."
+                });
+            }
+
+            const pointage = await Pointage.findOne({
+                where: { utilisateurId: confirmation.utilisateurId, date: confirmation.date },
+                transaction,
+                lock: transaction.LOCK.UPDATE
+            });
+            if (!pointage) {
+                await transaction.rollback();
+                return res.status(409).json({
+                    success: false,
+                    code: "DAILY_ATTENDANCE_NOT_FOUND",
+                    message: "Le pointage journalier associé à ce cours est introuvable."
+                });
+            }
+            if (pointage.heureDepart) {
+                await transaction.rollback();
+                return res.status(409).json({
+                    success: false,
+                    code: "DAILY_DEPARTURE_ALREADY_RECORDED",
+                    message: "Un départ est déjà enregistré pour cette journée."
+                });
+            }
+
+            await pointageSeance.update({ heureFinReelle: confirmation.heureFin }, { transaction });
+            await pointage.update({ heureDepart: confirmation.heureFin }, { transaction });
+            await transaction.commit();
+            return res.status(200).send(pointage);
+        } catch (error) {
+            await transaction.rollback();
+            console.error("[Pointage] échec de la confirmation de fin de cours", error);
+            return res.status(500).json({ success: false, message: "Erreur interne lors de la confirmation de fin de cours" });
+        }
+    }
+
+    private static async pointerEnseignantParQR(
+        req: Request,
+        res: Response,
+        utilisateur: Utilisateur,
+        date: string,
+        heure: string
+    ): Promise<Response> {
+        const etablissementId = Number(req.etablissementId);
+        if (!Number.isSafeInteger(etablissementId) || etablissementId <= 0) {
+            return res.status(409).json({
+                success: false,
+                code: "SITE_REQUIRED",
+                message: "Sélectionnez le site prévu pour cette séance avant de pointer."
+            });
+        }
+
+        const enseignant = await Enseignant.findOne({
+            where: { utilisateurId: utilisateur.id },
+            attributes: ["id"]
+        });
+        if (!enseignant) {
+            return res.status(403).json({
+                success: false,
+                code: "NOT_PROGRAMMED",
+                message: "Aucun planning de cours n’est associé à ce compte enseignant."
+            });
+        }
+
+        const heureEnMinutes = minutesHeure(heure);
+        const dateValue = new Date(`${date}T00:00:00.000Z`);
+        const jour = String(dateValue.getUTCDay() || 7);
+        const transaction = await Pointage.sequelize!.transaction();
+
+        try {
+            const seancesActives = await SeancePointage.findAll({
+                where: {
+                    utilisateurId: Number(utilisateur.id),
+                    enseignantId: Number(enseignant.id),
+                    etablissementId,
+                    date,
+                    heureDebutReelle: { [Op.ne]: null },
+                    heureFinReelle: null
+                },
+                order: [["heureDebutReelle", "ASC"]],
+                transaction,
+                lock: transaction.LOCK.UPDATE
+            });
+
+            if (seancesActives.length > 1) {
+                await transaction.rollback();
+                return res.status(409).json({
+                    success: false,
+                    code: "MULTIPLE_ACTIVE_SESSIONS",
+                    message: "Plusieurs cours sont déjà en cours. Aucun pointage n’a été enregistré."
+                });
+            }
+
+            if (seancesActives.length === 1) {
+                const pointageSeance = seancesActives[0];
+                const seance = await Seance.findOne({
+                    where: {
+                        id: pointageSeance.seanceId,
+                        enseignantId: Number(enseignant.id),
+                        etablissementId
+                    },
+                    include: [{ association: Seance.associations.cours, required: true }],
+                    transaction,
+                    lock: transaction.LOCK.UPDATE
+                });
+                if (!seance) {
+                    await transaction.rollback();
+                    return res.status(409).json({
+                        success: false,
+                        code: "SESSION_NOT_FOUND",
+                        message: "Le cours en cours n’a pas pu être retrouvé. Aucun pointage n’a été enregistré."
+                    });
+                }
+
+                const heureDebutReelle = heurePointage(pointageSeance.heureDebutReelle);
+                const confirmationToken = SeancePointageConfirmationService.creer({
+                    seancePointageId: Number(pointageSeance.id),
+                    utilisateurId: Number(utilisateur.id),
+                    etablissementId,
+                    date,
+                    heureFin: heure
+                });
+                await transaction.rollback();
+                return res.status(200).json({
+                    success: true,
+                    requiresConfirmation: true,
+                    mode: "depart",
+                    utilisateurId: Number(utilisateur.id),
+                    heureDepart: heure,
+                    confirmationToken,
+                    seancePointage: {
+                        action: "fin",
+                        seanceId: Number(seance.id),
+                        cours: String((seance as any).cours?.intitule || seance.titre || "Cours planifié"),
+                        heureDebutPrevue: heurePointage(seance.heureDebut),
+                        heureFinPrevue: heurePointage(seance.heureFin),
+                        heureDebutReelle,
+                        heureFinReelle: null,
+                        heureReelle: heure,
+                        confirmationToken
+                    }
+                });
+            }
+
+            const seances = await Seance.findAll({
+                where: {
+                    enseignantId: Number(enseignant.id),
+                    etablissementId,
+                    jourSemaine: jour,
+                    dateDebut: { [Op.lte]: date },
+                    dateFin: { [Op.gte]: date },
+                    publieeLe: { [Op.ne]: null }
+                },
+                include: [{ association: Seance.associations.cours, required: true }],
+                order: [["heureDebut", "ASC"]],
+                transaction,
+                lock: transaction.LOCK.UPDATE
+            });
+            const seancesEnCours = seances.filter(seance => {
+                const debut = minutesHeure(seance.heureDebut);
+                const fin = minutesHeure(seance.heureFin);
+                return debut >= 0 && fin > debut && heureEnMinutes >= debut && heureEnMinutes < fin;
+            });
+
+            if (seancesEnCours.length === 0) {
+                await transaction.rollback();
+                return res.status(403).json({
+                    success: false,
+                    code: "NOT_PROGRAMMED",
+                    message: "Vous n’êtes pas programmé à cette heure. Aucun pointage n’a été enregistré."
+                });
+            }
+            if (seancesEnCours.length > 1) {
+                await transaction.rollback();
+                return res.status(409).json({
+                    success: false,
+                    code: "MULTIPLE_SCHEDULED_SESSIONS",
+                    message: "Plusieurs cours sont programmés à cette heure. Aucun pointage n’a été enregistré."
+                });
+            }
+
+            const seance = seancesEnCours[0];
+            const pointageSeance = await SeancePointage.findOne({
+                where: { seanceId: Number(seance.id), date },
+                transaction,
+                lock: transaction.LOCK.UPDATE
+            });
+            if (pointageSeance?.heureDebutReelle || pointageSeance?.heureFinReelle) {
+                await transaction.rollback();
+                return res.status(409).json({
+                    success: false,
+                    code: "SESSION_ALREADY_RECORDED",
+                    message: "Ce cours a déjà été pointé aujourd’hui. Aucun nouveau pointage n’a été enregistré."
+                });
+            }
+
+            if (pointageSeance) {
+                await pointageSeance.update({ heureDebutReelle: heure }, { transaction });
+            } else {
+                await SeancePointage.create({
+                    seanceId: Number(seance.id),
+                    date,
+                    enseignantId: String(enseignant.id),
+                    utilisateurId: Number(utilisateur.id),
+                    etablissementId,
+                    heureDebutReelle: heure,
+                    heureFinReelle: null
+                }, { transaction });
+            }
+
+            let pointage = await Pointage.findOne({
+                where: { utilisateurId: Number(utilisateur.id), date },
+                transaction,
+                lock: transaction.LOCK.UPDATE
+            });
+            if (!pointage) {
+                pointage = await Pointage.create({
+                    utilisateurId: Number(utilisateur.id),
+                    date,
+                    heureArrivee: heure,
+                    heureDepart: null
+                }, { transaction });
+            } else if (pointage.heureDepart) {
+                await pointage.update({ heureDepart: null }, { transaction });
+            }
+
+            await transaction.commit();
+            return res.status(200).json({
+                success: true,
+                mode: "arrivee",
+                pointage,
+                heureEvenement: heure,
+                seancePointage: {
+                    action: "debut",
+                    seanceId: Number(seance.id),
+                    cours: String((seance as any).cours?.intitule || seance.titre || "Cours planifié"),
+                    heureDebutPrevue: heurePointage(seance.heureDebut),
+                    heureFinPrevue: heurePointage(seance.heureFin),
+                    heureDebutReelle: heure,
+                    heureFinReelle: null,
+                    heureReelle: heure
+                }
+            });
+        } catch (error) {
+            await transaction.rollback();
+            console.error("[Pointage] échec du pointage de séance par QR", error);
+            return res.status(500).json({
+                success: false,
+                code: "INTERNAL_ERROR",
+                message: "Erreur interne lors de l’enregistrement du pointage"
+            });
+        }
+    }
+
     static async pointerParQR(req: Request, res: Response): Promise<Response> {
         const role = (req as any).utilisateurRole;
         if (!ROLES_POINTAGE_SCAN.includes(role)) {
@@ -1091,7 +1399,10 @@ export default class PointageController {
             const isStudent = utilisateur.role === RolesUtilisateur.APPRENANT;
             const today = new Date().toISOString().split('T')[0];
             const now = new Date();
-            const time = now.toTimeString().split(' ')[0];
+            const time = now.toISOString().slice(11, 19);
+            if (utilisateur.role === RolesUtilisateur.ENSEIGNANT) {
+                return await PointageController.pointerEnseignantParQR(req, res, utilisateur, today, time);
+            }
             const maxAttempts = isStudent ? 2 : 1;
 
             for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -1158,6 +1469,7 @@ export default class PointageController {
                         success: true,
                         mode: actualMode,
                         pointage: updated,
+                        heureEvenement: time,
                         ...(avertissementPaiement ? { avertissementPaiement } : {}),
                         ...(situationFinanciere ? { situationFinanciere } : {})
                     });
@@ -1292,6 +1604,7 @@ export default class PointageController {
                         statut: 'rouge',
                         message: paiement.message,
                         utilisateurId: dossier.utilisateurId,
+                        matricule: dossier.matricule,
                         nom: dossier.utilisateur?.nom || '',
                         prenoms: dossier.utilisateur?.prenoms || '',
                         role: dossier.utilisateur?.role || 'apprenant',
@@ -1306,6 +1619,7 @@ export default class PointageController {
                     message: paiement.message,
                     ...(paiement.avertissementPaiement ? { avertissementPaiement: paiement.avertissementPaiement } : {}),
                     utilisateurId: dossier.utilisateurId,
+                    matricule: dossier.matricule,
                     nom: dossier.utilisateur?.nom || '',
                     prenoms: dossier.utilisateur?.prenoms || '',
                     role: dossier.utilisateur?.role || 'apprenant',

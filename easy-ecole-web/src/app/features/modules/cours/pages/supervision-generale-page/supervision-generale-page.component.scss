@@ -180,6 +180,17 @@
   font-size: .86rem; color: var(--slate);
 }
 .sup-table--alerts { min-width: 34rem; }
+.sup-table--courses { min-width: 70rem; table-layout: fixed; }
+.course-column--code { width: 9rem; }
+.course-column--hours { width: 7.5rem; }
+.course-column--progress { width: 15rem; }
+.sup-table--courses th:nth-child(3),
+.sup-table--courses th:nth-child(4),
+.sup-table--courses th:nth-child(5),
+.sup-table--courses td:nth-child(3),
+.sup-table--courses td:nth-child(4),
+.sup-table--courses td:nth-child(5) { text-align: right; }
+.sup-table--courses td:nth-child(2) { white-space: normal; }
 /* Neutralise le thème global de styles.scss (thead #1F3C75 !important). */
 .sup-table thead { background: transparent !important; color: inherit !important; }
 .sup-table thead th {
@@ -207,7 +218,8 @@
 }
 .cell-number { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--slate); }
 .cell-danger { color: #b91c1c; font-weight: 700; }
-.cell-course { font-weight: 600; color: var(--ink); }
+.cell-course { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .6rem; font-weight: 600; color: var(--ink); }
+.course-title { min-width: 0; overflow-wrap: anywhere; line-height: 1.45; }
 .code-chip {
   display: inline-block; padding: .2rem .5rem; border-radius: 7px; background: #eef2ff;
   color: #3730a3; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -240,6 +252,26 @@
 .progress__value {
   flex: 0 0 auto; font-size: .72rem; font-weight: 700;
   color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.course-pagination {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: .75rem; padding: .85rem 1rem; border-top: 1px solid var(--line); background: #fbfcff;
+}
+.course-pagination__summary {
+  margin: 0; color: var(--muted); font-size: .78rem; font-variant-numeric: tabular-nums;
+}
+.course-pagination__summary strong { color: var(--slate); font-weight: 700; }
+.course-pagination__controls { display: flex; align-items: center; gap: .65rem; }
+.course-pagination__button {
+  padding: .45rem .75rem; border: 1px solid #dbe3f0; border-radius: 9px;
+  background: #fff; color: var(--navy); font-size: .77rem; font-weight: 700;
+  cursor: pointer; transition: background .18s ease, border-color .18s ease;
+}
+.course-pagination__button:hover:not(:disabled) { border-color: #a5b4fc; background: #eef2ff; }
+.course-pagination__button:disabled { color: #94a3b8; background: #f8fafc; cursor: not-allowed; }
+.course-pagination__button:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
+.course-pagination__current {
+  color: var(--slate); font-size: .78rem; font-weight: 700; white-space: nowrap;
 }
 
 /* ------------------------------------------------------------- ÉTAT VIDE -- */
@@ -303,4 +335,6 @@
 @media (max-width: 640px) {
   .sup-hero { border-radius: 16px; }
   .kpi-card { padding: 1rem; }
+  .course-pagination { align-items: flex-start; }
+  .course-pagination__controls { width: 100%; justify-content: space-between; }
 }

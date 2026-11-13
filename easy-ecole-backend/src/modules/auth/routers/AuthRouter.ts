@@ -3,7 +3,7 @@ import multer from "multer";
 import * as path from "path"
 import * as fs from "fs"
 import { customAlphabet } from 'nanoid'
-import rateLimit from 'express-rate-limit'
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit'
 
 import AuthController from "../controllers/AuthController"
 import Authenticate from "../../../core/middlewares/Authenticate";
@@ -26,10 +26,21 @@ function getNormalizedExtension(mimetype: string): string {
     return MIME_TO_EXT[mimetype] || '.jpg';
 }
 
+const normaliserCompteRateLimit = (valeur: unknown): string =>
+  typeof valeur === 'string' ? valeur.trim().toLowerCase() : ''
+
+const cleRateLimitIp = (req: express.Request): string =>
+  `ip:${ipKeyGenerator(req.ip || '127.0.0.1')}`
+
+const cleRateLimitCompte = (req: express.Request, valeur: unknown): string => {
+  const compte = normaliserCompteRateLimit(valeur)
+  return compte ? `compte:${compte}` : cleRateLimitIp(req)
+}
+
 const resendOtpLimiter = rateLimit({
   windowMs: 30000,
   max: 1,
-  keyGenerator: (req) => req.body?.email || 'unknown',
+  keyGenerator: (req) => cleRateLimitCompte(req, req.body?.email),
   handler: (req, res) => {
     res.status(429).json({ error: 'rate_limited', message: 'Attendez 30s avant de renvoyer' })
   }
@@ -40,6 +51,9 @@ const loginLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
+  // Le quota est propre au compte : les utilisateurs partageant une IP
+  // (réseau d'établissement, NAT) ne consomment pas les tentatives des autres.
+  keyGenerator: (req) => cleRateLimitCompte(req, req.body?.email || req.body?.identifiant),
   message: { success: false, message: 'Trop de tentatives, réessayez dans 15 minutes' }
 })
 
@@ -48,6 +62,7 @@ const verifyOtpLimiter = rateLimit({
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => cleRateLimitCompte(req, req.body?.email),
   message: { success: false, message: 'Trop de tentatives de vérification, réessayez dans 1 minute' }
 })
 

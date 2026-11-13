@@ -69,6 +69,8 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
     { label: 'Autre', value: 'Autre' },
   ]
 
+  readonly diplomesPrepareOptions = ['LICENCE', 'MASTER']
+
   onboardingMode: boolean = false
 
   // Retour éventuel vers le wizard d'inscription après sauvegarde du profil.
@@ -94,6 +96,11 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
     'serieBac': 'Série du Bac',
     'anneePremiereInscription': 'Année de 1ère inscription',
     'nombreInscriptions': "Nombre d'inscriptions",
+    'statutHandicap': 'Présence de handicap',
+    'natureHandicap': 'Nature du handicap',
+    'informationsSalarie.estSalarie': 'Situation professionnelle',
+    'informationsSalarie.profession': 'Profession',
+    'informationsSalarie.entreprise': 'Entreprise',
     'identite.nationalite': 'Nationalité',
     'identite.situationMatrimoniale': 'Situation matrimoniale',
     'identite.etatPhysique': 'État physique',
@@ -140,7 +147,9 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
   private readonly champsParEtape: string[][] = [
     ['nom', 'prenoms', 'sexe', 'dateNaissance', 'lieuNaissance',
       'identite.nationalite', 'identite.situationMatrimoniale', 'identite.etatPhysique', 'matriculeEtudiant'],
-    ['periode', 'statutEtudiant'],
+    ['periode', 'statutEtudiant', 'diplomePrepare', 'anneeObtentionBac', 'serieBac',
+      'anneePremiereInscription', 'nombreInscriptions', 'statutHandicap', 'natureHandicap',
+      'informationsSalarie.estSalarie', 'informationsSalarie.profession', 'informationsSalarie.entreprise'],
     ['contact', 'adresse.telMobile',
       'adresse.quartier', 'adresse.ville', 'adresse.pays'],
     ['informationsParents.nomPrenomsPere', 'informationsParents.professionPere',
@@ -593,11 +602,20 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
     }
   }
 
+  private normaliserDiplomePrepare(diplome?: string | null): string | null {
+    const valeur = diplome?.trim()
+    if (!valeur) return null
+
+    const normalisee = valeur.toLocaleUpperCase()
+    if (normalisee.includes('LICENCE')) return 'LICENCE'
+    if (normalisee.includes('MASTER')) return 'MASTER'
+    return null
+  }
+
   initApprenantForm(): void {
     const cursus = this.apprenant?.cursusApprenant?.[0]
-    const parcours = cursus?.parcours
-    const classe = cursus?.classe
     const niveau = cursus?.niveauEtude
+    const anneeEtude = Number(niveau?.libelle?.match(/\d+/)?.[0])
 
     this.profilForm = new FormGroup({
       nom: new FormControl(this.apprenant?.utilisateur?.nom ?? null, [Validators.required]),
@@ -623,17 +641,16 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
       numeroPiece: new FormControl(this.apprenant?.numeroPiece ?? null, []),
       matriculeEtudiant: new FormControl(this.apprenant?.matriculeEtudiant ?? null,
         this.exigerMatriculeEtudiant ? [Validators.required, Validators.maxLength(64)] : [Validators.maxLength(64)]),
-      statutHandicap: new FormControl(this.apprenant?.statutHandicap ?? false, []),
+      statutHandicap: new FormControl(this.apprenant?.statutHandicap ?? false, [Validators.required]),
       natureHandicap: new FormControl(this.apprenant?.natureHandicap ?? null, []),
       statutEtudiant: new FormControl(this.apprenant?.statutEtudiant ?? 'nouveau', [Validators.required]),
       periode: new FormControl(this.apprenant?.periode ?? null, [Validators.required]),
-      diplomePrepare: new FormControl(this.apprenant?.diplomePrepare ?? null, []),
-      anneeObtentionBac: new FormControl(this.apprenant?.anneeObtentionBac ?? null, []),
-      serieBac: new FormControl(this.apprenant?.serieBac ?? null, []),
-      anneePremiereInscription: new FormControl(this.apprenant?.anneePremiereInscription ?? null, []),
-      nombreInscriptions: new FormControl(this.apprenant?.nombreInscriptions ?? 1, []),
-      filiere: new FormControl(parcours?.titre ?? classe?.libelle ?? null, []),
-      anneeEtude: new FormControl(niveau?.libelle ?? null, []),
+      diplomePrepare: new FormControl(this.normaliserDiplomePrepare(this.apprenant?.diplomePrepare), [Validators.required]),
+      anneeObtentionBac: new FormControl(this.apprenant?.anneeObtentionBac ?? null, [Validators.required]),
+      serieBac: new FormControl(this.apprenant?.serieBac ?? null, [Validators.required]),
+      anneePremiereInscription: new FormControl(this.apprenant?.anneePremiereInscription ?? null, [Validators.required]),
+      nombreInscriptions: new FormControl(this.apprenant?.nombreInscriptions ?? 1, [Validators.required, Validators.min(1)]),
+      anneeEtude: new FormControl(Number.isSafeInteger(anneeEtude) && anneeEtude > 0 ? anneeEtude : null, []),
       adresse: new FormGroup({
         boitePostale: new FormControl(this.apprenant?.adresse?.boitePostale ?? null, []),
         prorietaireBoitePostale: new FormControl(this.apprenant?.adresse?.prorietaireBoitePostale ?? null, []),
@@ -670,6 +687,27 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
         pays: new FormControl(this.apprenant?.personnePrevenir?.pays ?? null, [Validators.required]),
       }),
     })
+
+    this.profilForm.get('statutHandicap')?.valueChanges.subscribe(() => this.mettreAJourValidateursConditionnels())
+    this.profilForm.get('informationsSalarie.estSalarie')?.valueChanges.subscribe(() => this.mettreAJourValidateursConditionnels())
+    this.mettreAJourValidateursConditionnels()
+  }
+
+  private mettreAJourValidateursConditionnels(): void {
+    const handicap = this.profilForm.get('statutHandicap')?.value === true
+    const salarie = this.profilForm.get('informationsSalarie.estSalarie')?.value === true
+
+    this.mettreAJourObligation('natureHandicap', handicap)
+    this.mettreAJourObligation('informationsSalarie.profession', salarie)
+    this.mettreAJourObligation('informationsSalarie.entreprise', salarie)
+  }
+
+  private mettreAJourObligation(chemin: string, obligatoire: boolean): void {
+    const controle = this.profilForm.get(chemin)
+    if (!controle) return
+
+    controle.setValidators(obligatoire ? [Validators.required] : [])
+    controle.updateValueAndValidity({ onlySelf: true, emitEvent: false })
   }
 
   initInstitutionForm(): void {

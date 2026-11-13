@@ -17,6 +17,18 @@ export interface PointageTerminalConfig {
 }
 
 /** Réponse du serveur quand un départ doit être confirmé explicitement. */
+export interface SeancePointageScan {
+  action: 'debut' | 'fin';
+  seanceId: number;
+  cours: string;
+  heureDebutPrevue: string;
+  heureFinPrevue: string;
+  heureDebutReelle: string;
+  heureFinReelle: string | null;
+  heureReelle: string;
+  confirmationToken?: string;
+}
+
 export interface DepartureConfirmation {
   success: boolean;
   requiresConfirmation: true;
@@ -24,6 +36,7 @@ export interface DepartureConfirmation {
   heureDepart: string;
   confirmationToken: string;
   utilisateurId?: number;
+  seancePointage?: SeancePointageScan;
 }
 
 export type PointageScanResponse =
@@ -31,8 +44,10 @@ export type PointageScanResponse =
     success: boolean;
     mode: 'arrivee' | 'depart' | 'passage';
     pointage: Pointage;
+    heureEvenement?: string;
     avertissementPaiement?: string;
     situationFinanciere?: PointageSituationFinanciere;
+    seancePointage?: SeancePointageScan;
   }
   | DepartureConfirmation;
 
@@ -118,6 +133,10 @@ export class PointageService {
       `${this.SERVICE_URL}/scan/depart`,
       confirmationToken ? { userId, confirmationToken } : { userId }
     )
+  }
+
+  pointerFinCoursByScan(confirmationToken: string): Observable<Pointage> {
+    return this.httpClient.post<Pointage>(`${this.SERVICE_URL}/scan/fin-cours`, { confirmationToken })
   }
 
   pointerParQR(codeQR: string, confirmationToken?: string): Observable<PointageScanResponse> {

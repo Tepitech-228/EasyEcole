@@ -139,6 +139,23 @@ describe('SeancePointageController.pointerDebut', () => {
     }))
   })
 
+  it('utilise le site de la séance même si le cours est partagé entre sites', async () => {
+    ;(Seance.findByPk as jest.Mock).mockResolvedValue(seance({
+      etablissementId: 4,
+      cours: { etablissementId: null, intitule: 'Algorithmique' }
+    }))
+    ;(SeancePointage.findOrCreate as jest.Mock).mockResolvedValue([{ id: 12 }, true])
+    ;(SeancePointage.update as jest.Mock).mockResolvedValue([1])
+    const res = mockResponse()
+
+    await SeancePointageController.pointerDebut(request({ etablissementId: 4 }), res)
+
+    expect(SeancePointage.findOrCreate).toHaveBeenCalledWith(expect.objectContaining({
+      defaults: expect.objectContaining({ etablissementId: 4 }),
+    }))
+    expect(res.status).toHaveBeenCalledWith(201)
+  })
+
   it('refuse un second pointage de debut', async () => {
     ;(SeancePointage.findOrCreate as jest.Mock).mockResolvedValue([{ id: 11 }, false])
     ;(SeancePointage.update as jest.Mock).mockResolvedValue([0])

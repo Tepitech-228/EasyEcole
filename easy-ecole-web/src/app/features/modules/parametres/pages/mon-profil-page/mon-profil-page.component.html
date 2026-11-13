@@ -248,7 +248,7 @@
                     <label for="periode" class="mb-2 block text-sm leading-6 text-gray-600">Période <span class="text-red-600">*</span></label>
                     <select id="periode" formControlName="periode"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-                        <option value="matin">Cours du matin</option>
+                        <option value="matin">Cours du jour</option>
                         <option value="soir">Cours du soir</option>
                         <option value="en_ligne">Cours en ligne</option>
                     </select>
@@ -286,42 +286,62 @@
                     </div>
                 </div>
                 <div class="col-span-2">
-                    <label for="filiere" class="mb-2 block text-sm leading-6 text-gray-600">Filière</label>
-                    <input type="text" id="filiere" formControlName="filiere" [disabled]="true"
-                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 bg-gray-100">
-                </div>
-                <div class="col-span-2">
                     <label for="anneeEtude" class="mb-2 block text-sm leading-6 text-gray-600">Année d'étude</label>
-                    <input type="text" id="anneeEtude" formControlName="anneeEtude" [disabled]="true"
+                    <input type="number" id="anneeEtude" formControlName="anneeEtude" min="1" step="1" [disabled]="true"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 bg-gray-100">
                 </div>
                 <div class="col-span-2">
-                    <label for="diplomePrepare" class="mb-2 block text-sm leading-6 text-gray-600">Diplôme / certificat préparé</label>
-                    <input type="text" id="diplomePrepare" formControlName="diplomePrepare"
+                    <label for="diplomePrepare" class="mb-2 block text-sm leading-6 text-gray-600">Diplôme / certificat préparé <span class="text-red-600">*</span></label>
+                    <select id="diplomePrepare" formControlName="diplomePrepare"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        <option [ngValue]="null">— Choisir un diplôme —</option>
+                        <option *ngFor="let diplome of diplomesPrepareOptions" [value]="diplome">{{ diplome }}</option>
+                    </select>
+                    <div *ngIf="profilForm.get('diplomePrepare')!.invalid && (profilForm.get('diplomePrepare')!.dirty || profilForm.get('diplomePrepare')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('diplomePrepare')!.errors?.['required']"
+                            text="Veuillez choisir un diplôme ou certificat"></app-form-message>
+                    </div>
                 </div>
                 <div class="col-span-2">
-                    <label for="anneeObtentionBac" class="mb-2 block text-sm leading-6 text-gray-600">Année d'obtention du Bac</label>
+                    <label for="anneeObtentionBac" class="mb-2 block text-sm leading-6 text-gray-600">Année d'obtention du Bac <span class="text-red-600">*</span></label>
                     <input type="text" id="anneeObtentionBac" formControlName="anneeObtentionBac" placeholder="Ex: 2020"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('anneeObtentionBac')!.invalid && (profilForm.get('anneeObtentionBac')!.dirty || profilForm.get('anneeObtentionBac')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('anneeObtentionBac')!.errors?.['required']"
+                            text="Veuillez renseigner l'année d'obtention du Bac"></app-form-message>
+                    </div>
                 </div>
                 <div class="col-span-2">
-                    <label for="serieBac" class="mb-2 block text-sm leading-6 text-gray-600">Série du Bac</label>
+                    <label for="serieBac" class="mb-2 block text-sm leading-6 text-gray-600">Série du Bac <span class="text-red-600">*</span></label>
                     <input type="text" id="serieBac" formControlName="serieBac" placeholder="Ex: C, D, E..."
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('serieBac')!.invalid && (profilForm.get('serieBac')!.dirty || profilForm.get('serieBac')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('serieBac')!.errors?.['required']"
+                            text="Veuillez renseigner la série du Bac"></app-form-message>
+                    </div>
                 </div>
                 <div class="col-span-2">
-                    <label for="anneePremiereInscription" class="mb-2 block text-sm leading-6 text-gray-600">Année de 1ère inscription</label>
+                    <label for="anneePremiereInscription" class="mb-2 block text-sm leading-6 text-gray-600">Année de 1ère inscription <span class="text-red-600">*</span></label>
                     <input type="text" id="anneePremiereInscription" formControlName="anneePremiereInscription" placeholder="Ex: 2022"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('anneePremiereInscription')!.invalid && (profilForm.get('anneePremiereInscription')!.dirty || profilForm.get('anneePremiereInscription')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('anneePremiereInscription')!.errors?.['required']"
+                            text="Veuillez renseigner l'année de première inscription"></app-form-message>
+                    </div>
                 </div>
                 <div class="col-span-2">
-                    <label for="nombreInscriptions" class="mb-2 block text-sm leading-6 text-gray-600">Nombre d'inscriptions</label>
+                    <label for="nombreInscriptions" class="mb-2 block text-sm leading-6 text-gray-600">Nombre d'inscriptions <span class="text-red-600">*</span></label>
                     <input type="number" id="nombreInscriptions" formControlName="nombreInscriptions" min="1"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('nombreInscriptions')!.invalid && (profilForm.get('nombreInscriptions')!.dirty || profilForm.get('nombreInscriptions')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('nombreInscriptions')!.errors?.['required']"
+                            text="Veuillez renseigner le nombre d'inscriptions"></app-form-message>
+                        <app-form-message *ngIf="profilForm.get('nombreInscriptions')!.errors?.['min']"
+                            text="Le nombre d'inscriptions doit être supérieur à zéro"></app-form-message>
+                    </div>
                 </div>
                 <div class="col-span-2">
-                    <label for="statutHandicap" class="mb-2 block text-sm leading-6 text-gray-600">Présence de handicap</label>
+                    <label for="statutHandicap" class="mb-2 block text-sm leading-6 text-gray-600">Présence de handicap <span class="text-red-600">*</span></label>
                     <div class="flex items-center py-1 gap-x-4">
                         <div class="flex items-center gap-x-3">
                             <input id="handicapNon" formControlName="statutHandicap" type="radio" [value]="false"
@@ -336,9 +356,13 @@
                     </div>
                 </div>
                 <div class="col-span-2" *ngIf="profilForm.get('statutHandicap')!.value == true">
-                    <label for="natureHandicap" class="mb-2 block text-sm leading-6 text-gray-600">Nature du handicap</label>
+                    <label for="natureHandicap" class="mb-2 block text-sm leading-6 text-gray-600">Nature du handicap <span class="text-red-600">*</span></label>
                     <input type="text" id="natureHandicap" formControlName="natureHandicap" placeholder="Précisez la nature du handicap"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('natureHandicap')!.invalid && (profilForm.get('natureHandicap')!.dirty || profilForm.get('natureHandicap')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('natureHandicap')!.errors?.['required']"
+                            text="Veuillez préciser la nature du handicap"></app-form-message>
+                    </div>
                 </div>
             </div>
         </section>
@@ -415,7 +439,7 @@
             <h2 class="text-base font-semibold leading-7 text-gray-900 mb-6">Activité professionnelle</h2>
             <div class="grid grid-cols-6 gap-x-8 gap-y-6">
                 <div class="col-span-2">
-                    <label for="titre" class="mb-2 block text-sm leading-6 text-gray-600">Êtes-vous salarié ?</label>
+                    <label for="titre" class="mb-2 block text-sm leading-6 text-gray-600">Êtes-vous salarié ? <span class="text-red-600">*</span></label>
                     <div class="flex items-center py-1 gap-x-4">
                         <div class="flex items-center gap-x-3">
                             <input id="oui" formControlName="estSalarie" type="radio" [value]="true"
@@ -430,14 +454,22 @@
                     </div>
                 </div>
                 <div class="col-span-2">
-                    <label for="profession" class="mb-2 block text-sm leading-6 text-gray-600">Profession</label>
+                    <label for="profession" class="mb-2 block text-sm leading-6 text-gray-600">Profession <span *ngIf="profilForm.get('informationsSalarie.estSalarie')!.value == true" class="text-red-600">*</span></label>
                     <input type="text" id="profession" formControlName="profession"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('informationsSalarie.profession')!.invalid && (profilForm.get('informationsSalarie.profession')!.dirty || profilForm.get('informationsSalarie.profession')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('informationsSalarie.profession')!.errors?.['required']"
+                            text="Veuillez renseigner votre profession"></app-form-message>
+                    </div>
                 </div>
                 <div class="col-span-2">
-                    <label for="entreprise" class="mb-2 block text-sm leading-6 text-gray-600">Entreprise (où vous travaillez)</label>
+                    <label for="entreprise" class="mb-2 block text-sm leading-6 text-gray-600">Entreprise (où vous travaillez) <span *ngIf="profilForm.get('informationsSalarie.estSalarie')!.value == true" class="text-red-600">*</span></label>
                     <input type="text" id="entreprise" formControlName="entreprise"
                         class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <div *ngIf="profilForm.get('informationsSalarie.entreprise')!.invalid && (profilForm.get('informationsSalarie.entreprise')!.dirty || profilForm.get('informationsSalarie.entreprise')!.touched)">
+                        <app-form-message *ngIf="profilForm.get('informationsSalarie.entreprise')!.errors?.['required']"
+                            text="Veuillez renseigner votre entreprise"></app-form-message>
+                    </div>
                 </div>
             </div>
         </div>

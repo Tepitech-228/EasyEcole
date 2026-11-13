@@ -640,7 +640,9 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
             <div class="state-icon">
               <span class="material-symbols-outlined">logout</span>
             </div>
-            <div id="pointage-departure-title" class="state-title">Confirmer le départ</div>
+            <div id="pointage-departure-title" class="state-title">
+              {{ departureConfirmation.seancePointage ? 'Confirmer la fin du cours' : 'Confirmer le départ' }}
+            </div>
             <div class="pointage-success-person">
               <div class="pointage-success-photo">
                 <img *ngIf="departureConfirmation.photoUrl"
@@ -661,20 +663,104 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
               </div>
             </div>
             <div id="pointage-departure-question" class="state-desc">
-              Voulez-vous pointer le départ de
-              <strong>{{ departureConfirmation.prenoms }} {{ departureConfirmation.nom }}</strong>
-              à <strong>{{ departureConfirmation.heure }}</strong> ?
+              <ng-container *ngIf="departureConfirmation.seancePointage; else confirmerDepartQuestion">
+                Voulez-vous enregistrer la fin du cours
+                <strong>{{ departureConfirmation.seancePointage.cours }}</strong> pour
+                <strong>{{ departureConfirmation.prenoms }} {{ departureConfirmation.nom }}</strong>
+                à <strong>{{ departureConfirmation.heure }}</strong> ?
+              </ng-container>
+              <ng-template #confirmerDepartQuestion>
+                Voulez-vous pointer le départ de
+                <strong>{{ departureConfirmation.prenoms }} {{ departureConfirmation.nom }}</strong>
+                à <strong>{{ departureConfirmation.heure }}</strong> ?
+              </ng-template>
             </div>
             <div class="pointage-departure-actions">
               <button (click)="confirmerDepart()" [disabled]="departureConfirmationSaving" class="pointage-btn pointage-btn--success">
                 <span class="material-symbols-outlined">check_circle</span>
-                {{ departureConfirmationSaving ? 'Enregistrement…' : 'Oui, pointer le départ' }}
+                {{ departureConfirmationSaving ? 'Enregistrement…' : (departureConfirmation.seancePointage ? 'Oui, terminer le cours' : 'Oui, pointer le départ') }}
               </button>
               <button (click)="annulerConfirmationDepart()" [disabled]="departureConfirmationSaving" class="pointage-btn pointage-btn--outline">
                 <span class="material-symbols-outlined">undo</span>
                 Non, annuler
               </button>
             </div>
+            </section>
+          </div>
+
+          <div *ngIf="departureResultPopup" class="pointage-departure-overlay">
+            <section class="pointage-state-card pointage-state-card--success w-full max-w-xl shadow-2xl"
+              role="dialog" aria-modal="true" aria-labelledby="pointage-departure-result-title">
+              <div class="mb-4 flex items-center justify-between gap-3 border-b border-green-200 pb-3 text-left">
+                <div class="flex items-center gap-3">
+                  <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-green-100 text-green-700">
+                    <span class="material-symbols-outlined">check_circle</span>
+                  </span>
+                  <div>
+                    <div id="pointage-departure-result-title" class="text-lg font-extrabold text-green-900">
+                      {{ departureResultPopup.titre }}
+                    </div>
+                    <div class="text-sm text-green-800">{{ departureResultPopup.nomComplet }}</div>
+                    <div *ngIf="departureResultPopup.cours" class="text-sm font-semibold text-green-800">
+                      Cours : {{ departureResultPopup.cours }}
+                    </div>
+                  </div>
+                </div>
+                <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-bold uppercase text-green-800">
+                  {{ departureResultPopup.role }}
+                </span>
+              </div>
+              <div class="pointage-success-person !my-3 !w-full !max-w-full">
+                <div class="pointage-success-photo">
+                  <img *ngIf="departureResultPopup.photoUrl"
+                    [src]="departureResultPopup.photoUrl"
+                    [alt]="'Photo de ' + departureResultPopup.nomComplet"
+                    (error)="photoPointageIndisponible()">
+                  <span *ngIf="!departureResultPopup.photoUrl" class="material-symbols-outlined" aria-hidden="true">person</span>
+                </div>
+                <div class="pointage-success-details">
+                  <span class="pointage-success-eyebrow">Identité vérifiée</span>
+                  <strong>{{ departureResultPopup.nomComplet }}</strong>
+                  <span *ngIf="departureResultPopup.matricule" class="pointage-success-matricule">
+                    <span class="material-symbols-outlined" aria-hidden="true">badge</span>
+                    <span>Matricule</span>
+                    <strong>{{ departureResultPopup.matricule }}</strong>
+                  </span>
+                </div>
+              </div>
+              <div class="my-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div class="flex flex-col gap-1 rounded-xl border border-blue-200 bg-blue-50 p-3">
+                  <small class="text-xs text-blue-800">
+                    {{ departureResultPopup.cours ? 'Début du cours' : 'Heure d’arrivée' }}
+                  </small>
+                  <strong class="text-lg text-blue-900">{{ departureResultPopup.heureArrivee }}</strong>
+                </div>
+                <div class="flex flex-col gap-1 rounded-xl border border-blue-200 bg-blue-50 p-3">
+                  <small class="text-xs text-blue-800">
+                    {{ departureResultPopup.cours ? 'Fin du cours' : 'Heure de départ' }}
+                  </small>
+                  <strong class="text-lg text-blue-900">{{ departureResultPopup.heureDepart }}</strong>
+                </div>
+                <div class="flex flex-col gap-1 rounded-xl border border-green-200 bg-green-50 p-3">
+                  <small class="text-xs text-green-800">
+                    {{ departureResultPopup.cours ? 'Durée du cours' : 'Temps total effectué' }}
+                  </small>
+                  <strong class="text-lg text-green-900">{{ formaterDureeAffichee(departureResultPopup.minutesTotales) }}</strong>
+                </div>
+              </div>
+              <div *ngIf="!departureResultPopup.cours" class="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div class="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <small class="text-xs text-slate-600">Temps normal</small>
+                  <strong class="text-base text-slate-900">{{ formaterDureeAffichee(departureResultPopup.minutesNormales) }}</strong>
+                </div>
+                <div class="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <small class="text-xs text-slate-600">Heures supplémentaires</small>
+                  <strong class="text-base text-slate-900">{{ formaterDureeAffichee(departureResultPopup.minutesSupplementaires) }}</strong>
+                </div>
+              </div>
+              <button (click)="fermerResultatDepart()" class="pointage-btn pointage-btn--success">
+                Scanner un autre
+              </button>
             </section>
           </div>
 
@@ -700,18 +786,43 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
             </button>
           </div>
 
-          <div *ngIf="scanSuccess" class="pointage-state-card pointage-state-card--success">
-            <div class="state-icon">
-              <span class="material-symbols-outlined">check_circle</span>
+          <div *ngIf="scanSuccess && !departureResultPopup" class="pointage-state-card"
+            [ngClass]="{
+              'pointage-state-card--error': estDernierPointageEtudiant && statutFinancierDernierPointage === 'non-a-jour',
+              'pointage-state-card--success': !estDernierPointageEtudiant || statutFinancierDernierPointage === 'a-jour',
+              'pointage-state-card--solde': estDernierPointageEtudiant && statutFinancierDernierPointage === 'solde'
+            }">
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3 text-left">
+              <div class="flex items-center gap-3">
+                <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
+                  <span class="material-symbols-outlined">check_circle</span>
+                </span>
+                <div class="state-title">
+                  {{ estDernierPointageEtudiant ? 'Pointage étudiant' : 'Pointage du personnel' }}
+                </div>
+              </div>
+              <span class="rounded-full px-3 py-1 text-xs font-bold uppercase"
+                [ngClass]="{
+                  'bg-red-100 text-red-800': estDernierPointageEtudiant && statutFinancierDernierPointage === 'non-a-jour',
+                  'bg-green-100 text-green-800': (estDernierPointageEtudiant && statutFinancierDernierPointage === 'a-jour') || (!estDernierPointageEtudiant && lastAttendanceMode === 'arrivee'),
+                  'bg-blue-100 text-blue-800': (estDernierPointageEtudiant && statutFinancierDernierPointage === 'solde') || (!estDernierPointageEtudiant && lastAttendanceMode === 'depart'),
+                  'bg-slate-100 text-slate-700': !estDernierPointageEtudiant && lastAttendanceMode === 'passage'
+                }">
+                {{ estDernierPointageEtudiant
+                  ? libelleStatutFinancierDernierPointage
+                  : (lastAttendanceMode === 'depart' ? 'Départ enregistré' : 'Arrivée enregistrée') }}
+              </span>
             </div>
-            <div class="state-title">Pointage effectué</div>
             <div *ngIf="lastAttendanceName" class="pointage-success-person">
-              <div class="pointage-success-photo">
+              <div class="relative flex h-36 w-36 shrink-0 items-center justify-center rounded-full border border-blue-200 bg-blue-50 p-1">
+                <div class="absolute inset-2 rounded-full border border-dashed border-blue-300"></div>
+                <div class="pointage-success-photo relative z-10 transition-transform duration-300 hover:scale-105">
                 <img *ngIf="lastAttendancePhotoUrl"
                   [src]="lastAttendancePhotoUrl"
                   [alt]="'Photo de ' + lastAttendanceName"
                   (error)="photoPointageIndisponible()">
                 <span *ngIf="!lastAttendancePhotoUrl" class="material-symbols-outlined" aria-hidden="true">person</span>
+                </div>
               </div>
               <div class="pointage-success-details">
                 <span class="pointage-success-eyebrow">Identité vérifiée</span>
@@ -723,6 +834,25 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
                   <strong>{{ lastAttendanceMatricule }}</strong>
                 </span>
               </div>
+              <div *ngIf="estDernierPointageEtudiant" class="flex min-w-32 flex-col items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-center">
+                <span class="material-symbols-outlined text-blue-600">schedule</span>
+                <span class="text-xs font-semibold uppercase tracking-wide text-blue-700">Heure du pointage</span>
+                <strong class="mt-1 text-xl font-extrabold text-blue-900">{{ lastAttendanceEventTime || '—' }}</strong>
+              </div>
+              <div *ngIf="!estDernierPointageEtudiant" class="grid min-w-40 grid-cols-1 gap-2">
+                <div class="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-center">
+                  <span class="block text-xs font-semibold uppercase text-blue-700">Arrivée</span>
+                  <strong class="text-base text-blue-900">{{ lastAttendanceHeureArrivee || '—' }}</strong>
+                </div>
+                <div class="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-center">
+                  <span class="block text-xs font-semibold uppercase text-blue-700">Départ</span>
+                  <strong class="text-base text-blue-900">{{ lastAttendanceHeureDepart || '—' }}</strong>
+                </div>
+                <div class="rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-center">
+                  <span class="block text-xs font-semibold uppercase text-green-700">Temps effectué</span>
+                  <strong class="text-base text-green-900">{{ dureeDernierPointagePersonnel }}</strong>
+                </div>
+              </div>
             </div>
             <div class="state-desc">{{ scanSuccess }}</div>
             <div *ngIf="scanWarning" class="pointage-message pointage-message--warning" role="status">
@@ -733,14 +863,18 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
             </button>
           </div>
 
-          <div *ngIf="!scannedUser && lastAttendanceSituationFinanciere as situation"
+          <div *ngIf="!scannedUser && estDernierPointageEtudiant && lastAttendanceSituationFinanciere as situation"
             class="pointage-finance pointage-finance--result" role="status">
             <div class="pointage-finance-head">
               <h5>Situation financière</h5>
               <span class="pointage-finance-status"
-                [ngClass]="situation.estAJour ? 'is-ok' : 'is-late'">
-                <span class="material-symbols-outlined">{{ situation.estAJour ? 'check_circle' : 'warning' }}</span>
-                {{ situation.estAJour ? 'À jour' : 'En retard' }}
+                [ngClass]="{
+                  'is-late': statutFinancierDernierPointage === 'non-a-jour',
+                  'is-ok': statutFinancierDernierPointage === 'a-jour',
+                  'bg-blue-100 text-blue-800': statutFinancierDernierPointage === 'solde'
+                }">
+                <span class="material-symbols-outlined">{{ statutFinancierDernierPointage === 'non-a-jour' ? 'warning' : 'check_circle' }}</span>
+                {{ libelleStatutFinancierDernierPointage }}
               </span>
             </div>
             <div class="pointage-finance-grid">

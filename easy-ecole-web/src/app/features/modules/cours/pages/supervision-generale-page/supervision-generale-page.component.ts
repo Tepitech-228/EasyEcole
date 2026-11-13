@@ -49,6 +49,8 @@ export class SupervisionGeneralePageComponent extends BaseComponentClass impleme
   teachers: TeacherHours[] = [];
   courses: CourseHours[] = [];
   tardyTeachers: TardyTeacher[] = [];
+  readonly coursesPerPage = 50;
+  coursesPage = 1;
   lastUpdated: Date | null = null;
   private refreshSubscription?: Subscription;
 
@@ -71,6 +73,29 @@ export class SupervisionGeneralePageComponent extends BaseComponentClass impleme
 
   get totalCourses(): number {
     return this.courses.length;
+  }
+
+  get totalCoursePages(): number {
+    return Math.max(1, Math.ceil(this.totalCourses / this.coursesPerPage));
+  }
+
+  get paginatedCourses(): CourseHours[] {
+    const start = (this.coursesPage - 1) * this.coursesPerPage;
+    return this.courses.slice(start, start + this.coursesPerPage);
+  }
+
+  get firstCourseOnPage(): number {
+    return this.totalCourses === 0 ? 0 : (this.coursesPage - 1) * this.coursesPerPage + 1;
+  }
+
+  get lastCourseOnPage(): number {
+    return Math.min(this.coursesPage * this.coursesPerPage, this.totalCourses);
+  }
+
+  goToCoursesPage(page: number): void {
+    if (page >= 1 && page <= this.totalCoursePages) {
+      this.coursesPage = page;
+    }
   }
 
   get totalHoursDone(): number {
@@ -176,6 +201,7 @@ export class SupervisionGeneralePageComponent extends BaseComponentClass impleme
     this.seanceService.getVolumesHoraires().subscribe({
       next: (courses) => {
         this.courses = courses || [];
+        this.coursesPage = Math.min(this.coursesPage, this.totalCoursePages);
         this.lastUpdated = new Date();
       },
       error: () => this.error = 'Impossible de charger les volumes horaires des cours.'

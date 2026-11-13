@@ -16,6 +16,9 @@ jest.mock("../../../modules/auth/models/Utilisateur", () => ({
 jest.mock("../../../modules/auth/models/SiteUtilisateur", () => ({
   SiteUtilisateur: { findOne: jest.fn() }
 }));
+jest.mock("../../../modules/auth/models/Enseignant", () => ({
+  Enseignant: { findOne: jest.fn() }
+}));
 jest.mock("../../../modules/etablissement/models/Etablissement", () => ({
   Etablissement: { findOne: jest.fn() }
 }));
@@ -24,6 +27,12 @@ jest.mock("../../../modules/inscription/models/Pointage", () => ({
 }));
 jest.mock("../../../modules/inscription/models/PointageScan", () => ({
   PointageScan: { create: jest.fn() }
+}));
+jest.mock("../../../modules/inscription/models/Seance", () => ({
+  Seance: { findOne: jest.fn(), findAll: jest.fn(), associations: { cours: "cours" } }
+}));
+jest.mock("../../../modules/inscription/models/SeancePointage", () => ({
+  SeancePointage: { findOne: jest.fn(), findAll: jest.fn(), create: jest.fn() }
 }));
 jest.mock("../../../modules/inscription/models/DossierEtudiant", () => ({
   DossierEtudiant: { findOne: jest.fn(), associations: { echeances: "echeances" } }
@@ -34,15 +43,19 @@ jest.mock("../../../modules/inscription/services/VerificationPaiementService", (
 
 import PointageTerminalController from "../../../modules/inscription/controllers/PointageTerminalController";
 import PointageTerminalTokenService from "../../../modules/inscription/services/PointageTerminalTokenService";
+import SeancePointageConfirmationService from "../../../modules/inscription/services/SeancePointageConfirmationService";
 
 const { DatabaseConnection } = require("../../../core/helpers/DatabaseConnection");
 const { PointageTerminal } = require("../../../modules/inscription/models/PointageTerminal");
 const { PointageTerminalEvent } = require("../../../modules/inscription/models/PointageTerminalEvent");
 const { Utilisateur } = require("../../../modules/auth/models/Utilisateur");
 const { SiteUtilisateur } = require("../../../modules/auth/models/SiteUtilisateur");
+const { Enseignant } = require("../../../modules/auth/models/Enseignant");
 const { Etablissement } = require("../../../modules/etablissement/models/Etablissement");
 const { Pointage } = require("../../../modules/inscription/models/Pointage");
 const { PointageScan } = require("../../../modules/inscription/models/PointageScan");
+const { Seance } = require("../../../modules/inscription/models/Seance");
+const { SeancePointage } = require("../../../modules/inscription/models/SeancePointage");
 const { DossierEtudiant } = require("../../../modules/inscription/models/DossierEtudiant");
 const { VerificationPaiementService } = require("../../../modules/inscription/services/VerificationPaiementService");
 
@@ -82,6 +95,12 @@ beforeEach(() => {
   Pointage.findOne.mockResolvedValue(null);
   Pointage.create.mockResolvedValue({ id: 77 });
   PointageScan.create.mockResolvedValue({ id: 1 });
+  Enseignant.findOne.mockResolvedValue(null);
+  Seance.findOne.mockResolvedValue(null);
+  Seance.findAll.mockResolvedValue([]);
+  SeancePointage.findOne.mockResolvedValue(null);
+  SeancePointage.findAll.mockResolvedValue([]);
+  SeancePointage.create.mockResolvedValue({ id: 9 });
   DossierEtudiant.findOne.mockResolvedValue({ utilisateurId: 42 });
   VerificationPaiementService.verifierDossier.mockReturnValue({ statut: "vert", message: "" });
 });
@@ -174,6 +193,139 @@ describe("PointageTerminalController ADMS", () => {
     expect(recorded.mode).toBe("passage");
     expect(update).not.toHaveBeenCalled();
     expect(Pointage.create).not.toHaveBeenCalled();
+  });
+
+  it("refuses a teacher's scan when no published course is scheduled at that time", async () => {
+    Utilisateur.findByPk.mockResolvedValue({ id: 42, role: "enseignant", etablissementId: 3 });
+    Enseignant.findOne.mockResolvedValue({ id: 9 });
+
+    const recorded = await PointageTerminalController.processAttendanceEvent(
+      { id: 5, serialNumber: "ZK12345", etablissementId: 3 } as any,
+      {
+        pin: "42",
+        date: "2026-10-17",
+        time: "07:59:59",
+        statusCode: 5,
+        verifyType: 75,
+        utilisateurId: 42
+      }
+    );
+
+    expect(recorded).toMatchObject({
+      recorded: false,
+      mode: "refuse",
+      enseignantNonProgramme: true
+    });
+    expect(Pointage.create).not.toHaveBeenCalled();
+    expect(SeancePointage.create).not.toHaveBeenCalled();
+  });
+
+  it("records the start of the teacher's scheduled course and daily arrival", async () => {
+    Utilisateur.findByPk.mockResolvedValue({ id: 42, role: "enseignant", etablissementId: 3 });
+    Enseignant.findOne.mockResolvedValue({ id: 9 });
+    Seance.findAll.mockResolvedValue([{
+      id: 81,
+      jourSemaine: "6",
+      dateDebut: "2026-10-17",
+      dateFin: "2026-10-17",
+      heureDebut: "08:00:00",
+      heureFin: "09:00:00",
+      titre: "Cours de mathématiques",
+      cours: { intitule: "Mathématiques" }
+    }]);
+    Pointage.create.mockResolvedValue({ id: 77, heureArrivee: "08:15:30", heureDepart: null });
+
+    const recorded = await PointageTerminalController.processAttendanceEvent(
+      { id: 5, serialNumber: "ZK12345", etablissementId: 3 } as any,
+      {
+        pin: "42",
+        date: "2026-10-17",
+        time: "08:15:30",
+        statusCode: 5,
+        verifyType: 75,
+        utilisateurId: 42
+      }
+    );
+
+    expect(recorded).toMatchObject({
+      recorded: true,
+      mode: "arrivee",
+      seancePointage: {
+        action: "debut",
+        seanceId: 81,
+        cours: "Mathématiques",
+        heureReelle: "08:15:30"
+      }
+    });
+    expect(SeancePointage.create).toHaveBeenCalledWith(expect.objectContaining({
+      seanceId: 81,
+      utilisateurId: 42,
+      enseignantId: "9",
+      heureDebutReelle: "08:15:30",
+      heureFinReelle: null
+    }), expect.objectContaining({ transaction }));
+    expect(Seance.findAll).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ etablissementId: 3 }),
+    }));
+  });
+
+  it("requires confirmation before recording a teacher's active course end", async () => {
+    Utilisateur.findByPk.mockResolvedValue({ id: 42, role: "enseignant", etablissementId: 3 });
+    Enseignant.findOne.mockResolvedValue({ id: 9 });
+    const sessionUpdate = jest.fn().mockResolvedValue(undefined);
+    SeancePointage.findAll.mockResolvedValue([{
+      id: 12,
+      seanceId: 81,
+      heureDebutReelle: "08:15:30",
+      update: sessionUpdate
+    }]);
+    Seance.findOne.mockResolvedValue({
+      id: 81,
+      heureDebut: "08:00:00",
+      heureFin: "09:00:00",
+      cours: { intitule: "Mathématiques" }
+    });
+    const dailyUpdate = jest.fn().mockResolvedValue(undefined);
+    Pointage.findOne.mockResolvedValue({
+      id: 77,
+      heureArrivee: "08:15:30",
+      heureDepart: null,
+      update: dailyUpdate
+    });
+
+    const recorded = await PointageTerminalController.processAttendanceEvent(
+      { id: 5, serialNumber: "ZK12345", etablissementId: 3 } as any,
+      {
+        pin: "42",
+        date: "2026-10-17",
+        time: "08:55:00",
+        statusCode: 5,
+        verifyType: 75,
+        utilisateurId: 42
+      }
+    );
+
+    expect(recorded).toMatchObject({
+      recorded: true,
+      mode: "passage",
+      seancePointage: {
+        action: "fin",
+        cours: "Mathématiques",
+        heureDebutReelle: "08:15:30",
+        heureFinReelle: null,
+        heureReelle: "08:55:00",
+        confirmationToken: expect.any(String)
+      }
+    });
+    expect(SeancePointageConfirmationService.verifier(recorded.seancePointage?.confirmationToken)).toMatchObject({
+      seancePointageId: 12,
+      utilisateurId: 42,
+      etablissementId: 3,
+      date: "2026-10-17",
+      heureFin: "08:55:00"
+    });
+    expect(sessionUpdate).not.toHaveBeenCalled();
+    expect(dailyUpdate).not.toHaveBeenCalled();
   });
 
   it("processes a durable Hikvision receipt without inserting a second event", async () => {

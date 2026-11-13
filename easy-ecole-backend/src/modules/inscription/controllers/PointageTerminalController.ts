@@ -1,8 +1,11 @@
 import { createHash } from "crypto";
 import { isIP } from "net";
 import { Request, Response } from "express";
+import { Op, Transaction } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
+import { JoursSemaine } from "../../../core/enums/JoursSemaine";
+import { Enseignant } from "../../auth/models/Enseignant";
 import { SiteUtilisateur } from "../../auth/models/SiteUtilisateur";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { Etablissement } from "../../etablissement/models/Etablissement";
@@ -11,7 +14,10 @@ import { Pointage } from "../models/Pointage";
 import { PointageScan } from "../models/PointageScan";
 import { PointageTerminal } from "../models/PointageTerminal";
 import { PointageTerminalEvent } from "../models/PointageTerminalEvent";
+import { Seance } from "../models/Seance";
+import { SeancePointage } from "../models/SeancePointage";
 import PointageTerminalTokenService from "../services/PointageTerminalTokenService";
+import SeancePointageConfirmationService from "../services/SeancePointageConfirmationService";
 import { VerificationPaiementService } from "../services/VerificationPaiementService";
 import SituationFinanciereService, { SituationFinanciere } from "../services/SituationFinanciereService";
 
@@ -32,6 +38,43 @@ export interface AttendanceProcessingResult {
     motifRefus: string | null;
     avertissementPaiement: string | null;
     situationFinanciere: SituationFinanciere | null;
+    enseignantNonProgramme?: boolean;
+    heureArrivee?: string | null;
+    heureDepart?: string | null;
+    seancePointage?: {
+        action: "debut" | "fin";
+        seanceId: number;
+        cours: string;
+        heureDebutPrevue: string;
+        heureFinPrevue: string;
+        heureDebutReelle: string;
+        heureFinReelle: string | null;
+        heureReelle: string;
+        confirmationToken?: string;
+    };
+}
+
+interface TeacherSessionPointage {
+    action: "debut" | "fin";
+    seanceId: number;
+    cours: string;
+    heureDebutPrevue: string;
+    heureFinPrevue: string;
+    heureDebutReelle: string;
+    heureFinReelle: string | null;
+    heureReelle: string;
+    confirmationToken?: string;
+}
+
+function heurePointage(value: unknown): string {
+    const text = value instanceof Date ? value.toISOString() : String(value ?? "");
+    const match = text.match(/(?:^|T)(\d{2}):(\d{2})(?::(\d{2}))?/);
+    return match ? `${match[1]}:${match[2]}:${match[3] || "00"}` : "";
+}
+
+function minutesHeure(value: unknown): number {
+    const time = heurePointage(value);
+    return time ? Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5)) : -1;
 }
 
 function normalizedIp(ip: string): string {
@@ -266,6 +309,166 @@ export default class PointageTerminalController {
         }
     }
 
+    private static async enregistrerPointageSeanceEnseignant(
+        utilisateur: Utilisateur,
+        terminal: PointageTerminal,
+        log: AttendanceLog,
+        transaction: Transaction
+    ): Promise<{ pointage: TeacherSessionPointage | null; motifRefus: string | null; nonProgramme?: boolean }> {
+        const enseignant = await Enseignant.findOne({
+            where: { utilisateurId: utilisateur.id },
+            attributes: ["id"],
+            transaction,
+            lock: transaction.LOCK.UPDATE
+        });
+        if (!enseignant) {
+            return { pointage: null, motifRefus: "Aucun planning de cours n’est associé à ce compte enseignant." };
+        }
+
+        const siteId = Number(terminal.etablissementId);
+        const sessionsActives = await SeancePointage.findAll({
+            where: {
+                utilisateurId: Number(utilisateur.id),
+                enseignantId: Number(enseignant.id),
+                etablissementId: siteId,
+                date: log.date,
+                heureDebutReelle: { [Op.ne]: null },
+                heureFinReelle: null
+            },
+            order: [["heureDebutReelle", "ASC"]],
+            transaction,
+            lock: transaction.LOCK.UPDATE
+        });
+
+        const construirePointage = (
+            action: "debut" | "fin",
+            seance: Seance,
+            heureDebutReelle: string,
+            heureFinReelle: string | null,
+            heureReelle: string,
+            confirmationToken?: string
+        ): TeacherSessionPointage => ({
+            action,
+            seanceId: Number(seance.id),
+            cours: String(seance.cours?.intitule || seance.titre || "Cours planifié"),
+            heureDebutPrevue: heurePointage(seance.heureDebut),
+            heureFinPrevue: heurePointage(seance.heureFin),
+            heureDebutReelle,
+            heureFinReelle,
+            heureReelle,
+            confirmationToken
+        });
+
+        if (sessionsActives.length > 1) {
+            return {
+                pointage: null,
+                motifRefus: "Plusieurs cours sont déjà en cours. Aucun pointage n’a été enregistré."
+            };
+        }
+
+        const heureReelle = heurePointage(log.time);
+        if (!heureReelle) {
+            return { pointage: null, motifRefus: "L’heure transmise par le terminal est invalide." };
+        }
+
+        if (sessionsActives.length === 1) {
+            const pointageActif = sessionsActives[0];
+            const seance = await Seance.findOne({
+                where: {
+                    id: pointageActif.seanceId,
+                    enseignantId: Number(enseignant.id),
+                    etablissementId: siteId
+                },
+                include: [{ association: Seance.associations.cours, required: true }],
+                transaction,
+                lock: transaction.LOCK.UPDATE
+            });
+            if (!seance) {
+                return { pointage: null, motifRefus: "Le cours en cours n’a pas pu être retrouvé. Aucun pointage n’a été enregistré." };
+            }
+
+            const heureDebutReelle = heurePointage(pointageActif.heureDebutReelle);
+            const confirmationToken = SeancePointageConfirmationService.creer({
+                seancePointageId: Number(pointageActif.id),
+                utilisateurId: Number(utilisateur.id),
+                etablissementId: siteId,
+                date: log.date,
+                heureFin: heureReelle
+            });
+            return {
+                pointage: construirePointage("fin", seance, heureDebutReelle, null, heureReelle, confirmationToken),
+                motifRefus: null
+            };
+        }
+
+        const dateValue = new Date(`${log.date}T00:00:00.000Z`);
+        const jour = dateValue.getUTCDay() || 7;
+        const heureEnMinutes = minutesHeure(heureReelle);
+        const seances = await Seance.findAll({
+            where: {
+                enseignantId: Number(enseignant.id),
+                etablissementId: siteId,
+                jourSemaine: String(jour) as JoursSemaine,
+                dateDebut: { [Op.lte]: log.date },
+                dateFin: { [Op.gte]: log.date },
+                publieeLe: { [Op.ne]: null }
+            },
+            include: [{ association: Seance.associations.cours, required: true }],
+            order: [["heureDebut", "ASC"]],
+            transaction,
+            lock: transaction.LOCK.UPDATE
+        });
+        const seancesEnCours = seances.filter(seance => {
+            const debut = minutesHeure(seance.heureDebut);
+            const fin = minutesHeure(seance.heureFin);
+            return debut >= 0 && fin > debut && heureEnMinutes >= debut && heureEnMinutes < fin;
+        });
+        if (seancesEnCours.length === 0) {
+            return {
+                pointage: null,
+                motifRefus: "Vous n’êtes pas programmé à cette heure. Aucun pointage n’a été enregistré.",
+                nonProgramme: true
+            };
+        }
+        if (seancesEnCours.length > 1) {
+            return {
+                pointage: null,
+                motifRefus: "Plusieurs cours sont programmés à cette heure. Aucun pointage n’a été enregistré."
+            };
+        }
+
+        const seance = seancesEnCours[0];
+        const pointageExistant = await SeancePointage.findOne({
+            where: { seanceId: Number(seance.id), date: log.date },
+            transaction,
+            lock: transaction.LOCK.UPDATE
+        });
+        if (pointageExistant?.heureDebutReelle || pointageExistant?.heureFinReelle) {
+            return {
+                pointage: null,
+                motifRefus: "Ce cours a déjà été pointé aujourd’hui. Aucun nouveau pointage n’a été enregistré."
+            };
+        }
+
+        if (pointageExistant) {
+            await pointageExistant.update({ heureDebutReelle: heureReelle }, { transaction });
+        } else {
+            await SeancePointage.create({
+                seanceId: Number(seance.id),
+                date: log.date,
+                enseignantId: String(enseignant.id),
+                utilisateurId: Number(utilisateur.id),
+                etablissementId: siteId,
+                heureDebutReelle: heureReelle,
+                heureFinReelle: null
+            }, { transaction });
+        }
+        return {
+            pointage: construirePointage("debut", seance, heureReelle, null, heureReelle),
+            motifRefus: null
+        };
+    }
+
     static async processAttendanceEvent(terminal: PointageTerminal, log: AttendanceLog): Promise<AttendanceProcessingResult> {
         const parsedPin = Number(log.pin);
         const utilisateur = log.utilisateurId
@@ -350,6 +553,20 @@ export default class PointageTerminalController {
                     }, { transaction });
                 }
 
+                let pointageSeance: TeacherSessionPointage | null = null;
+                let enseignantNonProgramme = false;
+                if (!motifRefus && utilisateur?.role === RolesUtilisateur.ENSEIGNANT) {
+                    const resultatSeance = await PointageTerminalController.enregistrerPointageSeanceEnseignant(
+                        utilisateur,
+                        terminal,
+                        log,
+                        transaction
+                    );
+                    motifRefus = resultatSeance.motifRefus;
+                    pointageSeance = resultatSeance.pointage;
+                    enseignantNonProgramme = resultatSeance.nonProgramme === true;
+                }
+
                 if (motifRefus || !utilisateur) {
                     await event.update({
                         utilisateurId: utilisateur ? Number(utilisateur.id) : null,
@@ -357,7 +574,15 @@ export default class PointageTerminalController {
                         motifRefus
                     }, { transaction });
                     await transaction.commit();
-                    return { recorded: false, mode: "refuse", role: utilisateur?.role ?? null, motifRefus, avertissementPaiement: null, situationFinanciere };
+                    return {
+                        recorded: false,
+                        mode: "refuse",
+                        role: utilisateur?.role ?? null,
+                        motifRefus,
+                        avertissementPaiement: null,
+                        situationFinanciere,
+                        enseignantNonProgramme
+                    };
                 }
 
                 const estApprenant = utilisateur.role === RolesUtilisateur.APPRENANT;
@@ -367,7 +592,19 @@ export default class PointageTerminalController {
                     transaction,
                     lock: transaction.LOCK.UPDATE
                 });
-                if (!pointage) {
+                if (pointageSeance) {
+                    mode = pointageSeance.action === "debut" ? "arrivee" : "passage";
+                    if (!pointage) {
+                        pointage = await Pointage.create({
+                            utilisateurId: Number(utilisateur.id),
+                            date: log.date,
+                            heureArrivee: pointageSeance.heureDebutReelle,
+                            heureDepart: null
+                        }, { transaction });
+                    } else if (pointageSeance.action === "debut" && pointage.heureDepart) {
+                        await pointage.update({ heureDepart: null }, { transaction });
+                    }
+                } else if (!pointage) {
                     // Première détection de la journée : ligne conteneur (arrivée).
                     pointage = await Pointage.create({
                         utilisateurId: Number(utilisateur.id),
@@ -395,7 +632,17 @@ export default class PointageTerminalController {
                     motifRefus: null
                 }, { transaction });
                 await transaction.commit();
-                return { recorded: true, mode, role: utilisateur.role, motifRefus: null, avertissementPaiement, situationFinanciere };
+                return {
+                    recorded: true,
+                    mode,
+                    role: utilisateur.role,
+                    motifRefus: null,
+                    avertissementPaiement,
+                    situationFinanciere,
+                    heureArrivee: heurePointage(pointage.heureArrivee) || null,
+                    heureDepart: heurePointage(pointage.heureDepart) || null,
+                    seancePointage: pointageSeance || undefined
+                };
             } catch (error) {
                 await transaction.rollback();
                 if (estErreurUnique(error)) {

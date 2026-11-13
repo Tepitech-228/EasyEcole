@@ -36,8 +36,14 @@ export default class SeanceController {
 
     constructor() { }
 
+    private static peutGererPlanning(req: Request): boolean {
+        const role = (req as any).utilisateurRole;
+        return role === RolesUtilisateur.SUPERVISEUR_GENERAL || role === RolesUtilisateur.ADMIN;
+    }
+
     private static baseIncludes() {
         return [
+            { association: Seance.associations.etablissement },
             { association: Seance.associations.cours, include: [Cours.associations.etablissement] },
             { association: Seance.associations.enseignant, include: [Enseignant.associations.utilisateur] },
             { association: Seance.associations.salleDeClasse, required: false },
@@ -50,32 +56,13 @@ export default class SeanceController {
         ];
     }
 
-    private static async coursDuSiteActif(req: Request): Promise<number[] | null> {
+    private static siteActifId(req: Request): number | null {
         const etablissementId = Number((req as any).etablissementId);
-        return SeanceController.coursDuSite(etablissementId);
+        return Number.isSafeInteger(etablissementId) && etablissementId > 0 ? etablissementId : null;
     }
 
-    private static async coursDuSite(etablissementId: number | null): Promise<number[] | null> {
-        if (etablissementId === null || !Number.isSafeInteger(etablissementId) || etablissementId <= 0) return null;
-
-        const cours = await Cours.findAll({
-            where: { etablissementId },
-            attributes: ['id']
-        });
-        return cours.map(item => Number(item.id));
-    }
-
-    private static filtrerCoursDuSite(where: any, coursSiteIds: number[] | null): void {
-        if (coursSiteIds === null) return;
-        const filtreExistant = where.coursId;
-        if (filtreExistant && Array.isArray(filtreExistant[Op.in])) {
-            const autorises = new Set(coursSiteIds);
-            where.coursId = { [Op.in]: filtreExistant[Op.in].filter((id: number | string) => autorises.has(Number(id))) };
-        } else if (filtreExistant !== undefined) {
-            where.coursId = coursSiteIds.includes(Number(filtreExistant)) ? filtreExistant : { [Op.in]: [] };
-        } else {
-            where.coursId = { [Op.in]: coursSiteIds };
-        }
+    private static filtrerSeancesDuSite(where: any, etablissementId: number | null): void {
+        if (etablissementId !== null) where.etablissementId = etablissementId;
     }
 
     private static async verifierAffectationSite(
@@ -83,17 +70,13 @@ export default class SeanceController {
         coursId: number | string,
         enseignantId: number | string
     ): Promise<string | null> {
-        const role = (req as any).utilisateurRole;
-        const etablissementId = Number((req as any).etablissementId);
-        if ((!Number.isSafeInteger(etablissementId) || etablissementId <= 0) && role !== RolesUtilisateur.ADMIN) {
+        const etablissementId = SeanceController.siteActifId(req);
+        if (etablissementId === null) {
             return "Sélectionnez un site avant de gérer l'emploi du temps.";
         }
-        if (role === RolesUtilisateur.ADMIN && (!Number.isSafeInteger(etablissementId) || etablissementId <= 0)) {
-            return null;
-        }
 
-        const cours = await Cours.findOne({ where: { id: coursId, etablissementId } });
-        if (!cours) return "Le cours n'appartient pas au site actif.";
+        const cours = await Cours.findByPk(coursId, { attributes: ["id"] });
+        if (!cours) return "Le cours sélectionné est introuvable.";
 
         const enseignant = await Enseignant.findByPk(enseignantId, { attributes: ['utilisateurId'] });
         if (!enseignant) return "L'enseignant sélectionné est introuvable.";
@@ -141,11 +124,11 @@ export default class SeanceController {
             if (role === RolesUtilisateur.SURVEILLANT) {
                 const siteId = await getSurveillantSiteId(req);
                 if (!siteId) return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
-                SeanceController.filtrerCoursDuSite(where, await SeanceController.coursDuSite(siteId));
+                SeanceController.filtrerSeancesDuSite(where, siteId);
             } else if (![RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.SUPERVISEUR_GENERAL, RolesUtilisateur.ADMIN].includes(role)) {
-                SeanceController.filtrerCoursDuSite(where, await SeanceController.coursDuSiteActif(req));
+                SeanceController.filtrerSeancesDuSite(where, SeanceController.siteActifId(req));
             }
-            if (role !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
+            if (!SeanceController.peutGererPlanning(req)) {
                 where.publieeLe = { [Op.ne]: null };
             }
             options.where = where;
@@ -176,11 +159,11 @@ export default class SeanceController {
             if (role === RolesUtilisateur.SURVEILLANT) {
                 const siteId = await getSurveillantSiteId(req);
                 if (!siteId) return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
-                SeanceController.filtrerCoursDuSite(options.where as any, await SeanceController.coursDuSite(siteId));
+                SeanceController.filtrerSeancesDuSite(options.where as any, siteId);
             } else if (![RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.SUPERVISEUR_GENERAL, RolesUtilisateur.ADMIN].includes(role)) {
-                SeanceController.filtrerCoursDuSite(options.where as any, await SeanceController.coursDuSiteActif(req));
+                SeanceController.filtrerSeancesDuSite(options.where as any, SeanceController.siteActifId(req));
             }
-            if (role !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
+            if (!SeanceController.peutGererPlanning(req)) {
                 (options.where as any).publieeLe = { [Op.ne]: null };
             }
             const seance: Seance | null = await Seance.findOne(options);
@@ -270,11 +253,11 @@ export default class SeanceController {
             if (role === RolesUtilisateur.SURVEILLANT) {
                 const siteId = await getSurveillantSiteId(req);
                 if (!siteId) return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
-                SeanceController.filtrerCoursDuSite(options.where as any, await SeanceController.coursDuSite(siteId));
+                SeanceController.filtrerSeancesDuSite(options.where as any, siteId);
             } else if (![RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.SUPERVISEUR_GENERAL, RolesUtilisateur.ADMIN].includes(role)) {
-                SeanceController.filtrerCoursDuSite(options.where as any, await SeanceController.coursDuSiteActif(req));
+                SeanceController.filtrerSeancesDuSite(options.where as any, SeanceController.siteActifId(req));
             }
-            if (role !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
+            if (!SeanceController.peutGererPlanning(req)) {
                 (options.where as any).publieeLe = { [Op.ne]: null };
             }
             const seances = await Seance.findAll(options);
@@ -335,8 +318,8 @@ export default class SeanceController {
                             anneeAcademique: seance.anneeAcademique,
                             semestreAcademiqueId: seance.semestreAcademiqueId,
                             semestreAcademique: seance.semestreAcademique,
-                            etablissementId: (seance as any).cours?.etablissementId,
-                            etablissement: (seance as any).cours?.etablissement,
+                            etablissementId: seance.etablissementId ?? (seance as any).cours?.etablissementId,
+                            etablissement: (seance as any).etablissement ?? (seance as any).cours?.etablissement,
                             publieeLe: seance.publieeLe,
                         });
                     }
@@ -628,7 +611,6 @@ export default class SeanceController {
         const salle = data.salle;
         const enseignantId = data.enseignantId;
         const coursId = data.coursId;
-        const creneauId = data.creneauId;
         const classeGroupeId = data.classeGroupeId;
 
         const whereOverlap: any = {
@@ -679,21 +661,6 @@ export default class SeanceController {
             }
         }
 
-        // Créneau conflict : même créneau horaire (temps identique) — renforce la détection basée sur heures
-        if (creneauId) {
-            const creneauConflits = await Seance.findAll({
-                where: { ...whereOverlap, creneauId },
-                include: includes
-            });
-            for (const s of creneauConflits) {
-                conflits.push({
-                    type: 'creneau',
-                    message: `Créneau déjà utilisé : ${s.titre || 'Séance'} le ${s.jourSemaine} de ${s.heureDebut} à ${s.heureFin}`,
-                    seance: s
-                });
-            }
-        }
-
         // Groupe/classe conflict via classeGroupeId (le groupe = une Classe)
         if (classeGroupeId) {
             const groupeConflits = await Seance.findAll({
@@ -738,8 +705,8 @@ export default class SeanceController {
     }
 
     static async createSeance(req: Request, res: Response): Promise<Response | null> {
-        if ((req as any).utilisateurRole !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
-            return res.status(403).json({ success: false, message: "Réservé au superviseur général" });
+        if (!SeanceController.peutGererPlanning(req)) {
+            return res.status(403).json({ success: false, message: "Réservé au superviseur général ou à l'administrateur" });
         }
 
         const erreurSite = await SeanceController.verifierAffectationSite(req, req.body.coursId, req.body.enseignantId);
@@ -756,6 +723,7 @@ export default class SeanceController {
 
         let seance: Seance = new Seance();
         seance.titre = req.body.titre
+        seance.etablissementId = Number((req as any).etablissementId)
         seance.jourSemaine = req.body.jourSemaine
         seance.salle = req.body.salle
         seance.dateDebut = req.body.dateDebut
@@ -788,13 +756,15 @@ export default class SeanceController {
     }
 
     static async updateSeance(req: Request, res: Response): Promise<Response | null> {
-        if ((req as any).utilisateurRole !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
-            return res.status(403).json({ success: false, message: "Réservé au superviseur général" });
+        if (!SeanceController.peutGererPlanning(req)) {
+            return res.status(403).json({ success: false, message: "Réservé au superviseur général ou à l'administrateur" });
         }
 
-        const coursSiteIds = await SeanceController.coursDuSiteActif(req);
-        const seanceWhere: any = { id: req.params.id };
-        SeanceController.filtrerCoursDuSite(seanceWhere, coursSiteIds);
+        const etablissementId = SeanceController.siteActifId(req);
+        if (etablissementId === null) {
+            return res.status(400).json({ success: false, message: "Sélectionnez un site avant de gérer l'emploi du temps." });
+        }
+        const seanceWhere: any = { id: req.params.id, etablissementId };
         let seance: Seance | null = await Seance.findOne({ where: seanceWhere });
         if (seance != null) {
             const erreurSite = await SeanceController.verifierAffectationSite(
@@ -879,14 +849,15 @@ export default class SeanceController {
     }
 
     static async deleteSeance(req: Request, res: Response): Promise<Response | null> {
-        if ((req as any).utilisateurRole !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
-            return res.status(403).json({ success: false, message: "Réservé au superviseur général" });
+        if (!SeanceController.peutGererPlanning(req)) {
+            return res.status(403).json({ success: false, message: "Réservé au superviseur général ou à l'administrateur" });
         }
 
-        const seanceWhere: any = { id: req.params.id };
-        if ((req as any).utilisateurRole !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
-            SeanceController.filtrerCoursDuSite(seanceWhere, await SeanceController.coursDuSiteActif(req));
+        const etablissementId = SeanceController.siteActifId(req);
+        if (etablissementId === null) {
+            return res.status(400).json({ success: false, message: "Sélectionnez un site avant de gérer l'emploi du temps." });
         }
+        const seanceWhere: any = { id: req.params.id, etablissementId };
         let seance: Seance | null = await Seance.findOne({ where: seanceWhere });
         if (seance) {
             await seance.destroy()
@@ -912,9 +883,9 @@ export default class SeanceController {
             return res.status(403).json({ success: false, message: "Réservé à l'institution" });
         }
 
-        const coursSiteIds = await SeanceController.coursDuSiteActif(req);
-        if (coursSiteIds !== null) {
-            options.where = { coursId: { [Op.in]: coursSiteIds } } as any;
+        const etablissementId = SeanceController.siteActifId(req);
+        if (etablissementId !== null) {
+            options.where = { etablissementId } as any;
         }
 
         await Seance.count(options)
@@ -930,17 +901,16 @@ export default class SeanceController {
     }
 
     static async publierEmploiDuTemps(req: Request, res: Response): Promise<Response> {
-        const role = (req as any).utilisateurRole;
-        if (role !== RolesUtilisateur.SUPERVISEUR_GENERAL) {
-            return res.status(403).json({ success: false, message: "Réservé au superviseur général" });
+        if (!SeanceController.peutGererPlanning(req)) {
+            return res.status(403).json({ success: false, message: "Réservé au superviseur général ou à l'administrateur" });
         }
 
         try {
-            const coursSiteIds = await SeanceController.coursDuSiteActif(req);
-            if (coursSiteIds === null) {
+            const etablissementId = SeanceController.siteActifId(req);
+            if (etablissementId === null) {
                 return res.status(403).json({ success: false, message: "Sélectionnez un site avant de publier l'emploi du temps." });
             }
-            const where = { coursId: { [Op.in]: coursSiteIds } };
+            const where = { etablissementId };
             const seances = await Seance.findAll({
                 where,
                 include: [

@@ -57,7 +57,8 @@ export default class PresenceEnseignantController {
       if (!seance) return res.status(404).json({ message: 'Séance non trouvée' });
       if ((req as any).utilisateurRole === RolesUtilisateur.SURVEILLANT) {
         const etablissementId = await getSurveillantSiteId(req);
-        if (!etablissementId || Number((seance as any).cours?.etablissementId) !== etablissementId) {
+        const seanceEtablissementId = Number((seance as any).etablissementId ?? (seance as any).cours?.etablissementId);
+        if (!etablissementId || seanceEtablissementId !== etablissementId) {
           return res.status(403).json({ message: "Vous n'avez pas accès aux présences de cette séance" });
         }
       }

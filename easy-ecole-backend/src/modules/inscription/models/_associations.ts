@@ -294,6 +294,10 @@ FichierRessource.belongsTo(Ressource, { as: 'ressource', foreignKey: 'ressourceI
 Cours.hasMany(Seance, { foreignKey: 'coursId', as: 'seances' })
 Seance.belongsTo(Cours, { as: 'cours', foreignKey: 'coursId' })
 
+// Etablissement - Seance
+Etablissement.hasMany(Seance, { foreignKey: 'etablissementId', as: 'seances' })
+Seance.belongsTo(Etablissement, { as: 'etablissement', foreignKey: 'etablissementId' })
+
 // Enseignant - Seance
 Enseignant.hasMany(Seance, { foreignKey: 'enseignantId', as: 'seances' })
 Seance.belongsTo(Enseignant, { as: 'enseignant', foreignKey: 'enseignantId' })

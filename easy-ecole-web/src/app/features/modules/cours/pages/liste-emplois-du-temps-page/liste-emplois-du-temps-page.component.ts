@@ -14,6 +14,7 @@ import { Cours } from 'src/app/data/modules/inscription/models/Cours.model';
 import { CoursService } from 'src/app/data/modules/inscription/services/cours.service';
 import { Enseignant } from 'src/app/data/modules/auth/models/Enseignant.model';
 import { EnseignantService } from 'src/app/data/modules/auth/services/enseignant.service';
+import { AuthService, SiteUtilisateur } from 'src/app/data/modules/auth/services/auth.service';
 import { ClasseService } from 'src/app/data/modules/inscription/services/classe.service';
 import { Classe } from 'src/app/data/modules/inscription/models/Classe.model';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
@@ -21,9 +22,7 @@ import { NotificationService } from 'src/app/data/modules/elearning/services/not
 import { saveAs } from 'file-saver';
 
 const COULEURS_PALETTE = [
-  '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
-  '#ec4899', '#06b6d4', '#f97316', '#14b8a6', '#6366f1',
-  '#84cc16', '#d946ef', '#0ea5e9', '#e11d48', '#65a30d',
+  '#2563eb', '#ca8a04',
 ];
 
 @Component({
@@ -35,6 +34,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
 
   alreadyExists: boolean = false
   error: boolean = false
+  apiErrorMessage: string = ''
 
   calendarOptions?: CalendarOptions
   @ViewChild('calendar') calendarComponent!: FullCalendarComponent;
@@ -48,6 +48,9 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
   coursLoading: boolean = false
   enseignants: Enseignant[] = []
   enseignantsLoading: boolean = false
+  sitesDisponibles: SiteUtilisateur[] = []
+  sitesLoading: boolean = false
+  sitesError: string = ''
   classes: Classe[] = []
   classesLoading: boolean = false
   seances: Seance[] = []
@@ -120,6 +123,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
     private seanceService: SeanceService,
     private coursService: CoursService,
     private enseignantService: EnseignantService,
+    private authService: AuthService,
     private classeService: ClasseService,
     private notificationService: NotificationService,
   ) {
@@ -127,6 +131,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
     this.calendarOptions = {
       initialView: 'timeGridWeek',
       timeZone: 'UTC',
+      slotEventOverlap: false,
       headerToolbar: false,
       allDaySlot: false,
       plugins: [dayGridPlugin, interactionPlugin, timeGridPlugin, listPlugin],
@@ -157,6 +162,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
     this.getCours()
     this.getEnseignants()
     this.getClasses()
+    this.getSitesPlanning()
     this.loadPlanningForCurrentWeek()
   }
 
@@ -164,17 +170,37 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
   }
 
   get peutGererPlanning(): boolean {
-    return this.rolesValue.isSuperviseurGeneral
+    return this.rolesValue.isSuperviseurGeneral || this.rolesValue.isAdmin
   }
 
   get sitesPlanning(): Array<{ id: number, nom: string }> {
     const sites = new Map<number, string>()
+    for (const site of this.sitesDisponibles) {
+      sites.set(Number(site.id), site.nom)
+    }
     for (const event of this.planningEvents) {
       if (event.etablissementId) {
-        sites.set(event.etablissementId, event.etablissement?.nom || `Site ${event.etablissementId}`)
+        if (!sites.has(event.etablissementId)) {
+          sites.set(event.etablissementId, event.etablissement?.nom || `Site ${event.etablissementId}`)
+        }
       }
     }
     return Array.from(sites, ([id, nom]) => ({ id, nom }))
+  }
+
+  private getSitesPlanning(): void {
+    this.sitesLoading = true
+    this.sitesError = ''
+    this.authService.getSitesMoi().subscribe({
+      next: (sites) => {
+        this.sitesDisponibles = sites
+        this.sitesLoading = false
+      },
+      error: () => {
+        this.sitesError = 'Les sites autorisés n’ont pas pu être chargés.'
+        this.sitesLoading = false
+      }
+    })
   }
 
   getWeekRange(date: Date): { start: string, end: string } {
@@ -198,7 +224,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
 
   getCouleurSite(etablissementId?: number): string {
     if (!etablissementId) return COULEURS_PALETTE[0]
-    return COULEURS_PALETTE[Math.abs(Number(etablissementId)) % COULEURS_PALETTE.length]
+    return COULEURS_PALETTE[(Math.abs(Number(etablissementId)) - 1) % COULEURS_PALETTE.length]
   }
 
   loadPlanning(semaineDebut: string, semaineFin: string): void {
@@ -516,6 +542,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
   }
 
   ajouterSeance(): void {
+    this.apiErrorMessage = ''
     let seance: Seance = new Seance()
     seance.titre = this.nouvelleSeanceForm.get('titre')!.value
     seance.jourSemaine = this.nouvelleSeanceForm.get('jourSemaine')!.value
@@ -539,13 +566,15 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
           this.showConflits = true
           this.conflitModeCreation = true
         } else {
-          this.alreadyExists = err.error.alreadyExists
+          this.alreadyExists = Boolean(err?.error?.alreadyExists)
+          this.apiErrorMessage = err?.error?.message || 'La séance n’a pas pu être enregistrée.'
           if (!this.alreadyExists) {
             this.error = true
           }
           setTimeout(() => {
             this.error = false
             this.alreadyExists = false
+            this.apiErrorMessage = ''
           }, 3000)
         }
       }
@@ -554,6 +583,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
 
   modifierSeance(): void {
     if (this.selectedSeance) {
+      this.apiErrorMessage = ''
       let seance: Seance = new Seance()
       seance.id = this.selectedSeance.id
       seance.titre = this.modificationSeanceForm.get('titre')!.value
@@ -578,13 +608,15 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
             this.showConflits = true
             this.conflitModeCreation = false
           } else {
-            this.alreadyExists = err.error.alreadyExists
+            this.alreadyExists = Boolean(err?.error?.alreadyExists)
+            this.apiErrorMessage = err?.error?.message || 'La séance n’a pas pu être modifiée.'
             if (!this.alreadyExists) {
               this.error = true
             }
             setTimeout(() => {
               this.error = false
               this.alreadyExists = false
+              this.apiErrorMessage = ''
             }, 3000)
           }
         }

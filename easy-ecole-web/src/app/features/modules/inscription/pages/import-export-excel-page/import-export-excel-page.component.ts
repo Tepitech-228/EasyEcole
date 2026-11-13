@@ -302,6 +302,12 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
     }
   }
 
+  private inferParcoursCycleFromFileName(fileName: string): string | null {
+    const normalizedName = fileName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+    const cycle = normalizedName.match(/(?:^|[^A-Z])(DOCTORAT|MASTER|LICENCE|BTS|MBA)(?:[^A-Z]|$)/);
+    return cycle?.[1] || null;
+  }
+
   onDragOver(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
@@ -422,13 +428,25 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
       this.errorMessage = 'Sélectionnez le parcours correspondant à chaque fichier.';
       return;
     }
+    const cycleMismatch = parcoursByFile.find(item => {
+      const expectedCycle = this.inferParcoursCycleFromFileName(item.file.name);
+      return expectedCycle && String(item.parcours?.type || '').toUpperCase() !== expectedCycle;
+    });
+    if (cycleMismatch) {
+      const expectedCycle = this.inferParcoursCycleFromFileName(cycleMismatch.file.name);
+      const actualCycle = String(cycleMismatch.parcours?.type || 'non renseigné').toUpperCase();
+      this.errorMessage = `Import bloqué : "${cycleMismatch.file.name}" indique le cycle ${expectedCycle}, mais "${cycleMismatch.parcours?.titre}" est de type ${actualCycle}. Choisissez un parcours de type ${expectedCycle}.`;
+      return;
+    }
 
     this.importing = true;
     this.importResult = null;
     this.errorMessage = null;
     this.successMessage = null;
     this.detailFilter = 'all';
-    this.expandedUeCode = null;
+    this.selectedUeKey = '';
+    this.uePage = 1;
+    this.ecuePage = 1;
 
     const details: ExcelImportResult['details'] = [];
     const ignoredRows: NonNullable<ExcelImportResult['ignoredRows']> = [];
@@ -446,7 +464,7 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
           this.errorMessage = `${errorCount} erreur(s) détectée(s). Consultez le rapport pour identifier le fichier et la ligne concernés.`;
         }
         const firstGroup = this.getGroupedUe()[0];
-        if (firstGroup) this.expandedUeCode = firstGroup.key;
+        if (firstGroup) this.selectedUeKey = firstGroup.key;
         return;
       }
 
@@ -496,7 +514,9 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
       this.errorMessage = null;
       this.successMessage = null;
       this.detailFilter = 'all';
-      this.expandedUeCode = null;
+      this.selectedUeKey = '';
+      this.uePage = 1;
+      this.ecuePage = 1;
     }
 
    importTypeChanged(): void {
@@ -534,16 +554,76 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
 
   detailFilter: string = 'all';
 
-  expandedUeCode: string | null = null;
+  readonly reportPageSize = 50;
+  uePage = 1;
+  ecuePage = 1;
+  selectedUeKey = '';
 
   trackByFn(index: number, item: any): number { return index; }
+  trackByUe(index: number, item: any): string { return item.key; }
 
-  toggleUe(code: string): void {
-    this.expandedUeCode = this.expandedUeCode === code ? null : code;
+  setDetailFilter(filter: string): void {
+    this.detailFilter = filter;
+    this.uePage = 1;
+    this.ecuePage = 1;
   }
 
-  isExpanded(code: string): boolean {
-    return this.expandedUeCode === code;
+  selectUe(key: string): void {
+    this.selectedUeKey = key;
+    this.ecuePage = 1;
+  }
+
+  get totalUePages(): number {
+    return Math.max(1, Math.ceil(this.getGroupedUe().length / this.reportPageSize));
+  }
+
+  get paginatedUeGroups(): any[] {
+    const groups = this.getGroupedUe();
+    const start = (this.uePage - 1) * this.reportPageSize;
+    return groups.slice(start, start + this.reportPageSize);
+  }
+
+  get firstUeOnPage(): number {
+    return this.getGroupedUe().length ? (this.uePage - 1) * this.reportPageSize + 1 : 0;
+  }
+
+  get lastUeOnPage(): number {
+    return Math.min(this.uePage * this.reportPageSize, this.getGroupedUe().length);
+  }
+
+  get selectedUe(): any | null {
+    const groups = this.getGroupedUe();
+    return groups.find(group => group.key === this.selectedUeKey) || groups[0] || null;
+  }
+
+  get totalSelectedEcue(): number {
+    return this.selectedUe?.ecues.length || 0;
+  }
+
+  get totalEcuePages(): number {
+    return Math.max(1, Math.ceil(this.totalSelectedEcue / this.reportPageSize));
+  }
+
+  get paginatedEcueRows(): any[] {
+    const ecues = this.selectedUe?.ecues || [];
+    const start = (this.ecuePage - 1) * this.reportPageSize;
+    return ecues.slice(start, start + this.reportPageSize);
+  }
+
+  get firstEcueOnPage(): number {
+    return this.totalSelectedEcue ? (this.ecuePage - 1) * this.reportPageSize + 1 : 0;
+  }
+
+  get lastEcueOnPage(): number {
+    return Math.min(this.ecuePage * this.reportPageSize, this.totalSelectedEcue);
+  }
+
+  goToUePage(page: number): void {
+    if (page >= 1 && page <= this.totalUePages) this.uePage = page;
+  }
+
+  goToEcuePage(page: number): void {
+    if (page >= 1 && page <= this.totalEcuePages) this.ecuePage = page;
   }
 
   getGroupedUe(): any[] {

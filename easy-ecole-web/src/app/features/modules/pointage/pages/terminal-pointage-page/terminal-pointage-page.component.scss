@@ -1172,6 +1172,12 @@
   .pointage-btn { padding: 0.6rem 1.1rem; font-size: 0.9rem; }
 }
 
+.pointage-state-card--solde {
+  border-color: #93c5fd;
+  background: #eff6ff;
+  .state-title { color: #1e40af; }
+}
+
 .pointage-success-person {
   display: flex;
   width: min(680px, 100%);
@@ -1186,8 +1192,8 @@
 
   .pointage-success-photo {
     display: grid;
-    width: 200px;
-    height: 200px;
+    width: 124px;
+    height: 124px;
     flex: 0 0 auto;
     place-items: center;
     overflow: hidden;
@@ -1329,7 +1335,7 @@
   .scanner-frame { width: 180px; height: 180px; }
   .pointage-scanned-actions, .pointage-finance { padding-right: 1.1rem; padding-left: 1.1rem; }
   .pointage-scanned-photo-wrapper { width: min(413px, 100%); }
-  .pointage-success-person .pointage-success-photo { width: 160px; height: 160px; }
+  .pointage-success-person .pointage-success-photo { width: 112px; height: 112px; }
   .pointage-self-grid, .pointage-finance-grid { grid-template-columns: 1fr; }
   .pointage-scanned-head h4 { overflow-wrap: anywhere; }
 }
@@ -1338,7 +1344,7 @@
   .pointage-hero-mark { display: none; }
   .pointage-scanned-actions { flex-direction: column; }
   .pointage-success-person { flex-direction: column; text-align: center; }
-  .pointage-success-person .pointage-success-photo { width: min(190px, 68vw); height: min(190px, 68vw); }
+  .pointage-success-person .pointage-success-photo { width: 108px; height: 108px; }
   .pointage-success-details { align-items: center; text-align: center; }
 }
 

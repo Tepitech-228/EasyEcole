@@ -71,6 +71,34 @@ router
     .post('/scan/depart', [Authenticate], PointageController.pointerDepartByScan)
     /**
      * @openapi
+     * /inscription/pointages/scan/fin-cours:
+     *   post:
+     *     tags: [Pointage]
+     *     summary: Confirme la fin d'un cours enseignant détectée par terminal
+     *     security:
+     *       - bearerAuth: []
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             required: [confirmationToken]
+     *             properties:
+     *               confirmationToken: { type: string }
+     *     responses:
+     *       200:
+     *         description: Fin du cours et départ journalier enregistrés
+     *       400:
+     *         description: Confirmation absente, invalide ou expirée
+     *       403:
+     *         description: Rôle non autorisé
+     *       409:
+     *         description: Le cours n'est plus en attente de confirmation
+     */
+    .post('/scan/fin-cours', [Authenticate], PointageController.pointerFinCoursByScan)
+    /**
+     * @openapi
      * /inscription/pointages/scan/pointage:
      *   post:
      *     tags: [Pointage]

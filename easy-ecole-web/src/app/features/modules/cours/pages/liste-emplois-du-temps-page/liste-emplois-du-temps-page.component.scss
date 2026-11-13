@@ -1,0 +1,63 @@
+.planning-event {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  container-type: inline-size;
+}
+
+.planning-event__content {
+  min-width: 0;
+  overflow: hidden;
+  color: #1e293b;
+  line-height: 1.2;
+}
+
+.planning-event__row {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.planning-event__row img {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 13px;
+}
+
+.planning-event__title,
+.planning-event__text,
+.planning-event__time > div,
+.planning-event__site {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.planning-event__site {
+  padding-left: 1px;
+}
+
+.planning-event__status {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@container (max-width: 160px) {
+  .planning-event__row--detail,
+  .planning-event__site {
+    display: none;
+  }
+
+  .planning-event__content {
+    font-size: 10px;
+  }
+}
+
+:host ::ng-deep .fc .fc-event-main {
+  min-width: 0;
+  overflow: hidden;
+}

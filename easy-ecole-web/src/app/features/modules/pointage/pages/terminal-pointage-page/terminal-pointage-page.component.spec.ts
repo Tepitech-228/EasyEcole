@@ -44,6 +44,8 @@ describe('TerminalPointagePageComponent', () => {
         'getToday',
         'verifierStatutByQR',
         'pointerParQR',
+        'pointerDepartByScan',
+        'pointerFinCoursByScan',
         'getTerminauxHikvision',
         'creerTerminalHikvision',
         'testerTerminalHikvision',
@@ -60,6 +62,17 @@ describe('TerminalPointagePageComponent', () => {
       mode: 'arrivee',
       pointage: { heureArrivee: '08:00:00', heureDepart: null } as any
     }));
+    pointageService.pointerDepartByScan.and.returnValue(of({
+      success: true,
+      requiresConfirmation: true,
+      mode: 'depart',
+      heureDepart: '17:00:00',
+      confirmationToken: 'terminal-depart-token'
+    } as any));
+    pointageService.pointerFinCoursByScan.and.returnValue(of({
+      heureArrivee: '08:15:00',
+      heureDepart: '08:55:00'
+    } as any));
 
     await TestBed.configureTestingModule({
       declarations: [TerminalPointagePageComponent],
@@ -72,6 +85,150 @@ describe('TerminalPointagePageComponent', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(TerminalPointagePageComponent);
+  });
+
+  it('uses red, green, and blue result states for the student financial status', () => {
+    const component = fixture.componentInstance;
+    component.scanSuccess = 'Passage enregistré.';
+    component.lastAttendanceName = 'Jane Doe';
+    component.lastAttendanceRoleCode = 'apprenant';
+    component.lastAttendanceSituationFinanciere = {
+      sommeGlobale: 3000,
+      montantPaye: 1000,
+      resteAPayer: 2000,
+      estAJour: false,
+      echeancesEnRetard: 1,
+      echeancesPayees: 1,
+      echeancesTotales: 2,
+      moisEnCours: null,
+      echeances: []
+    };
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.pointage-state-card--error')).not.toBeNull();
+
+    component.lastAttendanceSituationFinanciere = {
+      ...component.lastAttendanceSituationFinanciere!,
+      estAJour: true,
+      echeancesEnRetard: 0
+    };
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.pointage-state-card--success')).not.toBeNull();
+
+    component.lastAttendanceSituationFinanciere = {
+      ...component.lastAttendanceSituationFinanciere!,
+      montantPaye: 3000,
+      resteAPayer: 0
+    };
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.pointage-state-card--solde')).not.toBeNull();
+  });
+
+  it('displays the actual QR scan time in the shared attendance result card', () => {
+    pointageService.pointerParQR.and.returnValue(of({
+      success: true,
+      mode: 'passage',
+      heureEvenement: '10:35:00',
+      pointage: { heureArrivee: '08:00:00', heureDepart: null } as any
+    } as any));
+    fixture.detectChanges();
+    fixture.componentInstance.scannedUser = {
+      userId: '42',
+      nom: 'Doe',
+      prenoms: 'Jane',
+      role: 'apprenant',
+      statut: 'vert',
+      matricule: 'APP042'
+    };
+    Object.assign(fixture.componentInstance, { scannedCodeQR: 'signed-qr' });
+
+    fixture.componentInstance.pointerScannedUser('arrivee');
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.lastAttendanceEventTime).toBe('10:35');
+    expect(fixture.nativeElement.querySelector('.pointage-success-person').textContent).toContain('Jane Doe');
+    expect(fixture.nativeElement.querySelector('.pointage-success-person').textContent).toContain('10:35');
+  });
+
+  it('announces scheduled teacher course starts and ends through the voice device', () => {
+    const speak = spyOn(window.speechSynthesis, 'speak');
+    pointageService.getToday.and.returnValue(of(null));
+    fixture.detectChanges();
+
+    terminalAttendanceEvents.next({
+      utilisateurId: 31,
+      nom: 'Doe',
+      prenoms: 'Jane',
+      role: 'enseignant',
+      employeeNoString: 'ENS031',
+      date: '2026-10-17',
+      time: '08:15:30',
+      mode: 'arrivee',
+      etablissementId: 1,
+      seancePointage: {
+        action: 'debut',
+        seanceId: 81,
+        cours: 'Mathématiques',
+        heureDebutPrevue: '08:00:00',
+        heureFinPrevue: '09:00:00',
+        heureDebutReelle: '08:15:30',
+        heureFinReelle: null,
+        heureReelle: '08:15:30'
+      }
+    });
+
+    expect(speak.calls.mostRecent().args[0].text).toContain('Début du cours Mathématiques à 08:15');
+    expect(fixture.componentInstance.scanSuccess).toContain('Début du cours');
+
+    terminalAttendanceEvents.next({
+      utilisateurId: 31,
+      nom: 'Doe',
+      prenoms: 'Jane',
+      role: 'enseignant',
+      employeeNoString: 'ENS031',
+      date: '2026-10-17',
+      time: '08:55:00',
+      mode: 'passage',
+      etablissementId: 1,
+      seancePointage: {
+        action: 'fin',
+        seanceId: 81,
+        cours: 'Mathématiques',
+        heureDebutPrevue: '08:00:00',
+        heureFinPrevue: '09:00:00',
+        heureDebutReelle: '08:15:30',
+        heureFinReelle: null,
+        heureReelle: '08:55:00',
+        confirmationToken: 'course-end-token'
+      }
+    });
+
+    expect(speak.calls.mostRecent().args[0].text).toContain('Voulez-vous confirmer la fin du cours');
+    fixture.componentInstance.confirmerDepart();
+    expect(speak.calls.mostRecent().args[0].text).toContain('Fin du cours Mathématiques à 08:55');
+  });
+
+  it('announces that an unscheduled teacher cannot point', () => {
+    const speak = spyOn(window.speechSynthesis, 'speak');
+    pointageService.getToday.and.returnValue(of(null));
+    fixture.detectChanges();
+
+    terminalAttendanceEvents.next({
+      utilisateurId: 31,
+      nom: 'Doe',
+      prenoms: 'Jane',
+      role: 'enseignant',
+      employeeNoString: 'ENS031',
+      date: '2026-10-17',
+      time: '07:59:59',
+      mode: 'refuse',
+      etablissementId: 1,
+      motifRefus: 'Vous n’êtes pas programmé à cette heure. Aucun pointage n’a été enregistré.',
+      enseignantNonProgramme: true
+    });
+
+    expect(speak.calls.mostRecent().args[0].text)
+      .toBe('Vous n’êtes pas programmé à cette heure. Aucun pointage n’a été enregistré.');
+    expect(fixture.componentInstance.scanError).toContain('pas programmé à cette heure');
   });
 
   it('shows an actionable error instead of claiming there was no pointage', () => {
@@ -171,11 +328,131 @@ describe('TerminalPointagePageComponent', () => {
     fixture.detectChanges();
 
     fixture.componentInstance.scannedUser = { userId: '42', nom: 'Doe', prenoms: 'Jane', role: 'apprenant' };
-    fixture.componentInstance.scannedCodeQR = 'signed-qr';
+    Object.assign(fixture.componentInstance, { scannedCodeQR: 'signed-qr' });
     fixture.componentInstance.pointerScannedUser('arrivee');
 
     expect(fixture.componentInstance.scanWarning).toBe('Échéance mois 2 partiellement payée.');
     expect(speak.calls.mostRecent().args[0].text).toContain('Attention. Échéance mois 2 partiellement payée.');
+  });
+
+  it('asks staff whether the second Hikvision scan is a departure, but does not ask on arrival', () => {
+    pointageService.getToday.and.returnValue(of(null));
+    const speak = spyOn(window.speechSynthesis, 'speak');
+    fixture.detectChanges();
+
+    const staffEvent: TerminalAttendanceEvent = {
+      utilisateurId: 42,
+      nom: 'Doe',
+      prenoms: 'Jane',
+      role: 'enseignant',
+      employeeNoString: 'ENS042',
+      date: '2026-10-18',
+      time: '17:00:00',
+      mode: 'arrivee',
+      etablissementId: 1
+    };
+    terminalAttendanceEvents.next(staffEvent);
+    expect(pointageService.pointerDepartByScan).not.toHaveBeenCalled();
+
+    terminalAttendanceEvents.next({ ...staffEvent, mode: 'passage' });
+    fixture.detectChanges();
+
+    expect(pointageService.pointerDepartByScan).toHaveBeenCalledOnceWith('42');
+    expect(fixture.componentInstance.departureConfirmation?.userId).toBe('42');
+    expect(fixture.componentInstance.departureConfirmation?.matricule).toBe('ENS042');
+    expect(fixture.nativeElement.querySelector('.pointage-departure-confirmation').textContent)
+      .toContain('Voulez-vous pointer le départ de');
+    expect(speak.calls.mostRecent().args[0].text).toContain('Voulez-vous pointer le départ de Jane Doe');
+  });
+
+  it('shows worked hours in a result popup after confirming a terminal staff departure', () => {
+    pointageService.getToday.and.returnValue(of(null));
+    pointageService.pointerDepartByScan.and.returnValues(
+      of({
+        success: true,
+        requiresConfirmation: true,
+        mode: 'depart',
+        heureDepart: '17:00:00',
+        confirmationToken: 'terminal-depart-token'
+      } as any),
+      of({
+        success: true,
+        mode: 'depart',
+        pointage: { heureArrivee: '08:00:00', heureDepart: '17:00:00' } as any
+      } as any)
+    );
+    fixture.detectChanges();
+    terminalAttendanceEvents.next({
+      utilisateurId: 42,
+      nom: 'Doe',
+      prenoms: 'Jane',
+      role: 'enseignant',
+      employeeNoString: 'ENS042',
+      date: '2026-10-18',
+      time: '17:00:00',
+      mode: 'passage',
+      etablissementId: 1
+    });
+
+    fixture.componentInstance.confirmerDepart();
+    fixture.detectChanges();
+
+    expect(pointageService.pointerDepartByScan).toHaveBeenCalledWith('42', 'terminal-depart-token');
+    expect(fixture.componentInstance.departureResultPopup?.minutesTotales).toBe(540);
+    expect(fixture.nativeElement.querySelector('.pointage-departure-result').textContent)
+      .toContain('Temps total effectué');
+    expect(fixture.nativeElement.querySelector('.pointage-departure-result').textContent)
+      .toContain('9 h 00');
+    expect(fixture.nativeElement.querySelector('.pointage-departure-result').textContent)
+      .toContain('Heures supplémentaires');
+
+    fixture.componentInstance.fermerResultatDepart();
+    expect(fixture.componentInstance.departureResultPopup).toBeNull();
+  });
+
+  it('asks before recording a scheduled teacher course end and announces it after confirmation', () => {
+    pointageService.getToday.and.returnValue(of(null));
+    const speak = spyOn(window.speechSynthesis, 'speak');
+    fixture.detectChanges();
+    terminalAttendanceEvents.next({
+      utilisateurId: 42,
+      nom: 'Doe',
+      prenoms: 'Jane',
+      role: 'enseignant',
+      employeeNoString: 'ENS042',
+      date: '2026-10-18',
+      time: '08:55:00',
+      mode: 'passage',
+      etablissementId: 1,
+      seancePointage: {
+        action: 'fin',
+        seanceId: 81,
+        cours: 'Mathématiques',
+        heureDebutPrevue: '08:00:00',
+        heureFinPrevue: '09:00:00',
+        heureDebutReelle: '08:15:00',
+        heureFinReelle: null,
+        heureReelle: '08:55:00',
+        confirmationToken: 'course-end-token'
+      }
+    });
+    fixture.detectChanges();
+
+    expect(pointageService.pointerFinCoursByScan).not.toHaveBeenCalled();
+    expect(pointageService.pointerDepartByScan).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.departureConfirmation?.seancePointage?.cours).toBe('Mathématiques');
+    expect(fixture.nativeElement.querySelector('.pointage-departure-confirmation').textContent)
+      .toContain('Voulez-vous enregistrer la fin du cours Mathématiques');
+    expect(speak.calls.mostRecent().args[0].text).toContain('Voulez-vous confirmer la fin du cours');
+
+    fixture.componentInstance.confirmerDepart();
+    fixture.detectChanges();
+
+    expect(pointageService.pointerFinCoursByScan).toHaveBeenCalledOnceWith('course-end-token');
+    expect(fixture.componentInstance.departureResultPopup?.titre).toBe('Fin du cours enregistrée');
+    expect(fixture.componentInstance.departureResultPopup?.cours).toBe('Mathématiques');
+    expect(fixture.componentInstance.departureResultPopup?.minutesTotales).toBe(40);
+    expect(speak.calls.mostRecent().args[0].text).toContain('Fin du cours Mathématiques à 08:55');
   });
 
   it('shows the combined financial summary after a student attendance event', () => {
@@ -215,6 +492,7 @@ describe('TerminalPointagePageComponent', () => {
         ]
       }
     });
+    expect(pointageService.pointerDepartByScan).not.toHaveBeenCalled();
     fixture.detectChanges();
 
     const summary = fixture.nativeElement.querySelector('.pointage-finance--result');

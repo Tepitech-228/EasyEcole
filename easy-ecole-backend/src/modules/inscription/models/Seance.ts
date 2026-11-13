@@ -12,10 +12,13 @@ import { NiveauEtude } from "./NiveauEtude";
 import { Parcours } from "./Parcours";
 import { AnneeAcademique } from "./AnneeAcademique";
 import { SemestreAcademique } from "./SemestreAcademique";
+import { Etablissement } from "../../etablissement/models/Etablissement";
 
 export class Seance extends Model<InferAttributes<Seance>, InferCreationAttributes<Seance>> {
   declare id: CreationOptional<number>
   declare titre: string
+  declare etablissementId: ForeignKey<Etablissement['id'] | null>
+  declare etablissement?: NonAttribute<Etablissement>
   declare jourSemaine: JoursSemaine
   declare salle: string
   declare dateDebut: Date
@@ -49,6 +52,7 @@ export class Seance extends Model<InferAttributes<Seance>, InferCreationAttribut
   declare readonly updatedAt: CreationOptional<Date>
 
   declare static associations: {
+    etablissement: Association<Seance, Etablissement>,
     cours: Association<Seance, Cours>,
     enseignant: Association<Seance, Enseignant>,
     salleDeClasse: Association<Seance, SalleDeClasse>,
@@ -70,6 +74,10 @@ Seance.init({
   titre: {
     type: new DataTypes.STRING,
     allowNull: true
+  },
+  etablissementId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true,
   },
   jourSemaine: {
     type: DataTypes.ENUM,

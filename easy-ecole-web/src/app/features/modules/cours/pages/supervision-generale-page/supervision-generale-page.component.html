@@ -296,9 +296,18 @@
         <p class="empty-state__text">Renseignez les volumes horaires des cours pour suivre leur consommation.</p>
       </div>
 
-      <div *ngIf="courses.length" class="table-wrap">
-        <table class="sup-table" data-card-table>
+      <div *ngIf="courses.length" class="course-table">
+        <div class="table-wrap">
+        <table class="sup-table sup-table--courses" data-card-table>
           <caption class="sr-only">Volume horaire prévu, consommé et restant par cours</caption>
+          <colgroup>
+            <col class="course-column--code">
+            <col class="course-column--title">
+            <col class="course-column--hours">
+            <col class="course-column--hours">
+            <col class="course-column--hours">
+            <col class="course-column--progress">
+          </colgroup>
           <thead>
             <tr>
               <th scope="col">Code UE</th>
@@ -310,11 +319,11 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let course of courses">
+            <tr *ngFor="let course of paginatedCourses">
               <td><span class="code-chip">{{ course.code || '—' }}</span></td>
               <td>
-                <div class="cell-course flex flex-wrap items-center gap-x-2 gap-y-1.5">
-                  <span>{{ course.intitule }}</span>
+                <div class="cell-course">
+                  <span class="course-title">{{ course.intitule || 'Cours non renseigné' }}</span>
                   <span *ngIf="course.depassement" class="status-badge status-badge--absent">Dépassement</span>
                 </div>
               </td>
@@ -336,6 +345,29 @@
             </tr>
           </tbody>
         </table>
+        </div>
+        <footer class="course-pagination">
+          <p class="course-pagination__summary" aria-live="polite">
+            Affichage <strong>{{ firstCourseOnPage }}–{{ lastCourseOnPage }}</strong>
+            sur <strong>{{ totalCourses }}</strong> cours
+            <span>· {{ coursesPerPage }} par page</span>
+          </p>
+          <nav class="course-pagination__controls" aria-label="Pagination des volumes horaires des cours">
+            <button type="button" class="course-pagination__button"
+              (click)="goToCoursesPage(coursesPage - 1)" [disabled]="coursesPage === 1"
+              aria-label="Page précédente">
+              Précédent
+            </button>
+            <span class="course-pagination__current" aria-current="page">
+              Page {{ coursesPage }} / {{ totalCoursePages }}
+            </span>
+            <button type="button" class="course-pagination__button"
+              (click)="goToCoursesPage(coursesPage + 1)" [disabled]="coursesPage === totalCoursePages"
+              aria-label="Page suivante">
+              Suivant
+            </button>
+          </nav>
+        </footer>
       </div>
     </section>
 

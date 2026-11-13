@@ -65,7 +65,7 @@ export default class SeancePointageController {
       return null;
     }
 
-    const etablissementId = Number((seance as any).cours?.etablissementId);
+    const etablissementId = Number((seance as any).etablissementId ?? (seance as any).cours?.etablissementId);
     if (!Number.isSafeInteger(etablissementId) || etablissementId <= 0) {
       res.status(409).json({ success: false, code: "SITE_UNCONFIGURED", message: "Le site de cette séance n'est pas renseigné." });
       return null;

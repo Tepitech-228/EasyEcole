@@ -35,6 +35,10 @@
     </div>
 </div>
 
+<div *ngIf="apiErrorMessage" class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+    {{ apiErrorMessage }}
+</div>
+
 <div *ngIf="showPublierSuccess" class="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
     <div class="flex items-center gap-3 text-sm text-emerald-800">
         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -66,6 +70,8 @@
             <select [(ngModel)]="filterSiteId" (change)="onFilterChange()"
                 class="block w-full max-w-[200px] rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
                 <option value="">Tous les sites</option>
+                <option *ngIf="sitesLoading" disabled>Chargement des sites…</option>
+                <option *ngIf="!sitesLoading && !sitesPlanning.length" disabled>Aucun site disponible</option>
                 <option *ngFor="let site of sitesPlanning" [value]="site.id">{{ site.nom }}</option>
             </select>
             <select *ngIf="peutGererPlanning" [(ngModel)]="filterEnseignantId" (change)="onFilterChange()"
@@ -90,39 +96,38 @@
         <div class="block col-span-full mt-8">
             <full-calendar class="w-full" #calendar [options]="calendarOptions" [deepChangeDetection]="true">
                 <ng-template #eventContent let-arg>
-                    <div class="w-full h-full m-0 rounded-lg flex" [style.borderLeft]="'4px solid ' + (arg.event.extendedProps['couleur'] || '#3b82f6')">
-                        <div class="flex flex-col w-full h-full justify-between gap-y-1 px-4 pt-2 pb-1 text-sm"
-                            [style.background]="(arg.event.extendedProps['couleur'] || '#3b82f6') + '15'"
-                            [style.color]="arg.event.extendedProps['couleur'] || '#3b82f6'">
-                            <div class="flex flex-col">
-                                <div class="flex items-start gap-x-2 mb-2">
+                    <div class="planning-event w-full h-full m-0 rounded-lg flex" [style.borderLeft]="'3px solid ' + (arg.event.extendedProps['couleur'] || '#2563eb')">
+                        <div class="planning-event__content flex flex-col w-full h-full min-w-0 justify-between gap-y-1 px-1 pt-1 pb-1 text-xs"
+                            [style.background]="(arg.event.extendedProps['couleur'] || '#2563eb') + '15'">
+                            <div class="flex min-w-0 flex-col gap-1">
+                                <div class="planning-event__row planning-event__time flex items-start gap-x-1 mb-1">
                                     <img src="assets/icons/clock-outline.svg" alt="icon">
-                                    <div>{{ arg.event.extendedProps.startTime + ' - ' + arg.event.extendedProps.endTime }}</div>
+                                    <div class="min-w-0 truncate">{{ arg.event.extendedProps.startTime + ' - ' + arg.event.extendedProps.endTime }}</div>
                                 </div>
-                                <div class="flex items-start gap-x-2 mb-2">
+                                <div class="planning-event__row flex items-start gap-x-1 mb-1">
                                     <img src="assets/icons/category-light.svg" alt="icon">
-                                    <div class="font-semibold">{{ arg.event.title }}</div>
+                                    <div class="planning-event__title min-w-0 font-semibold">{{ arg.event.title }}</div>
                                 </div>
-                                <div class="flex items-start gap-x-2 mb-2">
+                                <div class="planning-event__row planning-event__row--detail flex items-start gap-x-1 mb-1">
                                     <img src="assets/icons/student.svg" alt="icon">
-                                    <div>{{ arg.event.extendedProps.enseignant }}</div>
+                                    <div class="planning-event__text min-w-0">{{ arg.event.extendedProps.enseignant }}</div>
                                 </div>
-                                <div class="flex items-start gap-x-2 mb-2">
+                                <div class="planning-event__row planning-event__row--detail flex items-start gap-x-1 mb-1">
                                     <img src="assets/icons/location_on.svg" alt="icon">
-                                    <div>{{ arg.event.extendedProps.salle }}</div>
+                                    <div class="planning-event__text min-w-0">{{ arg.event.extendedProps.salle }}</div>
                                 </div>
-                                <div *ngIf="arg.event.extendedProps.etablissement" class="text-xs font-semibold">
+                                <div *ngIf="arg.event.extendedProps.etablissement" class="planning-event__site text-xs font-semibold">
                                     {{ arg.event.extendedProps.etablissement }}
                                 </div>
                                 <span *ngIf="rolesValue.isSurveillant || rolesValue.isSuperviseurGeneral"
-                                    class="w-fit rounded px-2 py-0.5 text-xs font-semibold"
+                                    class="planning-event__status w-fit rounded px-2 py-0.5 text-xs font-semibold"
                                     [ngClass]="{
                                         'bg-gray-100 text-gray-700': arg.event.extendedProps.statutPointage === 'a_venir',
                                         'bg-blue-100 text-blue-700': arg.event.extendedProps.statutPointage === 'en_cours',
                                         'bg-amber-100 text-amber-700': arg.event.extendedProps.statutPointage === 'en_retard',
                                         'bg-emerald-100 text-emerald-700': arg.event.extendedProps.statutPointage === 'termine',
                                         'bg-orange-100 text-orange-700': arg.event.extendedProps.statutPointage === 'termine_en_avance',
-                                        'bg-red-100 text-red-700': arg.event.extendedProps.statutPointage === 'absent'
+                                        'bg-amber-100 text-amber-800': arg.event.extendedProps.statutPointage === 'absent'
                                     }">
                                     {{ arg.event.extendedProps.statutPointage }}
                                 </span>
@@ -158,6 +163,7 @@
                                 </button>
                             </div>
                         </div>
+                        <p *ngIf="sitesError" class="mb-4 text-sm text-red-600" role="alert">{{ sitesError }}</p>
                     </div>
                 </ng-template>
             </full-calendar>

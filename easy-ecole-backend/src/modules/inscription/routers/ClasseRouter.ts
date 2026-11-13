@@ -41,7 +41,7 @@ router
  *       201:
  *         description: Classe créée
  */
-    .post('/', [AuthInstitution, CheckPermission('action.inscription.classe.creer')], ClasseController.createClasse)
+    .post('/', [AuthInstitution, CheckPermission('action.inscription.classe.creer'), cache(300)], ClasseController.createClasse)
 
 /**
  * @openapi
@@ -87,7 +87,7 @@ router
  *       200:
  *         description: Classe mise à jour
  */
-    .put('/:id', [AuthInstitution, CheckPermission('action.inscription.classe.modifier')], ClasseController.updateClasse)
+    .put('/:id', [AuthInstitution, CheckPermission('action.inscription.classe.modifier'), cache(300)], ClasseController.updateClasse)
 
 /**
  * @openapi
@@ -107,7 +107,7 @@ router
  *       200:
  *         description: Classe supprimée
  */
-    .delete('/:id', [AuthInstitution, CheckPermission('action.inscription.classe.supprimer')], ClasseController.deleteClasse)
+    .delete('/:id', [AuthInstitution, CheckPermission('action.inscription.classe.supprimer'), cache(300)], ClasseController.deleteClasse)
 
 /**
  * @openapi

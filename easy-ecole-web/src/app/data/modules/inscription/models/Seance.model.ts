@@ -5,6 +5,7 @@ import { SalleDeClasse } from "./SalleDeClasse.model";
 export class Seance {
   declare id?: string
   declare titre?: string
+  declare etablissementId?: number
   declare jourSemaine?: string
   declare salle?: string
   declare dateDebut?: Date

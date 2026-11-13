@@ -14,6 +14,20 @@ export interface TerminalAttendanceUpdate {
   motifRefus?: string | null;
   avertissementPaiement?: string | null;
   situationFinanciere?: SituationFinanciere | null;
+  enseignantNonProgramme?: boolean;
+  heureArrivee?: string | null;
+  heureDepart?: string | null;
+  seancePointage?: {
+    action: "debut" | "fin";
+    seanceId: number;
+    cours: string;
+    heureDebutPrevue: string;
+    heureFinPrevue: string;
+    heureDebutReelle: string;
+    heureFinReelle: string | null;
+    heureReelle: string;
+    confirmationToken?: string;
+  };
   photo?: string;
   photoType?: "apprenant" | "enseignant" | "profile";
 }

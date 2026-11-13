@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
+import * as JwtDecode from 'jwt-decode';
 import { RolesUtilisateur } from 'src/app/data/enums/RolesUtilisateur';
 import { LocalStorageService } from '../services/local-storage.service';
 
@@ -20,9 +21,7 @@ export class SuperviseurGeneralGuard implements CanActivate {
     if (!token) return this.router.parseUrl('/auth/connexion');
 
     try {
-      const parts = token.split('.');
-      if (parts.length !== 3) return this.router.parseUrl('/');
-      const decoded = JSON.parse(atob(parts[1]));
+      const decoded = JwtDecode.default(token) as { role?: string };
       return decoded?.role === RolesUtilisateur.SUPERVISEUR_GENERAL
         ? true
         : this.router.parseUrl('/');
