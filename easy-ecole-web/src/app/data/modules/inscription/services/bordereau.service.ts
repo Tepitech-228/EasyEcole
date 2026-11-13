@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { Bordereau } from '../models/Bordereau.model';
+import { Utilisateur } from '../../auth/models/Utilisateur.model';
 
 @Injectable({
   providedIn: 'root'
@@ -25,7 +26,12 @@ export class BordereauService {
     return this.httpClient.get<{ data: Bordereau[], pagination: any }>(`${this.SERVICE_URL}`, { params: httpParams });
   }
 
-  getAImputer(params?: any): Observable<{ data: Bordereau[], pagination: any }> {
+  getAImputer(params?: any): Observable<{
+    data: Bordereau[],
+    pagination: any,
+    recouvreurs?: Pick<Utilisateur, 'id' | 'nom' | 'prenoms'>[],
+    auditeurs?: Pick<Utilisateur, 'id' | 'nom' | 'prenoms'>[]
+  }> {
     let httpParams = new HttpParams();
     if (params) {
       Object.keys(params).forEach(key => {
@@ -34,7 +40,12 @@ export class BordereauService {
         }
       });
     }
-    return this.httpClient.get<{ data: Bordereau[], pagination: any }>(`${environment.API_MODULES.INSCRIPTION}/finance/bordereaux-a-traiter`, { params: httpParams });
+    return this.httpClient.get<{
+      data: Bordereau[],
+      pagination: any,
+      recouvreurs?: Pick<Utilisateur, 'id' | 'nom' | 'prenoms'>[],
+      auditeurs?: Pick<Utilisateur, 'id' | 'nom' | 'prenoms'>[]
+    }>(`${environment.API_MODULES.INSCRIPTION}/finance/bordereaux-a-traiter`, { params: httpParams });
   }
 
   imputationPreview(id: string, montantPaiement: number, type?: string): Observable<any> {

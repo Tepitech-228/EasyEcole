@@ -35,6 +35,8 @@ const montantPaiementValide = (control: AbstractControl): ValidationErrors | nul
 })
 export class EsacomptaBordereauxPageComponent extends BaseComponentClass implements OnInit, OnDestroy {
   bordereaux: Bordereau[] = []
+  recouvreurs: { id?: string | number; nom?: string; prenoms?: string }[] = []
+  auditeurs: { id?: string | number; nom?: string; prenoms?: string }[] = []
   typesOperations: TypeOperationBordereau[] = []
   annees: AnneeAcademique[] = []
   niveaux: NiveauEtude[] = []
@@ -58,6 +60,8 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   selectedNiveauId = ''
   selectedParcoursId = ''
   selectedTypeOperationId = ''
+  selectedRecouvreurId = ''
+  selectedAuditeurId = ''
 
   niveauxFiltres: NiveauEtude[] = []
   parcoursFiltres: Parcours[] = []
@@ -143,6 +147,13 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     ]
     if (this.activeStatut === 'valide,en_saisie_comptable') {
       return [...base, { key: 'statut', label: 'Statut', width: '120px' }]
+    }
+    if (this.activeStatut === 'traite') {
+      return [
+        ...base,
+        { key: 'traiteur', label: 'Traiteur', width: '180px' },
+        { key: 'auditeur', label: 'Auditeur', width: '180px' },
+      ]
     }
     return base
   }
@@ -265,11 +276,23 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     if (this.selectedNiveauId) params.niveauEtudeId = this.selectedNiveauId
     if (this.selectedParcoursId) params.parcoursId = this.selectedParcoursId
     if (this.selectedTypeOperationId) params.typeOperationId = this.selectedTypeOperationId
+    if (this.activeStatut === 'traite' && this.selectedRecouvreurId) {
+      params.saisiParId = this.selectedRecouvreurId
+    }
+    if (this.activeStatut === 'traite' && this.selectedAuditeurId) {
+      params.valideParId = this.selectedAuditeurId
+    }
 
     this.bordereauService.getAImputer(params).subscribe({
       next: (res: any) => {
         if (requestId !== this.dataRequestId) return
         this.bordereaux = res.data || res
+        if (Array.isArray(res.recouvreurs)) {
+          this.recouvreurs = res.recouvreurs
+        }
+        if (Array.isArray(res.auditeurs)) {
+          this.auditeurs = res.auditeurs
+        }
         this.calculateKPIs()
         this.loading = false
         this.dataLoaded = true
@@ -336,6 +359,14 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
       this.compositionPreviewResult = null
       this.bourseInfo = null
     }
+  }
+
+  onRecouvreurChange(): void {
+    this.loadData()
+  }
+
+  onAuditeurChange(): void {
+    this.loadData()
   }
 
   // ── Vue dossier-view (design effectifs) ──
@@ -430,6 +461,8 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
       typeOperation: this.getTypeOperationLibelle(b.typeOperationId ?? null),
       montantBordereau: this.formatCurrency(b.montant),
       date: b.dateSoumission ? new Date(b.dateSoumission) : null,
+      traiteur: b.saisiPar ? `${b.saisiPar.prenoms || ''} ${b.saisiPar.nom || ''}`.trim() || '—' : '—',
+      auditeur: b.validePar ? `${b.validePar.prenoms || ''} ${b.validePar.nom || ''}`.trim() || '—' : '—',
     }
   }
 

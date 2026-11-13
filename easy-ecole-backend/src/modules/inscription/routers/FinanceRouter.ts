@@ -193,12 +193,23 @@ router.get('/suivi-recouvrements', [AuthSuperviseurGeneralOuAdmin], async (req: 
  *         name: typeOperationId
  *         schema:
  *           type: integer
+ *       - in: query
+ *         name: saisiParId
+ *         description: Filtrer par l'identifiant du recouvreur ayant saisi le paiement
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: valideParId
+ *         description: Filtrer par l'identifiant de l'auditeur ayant validé le bordereau
+ *         schema:
+ *           type: integer
  *     responses:
  *       200:
- *         description: Liste des bordereaux
+ *         description: Liste des bordereaux, avec les recouvreurs disponibles pour le statut traite
  */
 router.get('/bordereaux-a-traiter', [AuthEsacompta, CheckPermission('action.finance.bordereau.voir')], async (req: Request, res: Response) => {
   try {
+    const sequelize = DatabaseConnection.getInstance().sequelize;
     const siteScopeId = getFinanceSiteScopeId(req);
     if (!siteScopeId && !canAccessFinanceWithoutSite(req)) {
       return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
@@ -213,6 +224,7 @@ router.get('/bordereaux-a-traiter', [AuthEsacompta, CheckPermission('action.fina
         { association: Bordereau.associations.echeance, include: [Echeance.associations.dossierEtudiant] },
         Bordereau.associations.utilisateur,
         Bordereau.associations.validePar,
+        Bordereau.associations.saisiPar,
         Bordereau.associations.typeOperation
       ],
       order: [['dateValidation', 'ASC']]
@@ -233,6 +245,81 @@ router.get('/bordereaux-a-traiter', [AuthEsacompta, CheckPermission('action.fina
     options.where = {
       statut: statutsRecherches as any,
       ...(siteScopeId ? { etablissementId: siteScopeId } : {})
+    }
+
+    const recouvreursBordereaux = statutsRecherches.includes('traite')
+      ? await Bordereau.findAll({
+        attributes: ['saisiParId'],
+        where: {
+          statut: 'traite',
+          saisiParId: { [Op.ne]: null },
+          ...(siteScopeId ? { etablissementId: siteScopeId } : {}),
+        },
+        group: [sequelize.col(`${MODULE_MODEL_PREFIX}Bordereau.saisiParId`)],
+      })
+      : [];
+    const recouvreurIds = [...new Set(
+      recouvreursBordereaux
+        .map(row => Number(row.saisiParId))
+        .filter(id => Number.isSafeInteger(id) && id > 0)
+    )];
+    const recouvreurs = recouvreurIds.length > 0
+      ? await Utilisateur.findAll({
+        attributes: ['id', 'nom', 'prenoms'],
+        where: { id: { [Op.in]: recouvreurIds } },
+        order: [['nom', 'ASC'], ['prenoms', 'ASC']],
+      })
+      : [];
+    const auditeursBordereaux = statutsRecherches.includes('traite')
+      ? await Bordereau.findAll({
+        attributes: ['valideParId'],
+        where: {
+          statut: 'traite',
+          valideParId: { [Op.ne]: null },
+          ...(siteScopeId ? { etablissementId: siteScopeId } : {}),
+        },
+        group: [sequelize.col(`${MODULE_MODEL_PREFIX}Bordereau.valideParId`)],
+      })
+      : [];
+    const auditeurIds = [...new Set(
+      auditeursBordereaux
+        .map(row => Number(row.valideParId))
+        .filter(id => Number.isSafeInteger(id) && id > 0)
+    )];
+    const auditeurs = auditeurIds.length > 0
+      ? await Utilisateur.findAll({
+        attributes: ['id', 'nom', 'prenoms'],
+        where: { id: { [Op.in]: auditeurIds } },
+        order: [['nom', 'ASC'], ['prenoms', 'ASC']],
+      })
+      : [];
+
+    const saisiParIdQuery = req.query.saisiParId;
+    if (saisiParIdQuery !== undefined) {
+      const saisiParId = Number(saisiParIdQuery);
+      if (
+        typeof saisiParIdQuery !== 'string'
+        || !/^\d+$/.test(saisiParIdQuery)
+        || !Number.isSafeInteger(saisiParId)
+        || saisiParId <= 0
+      ) {
+        return res.status(400).json({ success: false, message: "Identifiant du recouvreur invalide" });
+      }
+      options.where = { ...options.where, saisiParId } as any;
+    }
+
+    const valideParIdQuery = req.query.valideParId;
+    if (valideParIdQuery !== undefined) {
+      const valideParId = Number(valideParIdQuery);
+      if (
+        typeof valideParIdQuery !== 'string'
+        || !/^\d+$/.test(valideParIdQuery)
+        || !Number.isSafeInteger(valideParId)
+        || valideParId <= 0
+      ) {
+        return res.status(400).json({ success: false, message: "Identifiant de l'auditeur invalide" });
+      }
+      options.where = { ...options.where, valideParId } as any;
     }
 
     const statutsComptablesActifs = statutsRecherches.filter(statut =>
@@ -349,6 +436,8 @@ router.get('/bordereaux-a-traiter', [AuthEsacompta, CheckPermission('action.fina
 
     return res.status(200).json({
       data: rows,
+      recouvreurs,
+      auditeurs,
       pagination: {
         page,
         limit,

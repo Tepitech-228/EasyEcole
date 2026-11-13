@@ -1,8 +1,8 @@
 import { Sequelize } from "sequelize";
 
 /**
- * ensureBordereauFinance — migrations légères idempotentes liées au type de
- * bordereau MIXTE, exécutées à chaque boot (dev ET prod) après les syncs.
+ * ensureBordereauFinance — migrations légères idempotentes du schéma bordereau,
+ * exécutées à chaque boot (dev ET prod) après les syncs.
  *
  * 1. ENUM `type` de ins_bordereaux : ajout de la valeur 'mixte' si absente
  *    (sequelize.sync() ne modifie JAMAIS un ENUM existant).
@@ -12,6 +12,7 @@ import { Sequelize } from "sequelize";
  * 4. Table `cpt_bordereau_echeance` (lettrages bordereau ↔ échéance) : créée
  *    si absente — indispensable car la prod ne fait pas de sync et l'imputation
  *    FIFO y écrit à chaque saisie.
+ * 5. Colonnes de saisie comptable utilisées par le suivi des recouvrements.
  */
 export async function ensureBordereauFinance(sequelize: Sequelize): Promise<void> {
     // 0. Table des lettrages (garantie, même en production sans sync)
@@ -77,7 +78,33 @@ export async function ensureBordereauFinance(sequelize: Sequelize): Promise<void
         console.warn('[ensureBordereauFinance] colonnes paiement ignorées:', err?.message)
     }
 
-    // 3. Type d'opération MIXTE
+    // 3. Colonnes de saisie comptable (compatibilité base existante)
+    try {
+        const [suiviCols] = await sequelize.query(
+            "SHOW COLUMNS FROM `ins_bordereaux` WHERE Field IN ('saisiParId', 'dateSaisieComptable')"
+        )
+        const colonnesExistantes = new Set(
+            (suiviCols as Array<{ Field: string }>).map(colonne => colonne.Field)
+        )
+
+        if (!colonnesExistantes.has('saisiParId')) {
+            await sequelize.query(
+                "ALTER TABLE `ins_bordereaux` ADD COLUMN `saisiParId` INT UNSIGNED NULL DEFAULT NULL"
+            )
+            console.log('[ensureBordereauFinance] colonne ins_bordereaux.saisiParId créée')
+        }
+
+        if (!colonnesExistantes.has('dateSaisieComptable')) {
+            await sequelize.query(
+                "ALTER TABLE `ins_bordereaux` ADD COLUMN `dateSaisieComptable` DATETIME NULL DEFAULT NULL"
+            )
+            console.log('[ensureBordereauFinance] colonne ins_bordereaux.dateSaisieComptable créée')
+        }
+    } catch (err: any) {
+        console.warn('[ensureBordereauFinance] colonnes de suivi ignorées:', err?.message)
+    }
+
+    // 4. Type d'opération MIXTE
     try {
         await sequelize.query(
             "INSERT INTO `ins_types_operations_bordereau` (`code`, `libelle`, `actif`, `createdAt`, `updatedAt`) " +

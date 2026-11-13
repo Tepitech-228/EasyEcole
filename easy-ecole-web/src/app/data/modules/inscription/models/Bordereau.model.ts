@@ -18,7 +18,9 @@ export class Bordereau {
   declare dateSoumission?: Date
   declare dateValidation?: Date | null
   declare datePaiement?: Date | null
+  declare dateSaisieComptable?: Date | null
   declare valideParId?: string | null
+  declare saisiParId?: string | number | null
   declare auditAssigneAId?: number | null
   declare auditAssigneLe?: Date | null
   declare auditPrisEnChargeLe?: Date | null
@@ -36,6 +38,7 @@ export class Bordereau {
   declare utilisateur?: Utilisateur
   declare demandeInscription?: DemandeInscription
   declare validePar?: Utilisateur
+  declare saisiPar?: Utilisateur
   declare quitus?: Quitus
 
   declare readonly createdAt?: Date
