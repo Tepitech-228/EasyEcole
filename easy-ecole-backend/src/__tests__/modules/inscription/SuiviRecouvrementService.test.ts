@@ -1,5 +1,6 @@
 import { construireSuiviRecouvrements, LigneRecouvrementAgregee } from '../../../modules/inscription/services/SuiviRecouvrementService';
 import { AuthSuperviseurGeneral } from '../../../core/middlewares/AuthSuperviseurGeneral';
+import { AuthSuperviseurGeneralOuAdmin } from '../../../core/middlewares/AuthSuperviseurGeneralOuAdmin';
 import { RolesUtilisateur } from '../../../core/enums/RolesUtilisateur';
 import { mockNext, mockRequest, mockResponse } from '../../helpers/express-mocks';
 
@@ -82,6 +83,32 @@ describe('construireSuiviRecouvrements', () => {
         success: false,
         message: 'Action réservée au Superviseur général',
       });
+      expect(next).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('AuthSuperviseurGeneralOuAdmin pour le suivi des recouvrements', () => {
+    it.each([RolesUtilisateur.SUPERVISEUR_GENERAL, RolesUtilisateur.ADMIN])('autorise le rôle %s', role => {
+      const req = mockRequest() as any;
+      req.utilisateurRole = role;
+      const res = mockResponse();
+      const next = mockNext();
+
+      AuthSuperviseurGeneralOuAdmin(req, res, next);
+
+      expect(next).toHaveBeenCalledTimes(1);
+      expect(res.status).not.toHaveBeenCalled();
+    });
+
+    it('refuse les autres rôles', () => {
+      const req = mockRequest() as any;
+      req.utilisateurRole = RolesUtilisateur.ESA_COMPTA;
+      const res = mockResponse();
+      const next = mockNext();
+
+      AuthSuperviseurGeneralOuAdmin(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(403);
       expect(next).not.toHaveBeenCalled();
     });
   });

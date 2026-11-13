@@ -3,10 +3,10 @@ import { ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/ro
 import { RouterTestingModule } from '@angular/router/testing';
 import { RolesUtilisateur } from 'src/app/data/enums/RolesUtilisateur';
 import { LocalStorageService } from '../services/local-storage.service';
-import { SuperviseurGeneralGuard } from './superviseur-general.guard';
+import { SuiviRecouvrementGuard } from './suivi-recouvrement.guard';
 
-describe('SuperviseurGeneralGuard', () => {
-  let guard: SuperviseurGeneralGuard;
+describe('SuiviRecouvrementGuard', () => {
+  let guard: SuiviRecouvrementGuard;
   let localStorage: jasmine.SpyObj<LocalStorageService>;
   let router: Router;
 
@@ -20,11 +20,11 @@ describe('SuperviseurGeneralGuard', () => {
     TestBed.configureTestingModule({
       imports: [RouterTestingModule],
       providers: [
-        SuperviseurGeneralGuard,
+        SuiviRecouvrementGuard,
         { provide: LocalStorageService, useValue: localStorage }
       ]
     });
-    guard = TestBed.inject(SuperviseurGeneralGuard);
+    guard = TestBed.inject(SuiviRecouvrementGuard);
     router = TestBed.inject(Router);
   });
 
@@ -34,8 +34,14 @@ describe('SuperviseurGeneralGuard', () => {
     expect(guard.canActivate({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot)).toBeTrue();
   });
 
-  it('redirects other roles to the home page', () => {
+  it('allows the admin role', () => {
     localStorage.get.and.returnValue(tokenForRole(RolesUtilisateur.ADMIN));
+
+    expect(guard.canActivate({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot)).toBeTrue();
+  });
+
+  it('redirects other roles to the home page', () => {
+    localStorage.get.and.returnValue(tokenForRole(RolesUtilisateur.ESA_COMPTA));
 
     expect(guard.canActivate({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot)).toEqual(router.parseUrl('/'));
   });

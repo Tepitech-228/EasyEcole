@@ -7,7 +7,7 @@ import { LocalStorageService } from '../services/local-storage.service';
 @Injectable({
   providedIn: 'root'
 })
-export class SuperviseurGeneralGuard implements CanActivate {
+export class SuiviRecouvrementGuard implements CanActivate {
   constructor(
     private localStorageService: LocalStorageService,
     private router: Router
@@ -22,9 +22,11 @@ export class SuperviseurGeneralGuard implements CanActivate {
 
     try {
       const decoded = JwtDecode.default(token) as { role?: string };
-      return decoded?.role === RolesUtilisateur.SUPERVISEUR_GENERAL
-        ? true
-        : this.router.parseUrl('/');
+      const role = decoded?.role;
+      if (role === RolesUtilisateur.SUPERVISEUR_GENERAL || role === RolesUtilisateur.ADMIN) {
+        return true;
+      }
+      return this.router.parseUrl('/');
     } catch {
       return this.router.parseUrl('/');
     }

@@ -13,7 +13,7 @@ import { TypeOperationBordereau } from "../models/TypeOperationBordereau";
 import { PaiementInscription } from "../models/PaiementInscription";
 import { TypesPaiement } from "../../../core/enums/TypesPaiement";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
-import { AuthSuperviseurGeneral } from "../../../core/middlewares/AuthSuperviseurGeneral";
+import { AuthSuperviseurGeneralOuAdmin } from "../../../core/middlewares/AuthSuperviseurGeneralOuAdmin";
 import { AuthEsacompta } from "../../../core/middlewares/AuthEsacompta";
 import {
   construireSuiviRecouvrements,
@@ -78,7 +78,7 @@ const parseDateOnlyUtc = (value: string): Date | null => {
   return Number.isNaN(date.getTime()) || dateOnlyUtc(date) !== value ? null : date;
 };
 
-router.get('/suivi-recouvrements', [AuthSuperviseurGeneral], async (req: Request, res: Response) => {
+router.get('/suivi-recouvrements', [AuthSuperviseurGeneralOuAdmin], async (req: Request, res: Response) => {
   try {
     const dateFinQuery = req.query.dateFin;
     const dateDebutQuery = req.query.dateDebut;
