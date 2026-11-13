@@ -862,11 +862,11 @@
 }
 
 .pointage-scanned-photo-wrapper {
-  width: 280px;
-  height: 280px;
+  width: min(413px, 100%);
+  aspect-ratio: 413 / 531;
   margin: 0 auto 0.8rem;
   overflow: hidden;
-  border-radius: 50%;
+  border-radius: 18px;
   box-shadow: 0 0 0 5px #fff, 0 0 0 9px #047857, 0 12px 28px rgba(4, 120, 87, 0.28);
 }
 
@@ -1328,7 +1328,7 @@
   .scanner-wrapper { max-width: 100%; }
   .scanner-frame { width: 180px; height: 180px; }
   .pointage-scanned-actions, .pointage-finance { padding-right: 1.1rem; padding-left: 1.1rem; }
-  .pointage-scanned-photo-wrapper { width: 220px; height: 220px; }
+  .pointage-scanned-photo-wrapper { width: min(413px, 100%); }
   .pointage-success-person .pointage-success-photo { width: 160px; height: 160px; }
   .pointage-self-grid, .pointage-finance-grid { grid-template-columns: 1fr; }
   .pointage-scanned-head h4 { overflow-wrap: anywhere; }
