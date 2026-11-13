@@ -1,34 +1,42 @@
-<div class="cartes-page-wrapper px-4 sm:px-6 lg:px-8 py-8">
-  <nav class="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.05em] text-[#4c4546] mb-4 print-hidden">
-    <a class="hover:text-black transition-colors" href="#">Pôle pédagogique</a>
-    <span class="material-symbols-outlined text-[14px]">chevron_right</span>
-    <span class="text-black">Cartes étudiantes</span>
-  </nav>
+<div class="cartes-page-wrapper">
+  <header class="cards-hero print-hidden">
+    <div class="cards-hero-copy">
+      <span class="cards-eyebrow"><span aria-hidden="true"></span> ESPACE PÉDAGOGIQUE</span>
+      <h1>Cartes étudiantes</h1>
+      <p>Personnalisez les informations et préparez l’impression des cartes.</p>
+    </div>
+    <div class="cards-hero-stats" aria-label="Résumé">
+      <div>
+        <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+        <span><strong>{{ apprenants.length }}</strong><small>Étudiants</small></span>
+      </div>
+      <div>
+        <span class="material-symbols-outlined" aria-hidden="true">badge</span>
+        <span><strong>{{ selectedApprenant || cardMode === 'manual' ? '1' : '—' }}</strong><small>Carte sélectionnée</small></span>
+      </div>
+    </div>
+  </header>
 
-  <div class="flex justify-between items-start mb-6 print-hidden">
-    <app-header-title title="Cartes étudiantes" subtitle="Configurer la mise en page, regrouper les étudiants et personnaliser les champs"></app-header-title>
-  </div>
-
-  <div class="flex items-center gap-1 bg-[#EEEEEE] rounded p-1 mb-6 w-fit print-hidden">
-    <button type="button" (click)="setMode('picker')" [class.active]="cardMode === 'picker'" class="mode-tab">
-      <span class="material-symbols-outlined text-[14px] mr-1.5 align-text-bottom">group</span> Sélection
+  <div class="cards-mode-switch print-hidden" role="tablist" aria-label="Mode de création de carte">
+    <button type="button" role="tab" [attr.aria-selected]="cardMode === 'picker'" (click)="setMode('picker')" [class.active]="cardMode === 'picker'" class="mode-tab">
+      <span class="material-symbols-outlined" aria-hidden="true">group</span> Sélection d’un étudiant
     </button>
-    <button type="button" (click)="setMode('manual')" [class.active]="cardMode === 'manual'" class="mode-tab">
-      <span class="material-symbols-outlined text-[14px] mr-1.5 align-text-bottom">edit_note</span> Saisie manuelle
+    <button type="button" role="tab" [attr.aria-selected]="cardMode === 'manual'" (click)="setMode('manual')" [class.active]="cardMode === 'manual'" class="mode-tab">
+      <span class="material-symbols-outlined" aria-hidden="true">edit_note</span> Saisie manuelle
     </button>
   </div>
 
   <app-loading-spinner *ngIf="loading"></app-loading-spinner>
 
-  <div *ngIf="!loading && error" class="mb-6 p-4 bg-red-50 border border-red-200 rounded flex items-center gap-3">
+  <div *ngIf="!loading && error" class="cards-alert cards-alert--error print-hidden" role="alert">
     <div>
       <p class="text-sm font-medium text-red-800">Erreur de chargement</p>
       <p class="text-sm text-red-600">Impossible de charger la liste des étudiants.</p>
     </div>
-    <button (click)="loadApprenants()" class="ml-auto px-3 py-1.5 text-sm font-medium text-red-700 bg-red-100 rounded hover:bg-red-200 transition-colors">Réessayer</button>
+    <button type="button" (click)="loadApprenants()" class="cards-button cards-button--soft">Réessayer</button>
   </div>
 
-  <div *ngIf="cardMode === 'picker' && !loading && !error && apprenants.length == 0" class="flex flex-col items-center py-20 bg-white rounded border border-[#E0E0E0]">
+  <div *ngIf="cardMode === 'picker' && !loading && !error && apprenants.length == 0" class="cards-empty print-hidden">
     <div class="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
       <svg class="h-8 w-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -37,20 +45,21 @@
     <p class="text-gray-400 text-sm">Aucun étudiant trouvé</p>
   </div>
 
-  <div *ngIf="cardMode === 'manual' || !!selectedApprenant" class="grid grid-cols-1 xl:grid-cols-12 gap-6">
-    <div class="xl:col-span-5 flex flex-col gap-4 print-hidden">
-      <div class="bg-white border border-[#E0E0E0] rounded-xl p-4 shadow-sm">
-        <div class="flex items-center justify-between mb-4">
+  <div *ngIf="cardMode === 'manual' || !!selectedApprenant" class="cards-workspace">
+    <div class="cards-controls print-hidden">
+      <section class="surface-card configuration-card">
+        <div class="panel-heading">
           <div>
-            <h3 class="text-[11px] font-semibold uppercase tracking-[0.05em] text-black">Configuration de la carte</h3>
-            <p class="text-xs text-[#4c4546] mt-1">Ajoutez des champs, changez l’ordre et regroupez les étudiants par salle ou filière.</p>
+            <span class="panel-kicker">PERSONNALISATION</span>
+            <h2>Configuration de la carte</h2>
+            <p>Choisissez les informations à afficher et organisez les étudiants.</p>
           </div>
-          <span class="material-symbols-outlined text-[18px] text-[#4c4546]">tune</span>
+          <span class="panel-icon material-symbols-outlined" aria-hidden="true">tune</span>
         </div>
 
-        <div class="mb-4">
-          <p class="form-label mb-2">Regrouper par</p>
-          <div class="flex flex-wrap gap-2">
+        <div class="config-section">
+          <p class="form-label">Regrouper les étudiants par</p>
+          <div class="chip-list">
             <button type="button" (click)="setGroupBy('none')" [class.active]="groupBy === 'none'" class="chip">Aucun</button>
             <button type="button" (click)="setGroupBy('salle')" [class.active]="groupBy === 'salle'" class="chip">Salle</button>
             <button type="button" (click)="setGroupBy('filiere')" [class.active]="groupBy === 'filiere'" class="chip">Filière</button>
@@ -59,51 +68,67 @@
           </div>
         </div>
 
-        <div class="mb-4">
-          <p class="form-label mb-2">Champs visibles</p>
-          <div class="grid grid-cols-2 gap-2">
+        <div class="config-section">
+          <p class="form-label">Champs visibles sur la carte</p>
+          <div class="field-options">
             <button type="button" *ngFor="let option of fieldOptions" (click)="toggleField(option.key)" class="field-chip" [class.selected]="selectedFields.includes(option.key)">
               {{ option.label }}
             </button>
           </div>
         </div>
 
-        <div>
-          <p class="form-label mb-2">Champs personnalisés</p>
-          <div class="flex gap-2 mb-2">
+        <div class="config-section">
+          <p class="form-label">Champs personnalisés</p>
+          <div class="custom-field-add">
             <input [(ngModel)]="customFieldInput" type="text" class="form-input" placeholder="Ex. Téléphone parent">
-            <button type="button" (click)="addCustomField()" class="px-3 py-2 bg-black text-white text-[11px] uppercase rounded">Ajouter</button>
+            <button type="button" (click)="addCustomField()" class="cards-button cards-button--primary">
+              <span class="material-symbols-outlined" aria-hidden="true">add</span> Ajouter
+            </button>
           </div>
-          <div *ngFor="let field of customFields; let i = index" class="flex gap-2 mb-2">
+          <div *ngFor="let field of customFields; let i = index" class="custom-field-row">
             <input type="text" [value]="field.label" (input)="updateCustomFieldLabel(i, $event)" class="form-input" placeholder="Libellé">
             <input type="text" [value]="field.value" (input)="updateCustomFieldValue(i, $event)" class="form-input" placeholder="Valeur">
-            <button type="button" (click)="removeCustomField(i)" class="px-2 text-red-600">✕</button>
+            <button type="button" (click)="removeCustomField(i)" class="remove-field-button" [attr.aria-label]="'Supprimer le champ ' + field.label">
+              <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+            </button>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div *ngIf="cardMode === 'picker' && apprenants.length > 0" class="bg-white border border-[#E0E0E0] rounded-xl p-4 shadow-sm">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-[11px] font-semibold uppercase tracking-[0.05em] text-black">Étudiants à imprimer</h3>
-          <span class="text-[11px] text-[#4c4546]">{{ apprenants.length }} au total</span>
+      <section *ngIf="cardMode === 'picker' && apprenants.length > 0" class="surface-card students-card">
+        <div class="panel-heading panel-heading--compact">
+          <div>
+            <span class="panel-kicker">SÉLECTION</span>
+            <h2>Étudiants</h2>
+          </div>
+          <span class="count-pill">{{ apprenants.length }}</span>
         </div>
-        <div *ngFor="let group of getGroupedApprenants()" class="mb-4">
-          <div class="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#0F7A45] mb-2">{{ group.label }}</div>
-          <div class="grid grid-cols-2 gap-3">
-            <div *ngFor="let apprenant of group.apprenants" (click)="onPreviewClick(apprenant)" class="rounded-lg border border-[#E0E0E0] p-2 cursor-pointer hover:border-[#0F7A45]" [class.border-[#0F7A45]]="isSelected(apprenant)">
-              <div class="font-semibold text-sm truncate">{{ apprenant.utilisateur?.nom }} {{ apprenant.utilisateur?.prenoms }}</div>
-              <div class="text-[11px] text-[#4c4546] truncate">{{ getMatricule(apprenant) }}</div>
-            </div>
+        <div *ngFor="let group of getGroupedApprenants()" class="student-group">
+          <h3 class="student-group-title">{{ group.label }} <span>{{ group.apprenants.length }}</span></h3>
+          <div class="student-list">
+            <button type="button" *ngFor="let apprenant of group.apprenants"
+              (click)="onPreviewClick(apprenant)" class="student-option"
+              [class.selected]="isSelected(apprenant)" [attr.aria-pressed]="isSelected(apprenant)">
+              <img [src]="getPhotoSrc(apprenant)" (error)="onPhotoError($event, apprenant)" alt="" class="student-option-photo">
+              <span class="student-option-details">
+                <strong>{{ apprenant.utilisateur?.nom }} {{ apprenant.utilisateur?.prenoms }}</strong>
+                <small>{{ getMatricule(apprenant) }}</small>
+              </span>
+              <span class="material-symbols-outlined student-option-check" aria-hidden="true">check_circle</span>
+            </button>
           </div>
         </div>
-      </div>
+      </section>
 
-      <form *ngIf="cardMode === 'manual'" [formGroup]="manualForm" class="bg-white p-6 border border-[#E0E0E0] rounded shadow-sm">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-[11px] font-semibold uppercase tracking-[0.05em] text-black">Génération manuelle</h3>
-          <span class="material-symbols-outlined text-[18px] text-[#4c4546]">edit_note</span>
+      <form *ngIf="cardMode === 'manual'" [formGroup]="manualForm" class="surface-card manual-form">
+        <div class="panel-heading panel-heading--compact">
+          <div>
+            <span class="panel-kicker">CRÉATION LIBRE</span>
+            <h2>Informations de l’étudiant</h2>
+          </div>
+          <span class="panel-icon material-symbols-outlined" aria-hidden="true">edit_note</span>
         </div>
-        <div class="grid grid-cols-2 gap-3">
+        <div class="manual-fields-grid">
           <label class="block"><span class="form-label">Nom</span><input formControlName="nom" type="text" class="form-input"></label>
           <label class="block"><span class="form-label">Prénoms</span><input formControlName="prenoms" type="text" class="form-input"></label>
           <label class="block"><span class="form-label">Matricule</span><input formControlName="matricule" type="text" class="form-input"></label>
@@ -120,7 +145,7 @@
           <div class="col-span-2">
             <span class="form-label">Photo (optionnelle)</span>
             <div class="flex items-center gap-3">
-              <label class="cursor-pointer inline-flex items-center justify-center gap-2 px-3 py-2 bg-transparent border border-black text-black rounded font-semibold text-[11px] uppercase tracking-[0.05em] hover:bg-[#EEEEEE] transition-all">
+              <label class="photo-upload">
                 <span class="material-symbols-outlined text-[16px]">upload</span> Choisir une photo
                 <input type="file" accept="image/*" class="hidden" (change)="onManualPhotoSelected($event)">
               </label>
@@ -130,18 +155,25 @@
         </div>
       </form>
 
-      <div class="grid grid-cols-2 gap-3">
-        <button (click)="printCard()" class="bg-black text-white py-2.5 rounded border border-black font-semibold text-[11px] uppercase tracking-[0.05em] hover:opacity-90 transition-all flex items-center justify-center gap-2">
-          <span class="material-symbols-outlined text-[18px]">print</span> IMPRIMER
+      <div class="card-actions">
+        <button type="button" (click)="printCard()" class="cards-button cards-button--primary">
+          <span class="material-symbols-outlined" aria-hidden="true">print</span> Imprimer la carte
         </button>
-        <button (click)="toggleFlip()" class="bg-transparent text-black py-2.5 rounded border border-black font-semibold text-[11px] uppercase tracking-[0.05em] hover:bg-[#EEEEEE] transition-all flex items-center justify-center gap-2">
-          <span class="material-symbols-outlined text-[18px]">sync</span> PIVOTER
+        <button type="button" (click)="toggleFlip()" class="cards-button cards-button--secondary">
+          <span class="material-symbols-outlined" aria-hidden="true">sync</span> {{ cardFlipped ? 'Voir le recto' : 'Voir le verso' }}
         </button>
       </div>
     </div>
 
-    <div class="xl:col-span-7 card-column flex flex-col items-center justify-center min-h-[500px]">
-      <div class="lg:sticky lg:top-6 w-full max-w-[560px] flex flex-col items-center">
+    <section class="card-column preview-panel">
+      <div class="preview-heading print-hidden">
+        <div>
+          <span class="panel-kicker">APERÇU EN DIRECT</span>
+          <h2>Votre carte étudiante</h2>
+        </div>
+        <span class="preview-status"><span></span>{{ card.badge }}</span>
+      </div>
+      <div class="preview-card-wrap">
         <div class="card-container w-full max-w-[500px] aspect-[1.586/1] relative">
           <div class="card-inner w-full h-full relative cursor-pointer transition-transform duration-700 preserve-3d shadow-xl rounded-2xl" [class.card-flip]="cardFlipped" (click)="toggleFlip()">
 
@@ -368,8 +400,8 @@
             </div>
           </div>
         </div>
-        <p class="mt-6 text-[#4c4546] text-[11px] font-semibold uppercase tracking-[0.05em] animate-pulse print-hidden">CLIQUEZ SUR LA CARTE POUR LA RETOURNER</p>
+        <p class="flip-hint print-hidden"><span class="material-symbols-outlined" aria-hidden="true">touch_app</span> Cliquez sur la carte pour la retourner</p>
       </div>
-    </div>
+    </section>
   </div>
 </div>

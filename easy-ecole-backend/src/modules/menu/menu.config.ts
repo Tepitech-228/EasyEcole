@@ -27,37 +27,6 @@ export interface MenuPoleConfig {
 
 export const MENU_CONFIG: MenuPoleConfig[] = [
     {
-        label: 'Stockage des fichiers',
-        icon: 'folder_open',
-        allowedRoles: [
-            RolesUtilisateur.ADMIN,
-            RolesUtilisateur.SUPERVISEUR_GENERAL,
-            RolesUtilisateur.COMITE_ORIENTATION,
-            RolesUtilisateur.ESA_COMPTA,
-            RolesUtilisateur.CABINET_COMPTABLE
-        ],
-        groups: [
-            {
-                label: 'Documents',
-                items: [
-                    {
-                        label: 'Importer / exporter',
-                        route: '/ged/storage-files',
-                        icon: 'inventory_2',
-                        allowedRoles: [
-                            RolesUtilisateur.ADMIN,
-                            RolesUtilisateur.SUPERVISEUR_GENERAL,
-                            RolesUtilisateur.COMITE_ORIENTATION,
-                            RolesUtilisateur.ESA_COMPTA,
-                            RolesUtilisateur.CABINET_COMPTABLE
-                        ],
-                        roleRestricted: true
-                    }
-                ]
-            }
-        ]
-    },
-    {
         label: 'Pedagogique',
         icon: 'school',
         allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN, RolesUtilisateur.COMITE_ORIENTATION, RolesUtilisateur.SUPERVISEUR_GENERAL, RolesUtilisateur.SURVEILLANT],

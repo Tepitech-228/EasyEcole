@@ -870,12 +870,9 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       }
     }
 
-    // NOUVEAU : contrôle « premier bordereau ≥ frais d'inscription »
-    // Un premier bordereau dont le montant est inférieur aux frais d'inscription
-    // de la session est rejeté purement et simplement à la saisie ESA.
-    // Pour un bordereau MIXTE auto-composé, la composition garantit déjà que
-    // inscription = reste à payer. Ce garde-fou ne sert qu'en composition explicite.
-    if (estPremierBordereau && composition && composition.length > 0) {
+    // Le montant total du premier bordereau doit couvrir les frais d'inscription,
+    // y compris si le recouvreur sélectionne une opération mixte ou scolarité.
+    if (estPremierBordereau) {
       const demandeGuard = await DemandeInscription.findOne({
         where: { utilisateurId: bordereau.utilisateurId },
         include: [{ association: DemandeInscription.associations.session, include: [Session.associations.fraisInscription] }],
@@ -883,13 +880,14 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       })
       const fraisInscriptionSessionGuard = (demandeGuard?.session?.fraisInscription || [])
         .reduce((sum, f) => sum + (f.montant || 0), 0)
-      const montantPartInscription = estMixte
-        ? composition.filter(c => c.type === 'inscription').reduce((s, c) => s + c.montant, 0)
-        : montantPaiement
-      if (montantPartInscription < fraisInscriptionSessionGuard) {
+      if (montantPaiement <= fraisInscriptionSessionGuard) {
         await transaction.rollback()
-        console.log(_rid, 'ERREUR 400: Part inscription', montantPartInscription, '< frais inscription session', fraisInscriptionSessionGuard)
-        return res.status(400).json({ success: false, message: `La part inscription (${montantPartInscription}) est inférieure aux frais d'inscription de la session (${fraisInscriptionSessionGuard}). Le premier versement doit au minimum couvrir les frais d'inscription.` })
+        console.log(_rid, 'ERREUR 400: Montant du premier paiement', montantPaiement, '< frais inscription session', fraisInscriptionSessionGuard)
+        return res.status(400).json({
+          success: false,
+          code: 'FRAIS_INSCRIPTION_INSUFFISANTS',
+          message: `Les frais saisis ne sont pas conformes. Veuillez saisir une somme supérieure aux frais d'inscription (${fraisInscriptionSessionGuard} FCFA).`
+        })
       }
     }
 

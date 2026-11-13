@@ -4,6 +4,13 @@ import { MENU_CONFIG } from '../../../modules/menu/menu.config'
 import { RolesUtilisateur } from '../../../core/enums/RolesUtilisateur'
 
 describe('ROLE_PERMISSIONS d’administration', () => {
+  it('ne propose pas le pôle Stockage des fichiers dans le menu des profils', () => {
+    expect(MENU_CONFIG.some(pole => pole.label === 'Stockage des fichiers')).toBe(false)
+    expect(MENU_CONFIG.flatMap(pole => pole.groups)
+      .flatMap(group => group.items)
+      .some(item => item.route === '/ged/storage-files')).toBe(false)
+  })
+
   it('donne accès aux écrans de rôles et permissions aux profils administrateurs', () => {
     expect(ROLE_PERMISSIONS['Super Admin']).toEqual(expect.arrayContaining([
       'menu.administration',

@@ -655,6 +655,11 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
         this.loadData()
       },
       error: (err) => {
+        if (err?.error?.code === 'FRAIS_INSCRIPTION_INSUFFISANTS') {
+          this.toastService.error("Les frais saisis ne sont pas conformes. Veuillez saisir une somme supérieure aux frais d'inscription.")
+          return
+        }
+
         // Extraire le message d'erreur depuis toutes les structures possibles
         let msg = 'Erreur lors de la saisie comptable'
         try {
