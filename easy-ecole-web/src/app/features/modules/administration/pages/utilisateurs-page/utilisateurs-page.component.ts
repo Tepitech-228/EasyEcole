@@ -22,6 +22,7 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
   showModal: boolean = false
   editingUser: any = null
   formData: any = {}
+  readonly diplomesPrepareOptions = ['BTS', 'LICENCE', 'MASTER']
   selectedPhoto: File | null = null
   saving: boolean = false
   availableSites: SiteUtilisateur[] = []
@@ -251,10 +252,22 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
         if (this.staffRoles.includes(role)) profile = user.personnelAdministratif
     }
     if (!profile) return {}
-    return {
+    const result = {
       ...profile,
       dateNaissance: this.dateForInput(profile.dateNaissance),
     }
+    if (role === RolesUtilisateur.APPRENANT) {
+      result.diplomePrepare = this.normaliserDiplomePrepare(profile.diplomePrepare)
+    }
+    return result
+  }
+
+  private normaliserDiplomePrepare(diplome?: string | null): string {
+    const valeur = diplome?.trim().toLocaleUpperCase() || ''
+    if (valeur.includes('BTS') || valeur.includes('BREVET DE TECHNICIEN SUPERIEUR')) return 'BTS'
+    if (valeur.includes('LICENCE')) return 'LICENCE'
+    if (valeur.includes('MASTER')) return 'MASTER'
+    return ''
   }
 
   private dateForInput(value: string | Date | null | undefined): string {

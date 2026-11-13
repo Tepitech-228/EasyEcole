@@ -69,7 +69,7 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
     { label: 'Autre', value: 'Autre' },
   ]
 
-  readonly diplomesPrepareOptions = ['LICENCE', 'MASTER']
+  readonly diplomesPrepareOptions = ['BTS', 'LICENCE', 'MASTER']
 
   onboardingMode: boolean = false
 
@@ -607,6 +607,7 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
     if (!valeur) return null
 
     const normalisee = valeur.toLocaleUpperCase()
+    if (normalisee.includes('BTS') || normalisee.includes('BREVET DE TECHNICIEN SUPERIEUR')) return 'BTS'
     if (normalisee.includes('LICENCE')) return 'LICENCE'
     if (normalisee.includes('MASTER')) return 'MASTER'
     return null
@@ -641,7 +642,7 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
       numeroPiece: new FormControl(this.apprenant?.numeroPiece ?? null, []),
       matriculeEtudiant: new FormControl(this.apprenant?.matriculeEtudiant ?? null,
         this.exigerMatriculeEtudiant ? [Validators.required, Validators.maxLength(64)] : [Validators.maxLength(64)]),
-      statutHandicap: new FormControl(this.apprenant?.statutHandicap ?? false, [Validators.required]),
+      statutHandicap: new FormControl(this.apprenant?.statutHandicap ?? null, [Validators.required]),
       natureHandicap: new FormControl(this.apprenant?.natureHandicap ?? null, []),
       statutEtudiant: new FormControl(this.apprenant?.statutEtudiant ?? 'nouveau', [Validators.required]),
       periode: new FormControl(this.apprenant?.periode ?? null, [Validators.required]),
@@ -661,7 +662,7 @@ export class MonProfilPageComponent extends BaseComponentClass implements OnInit
         pays: new FormControl(this.apprenant?.adresse?.pays ?? null, [Validators.required]),
       }),
       informationsSalarie: new FormGroup({
-        estSalarie: new FormControl(this.apprenant?.informationsSalarie?.estSalarie ?? false, [Validators.required]),
+        estSalarie: new FormControl(this.apprenant?.informationsSalarie?.estSalarie ?? null, [Validators.required]),
         profession: new FormControl(this.apprenant?.informationsSalarie?.profession ?? null, []),
         entreprise: new FormControl(this.apprenant?.informationsSalarie?.entreprise ?? null, []),
       }),
