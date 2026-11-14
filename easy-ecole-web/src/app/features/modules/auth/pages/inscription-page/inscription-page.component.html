@@ -47,7 +47,12 @@
                     </label>
                 </div>
                 <div *ngIf="!identifiantSuggestionsLoading && identifiantSuggestionsError" class="mt-2 text-sm text-red-600">
-                    Aucune proposition n’est disponible pour le moment.
+                    <ng-container *ngIf="identifiantSuggestionsRateLimited; else suggestionsUnavailable">
+                        Trop de demandes ont été envoyées récemment. Patientez un instant avant de réessayer.
+                    </ng-container>
+                    <ng-template #suggestionsUnavailable>
+                        Aucune proposition n’est disponible pour le moment.
+                    </ng-template>
                     <button type="button" class="underline" (click)="demanderSuggestions()">Réessayer</button>
                 </div>
                 <div *ngIf="!identifiantSuggestionsLoading && identifiantSuggestions.length === 0 && !identifiantSuggestionsError

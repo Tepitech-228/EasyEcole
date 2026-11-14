@@ -86,6 +86,7 @@ router
      *             required: [confirmationToken]
      *             properties:
      *               confirmationToken: { type: string }
+     *               motifDepart: { type: string, maxLength: 500, description: Obligatoire si le départ précède l'heure de fin prévue }
      *     responses:
      *       200:
      *         description: Fin du cours et départ journalier enregistrés

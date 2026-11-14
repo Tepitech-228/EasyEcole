@@ -8,6 +8,7 @@ export class Presence {
   declare heureFin?: Date
   declare signature?: string
   declare signedAt?: Date
+  declare auteurEnseignantId?: string | null
 
   declare listePresenceId?: string
   declare listePresence?: ListePresence

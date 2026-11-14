@@ -8,7 +8,14 @@ jest.mock('../../../modules/inscription/models/ListePresence', () => {
   ListePresence.count = jest.fn()
   ListePresence.findAndCountAll = jest.fn()
   ListePresence.findByPk = jest.fn()
-  ListePresence.associations = { cours: 'cours', enseignant: 'enseignant', presences: 'presences' }
+  ListePresence.associations = {
+    cours: 'cours',
+    enseignant: 'enseignant',
+    presences: 'presences',
+    parcours: 'parcours',
+    niveauEtude: 'niveauEtude',
+    etablissement: 'etablissement',
+  }
   return { ListePresence }
 })
 
@@ -24,10 +31,25 @@ jest.mock('../../../modules/inscription/models/Cours', () => ({
 
 jest.mock('../../../modules/auth/models/Enseignant', () => ({
   Enseignant: {
+    findOne: jest.fn(),
     associations: {
       utilisateur: 'utilisateur'
     }
   }
+}))
+
+jest.mock('../../../modules/inscription/services/CahierCohorteService', () => ({
+  __esModule: true,
+  default: {
+    trouverCohortes: jest.fn(),
+    conditionsPourCohortes: jest.fn((cohortes: any[]) => cohortes.map(({ parcoursId, niveauEtudeId, etablissementId }) => ({
+      parcoursId,
+      niveauEtudeId,
+      etablissementId,
+    }))),
+    enseignantAssocieAuCahier: jest.fn(),
+    trouverCoursIds: jest.fn(),
+  },
 }))
 
 jest.mock('../../../modules/inscription/models/Parcours', () => ({
@@ -48,11 +70,26 @@ jest.mock('../../../modules/inscription/models/Presence', () => ({
 
 jest.mock('../../../modules/inscription/models/CoursParticipant', () => ({
   CoursParticipant: {
-    findAll: jest.fn()
+    findAll: jest.fn(),
+    associations: {
+      utilisateur: 'utilisateur',
+      cursusApprenant: 'cursusApprenant',
+    },
   }
 }))
 
+jest.mock('../../../modules/auth/models/Utilisateur', () => ({
+  Utilisateur: {
+    associations: {
+      apprenant: 'apprenant',
+    },
+  },
+}))
+
 const { ListePresence } = require('../../../modules/inscription/models/ListePresence')
+const { Enseignant } = require('../../../modules/auth/models/Enseignant')
+const { CoursParticipant } = require('../../../modules/inscription/models/CoursParticipant')
+const CahierCohorteService = require('../../../modules/inscription/services/CahierCohorteService').default
 import Ctrl from '../../../modules/inscription/controllers/ListePresenceController'
 
 beforeEach(() => {
@@ -79,11 +116,34 @@ describe('getAllListesPresences', () => {
               { association: 'parcours', include: ['niveauEtude'] }
             ]
           },
-          { association: 'enseignant', include: ['utilisateur'] }
+          { association: 'enseignant', include: ['utilisateur'] },
+          { association: 'parcours', include: ['niveauEtude'] },
+          'niveauEtude',
+          'etablissement',
         ]
       })
     )
     expect(res.send).toHaveBeenCalledWith(mockData)
+  })
+
+  it('inclut les cahiers partagés des cohortes enseignées', async () => {
+    const cohortes = [{ parcoursId: 4, niveauEtudeId: 2, etablissementId: 3 }]
+    Enseignant.findOne.mockResolvedValue({ id: 9 })
+    CahierCohorteService.trouverCohortes.mockResolvedValue(cohortes)
+    ;(ListePresence.findAll as jest.Mock).mockResolvedValue([])
+    const req = mockRequest({ utilisateurRole: 'enseignant', utilisateurId: 100 } as any)
+    const res = mockResponse()
+
+    await Ctrl.getAllListesPresences(req, res)
+
+    expect(ListePresence.findAll).toHaveBeenCalledWith(expect.objectContaining({
+      where: {
+        [require('sequelize').Op.or]: [
+          { enseignantId: 9 },
+          { parcoursId: 4, niveauEtudeId: 2, etablissementId: 3 },
+        ],
+      },
+    }))
   })
 })
 
@@ -91,7 +151,7 @@ describe('getListePresence', () => {
   it('should return liste de presence with presences includes', async () => {
     const req = mockRequest({ params: { id: '1' } })
     const res = mockResponse()
-    const mockData = { id: 1 }
+    const mockData = { id: 1, toJSON: () => ({ id: 1 }) }
     ;(ListePresence.findOne as jest.Mock).mockResolvedValue(mockData)
 
     await Ctrl.getListePresence(req, res)
@@ -108,11 +168,14 @@ describe('getListePresence', () => {
               { association: 'parcours', include: ['niveauEtude'] }
             ]
           },
-          { association: 'presences', include: ['presencesCoursParticipants'] }
+          { association: 'presences', include: ['presencesCoursParticipants'] },
+          { association: 'parcours', include: ['niveauEtude'] },
+          'niveauEtude',
+          'etablissement',
         ]
       })
     )
-    expect(res.send).toHaveBeenCalledWith(mockData)
+    expect(res.send).toHaveBeenCalledWith({ id: 1 })
   })
 
   it('should return 404 if not found', async () => {
@@ -123,6 +186,44 @@ describe('getListePresence', () => {
     await Ctrl.getListePresence(req, res)
 
     expect(res.status).toHaveBeenCalledWith(404)
+  })
+
+  it('autorise un enseignant associé à consulter le cahier de cohorte', async () => {
+    const cahierPartage = {
+      id: 7,
+      parcoursId: 4,
+      niveauEtudeId: 2,
+      etablissementId: 3,
+      presences: [
+        { id: 1, auteurEnseignantId: 9 },
+        { id: 2, auteurEnseignantId: 10 },
+      ],
+      toJSON: () => ({
+        id: 7,
+        parcoursId: 4,
+        niveauEtudeId: 2,
+        etablissementId: 3,
+        presences: [
+          { id: 1, auteurEnseignantId: 9 },
+          { id: 2, auteurEnseignantId: 10 },
+        ],
+      }),
+    }
+    ;(ListePresence.findOne as jest.Mock).mockResolvedValue(cahierPartage)
+    CoursParticipant.findAll.mockResolvedValue([])
+    Enseignant.findOne.mockResolvedValue({ id: 9 })
+    CahierCohorteService.enseignantAssocieAuCahier.mockResolvedValue(true)
+    CahierCohorteService.trouverCoursIds.mockResolvedValue([])
+    const req = mockRequest({ params: { id: '7' }, utilisateurRole: 'enseignant', utilisateurId: 100 } as any)
+    const res = mockResponse()
+
+    await Ctrl.getListePresence(req, res)
+
+    expect(CahierCohorteService.enseignantAssocieAuCahier).toHaveBeenCalledWith(9, cahierPartage)
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.send).toHaveBeenCalledWith(expect.objectContaining({
+      presences: [{ id: 1, auteurEnseignantId: 9 }],
+    }))
   })
 })
 

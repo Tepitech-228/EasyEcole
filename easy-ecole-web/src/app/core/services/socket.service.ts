@@ -31,6 +31,7 @@ export interface TerminalAttendanceEvent {
     heureFinReelle: string | null;
     heureReelle: string;
     confirmationToken?: string;
+    motifDepart?: string | null;
   };
   photo?: string;
   photoType?: 'apprenant' | 'enseignant' | 'profile';

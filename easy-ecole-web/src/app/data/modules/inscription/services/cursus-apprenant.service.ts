@@ -3,6 +3,14 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { CursusApprenant } from '../models/CursusApprenant.model';
+import { CoursParticipant } from '../models/CoursParticipant.model';
+import { DemandeInscriptionCours } from '../models/DemandeInscriptionCours.model';
+
+export interface CursusApprenantCoursResponse {
+  cursusApprenant: CursusApprenant;
+  coursParticipants: CoursParticipant[];
+  coursChoisis: DemandeInscriptionCours[];
+}
 
 @Injectable({
   providedIn: 'root'
@@ -25,10 +33,10 @@ export class CursusApprenantService {
     return this.httpClient.get<CursusApprenant>(`${this.SERVICE_URL}/${id}`)
   }
 
-  getCoursChoisis(id?: string): Observable<CursusApprenant> {
+  getCoursChoisis(id?: string): Observable<CursusApprenantCoursResponse | null> {
     // Sans id : route dédiée qui filtre par l'apprenant connecté (évite /undefined/cours)
     const url = id ? `${this.SERVICE_URL}/${id}/cours` : `${this.SERVICE_URL}/cours`
-    return this.httpClient.get<CursusApprenant>(url)
+    return this.httpClient.get<CursusApprenantCoursResponse | null>(url)
   }
 
   create(cursusApprenant: CursusApprenant): Observable<CursusApprenant> {

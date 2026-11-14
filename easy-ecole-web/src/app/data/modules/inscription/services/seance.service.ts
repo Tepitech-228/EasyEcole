@@ -52,8 +52,8 @@ export class SeanceService {
     return this.httpClient.post(`${this.SERVICE_URL}/${seanceId}/pointage/debut`, { date })
   }
 
-  pointerFin(seanceId: string, date: string): Observable<any> {
-    return this.httpClient.post(`${this.SERVICE_URL}/${seanceId}/pointage/fin`, { date })
+  pointerFin(seanceId: string, date: string, motifDepart?: string): Observable<any> {
+    return this.httpClient.post(`${this.SERVICE_URL}/${seanceId}/pointage/fin`, { date, motifDepart })
   }
 
   getVolumesEnseignants(mois: string): Observable<any> {

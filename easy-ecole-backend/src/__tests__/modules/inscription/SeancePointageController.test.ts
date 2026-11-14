@@ -20,12 +20,17 @@ jest.mock('../../../modules/inscription/models/SeancePointage', () => ({
 jest.mock('../../../modules/auth/models/Enseignant', () => ({
   Enseignant: { findOne: jest.fn() },
 }))
+jest.mock('../../../modules/inscription/services/SeancePointagePlanningService', () => ({
+  __esModule: true,
+  default: { trouverCoursSuivant: jest.fn() },
+}))
 
 import SeancePointageController from '../../../modules/inscription/controllers/SeancePointageController'
 
 const { Seance } = require('../../../modules/inscription/models/Seance')
 const { SeancePointage } = require('../../../modules/inscription/models/SeancePointage')
 const { Enseignant } = require('../../../modules/auth/models/Enseignant')
+const SeancePointagePlanningService = require('../../../modules/inscription/services/SeancePointagePlanningService').default
 
 const TODAY = '2026-11-10'
 
@@ -61,6 +66,10 @@ beforeEach(() => {
   jest.setSystemTime(new Date(`${TODAY}T09:15:00.000Z`))
   ;(Seance.findByPk as jest.Mock).mockResolvedValue(seance())
   ;(Enseignant.findOne as jest.Mock).mockResolvedValue({ id: 5 })
+  SeancePointagePlanningService.trouverCoursSuivant.mockResolvedValue({
+    siteActuel: 'Campus principal',
+    prochainCours: null,
+  })
 })
 
 afterEach(() => {
@@ -198,9 +207,9 @@ describe('SeancePointageController.pointerFin', () => {
     })
     ;(SeancePointage.update as jest.Mock).mockResolvedValue([1])
     const res = mockResponse()
-    await SeancePointageController.pointerFin(request(), res)
+    await SeancePointageController.pointerFin(request({ body: { date: TODAY, motifDepart: 'Raison de service' } }), res)
     expect(SeancePointage.update).toHaveBeenCalledWith(
-      { heureFinReelle: '09:50:00' },
+      { heureFinReelle: '09:50:00', motifDepart: 'Raison de service' },
       { where: { id: 11, heureFinReelle: null } },
     )
     expect(res.status).toHaveBeenCalledWith(200)
@@ -209,7 +218,66 @@ describe('SeancePointageController.pointerFin', () => {
       statut: 'termine_en_avance',
       dureeMinutes: 35,
       departAnticipeMinutes: 10,
+      motifDepart: 'Raison de service',
     }))
+  })
+
+  it('exige un motif avant la fin prévue sans enregistrer le départ', async () => {
+    jest.setSystemTime(new Date(`${TODAY}T09:50:00.000Z`))
+    ;(SeancePointage.findOne as jest.Mock).mockResolvedValue({
+      id: 11,
+      utilisateurId: 42,
+      heureDebutReelle: '09:15:00',
+      heureFinReelle: null,
+    })
+    const res = mockResponse()
+
+    await SeancePointageController.pointerFin(request(), res)
+
+    expect(SeancePointage.update).not.toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      code: 'EARLY_DEPARTURE_REASON_REQUIRED',
+    }))
+  })
+
+  it('refuse un départ plus de 15 minutes après la fin prévue', async () => {
+    jest.setSystemTime(new Date(`${TODAY}T10:15:01.000Z`))
+    ;(SeancePointage.findOne as jest.Mock).mockResolvedValue({
+      id: 11,
+      utilisateurId: 42,
+      heureDebutReelle: '09:15:00',
+      heureFinReelle: null,
+    })
+    const res = mockResponse()
+
+    await SeancePointageController.pointerFin(request(), res)
+
+    expect(SeancePointage.update).not.toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(409)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      code: 'DEPARTURE_WINDOW_EXPIRED',
+    }))
+  })
+
+  it('accepte un départ exactement 15 minutes après la fin prévue', async () => {
+    jest.setSystemTime(new Date(`${TODAY}T10:15:00.000Z`))
+    ;(SeancePointage.findOne as jest.Mock).mockResolvedValue({
+      id: 11,
+      utilisateurId: 42,
+      heureDebutReelle: '09:15:00',
+      heureFinReelle: null,
+    })
+    ;(SeancePointage.update as jest.Mock).mockResolvedValue([1])
+    const res = mockResponse()
+
+    await SeancePointageController.pointerFin(request(), res)
+
+    expect(SeancePointage.update).toHaveBeenCalledWith(
+      { heureFinReelle: '10:15:00', motifDepart: null },
+      { where: { id: 11, heureFinReelle: null } },
+    )
+    expect(res.status).toHaveBeenCalledWith(200)
   })
 
   it('marque la seance terminee a l heure prevue', async () => {

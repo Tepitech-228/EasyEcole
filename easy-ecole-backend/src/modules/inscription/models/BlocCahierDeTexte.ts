@@ -9,6 +9,7 @@ export class BlocCahierDeTexte extends Model<InferAttributes<BlocCahierDeTexte>,
   declare heureDebut: Date
   declare heureFin: Date
   declare contenu: string
+  declare auteurEnseignantId: CreationOptional<number | null>
 
   declare cahierDeTexteId: ForeignKey<CahierDeTexte['id']>
   declare cahierDeTexte?: NonAttribute<CahierDeTexte>
@@ -42,6 +43,10 @@ BlocCahierDeTexte.init({
   contenu: {
     type: DataTypes.TEXT,
     allowNull: false
+  },
+  auteurEnseignantId: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true,
   },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,

@@ -9,6 +9,7 @@
     "test": "set NODE_OPTIONS=--openssl-legacy-provider --max-old-space-size=4096&& ng test",
     "test:e2e": "cypress run",
     "test:e2e:dev": "cypress open",
+    "test:load:connections": "node scripts/load-test-connections.cjs",
     "build:temp": "set NODE_OPTIONS=--openssl-legacy-provider --max-old-space-size=4096&& ng build --output-path=dist-temp3"
   },
   "private": true,

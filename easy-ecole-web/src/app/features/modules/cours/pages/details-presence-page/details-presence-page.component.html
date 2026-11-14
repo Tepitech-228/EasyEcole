@@ -2,20 +2,24 @@
 
 <ng-container *ngIf="listePresence">
     <div class="flex md:flex-row flex-col items-start justify-between mb-8">
-        <app-header-title title="Liste de présences: {{ listePresence.cours ? listePresence.cours.code + ' - ' + listePresence.cours.intitule : listePresence.titre }}">
-            <div *ngIf="listePresence.cours" class="mt-2 md:mb-0 mb-8 flex md:flex-row flex-wrap gap-x-4 gap-y-2">
-                <div *ngIf="listePresence.cours.parcours?.niveauEtude" class="flex items-center text-secondary">
+        <app-header-title title="Liste de présences: {{ listePresence.cours ? listePresence.cours.code + ' - ' + listePresence.cours.intitule : (listePresence.parcours?.titre ? listePresence.parcours.titre + ' - ' : '') + (listePresence.niveauEtude?.libelle ?? listePresence.titre) }}">
+            <div *ngIf="listePresence.cours || listePresence.parcours || listePresence.niveauEtude" class="mt-2 md:mb-0 mb-8 flex md:flex-row flex-wrap gap-x-4 gap-y-2">
+                <div *ngIf="listePresence.cours?.parcours?.niveauEtude" class="flex items-center text-secondary">
                     <img src="assets/icons/student.svg" alt="icon">
-                    <div class="px-2 text-sm">{{ listePresence.cours.parcours?.niveauEtude?.libelle ?? '---' }}</div>
+                    <div class="px-2 text-sm">{{ listePresence.cours?.parcours?.niveauEtude?.libelle ?? '---' }}</div>
+                </div>
+                <div *ngIf="!listePresence.cours && listePresence.niveauEtude" class="flex items-center text-secondary">
+                    <img src="assets/icons/student.svg" alt="icon">
+                    <div class="px-2 text-sm">{{ listePresence.niveauEtude.libelle }}</div>
                 </div>
                 <div class="flex items-center text-secondary">
                     <img src="assets/icons/category-light.svg" alt="icon">
-                    <div class="px-2 text-sm">{{ listePresence.cours.classe ? listePresence.cours.classe.libelle : '---' }}</div>
+                    <div class="px-2 text-sm">{{ listePresence.cours?.classe ? listePresence.cours.classe.libelle : (listePresence.parcours?.titre ?? '---') }}</div>
                 </div>
             </div>
         </app-header-title>
         <div class="flex justify-end items-center gap-x-4">
-            <app-custom-button *ngIf="(rolesValue.isEnseignant || rolesValue.isInstitution || rolesValue.isSurveillant)" text="Nouvelle présence" (click)="openNouvellePresenceModal()"></app-custom-button>
+            <app-custom-button *ngIf="(rolesValue.isInstitution || rolesValue.isSurveillant || rolesValue.isEnseignant)" text="Nouvelle séance" (click)="openNouvellePresenceModal()"></app-custom-button>
             <app-custom-button *ngIf="rolesValue.isEnseignant && presences.length > 0"
                 text="Signer la feuille"
                 color="primary"
@@ -24,15 +28,37 @@
         </div>
     </div>
 
+    <section class="notebook-cover notebook-cover--presence" aria-label="Couverture du cahier de présence">
+        <div class="notebook-cover__spine" aria-hidden="true"></div>
+        <div class="notebook-cover__content">
+            <span class="notebook-cover__eyebrow">Registre de la classe</span>
+            <h2>Cahier de présence</h2>
+            <p>{{ listePresence.parcours?.titre ?? listePresence.cours?.intitule ?? listePresence.titre }}
+                <span *ngIf="listePresence.niveauEtude"> · {{ listePresence.niveauEtude.libelle }}</span>
+            </p>
+        </div>
+        <div class="notebook-cover__summary">
+            <span><strong>{{ coursParticipants.length }}</strong> apprenant(s)</span>
+            <span><strong>{{ presences.length }}</strong> séance(s) enregistrée(s)</span>
+        </div>
+    </section>
+
     <div class="w-full flex justify-between items-center mb-8">
         <div class="grid grid-cols-4 w-full gap-x-2 gap-y-4">
             <div class="block xl:col-span-3 lg:col-span-3 md:col-span-3 col-span-full">
                 <div class="flex flex-col">
-                    <div class="overflow-x-auto mb-8">
+                    <div class="overflow-x-auto mb-8 presence-notebook__paper">
                         <div class="py-2 inline-block min-w-full">
                             <div class="overflow-hidden">
-                                <table class="min-w-full">
-                                    <thead class="bg-gray-100 border-b">
+                                <div class="presence-notebook__paper-heading">
+                                    <div>
+                                        <span>Feuille d’appel</span>
+                                        <h3>Suivi des présences</h3>
+                                    </div>
+                                    <p *ngIf="rolesValue.isEnseignant">Vous ne voyez que les séances que vous avez renseignées.</p>
+                                </div>
+                                <table class="min-w-full presence-notebook__table">
+                                    <thead class="presence-notebook__head">
                                         <tr>
                                             <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
                                                 <div class="px-2">
@@ -49,7 +75,7 @@
                                                 <div class="px-2 flex flex-col items-center gap-x-2">
                                                     <div class="flex items-center gap-x-2">
                                                         <img class="opacity-80" width="20" src="assets/icons/clock-outline.svg" alt="icon">
-                                                        <div>{{ presence.heureDebut }} à {{ presence.heureFin }}</div>
+                                                        <div>{{ presence.date | date: 'dd MMM y' }} · {{ presence.heureDebut }} à {{ presence.heureFin }}</div>
                                                     </div>
                                                     <div *ngIf="presence.signature" class="text-xs text-green-600 flex items-center gap-1 mt-1">
                                                         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -65,10 +91,10 @@
                                         <tr *ngIf="coursParticipants.length==0"
                                             class="bg-white p-0 border-b transition duration-300 ease-in-out">
                                             <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
-                                                colspan="5">Aucun participant</td>
+                                                colspan="5">Aucun apprenant inscrit à cette cohorte</td>
                                         </tr>
                                         <tr *ngFor="let coursParticipant of coursParticipants; index as index"
-                                            class="bg-white hover:bg-gray-100 p-0 border-b transition duration-300 ease-in-out">
+                                            class="presence-notebook__row">
                                             <td
                                                 class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                                 <div
@@ -95,7 +121,7 @@
                                                 </div>
                                             </td>
                                             <td *ngFor="let presence of presences; index as presenceIndex" class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
-                                                <select *ngIf="rolesValue.isSurveillant"
+                                                <select *ngIf="rolesValue.isSurveillant || rolesValue.isEnseignant"
                                                     class="block mx-auto rounded-md border border-gray-300 bg-white px-2 py-1 text-sm"
                                                     [value]="getEtatPresence(presenceIndex, coursParticipant.id!)"
                                                     (change)="modifierEtatPresence(presence, coursParticipant, $event)">

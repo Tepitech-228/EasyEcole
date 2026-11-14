@@ -4,9 +4,15 @@
         <app-custom-button *ngIf="rolesValue.isInstitution" text="Nouveau cours" link="/orientation/cours/nouveau"></app-custom-button>
     </div> -->
     <div class="flex justify-end items-center gap-x-4">
-        <app-custom-button *ngIf="(rolesValue.isEnseignant || rolesValue.isInstitution || rolesValue.isAdmin || rolesValue.isSurveillant)" text="Nouvelle liste" (click)="openNouvelleListePresenceModal()"></app-custom-button>
+        <button *ngIf="rolesValue.isSurveillant" type="button" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50" [disabled]="generationEnCours" (click)="genererTousLesCahiers()">
+            {{ generationEnCours ? 'Génération...' : 'Créer tous les cahiers du site' }}
+        </button>
+        <app-custom-button *ngIf="(rolesValue.isInstitution || rolesValue.isAdmin)" text="Nouvelle liste" (click)="openNouvelleListePresenceModal()"></app-custom-button>
     </div>
 </div>
+
+<p *ngIf="generationMessage" class="mb-4 text-sm text-green-700" role="status">{{ generationMessage }}</p>
+<p *ngIf="generationErreur" class="mb-4 text-sm text-red-700" role="alert">{{ generationErreur }}</p>
 
 <div class="w-full flex justify-between items-center mb-8">
     <div class="flex md:flex-row flex-col gap-4">

@@ -1,30 +1,27 @@
-<a *ngIf="listePresence" [routerLink]="['./' + listePresence.id]" class="block mb-8">
-    <div id="card" class="w-full h-full bg-white shadow-sm ring-1 ring-gray-200 rounded-lg overflow-hidden">
-        <img class="w-full object-cover object-center" style="aspect-ratio: 16 / 9 !important;"
-            [src]="'assets/images/blank-card-picture.jpg'"
-            alt="img">
-        <div class="py-4 px-4">
-            <div *ngIf="listePresence.cours" class="text-md font-semibold text-gray-900 line-clamp-2">{{ listePresence.cours.code }} - {{ listePresence.cours.intitule }} - {{ listePresence.cours.parcours?.id }}</div>
-            <div *ngIf="!listePresence.cours" class="text-md font-semibold text-gray-900 line-clamp-2">{{ listePresence.titre }}</div>
-    
-            <div class="mt-4 space-y-2">
-                <div *ngIf="listePresence.cours && listePresence.cours.parcours?.niveauEtude" class="flex items-center text-secondary">
-                    <img src="assets/icons/student.svg" alt="icon">
-                    <div class="px-2 text-sm">{{ listePresence.cours.parcours?.niveauEtude?.libelle ?? '---' }}</div>
-                </div>
-                <div *ngIf="listePresence.cours" class="flex items-center text-secondary">
-                    <img src="assets/icons/category-light.svg" alt="icon">
-                    <div class="px-2 text-sm">{{ listePresence.cours.classe ? listePresence.cours.classe.libelle : '---' }}</div>
-                </div>
-                <div *ngIf="listePresence.enseignant && listePresence.enseignant.utilisateur" class="flex items-center text-secondary">
-                    <img src="assets/icons/student.svg" alt="icon">
-                    <div class="px-2 text-sm">{{ listePresence.enseignant.utilisateur.nom + ' ' + listePresence.enseignant.utilisateur.prenoms }}</div>
-                </div>
-                <!-- <div class="flex items-center text-secondary">
-                    <img src="assets/icons/clock-outline.svg" alt="icon">
-                    <div class="px-2 text-sm">{{ getDuree() }}</div>
-                </div> -->
+<a *ngIf="listePresence" [routerLink]="['./' + listePresence.id]" class="register-card-link">
+    <article class="register-card register-card--presence">
+        <div class="register-card__cover">
+            <span class="register-card__eyebrow">Registre de classe</span>
+            <h2>Cahier de présence</h2>
+            <p class="register-card__cohort">
+                {{ listePresence.cours ? listePresence.cours.code + ' · ' + listePresence.cours.intitule : (listePresence.parcours?.titre ?? listePresence.titre) }}
+            </p>
+            <span class="register-card__cover-note">Présences · absences · suivi</span>
+        </div>
+        <div class="register-card__body">
+            <div class="register-card__details">
+                <span *ngIf="listePresence.cours?.parcours?.niveauEtude || listePresence.niveauEtude">
+                    {{ listePresence.cours?.parcours?.niveauEtude?.libelle ?? listePresence.niveauEtude?.libelle }}
+                </span>
+                <span *ngIf="listePresence.cours?.classe">{{ listePresence.cours.classe.libelle }}</span>
+                <span *ngIf="!listePresence.cours && listePresence.parcours">{{ listePresence.parcours.titre }}</span>
+            </div>
+            <div class="register-card__footer">
+                <span *ngIf="listePresence.enseignant?.utilisateur">
+                    {{ listePresence.enseignant.utilisateur.nom }} {{ listePresence.enseignant.utilisateur.prenoms }}
+                </span>
+                <strong>Ouvrir le cahier <span aria-hidden="true">→</span></strong>
             </div>
         </div>
-    </div>
+    </article>
 </a>

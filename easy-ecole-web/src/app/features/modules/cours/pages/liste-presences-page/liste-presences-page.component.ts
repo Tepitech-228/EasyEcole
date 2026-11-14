@@ -24,6 +24,9 @@ export class ListePresencesPageComponent extends BaseComponentClass implements O
 
   alreadyExists: boolean = false
   error: boolean = false
+  generationEnCours: boolean = false
+  generationMessage: string | null = null
+  generationErreur: string | null = null
 
   // cursusApprenant?: CursusApprenant
   listesPresences: ListePresence[] = []
@@ -96,9 +99,18 @@ export class ListePresencesPageComponent extends BaseComponentClass implements O
     })
 
     this._listesPresences = this.listesPresences.filter((value: ListePresence) => {
-      return (this.selectedNiveauEtude == 'undefined' || value.cours?.parcours?.niveauEtudeId == this.selectedNiveauEtude) &&
-        (this.selectedClasse == 'undefined' || value.cours?.classeId == this.selectedClasse) &&
-        (this.selectedParcours == 'undefined' || value.cours?.parcoursId == this.selectedParcours)
+      const niveauEtudeId = value.niveauEtudeId ?? value.cours?.parcours?.niveauEtudeId
+      const parcoursId = value.parcoursId ?? value.cours?.parcoursId
+      const classeCorrespondante = this.selectedClasse == 'undefined'
+        || value.cours?.classeId == this.selectedClasse
+        || (!value.cours && this.classes.some(classe =>
+          classe.id == this.selectedClasse
+          && classe.parcoursId == parcoursId
+          && classe.niveauEtudeId == niveauEtudeId
+        ))
+      return (this.selectedNiveauEtude == 'undefined' || niveauEtudeId == this.selectedNiveauEtude) &&
+        classeCorrespondante &&
+        (this.selectedParcours == 'undefined' || parcoursId == this.selectedParcours)
     })
   }
 
@@ -117,8 +129,8 @@ export class ListePresencesPageComponent extends BaseComponentClass implements O
     }
     else {
       this._listesPresences = this.listesPresences.filter((value: ListePresence) => {
-        console.log(value.titre!.toLowerCase().includes(this.searchListePresence!.toLowerCase()))
-        return value.titre!.toLowerCase().includes(this.searchListePresence!.toLowerCase()) || value.description?.toLowerCase().includes(this.searchListePresence!.toLowerCase())
+        const recherche = this.searchListePresence!.toLowerCase()
+        return value.titre?.toLowerCase().includes(recherche) || value.description?.toLowerCase().includes(recherche)
       })
     }
   }
@@ -155,6 +167,28 @@ export class ListePresencesPageComponent extends BaseComponentClass implements O
           },
         }
       )
+  }
+
+  genererTousLesCahiers(): void {
+    if (this.generationEnCours) return
+    this.generationEnCours = true
+    this.generationMessage = null
+    this.generationErreur = null
+    this.listePresenceService.genererTousLesCahiers().subscribe({
+      next: resultat => {
+        this.generationMessage = resultat.cohortesTraitees === 0
+          ? 'Aucune filière avec niveau et cours rattaché à ce site.'
+          : `${resultat.listesPresencesCrees} cahier(s) de présence et ${resultat.cahiersDeTexteCrees} cahier(s) de texte créé(s) pour ${resultat.cohortesTraitees} filière(s)/niveau(x).`
+        this.getListesPresences()
+      },
+      error: err => {
+        this.generationErreur = err.error?.message || 'La génération des cahiers a échoué.'
+        this.generationEnCours = false
+      },
+      complete: () => {
+        this.generationEnCours = false
+      }
+    })
   }
 
   getNiveauxEtude(): void {

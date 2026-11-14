@@ -39,6 +39,22 @@ export interface DepartureConfirmation {
   seancePointage?: SeancePointageScan;
 }
 
+export interface NavigationProchainCours {
+  siteActuel: string;
+  prochainCours: {
+    site: string;
+    heureDebut: string;
+    salle: string | null;
+    etage: string | null;
+    memeSite: boolean;
+  } | null;
+}
+
+export interface SeancePointageEndResponse {
+  pointage: Pointage;
+  navigationCours: NavigationProchainCours;
+}
+
 export type PointageScanResponse =
   | {
     success: boolean;
@@ -135,8 +151,8 @@ export class PointageService {
     )
   }
 
-  pointerFinCoursByScan(confirmationToken: string): Observable<Pointage> {
-    return this.httpClient.post<Pointage>(`${this.SERVICE_URL}/scan/fin-cours`, { confirmationToken })
+  pointerFinCoursByScan(confirmationToken: string, motifDepart?: string): Observable<SeancePointageEndResponse> {
+    return this.httpClient.post<SeancePointageEndResponse>(`${this.SERVICE_URL}/scan/fin-cours`, { confirmationToken, motifDepart })
   }
 
   pointerParQR(codeQR: string, confirmationToken?: string): Observable<PointageScanResponse> {

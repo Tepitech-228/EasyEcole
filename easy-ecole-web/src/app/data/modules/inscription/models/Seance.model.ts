@@ -44,6 +44,7 @@ export interface PlanningEvent {
   pointage?: {
     heureDebutReelle?: string | null
     heureFinReelle?: string | null
+    motifDepart?: string | null
   } | null
   statutPointage?: 'a_venir' | 'en_cours' | 'en_retard' | 'termine' | 'termine_en_avance' | 'absent'
 }

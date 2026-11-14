@@ -2,15 +2,19 @@
 
 <ng-container *ngIf="cahierDeTexte">
     <div class="flex md:flex-row flex-col items-start justify-between mb-8">
-        <app-header-title title="Cahier de texte: {{ cahierDeTexte.cours ? cahierDeTexte.cours.code + ' - ' + cahierDeTexte.cours.intitule : cahierDeTexte.titre }}">
-            <div *ngIf="cahierDeTexte.cours" class="mt-2 md:mb-0 mb-8 flex md:flex-row flex-wrap gap-x-4 gap-y-2">
-                <div *ngIf="cahierDeTexte.cours.parcours?.niveauEtude" class="flex items-center text-secondary">
+        <app-header-title title="Cahier de texte: {{ cahierDeTexte.cours ? cahierDeTexte.cours.code + ' - ' + cahierDeTexte.cours.intitule : (cahierDeTexte.parcours?.titre ? cahierDeTexte.parcours.titre + ' - ' : '') + (cahierDeTexte.niveauEtude?.libelle ?? cahierDeTexte.titre) }}">
+            <div *ngIf="cahierDeTexte.cours || cahierDeTexte.parcours || cahierDeTexte.niveauEtude" class="mt-2 md:mb-0 mb-8 flex md:flex-row flex-wrap gap-x-4 gap-y-2">
+                <div *ngIf="cahierDeTexte.cours?.parcours?.niveauEtude" class="flex items-center text-secondary">
                     <img src="assets/icons/student.svg" alt="icon">
-                    <div class="px-2 text-sm">{{ cahierDeTexte.cours.parcours?.niveauEtude?.libelle ?? '---' }}</div>
+                    <div class="px-2 text-sm">{{ cahierDeTexte.cours?.parcours?.niveauEtude?.libelle ?? '---' }}</div>
+                </div>
+                <div *ngIf="!cahierDeTexte.cours && cahierDeTexte.niveauEtude" class="flex items-center text-secondary">
+                    <img src="assets/icons/student.svg" alt="icon">
+                    <div class="px-2 text-sm">{{ cahierDeTexte.niveauEtude.libelle }}</div>
                 </div>
                 <div class="flex items-center text-secondary">
                     <img src="assets/icons/category-light.svg" alt="icon">
-                    <div class="px-2 text-sm">{{ cahierDeTexte.cours.classe ? cahierDeTexte.cours.classe.libelle : '---' }}</div>
+                    <div class="px-2 text-sm">{{ cahierDeTexte.cours?.classe ? cahierDeTexte.cours.classe.libelle : (cahierDeTexte.parcours?.titre ?? '---') }}</div>
                 </div>
             </div>
         </app-header-title>
@@ -19,15 +23,37 @@
         </div>
     </div>
 
+    <section class="notebook-cover notebook-cover--text" aria-label="Couverture du cahier de texte">
+        <div class="notebook-cover__spine" aria-hidden="true"></div>
+        <div class="notebook-cover__content">
+            <span class="notebook-cover__eyebrow">Journal pédagogique</span>
+            <h2>Cahier de texte</h2>
+            <p>{{ cahierDeTexte.parcours?.titre ?? cahierDeTexte.cours?.intitule ?? cahierDeTexte.titre }}
+                <span *ngIf="cahierDeTexte.niveauEtude"> · {{ cahierDeTexte.niveauEtude.libelle }}</span>
+            </p>
+        </div>
+        <div class="notebook-cover__summary">
+            <span class="notebook-cover__summary-number">{{ blocsCahierDeTexte.length }}</span>
+            <span>{{ blocsCahierDeTexte.length > 1 ? 'séances consignées' : 'séance consignée' }}</span>
+        </div>
+    </section>
+
     <div class="w-full flex justify-between items-center mb-8">
         <div class="grid grid-cols-4 w-full gap-x-2 gap-y-4">
             <div class="block xl:col-span-3 lg:col-span-3 md:col-span-3 col-span-full">
                 <div class="flex flex-col">
-                    <div class="overflow-x-auto mb-8">
+                    <div class="overflow-x-auto mb-8 text-notebook__paper">
                         <div class="py-2 inline-block min-w-full">
                             <div class="overflow-hidden">
-                                <table class="min-w-full">
-                                    <thead class="bg-gray-100 border-b">
+                                <div class="text-notebook__paper-heading">
+                                    <div>
+                                        <span class="text-notebook__paper-kicker">Registre des cours</span>
+                                        <h3>Leçons et activités</h3>
+                                    </div>
+                                    <span class="text-notebook__count">{{ blocsCahierDeTexte.length }} entrée(s)</span>
+                                </div>
+                                <table class="min-w-full text-notebook__table">
+                                    <thead>
                                         <tr>
                                             <!-- <th scope="col" class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
                                                 <div class="px-2">
@@ -37,13 +63,13 @@
                                             <th scope="col"
                                                 class="text-sm w-56 font-medium text-gray-900 px-2 py-4 text-left">
                                                 <div class="px-2">
-                                                    Heure
+                                                    Date et horaire
                                                 </div>
                                             </th>
                                             <th scope="col"
                                                 class="text-sm font-medium text-gray-900 px-2 py-4 text-left">
                                                 <div class="px-2">
-                                                    Contenu
+                                                    Leçon du jour
                                                 </div>
                                             </th>
                                             <th scope="col"
@@ -55,13 +81,15 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <!-- <tr *ngIf="blocsCahierDeTexte.length==0"
-                                            class="bg-white p-0 border-b transition duration-300 ease-in-out">
-                                            <td class="text-sm text-center py-4 text-gray-600 font-regular p-0 whitespace-nowrap"
-                                                colspan="5">Aucun participant</td>
-                                        </tr> -->
+                                        <tr *ngIf="blocsCahierDeTexte.length == 0">
+                                            <td class="text-notebook__empty" colspan="3">
+                                                <span class="text-notebook__empty-icon" aria-hidden="true">✎</span>
+                                                <strong>Ce cahier est encore vierge</strong>
+                                                <span>La première leçon renseignée apparaîtra ici.</span>
+                                            </td>
+                                        </tr>
                                         <tr *ngFor="let blocCahierDeTexte of blocsCahierDeTexte; index as index"
-                                            class="bg-white hover:bg-gray-100 p-0 border transition duration-300 ease-in-out">
+                                            class="text-notebook__entry">
                                             <!-- <td
                                                 class="bg-transparent text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                                 <div
@@ -69,13 +97,15 @@
                                                     {{ index + 1 }}
                                                 </div>
                                             </td> -->
-                                            <td
-                                                class="bg-yellow-50 text-sm text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
+                                            <td class="text-notebook__time">
                                                 <div
                                                     class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
                                                     <div class="px-2 flex justify-center items-center gap-x-2">
                                                         <img class="opacity-80" width="20" src="assets/icons/clock-outline.svg" alt="icon">
-                                                        <div>{{ blocCahierDeTexte.heureDebut }} à {{ blocCahierDeTexte.heureFin }}</div>
+                                                        <div>
+                                                            <strong>{{ blocCahierDeTexte.date | date: 'dd MMM y' }}</strong>
+                                                            <span>{{ blocCahierDeTexte.heureDebut }} à {{ blocCahierDeTexte.heureFin }}</span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </td>
@@ -83,7 +113,7 @@
                                                 class="bg-transparent text-gray-600 font-regular p-0 whitespace-nowrap border-0 m-0 px-2">
                                                 <div
                                                     class="block w-full h-full border-0 m-0 px-2 py-4 text-gray-600 bg-transparent sm:text-sm sm:leading-6">
-                                                    <div class="text-gray-500">
+                                                    <div class="text-notebook__content">
                                                         <div class="ql-container ql-snow" [style.border]="'none'">
                                                             <div class="w-full ql-editor p-0 text*base" [innerHTML]="getContenu(blocCahierDeTexte.contenu)"></div>
                                                         </div>

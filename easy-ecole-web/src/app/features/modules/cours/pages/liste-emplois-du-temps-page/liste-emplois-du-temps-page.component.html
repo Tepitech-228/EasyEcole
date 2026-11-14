@@ -50,6 +50,33 @@
     {{ messagePointage }}
 </div>
 
+<div *ngIf="finAnticipeeEnAttente" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
+    <section class="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl" role="alertdialog" aria-modal="true"
+        aria-labelledby="motif-depart-title">
+        <h2 id="motif-depart-title" class="text-lg font-bold text-slate-900">Départ avant la fin prévue</h2>
+        <p class="mt-2 text-sm text-slate-700">
+            Le cours « {{ finAnticipeeEnAttente.titre }} » se termine à {{ finAnticipeeEnAttente.heureFin }}.
+            Un motif est obligatoire pour enregistrer ce départ anticipé.
+        </p>
+        <label for="motif-depart-saisie" class="mt-4 block text-sm font-semibold text-slate-800">Motif du départ</label>
+        <textarea id="motif-depart-saisie" rows="3" maxlength="500" [value]="motifDepart"
+            (input)="motifDepart = $any($event.target).value; motifDepartErreur = ''"
+            class="mt-2 w-full rounded-lg border border-slate-300 p-3 text-sm"
+            placeholder="Expliquez la raison du départ anticipé"></textarea>
+        <p *ngIf="motifDepartErreur" class="mt-2 text-sm text-red-700" role="alert">{{ motifDepartErreur }}</p>
+        <div class="mt-5 flex justify-end gap-3">
+            <button type="button" (click)="annulerFinAnticipee()"
+                class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">
+                Annuler
+            </button>
+            <button type="button" (click)="confirmerFinAnticipee()"
+                class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white">
+                Confirmer le départ
+            </button>
+        </div>
+    </section>
+</div>
+
 <div *ngIf="showImportResult" class="mb-6 p-4 rounded-xl border"
     [ngClass]="importResultType === 'success' ? 'bg-emerald-50 border-emerald-200' : (importResultType === 'warning' ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200')">
     <div class="flex items-center gap-3 text-sm"
@@ -144,6 +171,9 @@
                                     </button>
                                     <span *ngIf="arg.event.extendedProps.pointage?.heureFinReelle" class="text-xs">
                                         Fin : {{ arg.event.extendedProps.pointage.heureFinReelle }}
+                                    </span>
+                                    <span *ngIf="arg.event.extendedProps.pointage?.motifDepart" class="w-full text-xs text-amber-800">
+                                        Motif : {{ arg.event.extendedProps.pointage.motifDepart }}
                                     </span>
                                     <button *ngIf="arg.event.extendedProps.pointage?.heureDebutReelle && !arg.event.extendedProps.pointage?.heureFinReelle"
                                         type="button" [disabled]="pointageEnCours[arg.event.id]"

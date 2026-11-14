@@ -43,6 +43,7 @@ jest.mock('../../../modules/inscription/models/Seance', () => ({
   Seance: {
     findOne: jest.fn(),
     findAll: jest.fn(),
+    findByPk: jest.fn(),
     associations: { cours: 'cours' }
   }
 }))
@@ -54,6 +55,10 @@ jest.mock('../../../modules/inscription/models/DossierEtudiant', () => ({
 }))
 jest.mock('../../../modules/inscription/services/VerificationPaiementService', () => ({
   VerificationPaiementService: { verifierDossier: jest.fn() }
+}))
+jest.mock('../../../modules/inscription/services/SeancePointagePlanningService', () => ({
+  __esModule: true,
+  default: { trouverCoursSuivant: jest.fn() },
 }))
 
 import PointageController from '../../../modules/inscription/controllers/PointageController'
@@ -71,6 +76,7 @@ const { SeancePointage } = require('../../../modules/inscription/models/SeancePo
 const { Seance } = require('../../../modules/inscription/models/Seance')
 const { DossierEtudiant } = require('../../../modules/inscription/models/DossierEtudiant')
 const { VerificationPaiementService } = require('../../../modules/inscription/services/VerificationPaiementService')
+const SeancePointagePlanningService = require('../../../modules/inscription/services/SeancePointagePlanningService').default
 let transaction: any
 
 const validCode = 'CARTE|v=1|signed-payload|0123456789abcdef'
@@ -101,9 +107,14 @@ beforeEach(() => {
   SeancePointage.findAll.mockResolvedValue([])
   SeancePointage.create.mockResolvedValue({ id: 9 })
   Seance.findOne.mockResolvedValue(null)
+  Seance.findByPk.mockResolvedValue(null)
   Seance.findAll.mockResolvedValue([])
   DossierEtudiant.findOne.mockResolvedValue({ statut: 'actif', echeances: [] })
   VerificationPaiementService.verifierDossier.mockReturnValue({ statut: 'vert', message: 'Accès autorisé' })
+  SeancePointagePlanningService.trouverCoursSuivant.mockResolvedValue({
+    siteActuel: 'Campus principal',
+    prochainCours: null,
+  })
 })
 
 describe('PointageController.pointerFinCoursByScan', () => {
@@ -111,10 +122,13 @@ describe('PointageController.pointerFinCoursByScan', () => {
     const courseUpdate = jest.fn().mockResolvedValue(undefined)
     const dailyUpdate = jest.fn().mockResolvedValue(undefined)
     SeancePointage.findOne.mockResolvedValue({
+      id: 12,
+      seanceId: 81,
       heureDebutReelle: '08:15:00',
       heureFinReelle: null,
       update: courseUpdate
     })
+    Seance.findByPk.mockResolvedValue({ heureFin: '09:00:00' })
     const pointage = { heureArrivee: '08:15:00', heureDepart: null, update: dailyUpdate }
     Pointage.findOne.mockResolvedValue(pointage)
     const confirmationToken = SeancePointageConfirmationService.creer({
@@ -126,7 +140,7 @@ describe('PointageController.pointerFinCoursByScan', () => {
     })
     const res = mockResponse()
 
-    await PointageController.pointerFinCoursByScan(request({ confirmationToken }), res)
+    await PointageController.pointerFinCoursByScan(request({ confirmationToken, motifDepart: 'Raison de service' }), res)
 
     expect(SeancePointage.findOne).toHaveBeenCalledWith(expect.objectContaining({
       where: expect.objectContaining({
@@ -138,11 +152,69 @@ describe('PointageController.pointerFinCoursByScan', () => {
       }),
       transaction
     }))
-    expect(courseUpdate).toHaveBeenCalledWith({ heureFinReelle: '08:55:00' }, { transaction })
+    expect(courseUpdate).toHaveBeenCalledWith({
+      heureFinReelle: '08:55:00',
+      motifDepart: 'Raison de service'
+    }, { transaction })
     expect(dailyUpdate).toHaveBeenCalledWith({ heureDepart: '08:55:00' }, { transaction })
     expect(transaction.commit).toHaveBeenCalled()
     expect(res.status).toHaveBeenCalledWith(200)
-    expect(res.send).toHaveBeenCalledWith(pointage)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      pointage,
+      navigationCours: { siteActuel: 'Campus principal', prochainCours: null }
+    }))
+  })
+
+  it('requires a reason to confirm a course departure before its scheduled end', async () => {
+    SeancePointage.findOne.mockResolvedValue({
+      id: 12,
+      seanceId: 81,
+      heureDebutReelle: '08:15:00',
+      heureFinReelle: null,
+      update: jest.fn()
+    })
+    Seance.findByPk.mockResolvedValue({ heureFin: '09:00:00' })
+    const confirmationToken = SeancePointageConfirmationService.creer({
+      seancePointageId: 12,
+      utilisateurId: 42,
+      etablissementId: 3,
+      date: '2026-10-17',
+      heureFin: '08:55:00'
+    })
+    const res = mockResponse()
+
+    await PointageController.pointerFinCoursByScan(request({ confirmationToken }), res)
+
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      code: 'EARLY_DEPARTURE_REASON_REQUIRED'
+    }))
+  })
+
+  it('rejects course departures after the 15-minute grace period', async () => {
+    SeancePointage.findOne.mockResolvedValue({
+      id: 12,
+      seanceId: 81,
+      heureDebutReelle: '08:15:00',
+      heureFinReelle: null,
+      update: jest.fn()
+    })
+    Seance.findByPk.mockResolvedValue({ heureFin: '09:00:00' })
+    const confirmationToken = SeancePointageConfirmationService.creer({
+      seancePointageId: 12,
+      utilisateurId: 42,
+      etablissementId: 3,
+      date: '2026-10-17',
+      heureFin: '09:15:01'
+    })
+    const res = mockResponse()
+
+    await PointageController.pointerFinCoursByScan(request({ confirmationToken }), res)
+
+    expect(res.status).toHaveBeenCalledWith(409)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      code: 'DEPARTURE_WINDOW_EXPIRED'
+    }))
   })
 
   it('rejects a missing or invalid course-end confirmation token', async () => {

@@ -23,6 +23,8 @@ import QRCode from 'qrcode';
 import ExcelJS from "exceljs";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { JWT_SECRET } from "../../../core/config/jwt";
+import { depasseDelaiGraceDepart, estDepartAnticipe, validerMotifDepart } from "../services/SeancePointageRulesService";
+import SeancePointagePlanningService from "../services/SeancePointagePlanningService";
 import { AlignmentType, Document, PageOrientation, Packer, Paragraph, Table, TableCell, TableLayoutType, TableRow, TextRun, WidthType } from "docx";
 
 const ROLES_POINTAGE = [
@@ -1094,6 +1096,61 @@ export default class PointageController {
                 });
             }
 
+            const seance = await Seance.findByPk(pointageSeance.seanceId, { transaction, lock: transaction.LOCK.UPDATE });
+            if (!seance) {
+                await transaction.rollback();
+                return res.status(409).json({
+                    success: false,
+                    code: "COURSE_NOT_FOUND",
+                    message: "Le cours associé à ce pointage est introuvable. Aucun départ n’a été enregistré."
+                });
+            }
+            const departHorsDelai = depasseDelaiGraceDepart(confirmation.heureFin, seance.heureFin);
+            if (departHorsDelai === null) {
+                await transaction.rollback();
+                return res.status(409).json({
+                    success: false,
+                    code: "INVALID_SCHEDULE",
+                    message: "L’horaire de fin du cours est invalide. Aucun départ n’a été enregistré."
+                });
+            }
+            if (departHorsDelai) {
+                await transaction.rollback();
+                return res.status(409).json({
+                    success: false,
+                    code: "DEPARTURE_WINDOW_EXPIRED",
+                    message: "Le délai de 15 minutes après la fin prévue du cours est dépassé. Aucun départ n’a été enregistré."
+                });
+            }
+            const departAnticipe = estDepartAnticipe(confirmation.heureFin, seance.heureFin);
+            if (departAnticipe === null) {
+                await transaction.rollback();
+                return res.status(409).json({
+                    success: false,
+                    code: "INVALID_SCHEDULE",
+                    message: "L’horaire de fin du cours est invalide. Aucun départ n’a été enregistré."
+                });
+            }
+            const motifDepart = req.body?.motifDepart === undefined
+                ? null
+                : validerMotifDepart(req.body.motifDepart);
+            if (departAnticipe && !motifDepart) {
+                await transaction.rollback();
+                return res.status(400).json({
+                    success: false,
+                    code: "EARLY_DEPARTURE_REASON_REQUIRED",
+                    message: "Un motif de départ est obligatoire avant l’heure de fin prévue du cours (500 caractères maximum)."
+                });
+            }
+            if (req.body?.motifDepart !== undefined && !motifDepart) {
+                await transaction.rollback();
+                return res.status(400).json({
+                    success: false,
+                    code: "INVALID_DEPARTURE_REASON",
+                    message: "Le motif de départ doit contenir au maximum 500 caractères."
+                });
+            }
+
             const pointage = await Pointage.findOne({
                 where: { utilisateurId: confirmation.utilisateurId, date: confirmation.date },
                 transaction,
@@ -1116,10 +1173,21 @@ export default class PointageController {
                 });
             }
 
-            await pointageSeance.update({ heureFinReelle: confirmation.heureFin }, { transaction });
+            const navigationCours = await SeancePointagePlanningService.trouverCoursSuivant(
+                Number(pointageSeance.enseignantId),
+                confirmation.etablissementId,
+                confirmation.date,
+                confirmation.heureFin,
+                Number(pointageSeance.seanceId),
+                transaction
+            );
+            await pointageSeance.update({
+                heureFinReelle: confirmation.heureFin,
+                motifDepart
+            }, { transaction });
             await pointage.update({ heureDepart: confirmation.heureFin }, { transaction });
             await transaction.commit();
-            return res.status(200).send(pointage);
+            return res.status(200).json({ pointage, navigationCours });
         } catch (error) {
             await transaction.rollback();
             console.error("[Pointage] échec de la confirmation de fin de cours", error);
@@ -1202,6 +1270,24 @@ export default class PointageController {
                         success: false,
                         code: "SESSION_NOT_FOUND",
                         message: "Le cours en cours n’a pas pu être retrouvé. Aucun pointage n’a été enregistré."
+                    });
+                }
+
+                const departHorsDelai = depasseDelaiGraceDepart(heure, seance.heureFin);
+                if (departHorsDelai === null) {
+                    await transaction.rollback();
+                    return res.status(409).json({
+                        success: false,
+                        code: "INVALID_SCHEDULE",
+                        message: "L’horaire de fin du cours est invalide. Aucun départ n’a été enregistré."
+                    });
+                }
+                if (departHorsDelai) {
+                    await transaction.rollback();
+                    return res.status(409).json({
+                        success: false,
+                        code: "DEPARTURE_WINDOW_EXPIRED",
+                        message: "Le délai de 15 minutes après la fin prévue du cours est dépassé. Aucun départ n’a été enregistré."
                     });
                 }
 

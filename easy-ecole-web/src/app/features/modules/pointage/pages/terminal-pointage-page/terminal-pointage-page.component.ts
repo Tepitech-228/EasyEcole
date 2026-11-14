@@ -7,7 +7,9 @@ import {
   HikvisionTerminalConfig,
   HikvisionTerminalUpdatePayload,
   PointageScanResponse,
-  PointageService
+  PointageService,
+  NavigationProchainCours,
+  SeancePointageEndResponse
 } from 'src/app/data/modules/inscription/services/pointage.service';
 import { Pointage } from 'src/app/data/modules/inscription/models/Pointage.model';
 import { AuthService, SiteUtilisateur } from 'src/app/data/modules/auth/services/auth.service';
@@ -71,6 +73,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   /** Départ personnel en attente de double confirmation (2e scan du jour). */
   departureConfirmation: PendingDepartureConfirmation | null = null
   departureConfirmationSaving: boolean = false
+  departureReason: string = ''
+  departureReasonError: string = ''
   departureResultPopup: DepartureResultPopup | null = null
   scanTimeout: boolean = false
   selfSuccess: string = ''
@@ -569,6 +573,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
         photoUrl: this.buildPhotoUrl(event.photo, event.photoType),
         seancePointage
       }
+      this.departureReason = ''
+      this.departureReasonError = ''
       this.departureConfirmationSaving = false
       this.scanSuccess = ''
       const nomComplet = this.formatPersonName(event)
@@ -604,6 +610,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
           matricule: event.employeeNoString,
           photoUrl: this.buildPhotoUrl(event.photo, event.photoType)
         }
+        this.departureReason = ''
+        this.departureReasonError = ''
         this.scanSuccess = ''
         const nomComplet = this.formatPersonName(event)
         const heure = this.formatHeureCourte(response.heureDepart)
@@ -1484,13 +1492,24 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     })
   }
 
-  private isDepartureConfirmation(response: Pointage | PointageScanResponse): response is DepartureConfirmation {
+  private isDepartureConfirmation(
+    response: Pointage | PointageScanResponse | SeancePointageEndResponse
+  ): response is DepartureConfirmation {
     return (response as DepartureConfirmation)?.requiresConfirmation === true
   }
 
-  private extractPointage(response: Pointage | PointageScanResponse): Pointage {
+  private extractPointage(response: Pointage | PointageScanResponse | SeancePointageEndResponse): Pointage {
     const wrapped = response as { pointage?: Pointage }
     return wrapped.pointage ?? (response as Pointage)
+  }
+
+  private extraireNavigationCours(
+    response: Pointage | PointageScanResponse | SeancePointageEndResponse
+  ): NavigationProchainCours | undefined {
+    const navigationCours = (response as SeancePointageEndResponse).navigationCours
+    return navigationCours && typeof navigationCours.siteActuel === 'string'
+      ? navigationCours
+      : undefined
   }
 
   /**
@@ -1540,6 +1559,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   annulerConfirmationDepart(): void {
     this.departureConfirmation = null
     this.departureConfirmationSaving = false
+    this.departureReason = ''
+    this.departureReasonError = ''
     this.resetScan()
     this.resumeReaderQueue()
     this.traiterProchainDepartTerminal()
@@ -1549,9 +1570,19 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   confirmerDepart(): void {
     const pending = this.departureConfirmation
     if (!pending || this.departureConfirmationSaving) return
+    const motifDepart = this.departureReason.trim()
+    if (this.estDepartAnticipeEnAttente() && !motifDepart) {
+      this.departureReasonError = 'Veuillez indiquer le motif du départ anticipé.'
+      return
+    }
+    if (motifDepart.length > 500) {
+      this.departureReasonError = 'Le motif ne peut pas dépasser 500 caractères.'
+      return
+    }
+    this.departureReasonError = ''
     this.departureConfirmationSaving = true
-    const request$: Observable<Pointage | PointageScanResponse> = pending.seancePointage
-      ? this.pointageService.pointerFinCoursByScan(pending.confirmationToken)
+    const request$: Observable<Pointage | PointageScanResponse | SeancePointageEndResponse> = pending.seancePointage
+      ? this.pointageService.pointerFinCoursByScan(pending.confirmationToken, motifDepart || undefined)
       : pending.codeQR
         ? this.pointageService.pointerParQR(pending.codeQR, pending.confirmationToken)
         : this.pointageService.pointerDepartByScan(pending.userId, pending.confirmationToken)
@@ -1586,13 +1617,16 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
         this.lastAttendanceEventTime = this.formatHeureCourte(heure)
         this.lastAttendanceHeureArrivee = this.formatHeureCourte(pointage.heureArrivee)
         this.lastAttendanceHeureDepart = this.formatHeureCourte(pointage.heureDepart || heure)
-        this.announceAttendance(personne, 'depart', heure, null, pointage, pending.seancePointage)
+        const navigationCours = this.extraireNavigationCours(response)
+        this.announceAttendance(personne, 'depart', heure, null, pointage, pending.seancePointage, false, navigationCours)
         this.playBeepSucces()
         this.scanSuccess = pending.seancePointage
           ? `Fin du cours « ${pending.seancePointage.cours} » enregistrée à ${heure}.`
           : 'Départ enregistré à ' + heure + this.tempsPointageMessage(pointage)
         this.afficherResultatDepart(pointage, personne, pending.seancePointage)
         this.departureConfirmation = null
+        this.departureReason = ''
+        this.departureReasonError = ''
         this.scannedUser = null
         this.scannedCodeQR = null
         this.resumeReaderQueue()
@@ -1601,7 +1635,10 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       error: (err) => {
         this.departureConfirmationSaving = false
         this.departureConfirmation = null
+        this.departureReason = ''
+        this.departureReasonError = ''
         this.scanError = err.error?.message || 'Le départ n’a pas pu être enregistré. Réessayez.'
+        this.speak(this.scanError)
         this.playBeepRefus()
         this.resumeReaderQueue()
         this.traiterProchainDepartTerminal()
@@ -1661,7 +1698,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     avertissementPaiement?: string | null,
     pointage?: Pick<Pointage, 'heureArrivee' | 'heureDepart'> | null,
     seancePointage?: TerminalAttendanceEvent['seancePointage'],
-    enseignantNonProgramme = false
+    enseignantNonProgramme = false,
+    navigationCours?: NavigationProchainCours
   ): void {
     if (!this.voiceAnnouncementsEnabled) return
     const prenom = (user?.prenoms || '').trim() || this.formatPersonName(user)
@@ -1674,7 +1712,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
         this.speak('Vous n’êtes pas programmé à cette heure. Aucun pointage n’a été enregistré.')
         return
       }
-      this.speak('Accès refusé. Veuillez vous adresser à l’administration.')
+      this.speak(avertissementPaiement || 'Accès refusé. Veuillez vous adresser à l’administration.')
       return
     }
 
@@ -1683,7 +1721,10 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       const annonce = seancePointage.action === 'debut'
         ? `Début du cours ${seancePointage.cours}${heureCours ? ' à ' + heureCours : ''}.`
         : `Fin du cours ${seancePointage.cours}${heureCours ? ' à ' + heureCours : ''}.`
-      this.speak(`${prenom}. ${annonce}`)
+      const prochaineEtape = seancePointage.action === 'fin' && navigationCours
+        ? this.annoncerNavigationCours(navigationCours)
+        : ''
+      this.speak(`${prenom}. ${annonce}${prochaineEtape ? ' ' + prochaineEtape : ''}`)
       return
     }
 
@@ -1706,10 +1747,42 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     this.speak(`Bonjour ${prenom}. Bonne arrivée${heure ? ' à ' + heure : ''}.`)
   }
 
+  private annoncerNavigationCours(navigation: NavigationProchainCours): string {
+    const siteActuel = navigation.siteActuel
+    const prochain = navigation.prochainCours
+    if (!prochain) {
+      return `Vous n’avez plus de cours sur le site ${siteActuel} aujourd’hui.`
+    }
+
+    const heure = this.formatHeureCourte(prochain.heureDebut)
+    if (!prochain.memeSite) {
+      return `Vous n’avez plus de cours sur le site ${siteActuel}.`
+        + ` Votre prochain cours est sur le site ${prochain.site}${heure ? ' à ' + heure : ''}.`
+    }
+
+    const salle = prochain.salle ? ` en salle ${prochain.salle}` : ''
+    const etage = prochain.etage ? `, à l’étage ${prochain.etage}` : ''
+    return `Votre prochain cours sur le site ${siteActuel} est${salle || etage ? salle + etage : ''}`
+      + `${heure ? ' à ' + heure : ''}.`
+  }
+
   private formatHeureCourte(time?: string): string {
     if (!time) return ''
     const match = String(time).match(/^(\d{2}):(\d{2})/)
     return match ? `${match[1]}:${match[2]}` : ''
+  }
+
+  estDepartAnticipeEnAttente(): boolean {
+    const pending = this.departureConfirmation?.seancePointage
+    if (!pending) return false
+    const depart = this.secondesDepuisHeure(pending.heureReelle)
+    const finPrevue = this.secondesDepuisHeure(pending.heureFinPrevue)
+    return depart !== null && finPrevue !== null && depart < finPrevue
+  }
+
+  private secondesDepuisHeure(value: string): number | null {
+    const match = String(value).match(/^([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/)
+    return match ? Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3] || 0) : null
   }
 
   private verifierAnnoncePermanence(): void {

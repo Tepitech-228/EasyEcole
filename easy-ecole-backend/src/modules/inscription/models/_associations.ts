@@ -358,6 +358,13 @@ ListePresence.belongsTo(Cours, { as: 'cours', foreignKey: 'coursId' })
 Enseignant.hasMany(ListePresence, { foreignKey: 'enseignantId', as: 'listesPresences' })
 ListePresence.belongsTo(Enseignant, { as: 'enseignant', foreignKey: 'enseignantId' })
 
+Parcours.hasMany(ListePresence, { foreignKey: 'parcoursId', as: 'listesPresences' })
+ListePresence.belongsTo(Parcours, { as: 'parcours', foreignKey: 'parcoursId' })
+NiveauEtude.hasMany(ListePresence, { foreignKey: 'niveauEtudeId', as: 'listesPresences' })
+ListePresence.belongsTo(NiveauEtude, { as: 'niveauEtude', foreignKey: 'niveauEtudeId' })
+Etablissement.hasMany(ListePresence, { foreignKey: 'etablissementId', as: 'listesPresences' })
+ListePresence.belongsTo(Etablissement, { as: 'etablissement', foreignKey: 'etablissementId' })
+
 // ListePresence - Presence
 ListePresence.hasMany(Presence, { foreignKey: 'listePresenceId', as: 'presences' })
 Presence.belongsTo(ListePresence, { as: 'listePresence', foreignKey: 'listePresenceId' })
@@ -377,6 +384,13 @@ CahierDeTexte.belongsTo(Cours, { as: 'cours', foreignKey: 'coursId' })
 // Enseignant - CahierDeTexte
 Enseignant.hasMany(CahierDeTexte, { foreignKey: 'enseignantId', as: 'cahiersDeTexte' })
 CahierDeTexte.belongsTo(Enseignant, { as: 'enseignant', foreignKey: 'enseignantId' })
+
+Parcours.hasMany(CahierDeTexte, { foreignKey: 'parcoursId', as: 'cahiersDeTexte' })
+CahierDeTexte.belongsTo(Parcours, { as: 'parcours', foreignKey: 'parcoursId' })
+NiveauEtude.hasMany(CahierDeTexte, { foreignKey: 'niveauEtudeId', as: 'cahiersDeTexte' })
+CahierDeTexte.belongsTo(NiveauEtude, { as: 'niveauEtude', foreignKey: 'niveauEtudeId' })
+Etablissement.hasMany(CahierDeTexte, { foreignKey: 'etablissementId', as: 'cahiersDeTexte' })
+CahierDeTexte.belongsTo(Etablissement, { as: 'etablissement', foreignKey: 'etablissementId' })
 
 // CahierDeTexte - BlocCahierDeTexte
 CahierDeTexte.hasMany(BlocCahierDeTexte, { foreignKey: 'cahierDeTexteId', as: 'blocsCahierDeTexte' })

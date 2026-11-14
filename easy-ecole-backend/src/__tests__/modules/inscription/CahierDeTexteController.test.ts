@@ -9,11 +9,15 @@ jest.mock('../../../modules/inscription/models/CahierDeTexte', () => {
   CahierDeTexte.findAndCountAll = jest.fn()
   CahierDeTexte.findByPk = jest.fn()
   CahierDeTexte.associations = { cours: 'cours', enseignant: 'enseignant', blocsCahierDeTexte: 'blocsCahierDeTexte' }
+  CahierDeTexte.associations.parcours = 'parcours'
+  CahierDeTexte.associations.niveauEtude = 'niveauEtude'
+  CahierDeTexte.associations.etablissement = 'etablissement'
   return { CahierDeTexte }
 })
 
 jest.mock('../../../modules/inscription/models/Cours', () => ({
   Cours: {
+    findAll: jest.fn().mockResolvedValue([]),
     associations: {
       classe: 'classe',
       enseignant: 'enseignant',
@@ -24,10 +28,24 @@ jest.mock('../../../modules/inscription/models/Cours', () => ({
 
 jest.mock('../../../modules/auth/models/Enseignant', () => ({
   Enseignant: {
+    findOne: jest.fn(),
     associations: {
       utilisateur: 'utilisateur'
     }
   }
+}))
+
+jest.mock('../../../modules/inscription/services/CahierCohorteService', () => ({
+  __esModule: true,
+  default: {
+    trouverCohortes: jest.fn(),
+    conditionsPourCohortes: jest.fn((cohortes: any[]) => cohortes.map(({ parcoursId, niveauEtudeId, etablissementId }) => ({
+      parcoursId,
+      niveauEtudeId,
+      etablissementId,
+    }))),
+    enseignantAssocieAuCahier: jest.fn(),
+  },
 }))
 
 jest.mock('../../../modules/inscription/models/Parcours', () => ({
@@ -48,6 +66,8 @@ jest.mock('../../../core/helpers/SurveillantSiteScope', () => ({
 }))
 
 const { CahierDeTexte } = require('../../../modules/inscription/models/CahierDeTexte')
+const { Enseignant } = require('../../../modules/auth/models/Enseignant')
+const CahierCohorteService = require('../../../modules/inscription/services/CahierCohorteService').default
 const { getSurveillantSiteId } = require('../../../core/helpers/SurveillantSiteScope')
 import Ctrl from '../../../modules/inscription/controllers/CahierDeTexteController'
 
@@ -75,7 +95,10 @@ describe('getAllCahiersDeTexte', () => {
               { association: 'parcours', include: ['niveauEtude'] }
             ]
           },
-          { association: 'enseignant', include: ['utilisateur'] }
+          { association: 'enseignant', include: ['utilisateur'] },
+          { association: 'parcours', include: ['niveauEtude'] },
+          'niveauEtude',
+          'etablissement',
         ]
       })
     )
@@ -95,13 +118,33 @@ describe('getAllCahiersDeTexte', () => {
     await Ctrl.getAllCahiersDeTexte(req, res)
 
     expect(CahierDeTexte.findAll).toHaveBeenCalledWith(expect.objectContaining({
-      include: expect.arrayContaining([
-        expect.objectContaining({
-          association: 'cours',
-          where: { etablissementId: 3 },
-          required: true,
-        })
-      ])
+      where: expect.objectContaining({
+        [require('sequelize').Op.or]: [
+          { etablissementId: 3 },
+          { coursId: { [require('sequelize').Op.in]: [] } },
+        ],
+      }),
+    }))
+  })
+
+  it('inclut les cahiers partagés des cohortes enseignées', async () => {
+    Enseignant.findOne.mockResolvedValue({ id: 9 })
+    CahierCohorteService.trouverCohortes.mockResolvedValue([
+      { parcoursId: 4, niveauEtudeId: 2, etablissementId: 3 },
+    ])
+    ;(CahierDeTexte.findAll as jest.Mock).mockResolvedValue([])
+    const req = mockRequest({ utilisateurRole: 'enseignant', utilisateurId: 100 } as any)
+    const res = mockResponse()
+
+    await Ctrl.getAllCahiersDeTexte(req, res)
+
+    expect(CahierDeTexte.findAll).toHaveBeenCalledWith(expect.objectContaining({
+      where: {
+        [require('sequelize').Op.or]: [
+          { enseignantId: 9 },
+          { parcoursId: 4, niveauEtudeId: 2, etablissementId: 3 },
+        ],
+      },
     }))
   })
 })
@@ -127,7 +170,10 @@ describe('getCahierDeTexte', () => {
               { association: 'parcours', include: ['niveauEtude'] }
             ]
           },
-          { association: 'blocsCahierDeTexte' }
+          { association: 'blocsCahierDeTexte', required: false },
+          { association: 'parcours', include: ['niveauEtude'] },
+          'niveauEtude',
+          'etablissement',
         ]
       })
     )
@@ -161,6 +207,29 @@ describe('getCahierDeTexte', () => {
     await Ctrl.getCahierDeTexte(req, res)
 
     expect(res.status).toHaveBeenCalledWith(403)
+  })
+
+  it('autorise un enseignant associé à consulter un cahier de texte partagé', async () => {
+    ;(CahierDeTexte.findOne as jest.Mock).mockResolvedValue({
+      id: 12,
+      parcoursId: 4,
+      niveauEtudeId: 2,
+      etablissementId: 3,
+    })
+    Enseignant.findOne.mockResolvedValue({ id: 9 })
+    CahierCohorteService.enseignantAssocieAuCahier.mockResolvedValue(true)
+    const req = mockRequest({ params: { id: '12' }, utilisateurRole: 'enseignant', utilisateurId: 100 } as any)
+    const res = mockResponse()
+
+    await Ctrl.getCahierDeTexte(req, res)
+
+    expect(CahierCohorteService.enseignantAssocieAuCahier).toHaveBeenCalledWith(9, {
+      id: 12,
+      parcoursId: 4,
+      niveauEtudeId: 2,
+      etablissementId: 3,
+    })
+    expect(res.status).toHaveBeenCalledWith(200)
   })
 })
 
@@ -200,19 +269,13 @@ describe('createCahierDeTexte', () => {
     expect(res.send).toHaveBeenCalledWith(saved)
   })
 
-  it('should return 201 on success for EN role', async () => {
-    const saved = { id: 1, titre: 'Nouveau Cahier' }
-    const mockSave = jest.fn().mockResolvedValue(saved)
+  it('refuses individual cahier creation by a teacher', async () => {
     const req = mockRequest({ body: { titre: 'Nouveau Cahier' }, utilisateurRole: 'enseignant' } as any)
     const res = mockResponse()
-    ;(CahierDeTexte.findOne as jest.Mock).mockResolvedValue(null)
-    ;(CahierDeTexte as jest.Mock).mockReturnValue({ save: mockSave })
 
     await Ctrl.createCahierDeTexte(req, res)
 
-    expect(mockSave).toHaveBeenCalled()
-    expect(res.status).toHaveBeenCalledWith(201)
-    expect(res.send).toHaveBeenCalledWith(saved)
+    expect(res.status).toHaveBeenCalledWith(403)
   })
 })
 

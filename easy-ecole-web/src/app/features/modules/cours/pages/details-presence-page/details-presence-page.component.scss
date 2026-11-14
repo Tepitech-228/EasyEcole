@@ -1,0 +1,201 @@
+.notebook-cover {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  min-height: 190px;
+  margin-bottom: 2rem;
+  padding: 2rem 2.5rem 2rem 3rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 1.25rem;
+  color: #fff;
+  box-shadow: 0 18px 34px rgba(30, 41, 59, 0.18);
+}
+
+.notebook-cover--presence {
+  background:
+    radial-gradient(circle at 83% 18%, rgba(134, 239, 172, 0.2), transparent 24%),
+    linear-gradient(120deg, #123f46, #176b69 68%, #258681);
+}
+
+.notebook-cover__spine {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 1.15rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.25);
+  background: linear-gradient(90deg, rgba(8, 36, 39, 0.42), rgba(255, 255, 255, 0.08));
+  box-shadow: 5px 0 14px rgba(15, 23, 42, 0.16);
+}
+
+.notebook-cover__content,
+.notebook-cover__summary {
+  position: relative;
+  z-index: 1;
+}
+
+.notebook-cover__eyebrow {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: #b9eee0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.notebook-cover h2 {
+  margin: 0;
+  font-size: clamp(1.65rem, 3vw, 2.5rem);
+  font-weight: 750;
+  letter-spacing: -0.035em;
+}
+
+.notebook-cover p {
+  margin: 0.55rem 0 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.95rem;
+}
+
+.notebook-cover__summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-width: 11rem;
+  padding: 1rem 1.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 1rem;
+  background: rgba(8, 36, 39, 0.2);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.8rem;
+}
+
+.notebook-cover__summary strong {
+  color: #fff;
+  font-size: 1.05rem;
+}
+
+.presence-notebook__paper {
+  position: relative;
+  padding: 1.4rem 1.2rem 1.6rem 2.4rem;
+  overflow: hidden;
+  border: 1px solid #d6e5dc;
+  border-radius: 1rem;
+  background-color: #fffef9;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 47px,
+    rgba(86, 145, 177, 0.13) 48px
+  );
+  box-shadow: 0 12px 28px rgba(55, 65, 81, 0.08);
+}
+
+.presence-notebook__paper::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3.25rem;
+  width: 1px;
+  background: rgba(210, 105, 105, 0.3);
+  content: "";
+}
+
+.presence-notebook__paper-heading {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.15rem 0 1.1rem 1rem;
+  border-bottom: 1px solid #dce8df;
+}
+
+.presence-notebook__paper-heading span {
+  color: #548076;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.presence-notebook__paper-heading h3 {
+  margin: 0.2rem 0 0;
+  color: #213d43;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.presence-notebook__paper-heading p {
+  margin: 0;
+  color: #657f7a;
+  font-size: 0.75rem;
+}
+
+.presence-notebook__table {
+  position: relative;
+  z-index: 1;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.presence-notebook__head {
+  color: #54736c;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.presence-notebook__head th {
+  padding: 0.9rem 0.75rem;
+  border-bottom: 1px solid #dce8df;
+  text-align: left;
+}
+
+.presence-notebook__row td {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px dashed #d8e1da;
+  vertical-align: middle;
+}
+
+.presence-notebook__row td:first-child {
+  color: #87918c;
+  font-variant-numeric: tabular-nums;
+}
+
+.presence-notebook__row select {
+  min-width: 9.5rem;
+  border-color: #c5d8ce;
+  border-radius: 0.65rem;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 0.5rem 2rem 0.5rem 0.7rem;
+}
+
+@media (max-width: 640px) {
+  .notebook-cover {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1.2rem;
+    padding: 1.5rem 1.25rem 1.5rem 2rem;
+  }
+
+  .notebook-cover__summary {
+    min-width: 0;
+  }
+
+  .presence-notebook__paper {
+    padding: 1rem 0.7rem 1rem 1.15rem;
+  }
+
+  .presence-notebook__paper::before {
+    left: 1.8rem;
+  }
+
+  .presence-notebook__paper-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

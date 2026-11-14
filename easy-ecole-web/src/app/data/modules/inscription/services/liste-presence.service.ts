@@ -5,6 +5,13 @@ import { environment } from 'src/environments/environment';
 import { ListePresence } from '../models/ListePresence.model';
 import { Presence } from '../models/Presence.model';
 
+export interface CahiersCohorteGenerationResult {
+  success: boolean;
+  cohortesTraitees: number;
+  listesPresencesCrees: number;
+  cahiersDeTexteCrees: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -16,6 +23,10 @@ export class ListePresenceService {
 
   getAll(): Observable<ListePresence[]> {
     return this.httpClient.get<ListePresence[]>(`${this.SERVICE_URL}`)
+  }
+
+  genererTousLesCahiers(): Observable<CahiersCohorteGenerationResult> {
+    return this.httpClient.post<CahiersCohorteGenerationResult>(`${this.SERVICE_URL}/generer-tous`, {})
   }
 
   get(id: string): Observable<ListePresence> {

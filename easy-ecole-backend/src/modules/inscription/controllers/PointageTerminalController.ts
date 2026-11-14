@@ -18,6 +18,7 @@ import { Seance } from "../models/Seance";
 import { SeancePointage } from "../models/SeancePointage";
 import PointageTerminalTokenService from "../services/PointageTerminalTokenService";
 import SeancePointageConfirmationService from "../services/SeancePointageConfirmationService";
+import { depasseDelaiGraceDepart } from "../services/SeancePointageRulesService";
 import { VerificationPaiementService } from "../services/VerificationPaiementService";
 import SituationFinanciereService, { SituationFinanciere } from "../services/SituationFinanciereService";
 
@@ -388,6 +389,16 @@ export default class PointageTerminalController {
             }
 
             const heureDebutReelle = heurePointage(pointageActif.heureDebutReelle);
+            const departHorsDelai = depasseDelaiGraceDepart(heureReelle, seance.heureFin);
+            if (departHorsDelai === null) {
+                return { pointage: null, motifRefus: "L’horaire de fin du cours est invalide. Aucun pointage n’a été enregistré." };
+            }
+            if (departHorsDelai) {
+                return {
+                    pointage: null,
+                    motifRefus: "Le délai de 15 minutes après la fin prévue du cours est dépassé. Aucun départ n’a été enregistré."
+                };
+            }
             const confirmationToken = SeancePointageConfirmationService.creer({
                 seancePointageId: Number(pointageActif.id),
                 utilisateurId: Number(utilisateur.id),

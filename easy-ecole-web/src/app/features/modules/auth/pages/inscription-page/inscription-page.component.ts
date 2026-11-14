@@ -25,6 +25,7 @@ export class InscriptionPageComponent implements OnInit, OnDestroy {
   identifiantSuggestions: string[] = []
   identifiantSuggestionsLoading: boolean = false
   identifiantSuggestionsError: boolean = false
+  identifiantSuggestionsRateLimited: boolean = false
 
   private readonly nomsModifies$ = new Subject<void>()
   private readonly destroyed$ = new Subject<void>()
@@ -51,12 +52,13 @@ export class InscriptionPageComponent implements OnInit, OnDestroy {
         this.identifiantSuggestions = []
         this.identifiantAlreadyUsed = false
         this.identifiantSuggestionsError = false
+        this.identifiantSuggestionsRateLimited = false
         this.nomsModifies$.next()
       })
 
     this.nomsModifies$
       .pipe(
-        debounceTime(350),
+        debounceTime(700),
         switchMap(() => {
           const nom = String(nomControl.value || '').trim()
           const prenoms = String(prenomsControl.value || '').trim()
@@ -67,9 +69,11 @@ export class InscriptionPageComponent implements OnInit, OnDestroy {
 
           this.identifiantSuggestionsLoading = true
           this.identifiantSuggestionsError = false
+          this.identifiantSuggestionsRateLimited = false
           return this.authService.getIdentifiantSuggestions(nom, prenoms).pipe(
-            catchError(() => {
+            catchError((error: HttpErrorResponse) => {
               this.identifiantSuggestionsError = true
+              this.identifiantSuggestionsRateLimited = error.status === 429
               return of(null)
             })
           )

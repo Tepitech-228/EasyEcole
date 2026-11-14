@@ -675,6 +675,19 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
                 à <strong>{{ departureConfirmation.heure }}</strong> ?
               </ng-template>
             </div>
+            <div *ngIf="departureConfirmation.seancePointage && estDepartAnticipeEnAttente()" class="mt-4 text-left">
+              <label for="pointage-motif-depart" class="mb-2 block text-sm font-semibold text-slate-800">
+                Motif obligatoire du départ anticipé
+              </label>
+              <textarea id="pointage-motif-depart" rows="3" maxlength="500"
+                [value]="departureReason"
+                (input)="departureReason = $any($event.target).value; departureReasonError = ''"
+                class="w-full rounded-lg border border-slate-300 p-3 text-sm"
+                placeholder="Expliquez la raison du départ avant l’heure prévue"></textarea>
+              <div *ngIf="departureReasonError" class="mt-2 text-sm text-red-700" role="alert">
+                {{ departureReasonError }}
+              </div>
+            </div>
             <div class="pointage-departure-actions">
               <button (click)="confirmerDepart()" [disabled]="departureConfirmationSaving" class="pointage-btn pointage-btn--success">
                 <span class="material-symbols-outlined">check_circle</span>

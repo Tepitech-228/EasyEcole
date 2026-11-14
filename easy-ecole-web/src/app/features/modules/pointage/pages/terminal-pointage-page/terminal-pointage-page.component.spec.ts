@@ -203,6 +203,7 @@ describe('TerminalPointagePageComponent', () => {
     });
 
     expect(speak.calls.mostRecent().args[0].text).toContain('Voulez-vous confirmer la fin du cours');
+    fixture.componentInstance.departureReason = 'Raison de service';
     fixture.componentInstance.confirmerDepart();
     expect(speak.calls.mostRecent().args[0].text).toContain('Fin du cours Mathématiques à 08:55');
   });
@@ -443,16 +444,106 @@ describe('TerminalPointagePageComponent', () => {
     expect(fixture.componentInstance.departureConfirmation?.seancePointage?.cours).toBe('Mathématiques');
     expect(fixture.nativeElement.querySelector('.pointage-departure-confirmation').textContent)
       .toContain('Voulez-vous enregistrer la fin du cours Mathématiques');
+    expect(fixture.nativeElement.querySelector('#pointage-motif-depart')).not.toBeNull();
     expect(speak.calls.mostRecent().args[0].text).toContain('Voulez-vous confirmer la fin du cours');
 
     fixture.componentInstance.confirmerDepart();
+    expect(fixture.componentInstance.departureReasonError).toContain('motif');
+    expect(pointageService.pointerFinCoursByScan).not.toHaveBeenCalled();
+    fixture.componentInstance.departureReason = 'Raison de service';
+    pointageService.pointerFinCoursByScan.and.returnValue(of({
+      pointage: { heureArrivee: '08:15:00', heureDepart: '08:55:00' },
+      navigationCours: {
+        siteActuel: 'Campus principal',
+        prochainCours: {
+          site: 'Campus principal',
+          heureDebut: '10:00:00',
+          salle: 'B12',
+          etage: '2e étage',
+          memeSite: true
+        }
+      }
+    } as any));
+    fixture.componentInstance.confirmerDepart();
     fixture.detectChanges();
 
-    expect(pointageService.pointerFinCoursByScan).toHaveBeenCalledOnceWith('course-end-token');
+    expect(pointageService.pointerFinCoursByScan).toHaveBeenCalledOnceWith('course-end-token', 'Raison de service');
     expect(fixture.componentInstance.departureResultPopup?.titre).toBe('Fin du cours enregistrée');
     expect(fixture.componentInstance.departureResultPopup?.cours).toBe('Mathématiques');
     expect(fixture.componentInstance.departureResultPopup?.minutesTotales).toBe(40);
     expect(speak.calls.mostRecent().args[0].text).toContain('Fin du cours Mathématiques à 08:55');
+    expect(speak.calls.mostRecent().args[0].text)
+      .toContain('Votre prochain cours sur le site Campus principal est en salle B12, à l’étage 2e étage à 10:00.');
+  });
+
+  it('announces when the next teacher course is on a different site', () => {
+    pointageService.getToday.and.returnValue(of(null));
+    const speak = spyOn(window.speechSynthesis, 'speak');
+    fixture.detectChanges();
+    terminalAttendanceEvents.next({
+      utilisateurId: 42,
+      nom: 'Doe',
+      prenoms: 'Jane',
+      role: 'enseignant',
+      employeeNoString: 'ENS042',
+      date: '2026-10-18',
+      time: '08:55:00',
+      mode: 'passage',
+      etablissementId: 1,
+      seancePointage: {
+        action: 'fin',
+        seanceId: 81,
+        cours: 'Mathématiques',
+        heureDebutPrevue: '08:00:00',
+        heureFinPrevue: '09:00:00',
+        heureDebutReelle: '08:15:00',
+        heureFinReelle: null,
+        heureReelle: '08:55:00',
+        confirmationToken: 'course-end-token'
+      }
+    });
+    fixture.detectChanges();
+
+    fixture.componentInstance.departureReason = 'Raison de service';
+    pointageService.pointerFinCoursByScan.and.returnValue(of({
+      pointage: { heureArrivee: '08:15:00', heureDepart: '08:55:00' },
+      navigationCours: {
+        siteActuel: 'Campus principal',
+        prochainCours: {
+          site: 'Campus secondaire',
+          heureDebut: '10:30:00',
+          salle: null,
+          etage: null,
+          memeSite: false
+        }
+      }
+    } as any));
+    fixture.componentInstance.confirmerDepart();
+
+    expect(speak.calls.mostRecent().args[0].text)
+      .toContain('Vous n’avez plus de cours sur le site Campus principal. Votre prochain cours est sur le site Campus secondaire à 10:30.');
+  });
+
+  it('announces the explicit rejection reason for a late teacher departure', () => {
+    const speak = spyOn(window.speechSynthesis, 'speak');
+    pointageService.getToday.and.returnValue(of(null));
+    fixture.detectChanges();
+
+    terminalAttendanceEvents.next({
+      utilisateurId: 31,
+      nom: 'Doe',
+      prenoms: 'Jane',
+      role: 'enseignant',
+      employeeNoString: 'ENS031',
+      date: '2026-10-17',
+      time: '09:15:01',
+      mode: 'refuse',
+      etablissementId: 1,
+      motifRefus: 'Le délai de 15 minutes après la fin prévue du cours est dépassé.',
+    });
+
+    expect(speak.calls.mostRecent().args[0].text)
+      .toContain('Le délai de 15 minutes après la fin prévue du cours est dépassé.');
   });
 
   it('shows the combined financial summary after a student attendance event', () => {

@@ -15,6 +15,7 @@ export class SeancePointage extends Model<InferAttributes<SeancePointage>, Infer
   declare etablissementId: ForeignKey<Etablissement["id"]>
   declare heureDebutReelle: CreationOptional<string | null>
   declare heureFinReelle: CreationOptional<string | null>
+  declare motifDepart: CreationOptional<string | null>
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
 }
@@ -28,6 +29,7 @@ SeancePointage.init({
   etablissementId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false },
   heureDebutReelle: { type: DataTypes.TIME, allowNull: true },
   heureFinReelle: { type: DataTypes.TIME, allowNull: true },
+  motifDepart: { type: DataTypes.STRING(500), allowNull: true },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
 }, {

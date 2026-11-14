@@ -209,12 +209,17 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
     this._niveauxEtude = this.niveauxEtude.filter((value: NiveauEtude) => {
       return this.selectedNiveauEtude == 'undefined' || value.id == this.selectedNiveauEtude
     })
+    const parcoursApprenantId = this.rolesValue.isApprenant
+      ? this.cursusApprenant?.parcoursId
+      : undefined
     this._parcours = this.parcours.filter((value: Parcours) => {
-      return this.selectedNiveauEtude == 'undefined' || value.niveauEtudeId == this.selectedNiveauEtude
+      return (!this.rolesValue.isApprenant || (!!parcoursApprenantId && value.id == parcoursApprenantId)) &&
+        (this.selectedNiveauEtude == 'undefined' || value.niveauEtudeId == this.selectedNiveauEtude)
     })
 
     this._cours = this.cours.filter((value: Cours) => {
-      return (this.selectedNiveauEtude == 'undefined' || value.parcours?.niveauEtudeId == this.selectedNiveauEtude) &&
+      return (!this.rolesValue.isApprenant || (!!parcoursApprenantId && value.parcoursId == parcoursApprenantId)) &&
+        (this.selectedNiveauEtude == 'undefined' || value.parcours?.niveauEtudeId == this.selectedNiveauEtude) &&
         (this.selectedParcours == 'undefined' || value.parcoursId == this.selectedParcours)
     })
   }
@@ -244,15 +249,25 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
       .subscribe(
         {
           next: (res) => {
-            this.cursusApprenant = res
-
-            if (this.cursusApprenant != null) {
-              this.cours = this.cursusApprenant.demandeInscription?.cours ?? []
+            this.cursusApprenant = res?.cursusApprenant
+            const parcoursId = this.cursusApprenant?.parcoursId
+            if (!parcoursId) {
+              this.cours = []
               this.filtrerCours()
+              return
             }
+
+            this.selectedParcours = String(parcoursId)
+            this.coursService.getAll(this.selectedParcours).subscribe({
+              next: (cours) => {
+                this.cours = cours
+                this.filtrerCours()
+              },
+              error: (err) => console.error('Erreur lors du chargement des UE de la filière de l’apprenant:', err)
+            })
           },
           error: (err) => {
-            console.log(err)
+            console.error('Erreur lors du chargement du cursus de l’apprenant:', err)
           },
         }
       )
@@ -294,7 +309,7 @@ export class ListeCoursPageComponent extends BaseComponentClass implements OnIni
         {
           next: (res) => {
             this.parcours = res
-            this._parcours = this.parcours
+            this.filtrerCours()
           },
           error: (err) => {
             console.log(err)

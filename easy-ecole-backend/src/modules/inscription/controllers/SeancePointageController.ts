@@ -3,6 +3,8 @@ import { Op } from "sequelize";
 import { Seance } from "../models/Seance";
 import { SeancePointage } from "../models/SeancePointage";
 import { Enseignant } from "../../auth/models/Enseignant";
+import { depasseDelaiGraceDepart, estDepartAnticipe, validerMotifDepart } from "../services/SeancePointageRulesService";
+import SeancePointagePlanningService from "../services/SeancePointagePlanningService";
 
 function dateIso(value: unknown): string {
   if (value instanceof Date) return value.toISOString().slice(0, 10);
@@ -155,8 +157,47 @@ export default class SeancePointageController {
       }
 
       const heure = heureUtc(new Date());
+      const departHorsDelai = depasseDelaiGraceDepart(heure, context.seance.heureFin);
+      if (departHorsDelai === null) {
+        return res.status(409).json({ success: false, code: "INVALID_SCHEDULE", message: "L’horaire de fin du cours est invalide." });
+      }
+      if (departHorsDelai) {
+        return res.status(409).json({
+          success: false,
+          code: "DEPARTURE_WINDOW_EXPIRED",
+          message: "Le délai de 15 minutes après la fin prévue du cours est dépassé. Aucun départ n’a été enregistré."
+        });
+      }
+      const departAnticipe = estDepartAnticipe(heure, context.seance.heureFin);
+      if (departAnticipe === null) {
+        return res.status(409).json({ success: false, code: "INVALID_SCHEDULE", message: "L’horaire de fin du cours est invalide." });
+      }
+      const motifDepart = req.body?.motifDepart === undefined
+        ? null
+        : validerMotifDepart(req.body.motifDepart);
+      if (departAnticipe && !motifDepart) {
+        return res.status(400).json({
+          success: false,
+          code: "EARLY_DEPARTURE_REASON_REQUIRED",
+          message: "Un motif de départ est obligatoire avant l’heure de fin prévue du cours (500 caractères maximum)."
+        });
+      }
+      if (req.body?.motifDepart !== undefined && !motifDepart) {
+        return res.status(400).json({
+          success: false,
+          code: "INVALID_DEPARTURE_REASON",
+          message: "Le motif de départ doit contenir au maximum 500 caractères."
+        });
+      }
+      const navigationCours = await SeancePointagePlanningService.trouverCoursSuivant(
+        Number(context.enseignantId),
+        context.etablissementId,
+        context.date,
+        heure,
+        Number(context.seance.id)
+      );
       const [updated] = await SeancePointage.update(
-        { heureFinReelle: heure },
+        { heureFinReelle: heure, motifDepart },
         { where: { id: pointage.id, heureFinReelle: null } },
       );
       if (!updated) {
@@ -171,6 +212,8 @@ export default class SeancePointageController {
         statut: finReelle < finPrevue ? "termine_en_avance" : "termine",
         heureDebutReelle: pointage.heureDebutReelle,
         heureFinReelle: heure,
+        motifDepart,
+        navigationCours,
         dureeMinutes: Math.max(0, finReelle - debutReel),
         departAnticipeMinutes: Math.max(0, finPrevue - finReelle),
         message: "Fin de séance enregistrée.",

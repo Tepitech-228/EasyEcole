@@ -10,6 +10,7 @@ import { CursusApprenant } from 'src/app/data/modules/inscription/models/CursusA
 import { NiveauEtude } from 'src/app/data/modules/inscription/models/NiveauEtude.model';
 import { Parcours } from 'src/app/data/modules/inscription/models/Parcours.model';
 import { CahierDeTexteService } from 'src/app/data/modules/inscription/services/cahier-de-texte.service';
+import { ListePresenceService } from 'src/app/data/modules/inscription/services/liste-presence.service';
 import { ClasseService } from 'src/app/data/modules/inscription/services/classe.service';
 import { CoursService } from 'src/app/data/modules/inscription/services/cours.service';
 import { CursusApprenantService } from 'src/app/data/modules/inscription/services/cursus-apprenant.service';
@@ -25,6 +26,9 @@ export class ListeCahiersDeTextePageComponent extends BaseComponentClass impleme
 
   alreadyExists: boolean = false
   error: boolean = false
+  generationEnCours: boolean = false
+  generationMessage: string | null = null
+  generationErreur: string | null = null
 
   // cursusApprenant?: CursusApprenant
   cahiersDeTexte: CahierDeTexte[] = []
@@ -65,6 +69,7 @@ export class ListeCahiersDeTextePageComponent extends BaseComponentClass impleme
     private cursusApprenantService: CursusApprenantService,
     private parcoursService: ParcoursService,
     private cahierDeTexteService: CahierDeTexteService,
+    private listePresenceService: ListePresenceService,
     private enseignantService: EnseignantService,
   ) {
     super()
@@ -97,9 +102,18 @@ export class ListeCahiersDeTextePageComponent extends BaseComponentClass impleme
     })
 
     this._cahiersDeTexte = this.cahiersDeTexte.filter((value: CahierDeTexte) => {
-      return (this.selectedNiveauEtude == 'undefined' || value.cours?.parcours?.niveauEtudeId == this.selectedNiveauEtude) &&
-        (this.selectedClasse == 'undefined' || value.cours?.classeId == this.selectedClasse) &&
-        (this.selectedParcours == 'undefined' || value.cours?.parcoursId == this.selectedParcours)
+      const niveauEtudeId = value.niveauEtudeId ?? value.cours?.parcours?.niveauEtudeId
+      const parcoursId = value.parcoursId ?? value.cours?.parcoursId
+      const classeCorrespondante = this.selectedClasse == 'undefined'
+        || value.cours?.classeId == this.selectedClasse
+        || (!value.cours && this.classes.some(classe =>
+          classe.id == this.selectedClasse
+          && classe.parcoursId == parcoursId
+          && classe.niveauEtudeId == niveauEtudeId
+        ))
+      return (this.selectedNiveauEtude == 'undefined' || niveauEtudeId == this.selectedNiveauEtude) &&
+        classeCorrespondante &&
+        (this.selectedParcours == 'undefined' || parcoursId == this.selectedParcours)
     })
   }
 
@@ -118,8 +132,8 @@ export class ListeCahiersDeTextePageComponent extends BaseComponentClass impleme
     }
     else {
       this._cahiersDeTexte = this.cahiersDeTexte.filter((value: CahierDeTexte) => {
-        console.log(value.titre!.toLowerCase().includes(this.searchCahierDeTexte!.toLowerCase()))
-        return value.titre!.toLowerCase().includes(this.searchCahierDeTexte!.toLowerCase()) || value.description?.toLowerCase().includes(this.searchCahierDeTexte!.toLowerCase())
+        const recherche = this.searchCahierDeTexte!.toLowerCase()
+        return value.titre?.toLowerCase().includes(recherche) || value.description?.toLowerCase().includes(recherche)
       })
     }
   }
@@ -156,6 +170,28 @@ export class ListeCahiersDeTextePageComponent extends BaseComponentClass impleme
           },
         }
       )
+  }
+
+  genererTousLesCahiers(): void {
+    if (this.generationEnCours) return
+    this.generationEnCours = true
+    this.generationMessage = null
+    this.generationErreur = null
+    this.listePresenceService.genererTousLesCahiers().subscribe({
+      next: resultat => {
+        this.generationMessage = resultat.cohortesTraitees === 0
+          ? 'Aucune filière avec niveau et cours rattaché à ce site.'
+          : `${resultat.listesPresencesCrees} cahier(s) de présence et ${resultat.cahiersDeTexteCrees} cahier(s) de texte créé(s) pour ${resultat.cohortesTraitees} filière(s)/niveau(x).`
+        this.getcahiersDeTexte()
+      },
+      error: err => {
+        this.generationErreur = err.error?.message || 'La génération des cahiers a échoué.'
+        this.generationEnCours = false
+      },
+      complete: () => {
+        this.generationEnCours = false
+      }
+    })
   }
 
   getNiveauxEtude(): void {

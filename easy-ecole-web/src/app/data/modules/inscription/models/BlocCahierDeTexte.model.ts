@@ -6,6 +6,7 @@ export class BlocCahierDeTexte {
   declare heureDebut?: Date
   declare heureFin?: Date
   declare contenu?: string
+  declare auteurEnseignantId?: string | null
 
   declare cahierDeTexteId?: string
   declare cahierDeTexte?: CahierDeTexte

@@ -10,6 +10,7 @@ import { Cours } from "../models/Cours";
 import { Parcours } from "../models/Parcours";
 import { QrTokenService } from "../../../core/services/QrTokenService";
 import { VerificationPaiementService, VerificationPaiementResult } from "../services/VerificationPaiementService";
+import CahierCohorteService from "../services/CahierCohorteService";
 import * as fs from "fs"
 import * as path from "path"
 import { getSurveillantSiteId } from "../../../core/helpers/SurveillantSiteScope";
@@ -17,6 +18,18 @@ import { getSurveillantSiteId } from "../../../core/helpers/SurveillantSiteScope
 export default class PresenceController {
 
     constructor() { }
+
+    private static async enseignantPeutGererListePresence(req: Request, listePresenceId: number | string): Promise<boolean> {
+        const [enseignant, listePresence] = await Promise.all([
+            Enseignant.findOne({
+                where: { utilisateurId: (req as any).utilisateurId },
+                attributes: ["id"],
+            }),
+            ListePresence.findByPk(listePresenceId),
+        ]);
+        if (!enseignant || !listePresence) return false;
+        return CahierCohorteService.enseignantAssocieAuCahier(Number(enseignant.id), listePresence);
+    }
 
     static async getAllPresences(req: Request, res: Response): Promise<Response> {
         const role = (req as any).utilisateurRole;
@@ -40,11 +53,20 @@ export default class PresenceController {
         else if (role === RolesUtilisateur.ENSEIGNANT) {
             const enseignant = await Enseignant.findOne({ where: { utilisateurId } });
             if (enseignant) {
+                const cohortes = await CahierCohorteService.trouverCohortes(undefined, Number(enseignant.id));
                 const listesPresences = await ListePresence.findAll({
-                    where: { enseignantId: enseignant.id },
+                    where: {
+                        [Op.or]: [
+                            { enseignantId: enseignant.id },
+                            ...CahierCohorteService.conditionsPourCohortes(cohortes),
+                        ],
+                    },
                     attributes: ['id']
                 });
                 where.listePresenceId = { [Op.in]: listesPresences.map(lp => lp.id) };
+                where.auteurEnseignantId = enseignant.id;
+            } else {
+                where.auteurEnseignantId = -1;
             }
         }
         else if (role === RolesUtilisateur.SURVEILLANT) {
@@ -52,13 +74,18 @@ export default class PresenceController {
             if (!etablissementId) {
                 return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
             }
+            const coursDuSite = await Cours.findAll({
+                where: { etablissementId },
+                attributes: ["id"],
+            });
             const listesPresences = await ListePresence.findAll({
-                include: [{
-                    association: ListePresence.associations.cours,
-                    where: { etablissementId },
-                    required: true,
-                }],
-                attributes: ['id'],
+                where: {
+                    [Op.or]: [
+                        { etablissementId },
+                        { coursId: { [Op.in]: coursDuSite.map(cours => cours.id) } },
+                    ],
+                },
+                attributes: ["id"],
             });
             where.listePresenceId = { [Op.in]: listesPresences.map(liste => liste.id) };
         }
@@ -83,7 +110,17 @@ export default class PresenceController {
     static async getPresence(req: Request, res: Response): Promise<Response> {
         let options: FindOptions<InferAttributes<Presence>> = {}
         options = {
-            where: { id: req.params.id }, include: [Presence.associations.presencesCoursParticipants, { association: Presence.associations.listePresence }]
+            where: { id: req.params.id },
+            include: [
+                Presence.associations.presencesCoursParticipants,
+                {
+                    association: Presence.associations.listePresence,
+                    include: [
+                        { association: ListePresence.associations.cours, include: [Cours.associations.enseignant] },
+                        ListePresence.associations.parcours,
+                    ],
+                },
+            ],
         }
 
         try {
@@ -100,7 +137,14 @@ export default class PresenceController {
                 const coursParticipants = await CoursParticipant.findAll({ where: { utilisateurId }, attributes: ['coursId'] });
                 const coursIds = coursParticipants.map(cp => cp.coursId);
                 const listePresence = (presence as any).listePresence;
-                if (!listePresence || !coursIds.includes(listePresence.coursId)) {
+                const cohorteOk = listePresence?.parcoursId && listePresence?.niveauEtudeId && listePresence?.etablissementId
+                    ? (await CahierCohorteService.trouverCoursIds({
+                        parcoursId: Number(listePresence.parcoursId),
+                        niveauEtudeId: Number(listePresence.niveauEtudeId),
+                        etablissementId: Number(listePresence.etablissementId),
+                    })).some(coursId => coursIds.includes(coursId))
+                    : false;
+                if (!listePresence || (!coursIds.includes(listePresence.coursId) && !cohorteOk)) {
                     return res.status(403).json({ success: false, message: "Vous n'avez pas accès à cette présence" });
                 }
             }
@@ -108,16 +152,18 @@ export default class PresenceController {
             else if (role === RolesUtilisateur.ENSEIGNANT) {
                 const enseignant = await Enseignant.findOne({ where: { utilisateurId } });
                 const listePresence = (presence as any).listePresence;
-                if (!enseignant || !listePresence || listePresence.enseignantId !== enseignant.id) {
+                const autorise = enseignant && listePresence &&
+                    await CahierCohorteService.enseignantAssocieAuCahier(Number(enseignant.id), listePresence);
+                if (!autorise || Number(presence.auteurEnseignantId) !== Number(enseignant.id)) {
                     return res.status(403).json({ success: false, message: "Vous n'avez pas accès à cette présence" });
                 }
             } else if (role === RolesUtilisateur.SURVEILLANT) {
                 const etablissementId = await getSurveillantSiteId(req);
                 const listePresence = (presence as any).listePresence;
-                const cours = listePresence
+                const cours = listePresence?.coursId
                     ? await Cours.findOne({ where: { id: listePresence.coursId, etablissementId }, attributes: ["id"] })
                     : null;
-                if (!etablissementId || !cours) {
+                if (!etablissementId || (Number(listePresence?.etablissementId) !== etablissementId && !cours)) {
                     return res.status(403).json({ success: false, message: "Vous n'avez pas accès à cette présence" });
                 }
             }
@@ -139,21 +185,40 @@ export default class PresenceController {
         if (role === RolesUtilisateur.SURVEILLANT) {
             const etablissementId = await getSurveillantSiteId(req);
             const listePresence = etablissementId
-                ? await ListePresence.findOne({
-                    where: { id: req.body.listePresenceId },
-                    include: [{
-                        association: ListePresence.associations.cours,
-                        where: { etablissementId },
-                        required: true,
-                    }],
-                })
+                ? await ListePresence.findByPk(req.body.listePresenceId)
                 : null;
-            if (!listePresence) {
+            const cours = listePresence?.coursId
+                ? await Cours.findOne({ where: { id: listePresence.coursId, etablissementId }, attributes: ["id"] })
+                : null;
+            if (!listePresence || (
+                Number(listePresence.etablissementId) !== etablissementId && !cours
+            )) {
                 return res.status(403).json({ success: false, message: "Cette liste de présence n'appartient pas à votre site" });
             }
         }
 
-        let presence: Presence | null = await Presence.findOne({ where: { date: req.body.date, heureDebut: req.body.heureDebut, heureFin: req.body.heureFin, } });
+        let auteurEnseignantId: number | null = null;
+        if (role === RolesUtilisateur.ENSEIGNANT) {
+            const enseignant = await Enseignant.findOne({
+                where: { utilisateurId: (req as any).utilisateurId },
+                attributes: ["id"],
+            });
+            const listePresence = await ListePresence.findByPk(req.body.listePresenceId);
+            if (!enseignant || !listePresence ||
+                !await CahierCohorteService.enseignantAssocieAuCahier(Number(enseignant.id), listePresence)) {
+                return res.status(403).json({ success: false, message: "Vous n'êtes pas autorisé à renseigner cette liste de présence" });
+            }
+            auteurEnseignantId = Number(enseignant.id);
+        }
+
+        let presence: Presence | null = await Presence.findOne({
+            where: {
+                listePresenceId: req.body.listePresenceId,
+                date: req.body.date,
+                heureDebut: req.body.heureDebut,
+                heureFin: req.body.heureFin,
+            },
+        });
 
         if (presence != null) {
             return res.status(400).json({ success: false, alreadyExists: true });
@@ -164,6 +229,7 @@ export default class PresenceController {
             presence.heureDebut = req.body.heureDebut
             presence.heureFin = req.body.heureFin
             presence.listePresenceId = req.body.listePresenceId
+            presence.auteurEnseignantId = auteurEnseignantId
 
             await presence.save()
                 .then((presence) => {
@@ -188,6 +254,18 @@ export default class PresenceController {
 
         let presence: Presence | null = await Presence.findOne(options);
         if (presence != null) {
+            if ((req as any).utilisateurRole === RolesUtilisateur.ENSEIGNANT) {
+                const accesListeActuelle = await PresenceController.enseignantPeutGererListePresence(req, presence.listePresenceId);
+                const accesNouvelleListe = await PresenceController.enseignantPeutGererListePresence(req, req.body.listePresenceId);
+                const enseignant = await Enseignant.findOne({
+                    where: { utilisateurId: (req as any).utilisateurId },
+                    attributes: ["id"],
+                });
+                if (!enseignant || Number(presence.auteurEnseignantId) !== Number(enseignant.id) ||
+                    !accesListeActuelle || !accesNouvelleListe) {
+                    return res.status(403).json({ success: false, message: "Vous n'êtes pas autorisé à modifier cette présence" });
+                }
+            }
             // if (presence.titre != req.body.titre && await Presence.findOne({ where: { titre: req.body.titre } }) != null) {
             //     return res.status(400).json({ success: false, alreadyExists: true });
             // }
@@ -224,6 +302,14 @@ export default class PresenceController {
 
         let presence: Presence | null = await Presence.findOne({ where: { id: req.params.id } });
         if (presence) {
+            if ((req as any).utilisateurRole === RolesUtilisateur.ENSEIGNANT &&
+                (!await PresenceController.enseignantPeutGererListePresence(req, presence.listePresenceId) ||
+                    Number(presence.auteurEnseignantId) !== Number((await Enseignant.findOne({
+                        where: { utilisateurId: (req as any).utilisateurId },
+                        attributes: ["id"],
+                    }))?.id))) {
+                return res.status(403).json({ success: false, message: "Vous n'êtes pas autorisé à supprimer cette présence" });
+            }
             await presence.destroy()
                 .then(() => {
                     return res.status(200).json({ success: true, message: "Presence supprimée" });
@@ -287,16 +373,32 @@ export default class PresenceController {
                 }]
             })
 
-            if (!presence || !presence.listePresence || !presence.listePresence.cours) {
-                return res.status(404).json({ success: false, message: "Présence ou cours non trouvé" })
+            if (!presence || !presence.listePresence) {
+                return res.status(404).json({ success: false, message: "Présence ou cahier non trouvé" })
             }
 
-            const coursId = presence.listePresence.cours.id
+            const listePresence = presence.listePresence;
+            if ((req as any).utilisateurRole === RolesUtilisateur.ENSEIGNANT) {
+                const enseignant = await Enseignant.findOne({
+                    where: { utilisateurId: (req as any).utilisateurId },
+                    attributes: ["id"],
+                });
+                if (!enseignant ||
+                    Number(presence.auteurEnseignantId) !== Number(enseignant.id) ||
+                    !await CahierCohorteService.enseignantAssocieAuCahier(Number(enseignant.id), listePresence)) {
+                    return res.status(403).json({ success: false, message: "Vous n'êtes pas autorisé à renseigner cette liste de présence" });
+                }
+            }
+
+            const coursIds = await CahierCohorteService.trouverCoursIdsPourCahier(listePresence);
+            if (coursIds.length === 0) {
+                return res.status(404).json({ success: false, message: "Aucun cours n'est associé à cette liste de présence" });
+            }
 
             const coursParticipant = await CoursParticipant.findOne({
                 where: {
                     utilisateurId: resolvedUserId,
-                    coursId: coursId
+                    coursId: { [Op.in]: coursIds }
                 }
             })
 
@@ -365,10 +467,13 @@ export default class PresenceController {
             const presence = await Presence.findByPk(req.params.id, {
                 include: [{
                     association: Presence.associations.listePresence,
-                    include: [{
-                        association: ListePresence.associations.cours,
-                        include: [Cours.associations.enseignant]
-                    }]
+                    include: [
+                        {
+                            association: ListePresence.associations.cours,
+                            include: [Cours.associations.enseignant],
+                        },
+                        ListePresence.associations.parcours,
+                    ],
                 }]
             })
 
@@ -376,8 +481,15 @@ export default class PresenceController {
                 return res.status(404).json({ success: false, message: "Présence non trouvée" })
             }
 
-            const enseignant = presence.listePresence?.cours?.enseignant as any
-            if (!enseignant || enseignant.utilisateurId != (req as any).utilisateurId) {
+            const listePresence = presence.listePresence as any;
+            const enseignantProfil = await Enseignant.findOne({
+                where: { utilisateurId: (req as any).utilisateurId },
+                attributes: ["id"],
+            });
+            const autorise = enseignantProfil && listePresence &&
+                Number(presence.auteurEnseignantId) === Number(enseignantProfil.id) &&
+                await CahierCohorteService.enseignantAssocieAuCahier(Number(enseignantProfil.id), listePresence);
+            if (!autorise) {
                 return res.status(403).json({ success: false, message: "Vous n'êtes pas l'enseignant de ce cours" })
             }
 

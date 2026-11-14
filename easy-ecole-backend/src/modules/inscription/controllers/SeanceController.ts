@@ -345,6 +345,7 @@ export default class SeanceController {
                 event.pointage = pointage ? {
                     heureDebutReelle: pointage.heureDebutReelle,
                     heureFinReelle: pointage.heureFinReelle,
+                    motifDepart: pointage.motifDepart,
                 } : null;
                 if (pointage?.heureFinReelle) {
                     event.statutPointage = minutes(pointage.heureFinReelle) < minutes(event.heureFin)
@@ -500,7 +501,7 @@ export default class SeanceController {
         const utilisateurIds = Array.from(new Set(seances.map(seance => Number(seance.enseignant?.utilisateurId || seance.enseignantId)).filter(Boolean)))
         const [pointagesSeance, pointages] = await Promise.all([
             seanceIds.length
-                ? SeancePointage.findAll({ where: { seanceId: { [Op.in]: seanceIds }, date: { [Op.between]: [debut, fin] } }, attributes: ['seanceId', 'date', 'heureDebutReelle', 'heureFinReelle'] })
+                ? SeancePointage.findAll({ where: { seanceId: { [Op.in]: seanceIds }, date: { [Op.between]: [debut, fin] } }, attributes: ['seanceId', 'date', 'heureDebutReelle', 'heureFinReelle', 'motifDepart'] })
                 : Promise.resolve([]),
             Pointage.findAll({ where: { utilisateurId: { [Op.in]: utilisateurIds }, date: { [Op.between]: [debut, fin] } }, attributes: ['utilisateurId', 'date', 'heureArrivee', 'heureDepart'] })
         ])

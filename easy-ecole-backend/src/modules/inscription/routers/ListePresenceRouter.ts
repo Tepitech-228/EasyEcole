@@ -3,6 +3,7 @@ import express from "express"
 import { RefuserRoles } from "../../../core/middlewares/RefuserRoles"
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur"
 import ListePresenceController from "../controllers/ListePresenceController"
+import CahiersCohorteController from "../controllers/CahiersCohorteController"
 
 const router = express.Router()
 
@@ -23,6 +24,7 @@ router.use(RefuserRoles(RolesUtilisateur.PARENT))
  */
 router
     .get('/', ListePresenceController.getAllListesPresences)
+    .post('/generer-tous', CahiersCohorteController.genererTous)
 
 /**
  * @openapi

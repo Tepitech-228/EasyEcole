@@ -61,6 +61,9 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
   filterSiteId: string = ''
   pointageEnCours: Record<string, boolean> = {}
   messagePointage: string = ''
+  finAnticipeeEnAttente: PlanningEvent | null = null
+  motifDepart: string = ''
+  motifDepartErreur: string = ''
 
   filterEnseignantId: string = ''
   filterClasseId: string = ''
@@ -291,15 +294,52 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
 
   pointerSeance(event: PlanningEvent | undefined, action: 'debut' | 'fin'): void {
     if (!event?.seanceId || this.pointageEnCours[event.id]) return
+    if (action === 'fin' && this.estDepartAnticipe(event)) {
+      this.finAnticipeeEnAttente = event
+      this.motifDepart = ''
+      this.motifDepartErreur = ''
+      return
+    }
+    this.enregistrerPointageSeance(event, action)
+  }
+
+  confirmerFinAnticipee(): void {
+    const event = this.finAnticipeeEnAttente
+    const motif = this.motifDepart.trim()
+    if (!event) return
+    if (!motif) {
+      this.motifDepartErreur = 'Veuillez indiquer le motif du départ anticipé.'
+      return
+    }
+    if (motif.length > 500) {
+      this.motifDepartErreur = 'Le motif ne peut pas dépasser 500 caractères.'
+      return
+    }
+    this.finAnticipeeEnAttente = null
+    this.motifDepartErreur = ''
+    this.enregistrerPointageSeance(event, 'fin', motif)
+  }
+
+  annulerFinAnticipee(): void {
+    this.finAnticipeeEnAttente = null
+    this.motifDepart = ''
+    this.motifDepartErreur = ''
+  }
+
+  private enregistrerPointageSeance(event: PlanningEvent, action: 'debut' | 'fin', motifDepart?: string): void {
     this.pointageEnCours[event.id] = true
     this.messagePointage = ''
     const request = action === 'debut'
       ? this.seanceService.pointerDebut(event.seanceId, event.date)
-      : this.seanceService.pointerFin(event.seanceId, event.date)
-
+      : this.seanceService.pointerFin(event.seanceId, event.date, motifDepart)
     request.subscribe({
       next: (result) => {
-        this.messagePointage = result.message || 'Pointage enregistré.'
+        const message = result.message || 'Pointage enregistré.'
+        const navigationCours = action === 'fin' ? result.navigationCours : null
+        this.messagePointage = navigationCours
+          ? `${message} ${this.messageNavigationCours(navigationCours)}`
+          : message
+        this.motifDepart = ''
         this.annoncer(this.messagePointage)
         this.loadPlanning(this.currentWeekStart, this.currentWeekEnd)
       },
@@ -312,6 +352,43 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
         this.pointageEnCours[event.id] = false
       },
     })
+  }
+
+  private estDepartAnticipe(event: PlanningEvent): boolean {
+    if (event.date !== new Date().toISOString().slice(0, 10)) return false
+    const finPrevue = this.secondesDepuisHeure(event.heureFin)
+    const heureActuelle = this.secondesDepuisHeure(new Date().toISOString().slice(11, 19))
+    return finPrevue !== null && heureActuelle !== null && heureActuelle < finPrevue
+  }
+
+  private secondesDepuisHeure(value: unknown): number | null {
+    const heure = value instanceof Date ? value.toISOString().slice(11, 19) : String(value ?? '').slice(0, 8)
+    const match = heure.match(/^([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/)
+    return match ? Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3] || 0) : null
+  }
+
+  private messageNavigationCours(navigation: {
+    siteActuel: string
+    prochainCours: {
+      site: string
+      heureDebut: string
+      salle: string | null
+      etage: string | null
+      memeSite: boolean
+    } | null
+  }): string {
+    const prochain = navigation.prochainCours
+    if (!prochain) {
+      return `Vous n’avez plus de cours sur le site ${navigation.siteActuel} aujourd’hui.`
+    }
+    if (!prochain.memeSite) {
+      return `Vous n’avez plus de cours sur le site ${navigation.siteActuel}.`
+        + ` Votre prochain cours est sur le site ${prochain.site} à ${prochain.heureDebut.slice(0, 5)}.`
+    }
+    const salle = prochain.salle ? ` en salle ${prochain.salle}` : ''
+    const etage = prochain.etage ? `, à l’étage ${prochain.etage}` : ''
+    return `Votre prochain cours sur le site ${navigation.siteActuel} est${salle || etage ? salle + etage : ''}`
+      + ` à ${prochain.heureDebut.slice(0, 5)}.`
   }
 
   private annoncer(message: string): void {

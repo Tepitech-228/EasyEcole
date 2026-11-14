@@ -285,6 +285,7 @@ describe("PointageTerminalController ADMS", () => {
       heureFin: "09:00:00",
       cours: { intitule: "Mathématiques" }
     });
+
     const dailyUpdate = jest.fn().mockResolvedValue(undefined);
     Pointage.findOne.mockResolvedValue({
       id: 77,
@@ -326,6 +327,42 @@ describe("PointageTerminalController ADMS", () => {
     });
     expect(sessionUpdate).not.toHaveBeenCalled();
     expect(dailyUpdate).not.toHaveBeenCalled();
+  });
+
+  it("refuses a teacher departure after the 15-minute grace period with an explicit reason", async () => {
+    Utilisateur.findByPk.mockResolvedValue({ id: 42, role: "enseignant", etablissementId: 3 });
+    Enseignant.findOne.mockResolvedValue({ id: 9 });
+    SeancePointage.findAll.mockResolvedValue([{
+      id: 12,
+      seanceId: 81,
+      heureDebutReelle: "08:15:30"
+    }]);
+    Seance.findOne.mockResolvedValue({
+      id: 81,
+      heureDebut: "08:00:00",
+      heureFin: "09:00:00",
+      cours: { intitule: "Mathématiques" }
+    });
+
+    const recorded = await PointageTerminalController.processAttendanceEvent(
+      { id: 5, serialNumber: "ZK12345", etablissementId: 3 } as any,
+      {
+        pin: "42",
+        date: "2026-10-17",
+        time: "09:15:01",
+        statusCode: 5,
+        verifyType: 75,
+        utilisateurId: 42
+      }
+    );
+
+    expect(recorded).toMatchObject({
+      recorded: false,
+      mode: "refuse",
+      motifRefus: "Le délai de 15 minutes après la fin prévue du cours est dépassé. Aucun départ n’a été enregistré."
+    });
+    expect(SeancePointage.findAll).toHaveBeenCalled();
+    expect(SeancePointage.create).not.toHaveBeenCalled();
   });
 
   it("processes a durable Hikvision receipt without inserting a second event", async () => {

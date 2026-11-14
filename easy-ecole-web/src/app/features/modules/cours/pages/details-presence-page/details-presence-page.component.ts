@@ -97,6 +97,9 @@ export class DetailsPresencePageComponent extends BaseComponentClass implements 
           next: (res) => {
             this.listePresence = res
             this.presences = this.listePresence.presences ?? []
+            if (res.coursParticipants) {
+              this.coursParticipants = res.coursParticipants
+            }
 
             if(res.cours) {
               this.getParticipants(res.cours.id!)
