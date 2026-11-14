@@ -32,7 +32,7 @@
 #
 # POINTAGE HIKVISION : le backend publie HIKVISION_PORT (defaut 8000) sur
 #   l'hote -> port 3000 du conteneur (PORT de l'API).
-#   Terminaux : http://192.168.100.10:8000/api/hikvision/event
+#   Terminaux : http://192.168.1.154:8000/api/hikvision/event
 #   Ne PAS definir HIKVISION_CALLBACK_HOST en production : app.ts ouvrirait un
 #   second listener sur la meme IP/port, absente dans le conteneur -> crash.
 #
