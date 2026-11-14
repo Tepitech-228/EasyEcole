@@ -68,7 +68,9 @@ const verifyOtpLimiter = rateLimit({
 
 const identifiantSuggestionsLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 30,
+  // Une promotion entière peut s'inscrire derrière la même IP/NAT. Le quota
+  // doit tolérer leurs saisies simultanées sans supprimer la protection anti-abus.
+  max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Trop de demandes de propositions, réessayez plus tard' }
