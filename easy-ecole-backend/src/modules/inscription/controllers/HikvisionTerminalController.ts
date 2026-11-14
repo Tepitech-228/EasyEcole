@@ -10,6 +10,7 @@ import HikvisionIsapiService from "../services/HikvisionIsapiService";
 import HikvisionEnrollmentService from "../services/HikvisionEnrollmentService";
 import PointageTerminalTokenService from "../services/PointageTerminalTokenService";
 import { isHikvisionTerminalAddressAllowed } from "../services/HikvisionTerminalAddressService";
+import { logHikvisionDiagnostic } from "../services/HikvisionDiagnosticLogger";
 
 type TerminalPopulation = "personnel" | "etudiant";
 
@@ -144,11 +145,40 @@ export default class HikvisionTerminalController {
         try {
             const terminal = await PointageTerminal.findOne({ where: { id, protocol: "hikvision_isapi" } });
             if (!terminal) return res.status(404).json({ success: false, message: "Terminal Hikvision non trouvé." });
-            await HikvisionIsapiService.testConnection(terminal);
-            return res.status(200).json({ success: true, message: "Connexion ISAPI authentifiée." });
+            const testResult = await HikvisionIsapiService.testConnection(terminal);
+            logHikvisionDiagnostic("info", {
+                phase: "test_connexion_isapi_termine",
+                terminal: {
+                    id: Number(terminal.id),
+                    serialNumber: terminal.serialNumber,
+                    actif: terminal.actif,
+                    adresse: terminal.sourceIp,
+                    port: terminal.hikvisionPort,
+                    protocole: terminal.hikvisionHttps ? "HTTPS" : "HTTP"
+                },
+                exchanges: testResult
+            });
+            return res.status(200).json({
+                success: true,
+                message: "Connexion ISAPI authentifiée. La réception des événements alertStream doit être confirmée séparément.",
+                terminal: {
+                    id: Number(terminal.id),
+                    serialNumber: terminal.serialNumber,
+                    actif: terminal.actif,
+                    adresse: terminal.sourceIp,
+                    port: terminal.hikvisionPort,
+                    protocole: terminal.hikvisionHttps ? "HTTPS" : "HTTP"
+                },
+                ...testResult
+            });
         } catch (error) {
             console.error("[Hikvision] connection test failed:", error);
             const message = error instanceof Error ? error.message : "Le terminal n’a pas pu être joint.";
+            logHikvisionDiagnostic("error", {
+                phase: "test_connexion_isapi_echec",
+                terminalId: id,
+                message
+            });
             return res.status(502).json({ success: false, message });
         }
     }

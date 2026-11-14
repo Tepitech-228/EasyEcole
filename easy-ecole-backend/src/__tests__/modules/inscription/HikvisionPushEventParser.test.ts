@@ -151,6 +151,24 @@ describe("parseHikvisionPushEvent", () => {
 });
 
 describe("HikvisionAlertStreamParser", () => {
+  it("reports the terminal HTTP status and multipart response metadata", () => {
+    const responses: Array<{ status: number | null; contentType: string; boundary: string | null }> = [];
+    const parser = new HikvisionAlertStreamParser(
+      () => undefined,
+      response => responses.push(response)
+    );
+
+    parser.push(Buffer.from(
+      "HTTP/1.1 200 OK\r\nContent-Type: multipart/mixed; boundary=\"event-boundary\"\r\n\r\n"
+    ));
+
+    expect(responses).toEqual([{
+      status: 200,
+      contentType: "multipart/mixed",
+      boundary: "event-boundary"
+    }]);
+  });
+
   it("extracts JSON events from multipart responses and skips binary parts", () => {
     const events: unknown[] = [];
     const parser = new HikvisionAlertStreamParser(event => events.push(event));

@@ -4,7 +4,10 @@ export class HikvisionAlertStreamParser {
   private readingPartHeaders = false;
   private pendingPart: { contentType: string; contentLength: number | null } | null = null;
 
-  constructor(private readonly onJsonPart: (value: unknown) => void) {}
+  constructor(
+    private readonly onJsonPart: (value: unknown) => void,
+    private readonly onResponseHeaders?: (response: { status: number | null; contentType: string; boundary: string | null }) => void
+  ) {}
 
   push(chunk: Buffer): void {
     this.buffer = Buffer.concat([this.buffer, chunk]);
@@ -18,7 +21,14 @@ export class HikvisionAlertStreamParser {
       if (separator < 0) return;
       const headers = this.buffer.subarray(0, separator).toString("latin1");
       this.buffer = this.buffer.subarray(separator + 4);
-      const boundary = headers.match(/\bboundary\s*=\s*\"?([^;\"\r\n]+)\"?/i)?.[1]?.trim();
+      const status = headers.match(/^HTTP\/\d(?:\.\d)?\s+(\d{3})\b/i)?.[1];
+      const contentType = headers.match(/^content-type:\s*([^\r\n]+)/im)?.[1]?.trim() || "";
+      const boundary = contentType.match(/\bboundary\s*=\s*\"?([^;\"\r\n]+)\"?/i)?.[1]?.trim() || null;
+      this.onResponseHeaders?.({
+        status: status ? Number(status) : null,
+        contentType: contentType.split(";")[0].trim(),
+        boundary
+      });
       if (boundary) this.boundary = Buffer.from(`--${boundary}`);
     }
   }

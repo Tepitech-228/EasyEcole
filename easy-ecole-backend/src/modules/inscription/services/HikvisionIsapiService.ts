@@ -105,6 +105,35 @@ interface CurlResponse {
     body: string;
 }
 
+export interface HikvisionConnectionTestResult {
+    serveurVersTerminal: {
+        requeteDeviceInfo: {
+            methode: "GET";
+            chemin: "/ISAPI/System/deviceInfo";
+            url: string;
+            statutHttp: number;
+            reponseRecue: boolean;
+            terminalHikvisionReconnu: boolean;
+            numeroSerieCompatible: boolean;
+        };
+        requeteAccessControl: {
+            methode: "GET";
+            chemin: "/ISAPI/AccessControl/UserInfo/Count?format=json";
+            url: string;
+            statutHttp: number;
+            reponseRecue: boolean;
+            autorisationVerifiee: boolean;
+            endpointSupporte: boolean;
+        };
+        statut: "ok";
+    };
+    retourTerminalVersServeur: {
+        statut: "non_verifie_par_le_test_isapi";
+        transport: "alertStream";
+        message: string;
+    };
+}
+
 export function getCurlExecutable(platform: NodeJS.Platform = process.platform): string {
     return platform === "win32" ? "curl.exe" : "curl";
 }
@@ -217,11 +246,12 @@ export default class HikvisionIsapiService {
         return encryptPassword(password);
     }
 
-    static async testConnection(terminal: PointageTerminal): Promise<void> {
+    static async testConnection(terminal: PointageTerminal): Promise<HikvisionConnectionTestResult> {
         const controller = new AbortController();
         let timer = setTimeout(() => controller.abort(), 8000);
         try {
-            const response = await requestWithDigest(terminal, "/ISAPI/System/deviceInfo", controller.signal);
+            const deviceInfoPath = "/ISAPI/System/deviceInfo";
+            const response = await requestWithDigest(terminal, deviceInfoPath, controller.signal);
             if (response.status < 200 || response.status >= 300) throw new Error(`Hikvision device returned HTTP ${response.status}.`);
             const body = response.body;
             if (!body.includes("deviceInfo") && !body.includes("DeviceInfo")) {
@@ -252,11 +282,12 @@ export default class HikvisionIsapiService {
             // echouer tous les enrolements. On verifie donc explicitement ce droit.
             clearTimeout(timer);
             timer = setTimeout(() => controller.abort(), 8000);
+            const accessControlPath = "/ISAPI/AccessControl/UserInfo/Count?format=json";
             let accessControlResponse: CurlResponse;
             try {
                 accessControlResponse = await requestWithDigest(
                     terminal,
-                    "/ISAPI/AccessControl/UserInfo/Count?format=json",
+                    accessControlPath,
                     controller.signal
                 );
             } catch (error) {
@@ -274,6 +305,34 @@ export default class HikvisionIsapiService {
             } else if (accessControlResponse.status < 200 || accessControlResponse.status >= 300) {
                 throw new Error(`Hikvision AccessControl returned HTTP ${accessControlResponse.status}.`);
             }
+            return {
+                serveurVersTerminal: {
+                    requeteDeviceInfo: {
+                        methode: "GET",
+                        chemin: deviceInfoPath,
+                        url: buildTerminalUrl(terminal, deviceInfoPath).toString(),
+                        statutHttp: response.status,
+                        reponseRecue: true,
+                        terminalHikvisionReconnu: true,
+                        numeroSerieCompatible: serieCompatible
+                    },
+                    requeteAccessControl: {
+                        methode: "GET",
+                        chemin: accessControlPath,
+                        url: buildTerminalUrl(terminal, accessControlPath).toString(),
+                        statutHttp: accessControlResponse.status,
+                        reponseRecue: true,
+                        autorisationVerifiee: accessControlResponse.status >= 200 && accessControlResponse.status < 300,
+                        endpointSupporte: accessControlResponse.status !== 404
+                    },
+                    statut: "ok"
+                },
+                retourTerminalVersServeur: {
+                    statut: "non_verifie_par_le_test_isapi",
+                    transport: "alertStream",
+                    message: "Ce test confirme les réponses ISAPI du terminal. La réception du flux retour est confirmée uniquement lorsqu'un événement alertStream est reçu."
+                }
+            };
         } finally {
             clearTimeout(timer);
         }
@@ -281,7 +340,8 @@ export default class HikvisionIsapiService {
 
     static startAccessEventStream(
         terminal: PointageTerminal,
-        onEvent: (value: unknown) => void
+        onEvent: (value: unknown) => void,
+        onResponseHeaders?: (response: { status: number | null; contentType: string; boundary: string | null }) => void
     ): ChildProcess {
         const username = terminal.hikvisionUsername;
         const encryptedPassword = terminal.hikvisionPasswordEncrypted;
@@ -294,7 +354,7 @@ export default class HikvisionIsapiService {
         args.push(url.toString());
 
         const child = spawn(getCurlExecutable(), args, { windowsHide: true });
-        const parser = new HikvisionAlertStreamParser(onEvent);
+        const parser = new HikvisionAlertStreamParser(onEvent, onResponseHeaders);
         child.stdout.on("data", (chunk: Buffer) => parser.push(chunk));
         return child;
     }
