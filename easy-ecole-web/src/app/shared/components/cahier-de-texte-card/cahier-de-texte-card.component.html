@@ -4,7 +4,7 @@
             <span class="register-card__eyebrow">Journal pédagogique</span>
             <h2>Cahier de texte</h2>
             <p class="register-card__cohort">
-                {{ cahierDeTexte.cours ? cahierDeTexte.cours.code + ' · ' + cahierDeTexte.cours.intitule : (cahierDeTexte.parcours?.titre ?? cahierDeTexte.titre) }}
+                {{ cahierDeTexte.cours ? cahierDeTexte.cours?.code + ' · ' + cahierDeTexte.cours?.intitule : (cahierDeTexte.parcours?.titre ?? cahierDeTexte.titre) }}
             </p>
             <span class="register-card__cover-note">Leçons · activités · devoirs</span>
         </div>
@@ -13,12 +13,12 @@
                 <span *ngIf="cahierDeTexte.cours?.parcours?.niveauEtude || cahierDeTexte.niveauEtude">
                     {{ cahierDeTexte.cours?.parcours?.niveauEtude?.libelle ?? cahierDeTexte.niveauEtude?.libelle }}
                 </span>
-                <span *ngIf="cahierDeTexte.cours?.classe">{{ cahierDeTexte.cours.classe.libelle }}</span>
+                <span *ngIf="cahierDeTexte.cours?.classe">{{ cahierDeTexte.cours?.classe?.libelle }}</span>
                 <span *ngIf="!cahierDeTexte.cours && cahierDeTexte.parcours">{{ cahierDeTexte.parcours.titre }}</span>
             </div>
             <div class="register-card__footer">
                 <span *ngIf="cahierDeTexte.enseignant?.utilisateur">
-                    {{ cahierDeTexte.enseignant.utilisateur.nom }} {{ cahierDeTexte.enseignant.utilisateur.prenoms }}
+                    {{ cahierDeTexte.enseignant?.utilisateur?.nom }} {{ cahierDeTexte.enseignant?.utilisateur?.prenoms }}
                 </span>
                 <strong>Ouvrir le cahier <span aria-hidden="true">→</span></strong>
             </div>

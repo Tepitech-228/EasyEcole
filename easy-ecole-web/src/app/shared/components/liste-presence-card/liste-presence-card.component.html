@@ -4,7 +4,7 @@
             <span class="register-card__eyebrow">Registre de classe</span>
             <h2>Cahier de présence</h2>
             <p class="register-card__cohort">
-                {{ listePresence.cours ? listePresence.cours.code + ' · ' + listePresence.cours.intitule : (listePresence.parcours?.titre ?? listePresence.titre) }}
+                {{ listePresence.cours ? listePresence.cours?.code + ' · ' + listePresence.cours?.intitule : (listePresence.parcours?.titre ?? listePresence.titre) }}
             </p>
             <span class="register-card__cover-note">Présences · absences · suivi</span>
         </div>
@@ -13,12 +13,12 @@
                 <span *ngIf="listePresence.cours?.parcours?.niveauEtude || listePresence.niveauEtude">
                     {{ listePresence.cours?.parcours?.niveauEtude?.libelle ?? listePresence.niveauEtude?.libelle }}
                 </span>
-                <span *ngIf="listePresence.cours?.classe">{{ listePresence.cours.classe.libelle }}</span>
+                <span *ngIf="listePresence.cours?.classe">{{ listePresence.cours?.classe?.libelle }}</span>
                 <span *ngIf="!listePresence.cours && listePresence.parcours">{{ listePresence.parcours.titre }}</span>
             </div>
             <div class="register-card__footer">
                 <span *ngIf="listePresence.enseignant?.utilisateur">
-                    {{ listePresence.enseignant.utilisateur.nom }} {{ listePresence.enseignant.utilisateur.prenoms }}
+                    {{ listePresence.enseignant?.utilisateur?.nom }} {{ listePresence.enseignant?.utilisateur?.prenoms }}
                 </span>
                 <strong>Ouvrir le cahier <span aria-hidden="true">→</span></strong>
             </div>

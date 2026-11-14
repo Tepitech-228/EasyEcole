@@ -2,7 +2,7 @@
 
 <ng-container *ngIf="listePresence">
     <div class="flex md:flex-row flex-col items-start justify-between mb-8">
-        <app-header-title title="Liste de présences: {{ listePresence.cours ? listePresence.cours.code + ' - ' + listePresence.cours.intitule : (listePresence.parcours?.titre ? listePresence.parcours.titre + ' - ' : '') + (listePresence.niveauEtude?.libelle ?? listePresence.titre) }}">
+        <app-header-title title="Liste de présences: {{ listePresence.cours ? listePresence.cours?.code + ' - ' + listePresence.cours?.intitule : (listePresence.parcours?.titre ? listePresence.parcours?.titre + ' - ' : '') + (listePresence.niveauEtude?.libelle ?? listePresence.titre) }}">
             <div *ngIf="listePresence.cours || listePresence.parcours || listePresence.niveauEtude" class="mt-2 md:mb-0 mb-8 flex md:flex-row flex-wrap gap-x-4 gap-y-2">
                 <div *ngIf="listePresence.cours?.parcours?.niveauEtude" class="flex items-center text-secondary">
                     <img src="assets/icons/student.svg" alt="icon">
@@ -14,7 +14,7 @@
                 </div>
                 <div class="flex items-center text-secondary">
                     <img src="assets/icons/category-light.svg" alt="icon">
-                    <div class="px-2 text-sm">{{ listePresence.cours?.classe ? listePresence.cours.classe.libelle : (listePresence.parcours?.titre ?? '---') }}</div>
+                    <div class="px-2 text-sm">{{ listePresence.cours?.classe ? listePresence.cours?.classe?.libelle : (listePresence.parcours?.titre ?? '---') }}</div>
                 </div>
             </div>
         </app-header-title>
