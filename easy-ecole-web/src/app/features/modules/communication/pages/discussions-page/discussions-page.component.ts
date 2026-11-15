@@ -664,13 +664,13 @@ export class DiscussionsPageComponent extends BaseComponentClass implements OnIn
     this.socketService.notifyTyping(this.selectedSalon.id, this.currentUserId);
   }
 
-  createGroup(event: { titre: string; description: string; type: string; estPrive: boolean; photo: string; participants: number[] }): void {
+  createGroup(event: { titre: string; description: string; type: string; estPrive: boolean; icone: string; participants: number[] }): void {
     this.http.post(`${this.chatApi}/salons`, {
       titre: event.titre,
       description: event.description,
       type: event.type,
       estPrive: event.estPrive,
-      photo: event.photo,
+      icone: event.icone,
       participants: event.participants,
     }).subscribe({
       next: (salon: any) => {

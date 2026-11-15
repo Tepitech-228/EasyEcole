@@ -156,6 +156,7 @@ export default class ChatController {
                 return res.status(400).json({ success: false, message: "Un ou plusieurs participants sont introuvables." });
             }
             const code = crypto.randomBytes(4).toString('hex');
+            const icone = typeof req.body.icone === "string" ? req.body.icone.trim().slice(0, 16) : null;
             const salon = await DatabaseConnection.getInstance().sequelize.transaction(async transaction => {
                 const createdSalon = await Salon.create({
                     coursId: req.body.coursId || null,
@@ -165,6 +166,7 @@ export default class ChatController {
                     createdById: utilisateurId,
                     description: String(req.body.description || "").slice(0, 2000),
                     estPrive: type === "discussion" ? true : req.body.estPrive !== false,
+                    icone,
                     photo: req.body.photo || null,
                 }, { transaction });
                 await Promise.all(participantIds.map(participantId => ParticipantSalon.create({

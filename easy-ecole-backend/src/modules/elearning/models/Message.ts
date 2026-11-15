@@ -68,5 +68,7 @@ Message.init({
   paranoid: true,
   modelName: MODULE_MODEL_PREFIX + 'Message',
   tableName: MODULE_TABLE_PREFIX + 'messages',
+  charset: 'utf8mb4',
+  collate: 'utf8mb4_unicode_ci',
   timestamps: true
 })

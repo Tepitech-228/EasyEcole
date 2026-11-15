@@ -14,7 +14,7 @@ export class CreateGroupModalComponent {
     description: string;
     type: string;
     estPrive: boolean;
-    photo: string;
+    icone: string;
     participants: number[];
   }>();
 
@@ -59,7 +59,7 @@ export class CreateGroupModalComponent {
       description: this.groupDescription.trim(),
       type: this.groupType,
       estPrive: this.visibility === 'prive',
-      photo: this.selectedIcon,
+      icone: this.selectedIcon,
       participants: [...this.selectedUserIds]
     });
   }

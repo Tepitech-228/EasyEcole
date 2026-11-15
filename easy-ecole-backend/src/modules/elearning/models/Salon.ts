@@ -98,5 +98,7 @@ Salon.init({
   paranoid: true,
   modelName: MODULE_MODEL_PREFIX + 'Salon',
   tableName: MODULE_TABLE_PREFIX + 'salons',
+  charset: 'utf8mb4',
+  collate: 'utf8mb4_unicode_ci',
   timestamps: true
 })
