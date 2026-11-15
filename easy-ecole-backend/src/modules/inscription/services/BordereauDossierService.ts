@@ -600,7 +600,8 @@ export class BordereauDossierService {
 
         if (!pedagogieDifferee) {
             const coursChoisisFinal = await DemandeInscriptionCours.findAll({
-                where: { demandeInscriptionId: demande.id }
+                where: { demandeInscriptionId: demande.id },
+                transaction,
             })
             for (const coursChoisi of coursChoisisFinal) {
                 if (coursChoisi.etat === EtatsCoursChoisi.VALIDE) {
@@ -1133,7 +1134,8 @@ export class BordereauDossierService {
 
         if (savedCursusId) {
             const coursChoisisFinal = await DemandeInscriptionCours.findAll({
-                where: { demandeInscriptionId: demande.id }
+                where: { demandeInscriptionId: demande.id },
+                transaction,
             })
             for (const coursChoisi of coursChoisisFinal) {
                 if (coursChoisi.etat === EtatsCoursChoisi.VALIDE) {
