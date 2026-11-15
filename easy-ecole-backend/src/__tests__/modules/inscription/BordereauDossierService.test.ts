@@ -28,6 +28,14 @@ jest.mock('../../../modules/inscription/models/Cours', () => ({
   Cours: { findAll: jest.fn(), associations: { classe: {} } },
 }))
 
+jest.mock('../../../modules/inscription/models/DemandeInscriptionCours', () => ({
+  DemandeInscriptionCours: { findAll: jest.fn(), bulkCreate: jest.fn() },
+}))
+
+jest.mock('../../../modules/inscription/models/CoursParticipant', () => ({
+  CoursParticipant: { findOrCreate: jest.fn() },
+}))
+
 jest.mock('../../../modules/inscription/models/DossierEtudiant', () => ({
   DossierEtudiant: { findOne: jest.fn(), findByPk: jest.fn() },
 }))
@@ -42,6 +50,10 @@ jest.mock('../../../modules/inscription/models/NiveauEtude', () => ({
 
 jest.mock('../../../modules/inscription/models/Session', () => ({
   Session: { associations: { anneeAcademique: {} } },
+}))
+
+jest.mock('../../../modules/scolarite/models/TypeDocument', () => ({
+  TypeDocument: { findOrCreate: jest.fn() },
 }))
 
 jest.mock('../../../modules/inscription/services/DossierStorageService', () => ({
@@ -65,9 +77,13 @@ const { DemandeInscription } = require('../../../modules/inscription/models/Dema
 const { Bordereau } = require('../../../modules/inscription/models/Bordereau')
 const fs = require('fs')
 const { Cours } = require('../../../modules/inscription/models/Cours')
+const { DemandeInscriptionCours } = require('../../../modules/inscription/models/DemandeInscriptionCours')
+const { CoursParticipant } = require('../../../modules/inscription/models/CoursParticipant')
 const { DossierEtudiant } = require('../../../modules/inscription/models/DossierEtudiant')
 const { CursusApprenant } = require('../../../modules/inscription/models/CursusApprenant')
 const { NiveauEtude } = require('../../../modules/inscription/models/NiveauEtude')
+const { TypeDocument } = require('../../../modules/scolarite/models/TypeDocument')
+const { EtatsCoursChoisi } = require('../../../core/enums/EtatsCoursChoisi')
 const { GenerateurCarteService } = require('../../../modules/inscription/services/GenerateurCarteService')
 const { DossierStorageService } = require('../../../modules/inscription/services/DossierStorageService')
 const { FolderAutoService } = require('../../../modules/ged/services/FolderAutoService')
@@ -157,6 +173,77 @@ describe('BordereauDossierService.finaliserAffectationPedagogique', () => {
         transaction: expect.anything(),
       }),
     )
+  })
+
+  it('rattache toutes les UE actives au dossier et au cursus, y compris les UE facultatives', async () => {
+    const demande = {
+      id: 12,
+      utilisateurId: 90,
+      typeDemande: 'inscription',
+      matriculeEtudiant: '2026-L1-J-26-ESA',
+      matricule: '2026-L1-J-26-ESA',
+      update: jest.fn().mockResolvedValue(undefined),
+      utilisateur: { apprenant: { periode: 'matin' } },
+      reponseInscription: {},
+      parcoursChoisis: [{
+        parcoursId: 3,
+        choixFinal: true,
+        parcours: { id: 3, type: 'LICENCE', titre: 'Licence', niveauEtudeId: 44 },
+      }],
+      coursChoisis: [],
+      paiementsInscription: [],
+      session: {
+        niveauEtudeId: 44,
+        anneeAcademiqueId: 22,
+        anneeAcademique: { libelle: '2025-2026' },
+      },
+    }
+    const dossier = {
+      id: 55,
+      matricule: demande.matricule,
+      etablissementId: null,
+      update: jest.fn().mockResolvedValue(undefined),
+    }
+    const choixRejete = {
+      coursId: 2,
+      etat: EtatsCoursChoisi.REJETE,
+      update: jest.fn().mockResolvedValue(undefined),
+    }
+    const cursus = { id: 77, etablissementId: null, update: jest.fn().mockResolvedValue(undefined) }
+    DemandeInscription.findOne.mockResolvedValue(demande)
+    DossierEtudiant.findOne.mockImplementation(({ where }: { where: { matricule?: string } }) =>
+      Promise.resolve(where.matricule ? null : dossier),
+    )
+    Cours.findAll.mockResolvedValue([
+      { id: 1, estObligatoire: true },
+      { id: 2, estObligatoire: false },
+      { id: 3, estObligatoire: false },
+    ])
+    DemandeInscriptionCours.findAll.mockResolvedValue([
+      { coursId: 1, etat: EtatsCoursChoisi.VALIDE },
+      choixRejete,
+    ])
+    CursusApprenant.findOrCreate.mockResolvedValue([cursus, false])
+    TypeDocument.findOrCreate.mockRejectedValue(new Error('Arrêt du test après le rattachement des UE'))
+
+    await expect(
+      BordereauDossierService.finaliserAffectationPedagogique(90, { utilisateurId: 5 }, {} as any),
+    ).rejects.toThrow('Arrêt du test après le rattachement des UE')
+
+    expect(choixRejete.update).toHaveBeenCalledWith(
+      { etat: EtatsCoursChoisi.VALIDE },
+      { transaction: expect.anything() },
+    )
+    expect(DemandeInscriptionCours.bulkCreate).toHaveBeenCalledWith(
+      [{ coursId: 3, demandeInscriptionId: 12, etat: EtatsCoursChoisi.VALIDE }],
+      { transaction: expect.anything() },
+    )
+    expect(CoursParticipant.findOrCreate).toHaveBeenCalledTimes(3)
+    expect(CoursParticipant.findOrCreate).toHaveBeenCalledWith(expect.objectContaining({
+      where: { utilisateurId: 90, coursId: 3 },
+      defaults: { utilisateurId: 90, coursId: 3, cursusApprenantId: 77 },
+      transaction: expect.anything(),
+    }))
   })
 
   it('génère et enregistre la carte après la finalisation sans transaction ouverte', async () => {

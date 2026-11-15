@@ -66,6 +66,56 @@ const getParcoursFinal = <T extends { choixFinal?: any; parcoursId?: number | st
     return undefined;
 };
 
+const rattacherCoursDuParcours = async (
+    demandeInscriptionId: number,
+    utilisateurId: number,
+    cursusApprenantId: number | null,
+    coursDuParcours: Cours[],
+    transaction: Transaction,
+): Promise<void> => {
+    if (coursDuParcours.length === 0) return;
+
+    const coursChoisis = await DemandeInscriptionCours.findAll({
+        where: { demandeInscriptionId },
+        transaction,
+    });
+    const choixParCours = new Map(coursChoisis.map(choix => [Number(choix.coursId), choix]));
+    const choixACreer = [];
+
+    for (const cours of coursDuParcours) {
+        const choixExistant = choixParCours.get(Number(cours.id));
+        if (choixExistant) {
+            if (choixExistant.etat !== EtatsCoursChoisi.VALIDE) {
+                await choixExistant.update({ etat: EtatsCoursChoisi.VALIDE }, { transaction });
+            }
+        } else {
+            choixACreer.push({
+                coursId: cours.id,
+                demandeInscriptionId,
+                etat: EtatsCoursChoisi.VALIDE,
+            });
+        }
+    }
+
+    if (choixACreer.length > 0) {
+        await DemandeInscriptionCours.bulkCreate(choixACreer, { transaction });
+    }
+
+    if (cursusApprenantId) {
+        for (const cours of coursDuParcours) {
+            await CoursParticipant.findOrCreate({
+                where: { utilisateurId, coursId: cours.id },
+                defaults: {
+                    utilisateurId,
+                    coursId: cours.id,
+                    cursusApprenantId,
+                },
+                transaction,
+            });
+        }
+    }
+};
+
 export const documentsManquantsPremiereEtape = (
     dossiersRequis: Array<{ id: number; titre: string }>,
     dossiersTeleverses: Array<{ dossierId: number }>,
@@ -363,17 +413,6 @@ export class BordereauDossierService {
             })
             : []
 
-        const coursObligatoires = coursDuParcours.filter(c => c.estObligatoire)
-        if (coursObligatoires.length > 0) {
-            const coursChoisisIds = (demande.coursChoisis || []).map(cc => cc.coursId)
-            const obligatoiresManquants = coursObligatoires
-                .filter(c => !coursChoisisIds.includes(c.id))
-                .map(c => ({ coursId: c.id, demandeInscriptionId: demande.id, etat: EtatsCoursChoisi.VALIDE }))
-            if (obligatoiresManquants.length > 0) {
-                await DemandeInscriptionCours.bulkCreate(obligatoiresManquants, { transaction })
-            }
-        }
-
         const fraisTotal = (demande.session?.fraisInscription || []).reduce((sum, f) => sum + f.montant, 0)
         const fraisPayes = (demande.paiementsInscription || []).reduce((sum, p) => sum + (p.montant || 0), 0)
         if (!options?.ignorerVerifFrais && fraisPayes < fraisTotal) {
@@ -512,6 +551,13 @@ export class BordereauDossierService {
                 await savedCursus.update({ etablissementId: siteDossierId }, { transaction })
             }
         }
+        await rattacherCoursDuParcours(
+            demande.id,
+            demande.utilisateurId,
+            savedCursusId,
+            coursDuParcours,
+            transaction,
+        );
 
         const demarrage = parcoursChoisiFinal?.createdAt || demande.createdAt || new Date()
         let dossier = await DossierEtudiant.findOne({ where: { matricule } })
@@ -595,29 +641,6 @@ export class BordereauDossierService {
             if (echeance) {
                 echeance.dossierEtudiantId = dossier.id
                 await echeance.save({ transaction })
-            }
-        }
-
-        if (!pedagogieDifferee) {
-            const coursChoisisFinal = await DemandeInscriptionCours.findAll({
-                where: { demandeInscriptionId: demande.id },
-                transaction,
-            })
-            for (const coursChoisi of coursChoisisFinal) {
-                if (coursChoisi.etat === EtatsCoursChoisi.VALIDE) {
-                    await CoursParticipant.findOrCreate({
-                        where: {
-                            utilisateurId: demande.utilisateurId,
-                            coursId: coursChoisi.coursId,
-                        },
-                        defaults: {
-                            utilisateurId: demande.utilisateurId,
-                            coursId: coursChoisi.coursId,
-                            cursusApprenantId: savedCursusId!,
-                        },
-                        transaction
-                    })
-                }
             }
         }
 
@@ -938,17 +961,6 @@ export class BordereauDossierService {
         // pas affectée (CursusApprenant.classeId étant NOT NULL en base, on ne peut
         // pas créer un cursus sans classe).
 
-        const coursObligatoires = coursDuParcours.filter(c => c.estObligatoire)
-        if (coursObligatoires.length > 0) {
-            const coursChoisisIds = (demande.coursChoisis || []).map((cc: any) => cc.coursId)
-            const obligatoiresManquants = coursObligatoires
-                .filter(c => !coursChoisisIds.includes(c.id))
-                .map(c => ({ coursId: c.id, demandeInscriptionId: demande.id, etat: EtatsCoursChoisi.VALIDE }))
-            if (obligatoiresManquants.length > 0) {
-                await DemandeInscriptionCours.bulkCreate(obligatoiresManquants, { transaction })
-            }
-        }
-
         // Matricule définitif (réutilisé si déjà au format final — idempotence).
         const anneeLibelle = demande.session?.anneeAcademique?.libelle || new Date().getFullYear().toString()
         const etablissementId = parcoursData?.etablissementId ?? classeDerivee?.etablissementId
@@ -1059,6 +1071,13 @@ export class BordereauDossierService {
         if (!savedCursus.etablissementId && siteDossierId) {
             await savedCursus.update({ etablissementId: siteDossierId }, { transaction })
         }
+        await rattacherCoursDuParcours(
+            demande.id,
+            demande.utilisateurId,
+            savedCursusId,
+            coursDuParcours,
+            transaction,
+        );
 
         // L'autorisation provisoire est un livrable gratuit de la finalisation.
         // Le PDF est généré APRÈS le commit (setImmediate côté contrôleur) pour ne pas
@@ -1130,26 +1149,6 @@ export class BordereauDossierService {
 
         if (!classeDerivee?.id) {
             console.info(`[AffectationPédagogique] Cursus créé sans classe affectée (utilisateur ${utilisateurId}) : à affecter ultérieurement.`)
-        }
-
-        if (savedCursusId) {
-            const coursChoisisFinal = await DemandeInscriptionCours.findAll({
-                where: { demandeInscriptionId: demande.id },
-                transaction,
-            })
-            for (const coursChoisi of coursChoisisFinal) {
-                if (coursChoisi.etat === EtatsCoursChoisi.VALIDE) {
-                    await CoursParticipant.findOrCreate({
-                        where: { utilisateurId: demande.utilisateurId, coursId: coursChoisi.coursId },
-                        defaults: {
-                            utilisateurId: demande.utilisateurId,
-                            coursId: coursChoisi.coursId,
-                            cursusApprenantId: savedCursus.id,
-                        },
-                        transaction
-                    })
-                }
-            }
         }
 
         let carteEtudiant: CarteEtudiantDifferee | undefined;
