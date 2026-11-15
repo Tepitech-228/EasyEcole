@@ -68,11 +68,15 @@ export class ExcelService {
   }
 
   /** Importer des UE depuis un fichier Excel */
-  importUe(file: File, parcoursTitre?: string, semestre?: string): Observable<ExcelImportResult> {
+  importUe(
+    file: File,
+    options: { parcoursId?: number; parcoursTitre?: string; semestre?: string } = {},
+  ): Observable<ExcelImportResult> {
     const formData = new FormData();
     formData.append('fichier', file);
-    if (parcoursTitre) formData.append('parcoursTitre', parcoursTitre);
-    if (semestre) formData.append('semestre', semestre);
+    if (options.parcoursId) formData.append('parcoursId', String(options.parcoursId));
+    if (options.parcoursTitre) formData.append('parcoursTitre', options.parcoursTitre);
+    if (options.semestre) formData.append('semestre', options.semestre);
     return this.http.post<ExcelImportResult>(`${EXCEL_BASE}/ue/import`, formData);
   }
 

@@ -808,6 +808,18 @@ export default class ExcelController {
 
       const semestreDemande = (req.body.semestre as string) || '';
       const parcoursTitre = (req.body.parcoursTitre as string) || '';
+      const parcoursIdDemande = String(req.body.parcoursId || '').trim();
+      let parcoursSelectionne: Parcours | null = null;
+      if (parcoursIdDemande) {
+        const parcoursId = Number(parcoursIdDemande);
+        if (!Number.isSafeInteger(parcoursId) || parcoursId <= 0) {
+          return res.status(400).json({ success: false, message: "Identifiant de parcours invalide" });
+        }
+        parcoursSelectionne = await Parcours.findByPk(parcoursId);
+        if (!parcoursSelectionne) {
+          return res.status(404).json({ success: false, message: "Parcours sélectionné introuvable" });
+        }
+      }
       let imported = 0, errors = 0, ignored = 0;
       const ignoredRows: { ligne: number; raison: string }[] = [];
       const hasImportableData = matrices.some(matrix => matrix.slice(1).some(row => {
@@ -844,7 +856,7 @@ export default class ExcelController {
             continue;
           }
           try {
-            const p = await resolveParcours(parcours);
+            const p = parcoursSelectionne || await resolveParcours(parcours);
             if (!p) { errors++; results.push({ code, intitule, ligne: lineOffset + i + 1, semestre: semestreDemande || 'semestre1', categorie: null, statut: "erreur", message: `Parcours "${parcours}" introuvable` }); continue; }
             const cycleMismatch = parcoursCycleMismatch(p.type);
             if (cycleMismatch) return res.status(400).json({ success: false, message: cycleMismatch });
@@ -880,8 +892,8 @@ export default class ExcelController {
         let blockSemestre = '';
         let blockEcueData: Array<{ ecueCode: string; ecueLibelle: string; codeGenerated: boolean; cmHoraire: number; tdTpHoraire: number; tpeHoraire: number; vhHoraire: number | null; creditEcts: number; type: string | null; ligne: number }> = [];
 
-        if (!parcoursTitre) return res.status(400).json({ success: false, message: "Le parcours (parcoursTitre) est obligatoire pour le Format B" });
-        const parcours = await resolveParcours(parcoursTitre);
+        if (!parcoursSelectionne && !parcoursTitre) return res.status(400).json({ success: false, message: "Le parcours (parcoursId ou parcoursTitre) est obligatoire pour le Format B" });
+        const parcours = parcoursSelectionne || await resolveParcours(parcoursTitre);
         if (!parcours) return res.status(400).json({ success: false, message: `Parcours "${parcoursTitre}" introuvable` });
         const cycleMismatch = parcoursCycleMismatch(parcours.type);
         if (cycleMismatch) return res.status(400).json({ success: false, message: cycleMismatch });

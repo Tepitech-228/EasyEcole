@@ -469,7 +469,11 @@ export class ImportExportExcelPageComponent extends BaseComponentClass implement
       }
 
       const item = parcoursByFile[index++];
-      this.excelService.importUe(item.file, item.parcours!.titre, this.selectedImportSemestre).subscribe({
+      this.excelService.importUe(item.file, {
+        parcoursId: Number(item.parcoursId),
+        parcoursTitre: item.parcours!.titre,
+        semestre: this.selectedImportSemestre,
+      }).subscribe({
         next: result => {
           importedCount += result.importedCount || 0;
           errorCount += result.errorCount || 0;

@@ -242,6 +242,7 @@ class DashboardController {
                 { association: CursusApprenant.associations.niveauEtude },
                 { association: CursusApprenant.associations.parcours }
             ],
+            order: [['createdAt', 'DESC'], ['id', 'DESC']],
         });
         const dossierActif = await DossierEtudiant.findOne({ where: { utilisateurId, statut: 'actif' } });
 
