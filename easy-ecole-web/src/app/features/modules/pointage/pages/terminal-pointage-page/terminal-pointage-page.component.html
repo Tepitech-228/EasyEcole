@@ -797,7 +797,28 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
             <div class="state-icon">
               <span class="material-symbols-outlined">error</span>
             </div>
-            <div class="state-title">Scan non validé</div>
+            <div class="state-title">
+              {{ terminalRefusalInProgress && lastAttendanceName ? 'Dossier en cours de traitement' : 'Scan non validé' }}
+            </div>
+            <div *ngIf="terminalRefusalDetailsVisible && lastAttendanceName" class="pointage-success-person">
+              <div class="pointage-success-photo">
+                <img *ngIf="lastAttendancePhotoUrl"
+                  [src]="lastAttendancePhotoUrl"
+                  [alt]="'Photo de ' + lastAttendanceName"
+                  (error)="photoPointageIndisponible()">
+                <span *ngIf="!lastAttendancePhotoUrl" class="material-symbols-outlined" aria-hidden="true">person</span>
+              </div>
+              <div class="pointage-success-details">
+                <span class="pointage-success-eyebrow">Étudiant reconnu</span>
+                <strong>{{ lastAttendanceName }}</strong>
+                <span class="pointage-success-role">{{ lastAttendanceRole }}</span>
+                <span *ngIf="lastAttendanceMatricule" class="pointage-success-matricule">
+                  <span class="material-symbols-outlined" aria-hidden="true">badge</span>
+                  <span>Matricule</span>
+                  <strong>{{ lastAttendanceMatricule }}</strong>
+                </span>
+              </div>
+            </div>
             <div class="state-desc">{{ scanError }}</div>
             <button (click)="resetScan()" class="pointage-btn pointage-btn--outline pointage-btn--sm">
               Réessayer

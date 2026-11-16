@@ -906,7 +906,7 @@ describe('TerminalPointagePageComponent', () => {
     expect(utterance.text).toContain('Accès refusé');
   });
 
-  it('announces the refusal for a Hikvision refuse event', () => {
+  it('shows the recognized learner photo and identity with a Hikvision refusal', () => {
     const speak = spyOn(window.speechSynthesis, 'speak');
     fixture.detectChanges();
 
@@ -920,13 +920,35 @@ describe('TerminalPointagePageComponent', () => {
       time: '09:18:22',
       mode: 'refuse',
       etablissementId: 1,
-      motifRefus: 'Dossier non à jour'
+      motifRefus: 'Aucun dossier d’inscription actif n’est lié à cet étudiant.',
+      photo: 'jane-doe.jpg',
+      photoType: 'apprenant'
     });
 
     expect(speak).toHaveBeenCalledTimes(1);
     const utterance = speak.calls.mostRecent().args[0] as SpeechSynthesisUtterance;
-    expect(utterance.text).toContain('Accès refusé');
-    expect(fixture.componentInstance.scanError).toContain('Dossier non à jour');
+    expect(utterance.text).toContain('Votre dossier est en cours de traitement, Jane Doe.');
+    expect(fixture.componentInstance.scanError).toBe('Votre dossier est en cours de traitement, Jane Doe.');
+    expect(fixture.componentInstance.terminalRefusalDetailsVisible).toBeTrue();
+    expect(fixture.componentInstance.terminalRefusalInProgress).toBeTrue();
+    expect(fixture.componentInstance.lastAttendanceName).toBe('Jane Doe');
+    expect(fixture.componentInstance.lastAttendanceMatricule).toBe('ESA001');
+    expect(fixture.componentInstance.lastAttendancePhotoUrl).toContain('/media/photos/apprenants/jane-doe.jpg');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.pointage-state-card--error img')?.getAttribute('src'))
+      .toContain('/media/photos/apprenants/jane-doe.jpg');
+    expect(fixture.nativeElement.querySelector('.pointage-state-card--error .state-title')?.textContent)
+      .toContain('Dossier en cours de traitement');
+    expect(fixture.nativeElement.querySelector('.pointage-state-card--error .state-desc')?.textContent)
+      .toContain('Votre dossier est en cours de traitement, Jane Doe.');
+    expect(fixture.nativeElement.querySelector('.pointage-state-card--error .pointage-success-person')?.textContent)
+      .toContain('Jane Doe');
+    expect(fixture.nativeElement.querySelector('.pointage-state-card--error .pointage-success-matricule')?.textContent)
+      .toContain('ESA001');
+
+    fixture.componentInstance.resetScan();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.pointage-state-card--error .pointage-success-person')).toBeNull();
   });
 
   it('does not announce a QR scan when the server did not record the attendance', () => {

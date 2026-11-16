@@ -91,6 +91,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   lastAttendanceRoleCode: string = ''
   lastAttendanceMatricule: string = ''
   lastAttendancePhotoUrl: string = ''
+  terminalRefusalDetailsVisible: boolean = false
+  terminalRefusalInProgress: boolean = false
   lastAttendanceSituationFinanciere: PointageSituationFinanciere | null = null
   lastAttendanceMode: 'arrivee' | 'depart' | 'passage' | 'refuse' = 'arrivee'
   lastAttendanceEventTime = ''
@@ -474,6 +476,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   }
 
   private afficherPointageHikvision(event: TerminalAttendanceEvent): void {
+    this.terminalRefusalDetailsVisible = event.mode === 'refuse'
+    this.terminalRefusalInProgress = false
     const memePersonneMemeJour = this.lastAttendanceMatricule === event.employeeNoString
       && this.lastAttendanceEventDate === event.date
     if (!memePersonneMemeJour) {
@@ -499,9 +503,15 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
 
     if (event.mode === 'refuse') {
       this.scanSuccess = ''
-      this.scanError = event.motifRefus || 'Accès refusé'
+      const motifRefus = (event.motifRefus || '').replace(/[’‘]/g, "'").toLowerCase()
+      const dossierEnTraitement = motifRefus.includes("aucun dossier d'inscription actif")
+      this.terminalRefusalInProgress = dossierEnTraitement
+      const messageRefus = dossierEnTraitement && this.lastAttendanceName
+        ? `Votre dossier est en cours de traitement, ${this.lastAttendanceName}.`
+        : event.motifRefus || 'Accès refusé'
+      this.scanError = messageRefus
       this.playBeepRefus()
-      this.announceAttendance(event, 'refuse', event.time, event.motifRefus, null, undefined, event.enseignantNonProgramme)
+      this.announceAttendance(event, 'refuse', event.time, messageRefus, null, undefined, event.enseignantNonProgramme)
       return
     }
 
@@ -1400,6 +1410,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   }
 
   private verifierStatut(codeQR: string): void {
+    this.terminalRefusalDetailsVisible = false
     this.scannedUser = null
     this.lastAttendanceSituationFinanciere = null
     this.scanError = ''
@@ -1664,6 +1675,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
 
   resetScan(): void {
     this.scannedUser = null
+    this.terminalRefusalDetailsVisible = false
+    this.terminalRefusalInProgress = false
     this.scanError = ''
     this.scanWarning = ''
     this.scanSuccess = ''
