@@ -112,7 +112,7 @@ services:
       TZ: ${TZ:-UTC}
     volumes:
       - mysql_backups:/backups/mysql
-      - ${PUBLIC_HOST_PATH:-/data/application/public}:/data/uploads:ro
+      - ${PUBLIC_HOST_PATH:-/data/documents/uploads/_legacy/public}:/data/uploads:ro
       - ${STORAGE_HOST_PATH:-/data/application/storage}:/data/storage:ro
       - ${UPLOADS_HOST_PATH:-/data/application/uploads}:/data/pv:ro
       - ${DOCUMENTS_HOST_PATH:-/data/documents}:/data/documents:ro
@@ -190,7 +190,7 @@ services:
     volumes:
       - ${DOCUMENTS_HOST_PATH:-/data/documents}:/app/documents
       - ${BACKUP_STORAGE_HOST_PATH:-/data/backups}:/app/backups
-      - ${PUBLIC_HOST_PATH:-/data/application/public}:/app/public
+      - ${PUBLIC_HOST_PATH:-/data/documents/uploads/_legacy/public}:/app/public
       - ${UPLOADS_HOST_PATH:-/data/application/uploads}:/app/uploads
       - ${STORAGE_HOST_PATH:-/data/application/storage}:/app/storage
       - ${CONFIG_HOST_PATH:-/opt/mon-app/config}:/app/config
@@ -252,7 +252,7 @@ services:
     volumes:
       - ${DOCUMENTS_HOST_PATH:-/data/documents}:/app/documents
       - ${BACKUP_STORAGE_HOST_PATH:-/data/backups}:/app/backups
-      - ${PUBLIC_HOST_PATH:-/data/application/public}:/app/public
+      - ${PUBLIC_HOST_PATH:-/data/documents/uploads/_legacy/public}:/app/public
       - ${UPLOADS_HOST_PATH:-/data/application/uploads}:/app/uploads
       - ${STORAGE_HOST_PATH:-/data/application/storage}:/app/storage
       - ${CONFIG_HOST_PATH:-/opt/mon-app/config}:/app/config
