@@ -637,12 +637,17 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
           <div *ngIf="departureConfirmation" class="pointage-departure-overlay">
             <section class="pointage-state-card pointage-state-card--warning pointage-departure-confirmation"
               role="alertdialog" aria-modal="true" aria-labelledby="pointage-departure-title" aria-describedby="pointage-departure-question">
-            <div class="state-icon">
-              <span class="material-symbols-outlined">logout</span>
-            </div>
-            <div id="pointage-departure-title" class="state-title">
-              {{ departureConfirmation.seancePointage ? 'Confirmer la fin du cours' : 'Confirmer le départ' }}
-            </div>
+            <header class="pointage-departure-heading">
+              <span class="state-icon">
+                <span class="material-symbols-outlined">logout</span>
+              </span>
+              <div>
+                <span class="pointage-departure-kicker">Confirmation requise</span>
+                <h2 id="pointage-departure-title" class="state-title">
+                  {{ departureConfirmation.seancePointage ? 'Confirmer la fin du cours' : 'Confirmer le départ' }}
+                </h2>
+              </div>
+            </header>
             <div class="pointage-success-person">
               <div class="pointage-success-photo">
                 <img *ngIf="departureConfirmation.photoUrl"
@@ -672,7 +677,7 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
               <ng-template #confirmerDepartQuestion>
                 Voulez-vous pointer le départ de
                 <strong>{{ departureConfirmation.prenoms }} {{ departureConfirmation.nom }}</strong>
-                à <strong>{{ departureConfirmation.heure }}</strong> ?
+                <span class="pointage-departure-time">{{ departureConfirmation.heure }}</span> ?
               </ng-template>
             </div>
             <div *ngIf="departureConfirmation.seancePointage && estDepartAnticipeEnAttente()" class="mt-4 text-left">
@@ -689,11 +694,11 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
               </div>
             </div>
             <div class="pointage-departure-actions">
-              <button (click)="confirmerDepart()" [disabled]="departureConfirmationSaving" class="pointage-btn pointage-btn--success">
+              <button (click)="confirmerDepart()" [disabled]="departureConfirmationSaving" class="pointage-btn pointage-btn--success pointage-departure-confirm-button">
                 <span class="material-symbols-outlined">check_circle</span>
                 {{ departureConfirmationSaving ? 'Enregistrement…' : (departureConfirmation.seancePointage ? 'Oui, terminer le cours' : 'Oui, pointer le départ') }}
               </button>
-              <button (click)="annulerConfirmationDepart()" [disabled]="departureConfirmationSaving" class="pointage-btn pointage-btn--outline">
+              <button (click)="annulerConfirmationDepart()" [disabled]="departureConfirmationSaving" class="pointage-btn pointage-btn--outline pointage-departure-cancel-button">
                 <span class="material-symbols-outlined">undo</span>
                 Non, annuler
               </button>

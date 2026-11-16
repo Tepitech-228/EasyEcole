@@ -1088,18 +1088,107 @@
   z-index: 1200;
   display: grid;
   place-items: center;
-  padding: 1rem;
-  background: rgba(15, 23, 42, 0.62);
-  backdrop-filter: blur(3px);
+  padding: 1.25rem;
+  background: rgba(15, 23, 42, 0.68);
+  backdrop-filter: blur(5px);
 
   .pointage-departure-confirmation {
-    width: min(520px, 100%);
+    width: min(760px, 100%);
     max-height: calc(100vh - 2rem);
     overflow-y: auto;
-    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.3);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 22px;
+    padding: 1.5rem;
+    text-align: left;
+    background: #fff;
+    box-shadow: 0 28px 80px rgba(15, 23, 42, 0.32);
 
-    .pointage-success-photo { width: 132px; height: 132px; }
+    .state-title { margin: 0; color: #172b4d; font-size: 1.15rem; font-weight: 750; }
+    .state-desc { margin: 0 0 1.25rem; color: #596579; font-size: 0.92rem; line-height: 1.6; }
+    .state-desc strong { color: #172b4d; font-weight: 700; }
+
+    .pointage-success-photo {
+      width: 240px;
+      height: 240px;
+      border: 3px solid #fff;
+      border-radius: 12px;
+      box-shadow: 0 0 0 2px #cbd5e1;
+    }
+
+    .pointage-success-person {
+      width: 100%;
+      gap: 1.35rem;
+      margin: 1.25rem 0 1rem;
+      border: 1px solid #e5eaf1;
+      border-radius: 16px;
+      padding: 1rem 1.1rem;
+      color: #334155;
+      background: #f8fafc;
+    }
+
+    .pointage-success-details { gap: 0.28rem; }
+    .pointage-success-details > strong { color: #172b4d; font-size: clamp(1.05rem, 2.8vw, 1.35rem); }
+    .pointage-success-role { color: #64748b; font-size: 0.83rem; line-height: 1.4; }
+    .pointage-success-matricule { color: #64748b; font-size: 0.72rem; }
+    .pointage-success-matricule strong { color: #334155; overflow-wrap: anywhere; }
+    .pointage-departure-actions { justify-content: flex-end; gap: 0.65rem; }
+    .pointage-departure-actions .pointage-btn { min-width: 0; min-height: 46px; }
+    .pointage-departure-confirm-button { order: 1; padding-inline: 1.15rem; }
+    .pointage-departure-cancel-button {
+      order: 0;
+      border-color: #dc2626;
+      color: #fff;
+      background: #dc2626;
+
+      &:hover:not(:disabled) {
+        border-color: #b91c1c;
+        color: #fff;
+        background: #b91c1c;
+      }
+    }
   }
+}
+
+.pointage-departure-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+
+  .state-icon {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 auto;
+    place-items: center;
+    margin: 0;
+    border-radius: 13px;
+    color: #b45309;
+    background: #fff4d6;
+
+    .material-symbols-outlined { font-size: 1.3rem; }
+  }
+}
+
+.pointage-departure-kicker {
+  display: block;
+  margin-bottom: 0.18rem;
+  color: #b45309;
+  font-size: 0.65rem;
+  font-weight: 750;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.pointage-departure-time {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.15rem;
+  border-radius: 7px;
+  padding: 0.1rem 0.45rem;
+  color: #92400e;
+  background: #fff4d6;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
 }
 
 .pointage-state-card {
@@ -1335,7 +1424,8 @@
   .scanner-frame { width: 180px; height: 180px; }
   .pointage-scanned-actions, .pointage-finance { padding-right: 1.1rem; padding-left: 1.1rem; }
   .pointage-scanned-photo-wrapper { width: min(413px, 100%); }
-  .pointage-success-person .pointage-success-photo { width: 112px; height: 112px; }
+  .pointage-success-person .pointage-success-photo { width: 168px; height: 168px; }
+  .pointage-departure-overlay .pointage-departure-confirmation { padding: 1.25rem; }
   .pointage-self-grid, .pointage-finance-grid { grid-template-columns: 1fr; }
   .pointage-scanned-head h4 { overflow-wrap: anywhere; }
 }
@@ -1346,6 +1436,16 @@
   .pointage-success-person { flex-direction: column; text-align: center; }
   .pointage-success-person .pointage-success-photo { width: 108px; height: 108px; }
   .pointage-success-details { align-items: center; text-align: center; }
+  .pointage-departure-overlay { padding: 0.75rem; }
+  .pointage-departure-overlay .pointage-departure-confirmation {
+    padding: 1.1rem;
+
+    .pointage-success-person { flex-direction: row; text-align: left; }
+    .pointage-success-person .pointage-success-photo { width: 112px; height: 112px; }
+    .pointage-success-details { align-items: flex-start; text-align: left; }
+    .pointage-departure-actions { flex-direction: column-reverse; }
+    .pointage-departure-actions .pointage-btn { width: 100%; }
+  }
 }
 
 @media print {
