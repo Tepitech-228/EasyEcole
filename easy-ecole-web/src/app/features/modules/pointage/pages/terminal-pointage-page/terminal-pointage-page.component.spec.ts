@@ -87,7 +87,7 @@ describe('TerminalPointagePageComponent', () => {
     fixture = TestBed.createComponent(TerminalPointagePageComponent);
   });
 
-  it('uses red, green, and blue result states for the student financial status', () => {
+  it('uses a full red result background for overdue students and green for up-to-date or settled students', () => {
     const component = fixture.componentInstance;
     component.scanSuccess = 'Passage enregistré.';
     component.lastAttendanceName = 'Jane Doe';
@@ -104,7 +104,9 @@ describe('TerminalPointagePageComponent', () => {
       echeances: []
     };
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.pointage-state-card--error')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.pointage-attendance-result--warning')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.pointage-state-card--financial-warning')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.pointage-finance--result-warning')).not.toBeNull();
 
     component.lastAttendanceSituationFinanciere = {
       ...component.lastAttendanceSituationFinanciere!,
@@ -112,6 +114,7 @@ describe('TerminalPointagePageComponent', () => {
       echeancesEnRetard: 0
     };
     fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.pointage-attendance-result--success')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('.pointage-state-card--success')).not.toBeNull();
 
     component.lastAttendanceSituationFinanciere = {
@@ -120,6 +123,7 @@ describe('TerminalPointagePageComponent', () => {
       resteAPayer: 0
     };
     fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.pointage-attendance-result--success')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('.pointage-state-card--solde')).not.toBeNull();
   });
 

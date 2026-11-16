@@ -804,9 +804,14 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
             </button>
           </div>
 
-          <div *ngIf="scanSuccess && !departureResultPopup" class="pointage-state-card"
+          <div *ngIf="scanSuccess && !departureResultPopup" class="pointage-attendance-result"
             [ngClass]="{
-              'pointage-state-card--error': estDernierPointageEtudiant && statutFinancierDernierPointage === 'non-a-jour',
+              'pointage-attendance-result--warning': estDernierPointageEtudiant && statutFinancierDernierPointage === 'non-a-jour',
+              'pointage-attendance-result--success': estDernierPointageEtudiant && statutFinancierDernierPointage !== 'non-a-jour'
+            }">
+          <div class="pointage-state-card"
+            [ngClass]="{
+              'pointage-state-card--financial-warning': estDernierPointageEtudiant && statutFinancierDernierPointage === 'non-a-jour',
               'pointage-state-card--success': !estDernierPointageEtudiant || statutFinancierDernierPointage === 'a-jour',
               'pointage-state-card--solde': estDernierPointageEtudiant && statutFinancierDernierPointage === 'solde'
             }">
@@ -821,9 +826,10 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
               </div>
               <span class="rounded-full px-3 py-1 text-xs font-bold uppercase"
                 [ngClass]="{
-                  'bg-red-100 text-red-800': estDernierPointageEtudiant && statutFinancierDernierPointage === 'non-a-jour',
+                  'pointage-financial-status--warning': estDernierPointageEtudiant && statutFinancierDernierPointage === 'non-a-jour',
+                  'pointage-financial-status--success': estDernierPointageEtudiant && statutFinancierDernierPointage !== 'non-a-jour',
                   'bg-green-100 text-green-800': (estDernierPointageEtudiant && statutFinancierDernierPointage === 'a-jour') || (!estDernierPointageEtudiant && lastAttendanceMode === 'arrivee'),
-                  'bg-blue-100 text-blue-800': (estDernierPointageEtudiant && statutFinancierDernierPointage === 'solde') || (!estDernierPointageEtudiant && lastAttendanceMode === 'depart'),
+                  'bg-blue-100 text-blue-800': !estDernierPointageEtudiant && lastAttendanceMode === 'depart',
                   'bg-slate-100 text-slate-700': !estDernierPointageEtudiant && lastAttendanceMode === 'passage'
                 }">
                 {{ estDernierPointageEtudiant
@@ -882,7 +888,12 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
           </div>
 
           <div *ngIf="!scannedUser && estDernierPointageEtudiant && lastAttendanceSituationFinanciere as situation"
-            class="pointage-finance pointage-finance--result" role="status">
+            class="pointage-finance pointage-finance--result"
+            [ngClass]="{
+              'pointage-finance--result-warning': statutFinancierDernierPointage === 'non-a-jour',
+              'pointage-finance--result-success': statutFinancierDernierPointage !== 'non-a-jour'
+            }"
+            role="status">
             <div class="pointage-finance-head">
               <h5>Situation financière</h5>
               <span class="pointage-finance-status"
@@ -932,6 +943,7 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
                 </li>
               </ul>
             </div>
+          </div>
           </div>
 
         </div>
