@@ -86,22 +86,41 @@ describe("HikvisionEnrollmentService", () => {
     }));
   });
 
-  it("backfills only validated student profiles to a student terminal", async () => {
+  it("backfills validated learners and submitted applications to a student terminal", async () => {
     const terminal = { id: 8, etablissementId: 3, population: "etudiant" as const };
     DossierEtudiant.findAll.mockResolvedValue([
       { utilisateurId: 42, matricule: "ESA042" },
       { utilisateurId: 43, matricule: "ESA043" }
     ]);
-    DemandeInscription.findAll.mockResolvedValue([{ utilisateurId: 42 }]);
+    DemandeInscription.findAll
+      .mockResolvedValueOnce([{ utilisateurId: 42 }])
+      .mockResolvedValueOnce([{ utilisateurId: 44, matriculeEtudiant: "ESA044" }]);
     HikvisionEnrollment.findOrCreate.mockResolvedValue([{}, true]);
 
     await HikvisionEnrollmentService.enqueueEligibleProfilesForTerminal(terminal);
 
-    expect(HikvisionEnrollment.findOrCreate).toHaveBeenCalledTimes(1);
+    expect(HikvisionEnrollment.findOrCreate).toHaveBeenCalledTimes(2);
     expect(HikvisionEnrollment.findOrCreate).toHaveBeenCalledWith(expect.objectContaining({
       where: { terminalId: 8, utilisateurId: 42 },
       defaults: expect.objectContaining({ employeeNo: "ESA042" })
     }));
+    expect(HikvisionEnrollment.findOrCreate).toHaveBeenCalledWith(expect.objectContaining({
+      where: { terminalId: 8, utilisateurId: 44 },
+      defaults: expect.objectContaining({ employeeNo: "ESA044" })
+    }));
+    expect(DemandeInscription.findAll).toHaveBeenLastCalledWith({
+      where: {
+        etablissementId: 3,
+        matriculeEtudiant: { [require("sequelize").Op.ne]: null },
+        [require("sequelize").Op.or]: [
+          { statutPipeline: { [require("sequelize").Op.ne]: null } },
+          { soumissionComite: true },
+          { dateValidation: { [require("sequelize").Op.ne]: null } }
+        ]
+      },
+      attributes: ["utilisateurId", "matriculeEtudiant"],
+      order: [["updatedAt", "DESC"]]
+    });
     expect(SiteUtilisateur.findAll).not.toHaveBeenCalled();
   });
 
@@ -215,6 +234,27 @@ describe("HikvisionEnrollmentService", () => {
         employeeNo: "admin-test",
         statut: "en_attente"
       })
+    }));
+  });
+
+  it("backfills submitted student applications on all active student terminals at startup", async () => {
+    const terminal = { id: 8, etablissementId: 3, population: "etudiant" as const };
+    PointageTerminal.findAll.mockResolvedValue([terminal]);
+    DossierEtudiant.findAll.mockResolvedValue([]);
+    DemandeInscription.findAll
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ utilisateurId: 42, matriculeEtudiant: "ESA042" }]);
+    HikvisionEnrollment.findOrCreate.mockResolvedValue([{ statut: "en_attente" }, true]);
+
+    await HikvisionEnrollmentService.enqueueStudentsForActiveTerminals();
+
+    expect(PointageTerminal.findAll).toHaveBeenCalledWith({
+      where: { protocol: "hikvision_isapi", population: "etudiant", actif: true },
+      attributes: ["id", "etablissementId", "population"]
+    });
+    expect(HikvisionEnrollment.findOrCreate).toHaveBeenCalledWith(expect.objectContaining({
+      where: { terminalId: 8, utilisateurId: 42 },
+      defaults: expect.objectContaining({ employeeNo: "ESA042" })
     }));
   });
 

@@ -7,6 +7,7 @@ import { PersonnelAdministratif } from "../../auth/models/PersonnelAdministratif
 import { Enseignant } from "../../auth/models/Enseignant";
 import { SiteUtilisateur } from "../../auth/models/SiteUtilisateur";
 import { DossierEtudiant } from "../models/DossierEtudiant";
+import { DemandeInscription } from "../models/DemandeInscription";
 import { PointageTerminal } from "../models/PointageTerminal";
 import { PointageTerminalEvent } from "../models/PointageTerminalEvent";
 import { Op } from "sequelize";
@@ -21,10 +22,14 @@ function normalizedIp(ip: string): string {
   return ip.startsWith("::ffff:") ? ip.slice(7) : ip;
 }
 
-async function resolveUtilisateur(employeeNo: string, etablissementId: number): Promise<Utilisateur | null> {
-  const [dossiers, siteUsers] = await Promise.all([
+export async function resolveUtilisateur(employeeNo: string, etablissementId: number): Promise<Utilisateur | null> {
+  const [dossiers, demandes, siteUsers] = await Promise.all([
     DossierEtudiant.findAll({
       where: { matricule: employeeNo, etablissementId },
+      attributes: ["utilisateurId"]
+    }),
+    DemandeInscription.findAll({
+      where: { matriculeEtudiant: employeeNo, etablissementId },
       attributes: ["utilisateurId"]
     }),
     SiteUtilisateur.findAll({ where: { etablissementId }, attributes: ["utilisateurId"] })
@@ -49,6 +54,7 @@ async function resolveUtilisateur(employeeNo: string, etablissementId: number): 
   ]);
   const profileIds = new Set<number>([
     ...dossiers.map(item => Number(item.utilisateurId)),
+    ...demandes.map(item => Number(item.utilisateurId)),
     ...personnels.map(item => Number(item.utilisateurId)),
     ...enseignants.map(item => Number(item.utilisateurId))
   ].filter(id => Number.isSafeInteger(id) && id > 0));
@@ -70,10 +76,14 @@ async function resolveUtilisateur(employeeNo: string, etablissementId: number): 
   // On retrouve le profil en comparant les matricules normalises du site.
   const normalized = normalizeHikvisionEmployeeNo(employeeNo);
   if (normalized) {
-    const [siteDossiers, sitePersonnels, siteEnseignants, siteAdministrateurs] = await Promise.all([
+    const [siteDossiers, siteDemandes, sitePersonnels, siteEnseignants, siteAdministrateurs] = await Promise.all([
       DossierEtudiant.findAll({
         where: { etablissementId },
         attributes: ["matricule", "utilisateurId"]
+      }),
+      DemandeInscription.findAll({
+        where: { etablissementId },
+        attributes: ["matriculeEtudiant", "utilisateurId"]
       }),
       PersonnelAdministratif.findAll({
         where: {
@@ -97,6 +107,11 @@ async function resolveUtilisateur(employeeNo: string, etablissementId: number): 
     for (const profil of [...siteDossiers, ...sitePersonnels, ...siteEnseignants]) {
       if (profil.matricule && normalizeHikvisionEmployeeNo(String(profil.matricule)) === normalized) {
         normalizedIds.add(Number(profil.utilisateurId));
+      }
+    }
+    for (const demande of siteDemandes) {
+      if (demande.matriculeEtudiant && normalizeHikvisionEmployeeNo(String(demande.matriculeEtudiant)) === normalized) {
+        normalizedIds.add(Number(demande.utilisateurId));
       }
     }
     for (const administrateur of siteAdministrateurs) {

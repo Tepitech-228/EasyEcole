@@ -94,19 +94,33 @@ export default class HikvisionEnrollmentService {
       const utilisateursValides = new Set(demandes.map(demande => Number(demande.utilisateurId)));
       for (const dossier of dossiers) {
         if (!utilisateursValides.has(Number(dossier.utilisateurId)) || !dossier.matricule) continue;
-        await HikvisionEnrollment.findOrCreate({
-          where: { terminalId: terminal.id, utilisateurId: dossier.utilisateurId },
-          defaults: {
-            terminalId: Number(terminal.id),
-            utilisateurId: Number(dossier.utilisateurId),
-            etablissementId: Number(terminal.etablissementId),
-            employeeNo: dossier.matricule,
-            statut: "en_attente",
-            tentatives: 0,
-            prochaineTentativeAt: new Date(),
-            derniereErreur: null
-          }
-        });
+        await HikvisionEnrollmentService.enqueueForTerminal(
+          terminal,
+          Number(dossier.utilisateurId),
+          dossier.matricule
+        );
+      }
+
+      const submittedDemands = await DemandeInscription.findAll({
+        where: {
+          etablissementId: terminal.etablissementId,
+          matriculeEtudiant: { [Op.ne]: null },
+          [Op.or]: [
+            { statutPipeline: { [Op.ne]: null } },
+            { soumissionComite: true },
+            { dateValidation: { [Op.ne]: null } }
+          ]
+        },
+        attributes: ["utilisateurId", "matriculeEtudiant"],
+        order: [["updatedAt", "DESC"]]
+      });
+      for (const demande of submittedDemands) {
+        if (!demande.matriculeEtudiant) continue;
+        await HikvisionEnrollmentService.enqueueForTerminal(
+          terminal,
+          Number(demande.utilisateurId),
+          demande.matriculeEtudiant
+        );
       }
       return;
     }
@@ -193,6 +207,17 @@ export default class HikvisionEnrollmentService {
           String(administrateur.identifiant)
         );
       }
+
+    }
+  }
+
+  static async enqueueStudentsForActiveTerminals(): Promise<void> {
+    const terminals = await PointageTerminal.findAll({
+      where: { protocol: "hikvision_isapi", population: "etudiant", actif: true },
+      attributes: ["id", "etablissementId", "population"]
+    });
+    for (const terminal of terminals) {
+      await HikvisionEnrollmentService.enqueueEligibleProfilesForTerminal(terminal);
     }
   }
 

@@ -13,7 +13,7 @@ export class AdresseApprenant extends Model<InferAttributes<AdresseApprenant>, I
   declare quartier: string
   declare ville: string
   declare pays: string
-  declare apprenantId: ForeignKey<Apprenant['id']>
+  declare apprenantId: ForeignKey<Apprenant['id']> | null
   declare apprenant?: NonAttribute<Apprenant>
   
   declare readonly createdAt: CreationOptional<Date>

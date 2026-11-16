@@ -415,10 +415,13 @@ server.on("listening", async () => {
             console.error('[Hikvision] Traitement de la file des enrôlements impossible:', error);
         });
     };
-    void HikvisionEnrollmentService.enqueueAdministratorsForActiveTerminals()
+    void Promise.all([
+        HikvisionEnrollmentService.enqueueAdministratorsForActiveTerminals(),
+        HikvisionEnrollmentService.enqueueStudentsForActiveTerminals()
+    ])
         .then(runHikvisionEnrollments)
         .catch(error => {
-            console.error('[Hikvision] Synchronisation initiale des administrateurs impossible:', error);
+            console.error('[Hikvision] Synchronisation initiale des comptes sur les pointeuses impossible:', error);
             runHikvisionEnrollments();
         });
     setInterval(runHikvisionEnrollments, 60_000);
