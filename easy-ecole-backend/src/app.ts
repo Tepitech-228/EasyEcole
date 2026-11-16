@@ -118,7 +118,7 @@ const limiter = rateLimit({
 app.use(limiter)
 
 morgan.token('url', (req) =>
-    String(req.originalUrl || req.url || '').replace(/([?&]token=)[^&]*/gi, '$1[REDACTED]')
+    String(req.url || '').replace(/([?&]token=)[^&]*/gi, '$1[REDACTED]')
 )
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'))
 app.use(express.json({ limit: '10mb' }))

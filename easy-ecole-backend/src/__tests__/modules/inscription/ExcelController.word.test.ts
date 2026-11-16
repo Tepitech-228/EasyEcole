@@ -61,7 +61,7 @@ describe('ExcelController.lireTableauWord', () => {
           ],
         }),
       ],
-    }, 30000);
+    });
     const doc = new Document({ sections: [{ children: [table] }] });
     const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'easyecole-word-'));
     const filePath = path.join(workDir, 'merged-credit.docx');
@@ -118,7 +118,7 @@ describe('ExcelController.lireTableauWord', () => {
           ],
         }),
       ],
-    }, 30000);
+    });
     const alternateTable = new Table({
       rows: [
         new TableRow({
