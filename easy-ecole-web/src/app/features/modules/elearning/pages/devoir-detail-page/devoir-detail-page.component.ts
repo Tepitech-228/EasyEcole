@@ -6,8 +6,7 @@ import { LocalStorageService } from 'src/app/core/services/local-storage.service
 
 @Component({
   selector: 'app-devoir-detail-page',
-  templateUrl: './devoir-detail-page.component.html',
-  styleUrls: ['./devoir-detail-page.component.scss']
+  templateUrl: './devoir-detail-page.component.html'
 })
 export class DevoirDetailPageComponent implements OnInit, OnDestroy {
   devoir: any = null;

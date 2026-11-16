@@ -1,109 +1,163 @@
-<div class="detail-page">
-  <h2 class="detail-page__title">{{ devoir?.titre || 'Détail du devoir' }}</h2>
-
-  <button (click)="goBack()" class="detail-page__back">&larr; Retour aux devoirs</button>
-
-  <div *ngIf="loading" class="spinner-wrapper">
-    <div class="spinner"></div>
+<div class="space-y-5">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <button (click)="goBack()" class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-indigo-600">
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      Retour aux devoirs
+    </button>
   </div>
 
-  <div *ngIf="!loading && !devoir" class="empty-state">Devoir introuvable.</div>
+  <div *ngIf="loading" class="flex items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-14 text-sm text-slate-500 shadow-sm">
+    <span class="h-5 w-5 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600"></span>
+    Chargement du devoir…
+  </div>
 
-  <div *ngIf="devoir && !loading" class="detail-page__layout">
-    <div class="detail-page__main">
-      <div class="card">
-        <div class="card__header-row">
-          <h3 class="card__title">{{ devoir.titre }}</h3>
-          <span class="badge" [ngClass]="(devoir.statut || 'à rendre') === 'noté' ? 'badge--success' : (devoir.statut || 'à rendre') === 'soumis' ? 'badge--info' : 'badge--warning'">{{ devoir.statut || 'à rendre' }}</span>
-        </div>
-        <p class="card__text">{{ devoir.description }}</p>
-        <div class="card__meta">
-          <span *ngIf="devoir.cours?.titre">Matière: <strong>{{ devoir.cours.titre }}</strong></span>
-          <span *ngIf="devoir.semestre !== null && devoir.semestre !== undefined">
-            Période: <strong>{{ devoir.semestre === 0 ? 'Annuel' : 'Semestre ' + devoir.semestre }}</strong>
-          </span>
-          <span>Date limite: <strong [ngClass]="isLate() && canSubmit() ? 'text-danger' : ''">{{ devoir.dateLimite | date:'dd/MM/yyyy' }}</strong></span>
-        </div>
-        <button *ngIf="devoir.statut === 'publie'" (click)="telechargerSujet()" class="btn btn--outline">Télécharger le sujet PDF</button>
-        <div *ngIf="isLate() && canSubmit()" class="alert alert--warning">Date limite dépassée. Ce devoir est en retard.</div>
-      </div>
+  <div *ngIf="!loading && !devoir" class="flex flex-col items-center rounded-2xl border border-slate-200 bg-white px-5 py-14 text-center shadow-sm">
+    <h3 class="text-sm font-semibold text-slate-900">Devoir introuvable</h3>
+    <button (click)="goBack()" class="mt-3 text-xs font-semibold text-indigo-600 hover:text-indigo-800">Retour à la liste</button>
+  </div>
 
-      <div *ngIf="canSubmit()" class="card">
-        <h3 class="card__title">Soumettre votre devoir</h3>
-        <div *ngIf="submitSuccess" class="alert alert--success">Devoir soumis avec succès !</div>
-        <div *ngIf="!submitSuccess">
-          <div class="form-group">
-            <label class="form-label">Fichier PDF</label>
-            <input type="file" accept="application/pdf,.pdf" (change)="onFileSelected($event)" class="form-file">
+  <div *ngIf="devoir && !loading" class="grid grid-cols-1 gap-5 lg:grid-cols-3">
+    <div class="space-y-5 lg:col-span-2">
+      <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-600 px-6 py-7 text-white shadow-xl shadow-indigo-200 sm:px-8">
+        <div class="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-white/10 blur-2xl"></div>
+        <div class="relative">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide"
+              [ngClass]="(devoir.statut || 'à rendre') === 'noté' ? 'bg-emerald-400/20 text-emerald-100 ring-1 ring-inset ring-emerald-300/40' : (devoir.statut || 'à rendre') === 'soumis' ? 'bg-sky-400/20 text-sky-100 ring-1 ring-inset ring-sky-300/40' : 'bg-amber-400/20 text-amber-100 ring-1 ring-inset ring-amber-300/40'">
+              {{ devoir.statut || 'à rendre' }}
+            </span>
+            <span *ngIf="devoir.cours?.titre" class="text-xs font-medium text-indigo-200">{{ devoir.cours.titre }}</span>
           </div>
-          <button (click)="soumettre()" [disabled]="!selectedFile" class="btn btn--primary">Soumettre</button>
+
+          <h2 class="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">{{ devoir.titre }}</h2>
+          <p class="mt-2 max-w-2xl text-sm leading-relaxed text-indigo-100">{{ devoir.description }}</p>
+
+          <div class="mt-5 flex flex-wrap gap-2">
+            <span *ngIf="devoir.semestre !== null && devoir.semestre !== undefined" class="rounded-lg bg-white/10 px-3 py-1.5 text-[11px] font-medium text-indigo-100 ring-1 ring-inset ring-white/15">
+              {{ devoir.semestre === 0 ? 'Annuel' : 'Semestre ' + devoir.semestre }}
+            </span>
+            <span class="rounded-lg bg-white/10 px-3 py-1.5 text-[11px] font-medium ring-1 ring-inset ring-white/15"
+              [ngClass]="isLate() && canSubmit() ? 'text-rose-200' : 'text-indigo-100'">
+              Échéance : {{ devoir.dateLimite | date:'dd/MM/yyyy' }}
+            </span>
+          </div>
+
+          <button *ngIf="devoir.statut === 'publie'" (click)="telechargerSujet()"
+            class="mt-5 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 shadow-sm transition hover:bg-indigo-50">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"></path></svg>
+            Télécharger le sujet PDF
+          </button>
         </div>
+      </section>
+
+      <div *ngIf="isLate() && canSubmit()" class="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800" role="alert">
+        Date limite dépassée. Ce devoir est en retard.
       </div>
 
-      <div *ngIf="canManage() && soumissions.length > 0" class="card">
-        <h3 class="card__title">Soumissions ({{ soumissions.length }})</h3>
-        <div class="soumissions-list">
-          <div *ngFor="let s of soumissions" class="soumission-item">
-            <div class="soumission-item__left">
-              <span class="soumission-item__name">{{ s.apprenant?.nom }} {{ s.apprenant?.prenoms }}</span>
-              <span class="soumission-item__date">{{ s.date | date:'dd/MM/yyyy HH:mm' }}</span>
+      <section *ngIf="canSubmit()" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <h3 class="text-sm font-semibold text-slate-900">Soumettre votre devoir</h3>
+        <p class="mt-1 text-xs text-slate-500">Déposez votre copie au format PDF avant la date limite.</p>
+
+        <div *ngIf="submitSuccess" class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+          Devoir soumis avec succès !
+        </div>
+
+        <div *ngIf="!submitSuccess" class="mt-4">
+          <label class="mb-1.5 block text-xs font-medium text-slate-600" for="copie-pdf">Fichier PDF</label>
+          <input id="copie-pdf" type="file" accept="application/pdf,.pdf" (change)="onFileSelected($event)"
+            class="w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100" />
+          <button (click)="soumettre()" [disabled]="!selectedFile"
+            class="mt-4 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">
+            Soumettre
+          </button>
+        </div>
+      </section>
+
+      <section *ngIf="canManage() && soumissions.length > 0" class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <header class="border-b border-slate-100 px-5 py-4">
+          <h3 class="text-sm font-semibold text-slate-900">Soumissions ({{ soumissions.length }})</h3>
+        </header>
+        <div class="divide-y divide-slate-100">
+          <div *ngFor="let s of soumissions" class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="min-w-0">
+              <p class="text-sm font-medium text-slate-900">{{ s.apprenant?.nom }} {{ s.apprenant?.prenoms }}</p>
+              <p class="text-[11px] text-slate-400">{{ s.date | date:'dd/MM/yyyy HH:mm' }}</p>
+              <p *ngIf="s.commentaire" class="mt-1 text-xs text-slate-500">{{ s.commentaire }}</p>
             </div>
-            <div class="soumission-item__actions">
-              <span *ngIf="s.note !== null" class="soumission-item__note">{{ s.note }}/20</span>
-              <span *ngIf="s.commentaire" class="soumission-item__comment">{{ s.commentaire }}</span>
-              <button (click)="downloadSoumission(s.id)" class="btn btn--sm btn--outline">Télécharger</button>
-              <button (click)="openNoterModal(s.id)" class="btn btn--sm btn--outline btn--outline-success">Noter</button>
+            <div class="flex flex-wrap items-center gap-2">
+              <span *ngIf="s.note !== null" class="rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">{{ s.note }}/20</span>
+              <button (click)="downloadSoumission(s.id)"
+                class="rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50">
+                Télécharger
+              </button>
+              <button (click)="openNoterModal(s.id)"
+                class="rounded-lg bg-emerald-50 px-3 py-1.5 text-[11px] font-semibold text-emerald-700 transition hover:bg-emerald-100">
+                Noter
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      </section>
     </div>
 
-    <div class="detail-page__sidebar">
-      <div class="card card--sidebar">
-        <h3 class="card__title">Informations</h3>
-        <div class="info-list">
-          <div class="info-item">
-            <span class="info-item__label">Matière</span>
-            <p class="info-item__value">{{ devoir.cours?.titre || '—' }}</p>
+    <aside class="space-y-5">
+      <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h3 class="text-sm font-semibold text-slate-900">Informations</h3>
+        <dl class="mt-4 space-y-3">
+          <div>
+            <dt class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Matière</dt>
+            <dd class="mt-0.5 text-sm text-slate-700">{{ devoir.cours?.titre || '—' }}</dd>
           </div>
-          <div class="info-item">
-            <span class="info-item__label">Statut</span>
-            <span class="badge" [ngClass]="(devoir.statut || 'à rendre') === 'noté' ? 'badge--success' : (devoir.statut || 'à rendre') === 'soumis' ? 'badge--info' : 'badge--warning'">{{ devoir.statut || 'à rendre' }}</span>
+          <div>
+            <dt class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Statut</dt>
+            <dd class="mt-0.5">
+              <span class="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide"
+                [ngClass]="(devoir.statut || 'à rendre') === 'noté' ? 'bg-emerald-50 text-emerald-700' : (devoir.statut || 'à rendre') === 'soumis' ? 'bg-sky-50 text-sky-700' : 'bg-amber-50 text-amber-700'">
+                {{ devoir.statut || 'à rendre' }}
+              </span>
+            </dd>
           </div>
-          <div class="info-item">
-            <span class="info-item__label">Date limite</span>
-            <p class="info-item__value" [ngClass]="isLate() ? 'text-danger' : ''">{{ devoir.dateLimite | date:'dd/MM/yyyy' }}</p>
+          <div>
+            <dt class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Date limite</dt>
+            <dd class="mt-0.5 text-sm" [ngClass]="isLate() ? 'font-semibold text-rose-600' : 'text-slate-700'">{{ devoir.dateLimite | date:'dd/MM/yyyy' }}</dd>
           </div>
-          <div class="info-item">
-            <span class="info-item__label">Soumissions</span>
-            <p class="info-item__value">{{ soumissions.length }}</p>
+          <div>
+            <dt class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Soumissions</dt>
+            <dd class="mt-0.5 text-sm text-slate-700">{{ soumissions.length }}</dd>
           </div>
-        </div>
-      </div>
-    </div>
+        </dl>
+      </section>
+    </aside>
   </div>
 </div>
 
-<div *ngIf="showNoterModal" class="modal-overlay" (click)="showNoterModal = false">
-  <div class="modal" (click)="$event.stopPropagation()">
-    <div class="modal__header">
-      <h3 class="modal__title">Noter la soumission</h3>
-      <button (click)="showNoterModal = false" class="modal__close">&times;</button>
+<div *ngIf="showNoterModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4 backdrop-blur-sm" (click)="showNoterModal = false">
+  <div class="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl" (click)="$event.stopPropagation()">
+    <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+      <h3 class="text-sm font-semibold text-slate-900">Noter la soumission</h3>
+      <button (click)="showNoterModal = false" class="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" aria-label="Fermer">&times;</button>
     </div>
-    <div class="modal__body">
-      <div class="form-group">
-        <label class="form-label">Note /20</label>
-        <input [(ngModel)]="noteValue" type="number" min="0" max="20" class="form-input">
+    <div class="space-y-4 px-5 py-4">
+      <div>
+        <label class="mb-1 block text-xs font-medium text-slate-600" for="note-soumission">Note /20</label>
+        <input id="note-soumission" [(ngModel)]="noteValue" type="number" min="0" max="20"
+          class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20" />
       </div>
-      <div class="form-group">
-        <label class="form-label">Commentaire de correction</label>
-        <textarea [(ngModel)]="commentaireCorrection" rows="3" class="form-input"></textarea>
+      <div>
+        <label class="mb-1 block text-xs font-medium text-slate-600" for="commentaire-correction">Commentaire de correction</label>
+        <textarea id="commentaire-correction" [(ngModel)]="commentaireCorrection" rows="3"
+          class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20"></textarea>
       </div>
-      <div class="modal__actions">
-        <button (click)="noterSoumission()" class="btn btn--primary">Enregistrer</button>
-        <button (click)="showNoterModal = false" class="btn btn--outline">Annuler</button>
-      </div>
+    </div>
+    <div class="flex flex-wrap gap-3 border-t border-slate-100 bg-slate-50/60 px-5 py-4">
+      <button (click)="noterSoumission()"
+        class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700">
+        Enregistrer
+      </button>
+      <button (click)="showNoterModal = false"
+        class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
+        Annuler
+      </button>
     </div>
   </div>
 </div>

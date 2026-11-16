@@ -1,67 +1,98 @@
-<div class="quiz-do-page">
-  <h2 class="quiz-do-page__title">{{ quiz?.titre || 'Quiz' }}</h2>
-
-  <div *ngIf="loading" class="spinner-wrapper">
-    <div class="spinner"></div>
+<div class="mx-auto max-w-3xl space-y-5">
+  <div class="flex items-center justify-between gap-4">
+    <h2 class="truncate text-lg font-bold text-slate-900">{{ quiz?.titre || 'Quiz' }}</h2>
+    <button *ngIf="quiz" (click)="goBack()" class="shrink-0 text-xs font-medium text-slate-500 transition hover:text-indigo-600">
+      Retour aux quiz
+    </button>
   </div>
 
-  <div *ngIf="!loading && !quiz" class="empty-state">
-    Quiz introuvable.
-    <button (click)="goBack()" class="empty-state__link">Retour à la liste</button>
+  <div *ngIf="loading" class="flex items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-14 text-sm text-slate-500 shadow-sm">
+    <span class="h-5 w-5 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600"></span>
+    Chargement du quiz…
   </div>
 
-  <div *ngIf="quiz && !loading && !submitted" class="quiz-do-page__content">
-    <div class="card card--progress">
-      <div class="quiz-do-page__info">
-        <span class="quiz-do-page__counter">Question {{ currentQuestionIndex + 1 }} sur {{ totalQuestions }}</span>
-        <span class="quiz-do-page__timer" [ngClass]="timeWarning ? 'quiz-do-page__timer--warn' : ''">{{ formattedTime }}</span>
+  <div *ngIf="!loading && !quiz" class="flex flex-col items-center rounded-2xl border border-slate-200 bg-white px-5 py-14 text-center shadow-sm">
+    <h3 class="text-sm font-semibold text-slate-900">Quiz introuvable</h3>
+    <button (click)="goBack()" class="mt-3 text-xs font-semibold text-indigo-600 hover:text-indigo-800">Retour à la liste</button>
+  </div>
+
+  <div *ngIf="quiz && !loading && !submitted" class="space-y-5">
+    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div class="mb-3 flex items-center justify-between text-xs font-medium text-slate-500">
+        <span>Question {{ currentQuestionIndex + 1 }} sur {{ totalQuestions }}</span>
+        <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-semibold"
+          [ngClass]="timeWarning ? 'bg-rose-50 text-rose-600' : 'bg-indigo-50 text-indigo-700'">
+          <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+          {{ formattedTime }}
+        </span>
       </div>
-      <div class="progress-bar">
-        <div class="progress-bar__fill" [style.width.%]="progressPercent"></div>
+      <div class="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+        <div class="h-2 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all" [style.width.%]="progressPercent"></div>
       </div>
     </div>
 
-    <div class="card card--question">
-      <h3 class="quiz-do-page__question-text">{{ questions[currentQuestionIndex]?.texte }}</h3>
-      <div class="quiz-do-page__options">
-        <div *ngFor="let option of (questions[currentQuestionIndex]?.options || []); let oi = index"
-             (click)="selectAnswer(currentQuestionIndex, oi)"
-             class="option-item"
-             [ngClass]="{'option-item--selected': isAnswerSelected(currentQuestionIndex, oi)}">
-          <div class="option-item__circle" [ngClass]="isAnswerSelected(currentQuestionIndex, oi) ? 'option-item__circle--active' : ''">
+    <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h3 class="text-base font-semibold leading-relaxed text-slate-900">{{ questions[currentQuestionIndex]?.texte }}</h3>
+      <div class="mt-5 space-y-2.5">
+        <button
+          *ngFor="let option of (questions[currentQuestionIndex]?.options || []); let oi = index"
+          type="button"
+          (click)="selectAnswer(currentQuestionIndex, oi)"
+          class="flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm transition"
+          [ngClass]="isAnswerSelected(currentQuestionIndex, oi)
+            ? 'border-indigo-500 bg-indigo-50 text-indigo-900 ring-1 ring-inset ring-indigo-400'
+            : 'border-slate-200 bg-white text-slate-700 hover:border-indigo-200 hover:bg-slate-50'"
+        >
+          <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold"
+            [ngClass]="isAnswerSelected(currentQuestionIndex, oi) ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'">
             {{ ['A', 'B', 'C', 'D'][oi] }}
-          </div>
+          </span>
           <span>{{ option }}</span>
-        </div>
+        </button>
       </div>
     </div>
 
-    <div class="quiz-do-page__nav">
-      <button *ngIf="currentQuestionIndex > 0" (click)="prevQuestion()" class="btn btn--outline">Précédent</button>
-      <div class="quiz-do-page__nav-right">
-        <button *ngIf="currentQuestionIndex < totalQuestions - 1" (click)="nextQuestion()" class="btn btn--primary" [disabled]="selectedAnswers[currentQuestionIndex] === undefined">Suivant</button>
-        <button *ngIf="currentQuestionIndex === totalQuestions - 1" (click)="finishQuiz()" class="btn btn--success" [disabled]="!allAnswered">Terminer</button>
+    <div class="flex items-center justify-between gap-3">
+      <button *ngIf="currentQuestionIndex > 0" (click)="prevQuestion()"
+        class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
+        Précédent
+      </button>
+      <span *ngIf="currentQuestionIndex === 0"></span>
+      <div class="flex items-center gap-3">
+        <button *ngIf="currentQuestionIndex < totalQuestions - 1" (click)="nextQuestion()" [disabled]="selectedAnswers[currentQuestionIndex] === undefined"
+          class="rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">
+          Suivant
+        </button>
+        <button *ngIf="currentQuestionIndex === totalQuestions - 1" (click)="finishQuiz()" [disabled]="!allAnswered"
+          class="rounded-xl bg-emerald-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50">
+          Terminer
+        </button>
       </div>
     </div>
   </div>
 
-  <div *ngIf="quiz && submitted" class="quiz-do-page__result">
-    <div class="card card--result">
-      <h2 class="quiz-do-page__result-title">Quiz terminé !</h2>
-      <p class="quiz-do-page__result-subtitle">{{ quiz.titre }}</p>
+  <div *ngIf="quiz && submitted" class="rounded-2xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm">
+    <h2 class="text-lg font-bold text-slate-900">Quiz terminé !</h2>
+    <p class="mt-1 text-sm text-slate-500">{{ quiz.titre }}</p>
 
-      <div class="result-circle" [ngClass]="score !== null && score >= 70 ? 'result-circle--success' : score !== null && score >= 40 ? 'result-circle--warning' : 'result-circle--danger'">
-        <div>
-          <div class="result-circle__value" [ngClass]="score !== null && score >= 70 ? 'result-circle__value--success' : score !== null && score >= 40 ? 'result-circle__value--warning' : 'result-circle__value--danger'">{{ score }}%</div>
-          <div class="result-circle__label">{{ totalCorrect }}/{{ totalQuestions }}</div>
-        </div>
+    <div class="mx-auto mt-6 flex h-32 w-32 items-center justify-center rounded-full border-8"
+      [ngClass]="score !== null && score >= 70 ? 'border-emerald-100' : score !== null && score >= 40 ? 'border-amber-100' : 'border-rose-100'">
+      <div>
+        <p class="text-3xl font-bold"
+          [ngClass]="score !== null && score >= 70 ? 'text-emerald-600' : score !== null && score >= 40 ? 'text-amber-600' : 'text-rose-600'">
+          {{ score }}%
+        </p>
+        <p class="text-xs font-medium text-slate-500">{{ totalCorrect }}/{{ totalQuestions }}</p>
       </div>
-
-      <div class="alert result-alert" [ngClass]="score !== null && score >= 70 ? 'alert--success' : score !== null && score >= 40 ? 'alert--warning' : 'alert--danger'">
-        {{ score !== null && score >= 70 ? 'Félicitations ! Excellent résultat.' : score !== null && score >= 40 ? 'Bon résultat, continuez à réviser.' : 'Quiz difficile, essayez de réviser et recommencez.' }}
-      </div>
-
-      <button (click)="goBack()" class="btn btn--primary">Retour aux quiz</button>
     </div>
+
+    <p class="mx-auto mt-6 max-w-md rounded-xl px-4 py-3 text-sm font-medium"
+      [ngClass]="score !== null && score >= 70 ? 'bg-emerald-50 text-emerald-700' : score !== null && score >= 40 ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'">
+      {{ score !== null && score >= 70 ? 'Félicitations ! Excellent résultat.' : score !== null && score >= 40 ? 'Bon résultat, continuez à réviser.' : 'Quiz difficile, essayez de réviser et recommencez.' }}
+    </p>
+
+    <button (click)="goBack()" class="mt-6 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700">
+      Retour aux quiz
+    </button>
   </div>
 </div>

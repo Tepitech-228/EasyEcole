@@ -7,6 +7,7 @@ import { Presence } from "./Presence";
 import { Parcours } from "./Parcours";
 import { NiveauEtude } from "./NiveauEtude";
 import { Etablissement } from "../../etablissement/models/Etablissement";
+import { ClasseOption } from "../../../core/enums/ClasseOption";
 
 export class ListePresence extends Model<InferAttributes<ListePresence>, InferCreationAttributes<ListePresence>> {
   declare id: CreationOptional<number>
@@ -21,6 +22,7 @@ export class ListePresence extends Model<InferAttributes<ListePresence>, InferCr
   declare parcours?: NonAttribute<Parcours>
   declare niveauEtudeId: CreationOptional<ForeignKey<NiveauEtude['id']> | null>
   declare niveauEtude?: NonAttribute<NiveauEtude>
+  declare classeOption: CreationOptional<ClasseOption | null>
   declare etablissementId: CreationOptional<ForeignKey<Etablissement['id']> | null>
   declare etablissement?: NonAttribute<Etablissement>
   declare presences?: NonAttribute<Presence[]>
@@ -67,6 +69,10 @@ ListePresence.init({
   },
   niveauEtudeId: {
     type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true,
+  },
+  classeOption: {
+    type: DataTypes.ENUM(ClasseOption.JOUR, ClasseOption.SOIR, ClasseOption.EN_LIGNE),
     allowNull: true,
   },
   etablissementId: {

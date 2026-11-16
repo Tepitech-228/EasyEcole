@@ -5,8 +5,7 @@ import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-chat-page',
-  templateUrl: './chat-page.component.html',
-  styleUrls: ['./chat-page.component.scss']
+  templateUrl: './chat-page.component.html'
 })
 export class ChatPageComponent implements OnInit {
   coursId: string | null = null;

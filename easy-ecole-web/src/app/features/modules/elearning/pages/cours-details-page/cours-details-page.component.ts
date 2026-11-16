@@ -6,14 +6,17 @@ import { BaseComponentClass } from 'src/app/core/base-component-class';
 
 @Component({
   selector: 'app-cours-details-page',
-  templateUrl: './cours-details-page.component.html',
-  styleUrls: ['./cours-details-page.component.scss']
+  templateUrl: './cours-details-page.component.html'
 })
 export class CoursDetailsPageComponent extends BaseComponentClass implements OnInit {
   cours: any = null;
   loading = false;
 
   constructor(private route: ActivatedRoute, private http: HttpClient) { super(); }
+
+  get coursImage(): string | null {
+    return this.cours?.image ? `${environment.API_BASE_URL}media/elearning/cours/${this.cours.image}` : null;
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');

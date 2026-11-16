@@ -1,84 +1,105 @@
-<div class="progression-page">
-  <div class="card card--hero">
-    <p class="progression-page__subtitle">Suivi académique</p>
-    <h2 class="progression-page__title">Mon parcours e-learning</h2>
-    <p class="progression-page__desc">Visualisez votre progression de manière claire, avec un aperçu rapide de vos cours, évaluations et réussites.</p>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+
+  <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-indigo-600 to-blue-600 px-6 py-8 sm:px-10 sm:py-10 shadow-lg">
+    <div class="absolute -top-24 -right-16 h-64 w-64 rounded-full bg-white/10 blur-2xl"></div>
+    <div class="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-violet-100">Suivi académique</p>
+        <h1 class="mt-2 text-2xl sm:text-3xl font-bold text-white">Mon parcours e-learning</h1>
+        <p class="mt-2 max-w-xl text-sm text-violet-100">Visualisez clairement votre progression : cours, modules, évaluations et réussites.</p>
+      </div>
+      <div class="self-start rounded-2xl bg-white/10 px-5 py-3 backdrop-blur-sm sm:self-auto">
+        <div class="text-2xl font-bold leading-none text-white">{{ data?.moyenneQuiz ?? 0 }}<span class="text-sm font-medium text-violet-100">/10</span></div>
+        <div class="mt-1 text-[11px] text-violet-100">Moyenne quiz</div>
+      </div>
+    </div>
+  </section>
+
+  <div *ngIf="loading" class="flex justify-center py-16">
+    <div class="h-10 w-10 animate-spin rounded-full border-4 border-violet-100 border-t-violet-600"></div>
   </div>
 
-  <div *ngIf="loading" class="spinner-wrapper">
-    <div class="spinner"></div>
-  </div>
-
-  <div *ngIf="data && !loading" class="progression-page__content">
-    <div class="progression-page__stats">
-      <div class="stat-card">
-        <div class="stat-card__icon stat-card__icon--blue">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b5bff" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.84 3.422"/></svg>
+  <ng-container *ngIf="data && !loading">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+        <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.84 3.422"/></svg>
         </div>
-        <div class="stat-card__value">{{ data.totalCours }}</div>
-        <div class="stat-card__label">Cours</div>
+        <div class="text-2xl font-bold text-gray-900">{{ data.totalCours }}</div>
+        <div class="text-xs text-gray-500">Cours</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-card__icon stat-card__icon--green">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.84 3.422"/></svg>
+      <div class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+        <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
         </div>
-        <div class="stat-card__value">{{ data.totalModules }}</div>
-        <div class="stat-card__label">Modules</div>
+        <div class="text-2xl font-bold text-gray-900">{{ data.totalModules }}</div>
+        <div class="text-xs text-gray-500">Modules</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-card__icon stat-card__icon--violet">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.84 3.422"/></svg>
+      <div class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+        <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         </div>
-        <div class="stat-card__value">{{ data.totalQuiz }}</div>
-        <div class="stat-card__label">Quiz</div>
+        <div class="text-2xl font-bold text-gray-900">{{ data.totalQuiz }}</div>
+        <div class="text-xs text-gray-500">Quiz</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-card__icon stat-card__icon--amber">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.84 3.422"/></svg>
+      <div class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+        <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         </div>
-        <div class="stat-card__value">{{ data.totalDevoirs }}</div>
-        <div class="stat-card__label">Devoirs</div>
+        <div class="text-2xl font-bold text-gray-900">{{ data.totalDevoirs }}</div>
+        <div class="text-xs text-gray-500">Devoirs</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-card__icon stat-card__icon--blue">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b5bff" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+      <div class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+        <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
         </div>
-        <div class="stat-card__value">{{ data.quizFaits }}</div>
-        <div class="stat-card__label">Quiz faits</div>
+        <div class="text-2xl font-bold text-gray-900">{{ data.quizFaits }}</div>
+        <div class="text-xs text-gray-500">Quiz faits</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-card__icon stat-card__icon--green">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+      <div class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+        <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-green-50 text-green-600">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
         </div>
-        <div class="stat-card__value">{{ data.devoirsRemis }}</div>
-        <div class="stat-card__label">Devoirs remis</div>
+        <div class="text-2xl font-bold text-gray-900">{{ data.devoirsRemis }}</div>
+        <div class="text-xs text-gray-500">Devoirs remis</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-card__icon stat-card__icon--violet">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      <div class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+        <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
         </div>
-        <div class="stat-card__value">{{ data.certifications }}</div>
-        <div class="stat-card__label">Certifications</div>
+        <div class="text-2xl font-bold text-gray-900">{{ data.certifications }}</div>
+        <div class="text-xs text-gray-500">Certifications</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-card__icon stat-card__icon--amber">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      <div class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+        <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
         </div>
-        <div class="stat-card__value">{{ data.moyenneQuiz }}/10</div>
-        <div class="stat-card__label">Moyenne quiz</div>
+        <div class="text-2xl font-bold text-gray-900">{{ data.moyenneQuiz }}<span class="text-sm font-medium text-gray-400">/10</span></div>
+        <div class="text-xs text-gray-500">Moyenne quiz</div>
       </div>
     </div>
 
-    <div class="card">
-      <h3 class="card__title">Activités récentes</h3>
-      <div *ngIf="data.quizRecents?.length === 0" class="card__empty">Aucune activité récente pour le moment.</div>
-      <div *ngFor="let r of data.quizRecents" class="activity-row">
-        <div class="activity-row__left">
-          <span class="activity-row__name">{{ r.quiz?.titre || 'Quiz' }}</span>
-          <span class="activity-row__date">{{ r.date | date:'dd/MM/yyyy' }}</span>
+    <div class="rounded-3xl border border-gray-100 bg-white p-5 sm:p-6 shadow-sm">
+      <div class="mb-4 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-gray-900">Activités récentes</h2>
+        <span class="rounded-full bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-500">{{ data.quizRecents?.length || 0 }} activité(s)</span>
+      </div>
+      <div *ngIf="!data.quizRecents?.length" class="rounded-2xl border border-dashed border-gray-200 px-4 py-10 text-center">
+        <p class="text-sm text-gray-500">Aucune activité récente pour le moment.</p>
+      </div>
+      <div *ngFor="let r of data.quizRecents" class="flex items-center justify-between border-b border-gray-50 py-3 last:border-0">
+        <div class="flex items-center gap-3">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          </div>
+          <div>
+            <div class="text-sm font-medium text-gray-900">{{ r.quiz?.titre || 'Quiz' }}</div>
+            <div class="text-xs text-gray-400">{{ r.date | date:'dd/MM/yyyy' }}</div>
+          </div>
         </div>
-        <span class="activity-row__score" [ngClass]="(r.score / r.total * 100) >= 70 ? 'activity-row__score--success' : (r.score / r.total * 100) >= 40 ? 'activity-row__score--warning' : 'activity-row__score--danger'">{{ r.score }}/{{ r.total }}</span>
+        <span class="rounded-full px-3 py-1 text-xs font-semibold"
+          [ngClass]="(r.score / r.total * 100) >= 70 ? 'bg-emerald-50 text-emerald-600' : (r.score / r.total * 100) >= 40 ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'">{{ r.score }}/{{ r.total }}</span>
       </div>
     </div>
-  </div>
+  </ng-container>
 </div>

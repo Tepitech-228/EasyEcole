@@ -38,6 +38,7 @@ router
   .post("/", [Authenticate, upload.single("sujet")], ExamenController.create)
   .get("/:id/sujet", [Authenticate], ExamenController.sujet)
   .get("/:id/impression", [Authenticate], ExamenController.impression)
+  .put("/:id/notes/publier", [Authenticate], ExamenController.publierNotes)
   .post("/:id/notes", [Authenticate], ExamenController.noter);
 
 export default router;

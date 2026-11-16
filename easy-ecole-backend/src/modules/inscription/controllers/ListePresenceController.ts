@@ -41,7 +41,7 @@ export default class ListePresenceController {
                     return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
                 }
                 const coursDuSite = await Cours.findAll({
-                    where: { etablissementId },
+                    where: { [Op.or]: [{ etablissementId }, { etablissementId: null }] },
                     attributes: ["id"],
                 });
                 where[Op.or] = [
@@ -135,6 +135,7 @@ export default class ListePresenceController {
                     parcoursId: Number(listePresence.parcoursId),
                     niveauEtudeId: Number(listePresence.niveauEtudeId),
                     etablissementId: Number(listePresence.etablissementId),
+                    classeOption: listePresence.classeOption ?? null,
                 });
                 const participants = await CoursParticipant.findAll({
                     where: { coursId: { [Op.in]: coursIds } },

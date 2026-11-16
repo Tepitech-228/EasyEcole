@@ -37,6 +37,7 @@ router
   .get('/:id', [Authenticate], DevoirController.get)
   .post('/:id/soumettre', [Authenticate, submissionUpload.single('fichier')], DevoirController.soumettre)
   .put('/:id/noter/:soumissionId', [Authenticate], DevoirController.noter)
+  .put('/:id/publier-notes', [Authenticate], DevoirController.publierNotes)
   .get('/:id/download/:soumissionId', [Authenticate], DevoirController.downloadSoumission)
   .delete('/:id', [Authenticate], DevoirController.delete)
 

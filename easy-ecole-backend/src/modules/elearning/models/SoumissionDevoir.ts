@@ -13,6 +13,9 @@ export class SoumissionDevoir extends Model<InferAttributes<SoumissionDevoir>, I
   declare fichier: string
   declare note: CreationOptional<number | null>
   declare commentaire: CreationOptional<string>
+  declare notePubliee: CreationOptional<boolean>
+  declare notePublieeLe: CreationOptional<Date | null>
+  declare notePublieePar: CreationOptional<number | null>
   declare dateSoumission: CreationOptional<Date>
   declare dateCorrection: CreationOptional<Date | null>
   declare corrigePar: CreationOptional<number | null>
@@ -33,6 +36,9 @@ SoumissionDevoir.init({
   fichier: { type: new DataTypes.STRING, allowNull: false },
   note: { type: DataTypes.FLOAT, allowNull: true },
   commentaire: { type: DataTypes.TEXT, allowNull: true },
+  notePubliee: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+  notePublieeLe: { type: DataTypes.DATE, allowNull: true },
+  notePublieePar: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
   dateSoumission: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
   dateCorrection: { type: DataTypes.DATE, allowNull: true },
   corrigePar: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },

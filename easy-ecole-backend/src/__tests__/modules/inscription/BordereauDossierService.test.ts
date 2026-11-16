@@ -123,6 +123,35 @@ describe('BordereauDossierService.finaliserAffectationPedagogique', () => {
     CursusApprenant.findOrCreate.mockRejectedValue(new Error('Arrêt du test après la création du cursus'))
   })
 
+  it('refuse la validation si le parcours final ne contient aucune UE active', async () => {
+    const demande = {
+      id: 12,
+      utilisateurId: 90,
+      typeDemande: 'inscription',
+      modeFormation: 'presentiel',
+      utilisateur: { apprenant: { periode: 'matin' } },
+      reponseInscription: {},
+      parcoursChoisis: [{
+        parcoursId: 3,
+        choixFinal: true,
+        parcours: { id: 3, type: 'LICENCE', titre: 'Banque-assurance', niveauEtudeId: 44 },
+      }],
+    }
+    DemandeInscription.findOne.mockResolvedValue(demande)
+
+    await expect(
+      BordereauDossierService.finaliserAffectationPedagogique(90, { utilisateurId: 5 }, {} as any),
+    ).rejects.toThrow("Aucune UE active n'est configurée pour le parcours")
+
+    expect(Cours.findAll).toHaveBeenCalledWith({
+      where: { parcoursId: 3 },
+      include: [Cours.associations.classe],
+    })
+    expect(CursusApprenant.findOrCreate).not.toHaveBeenCalled()
+    expect(DemandeInscriptionCours.bulkCreate).not.toHaveBeenCalled()
+    expect(CoursParticipant.findOrCreate).not.toHaveBeenCalled()
+  })
+
   it('utilise le niveau de la session si le parcours et la classe ne définissent pas de niveau', async () => {
     const demande = {
       id: 12,
@@ -155,6 +184,7 @@ describe('BordereauDossierService.finaliserAffectationPedagogique', () => {
       update: jest.fn().mockResolvedValue(undefined),
     }
     DemandeInscription.findOne.mockResolvedValue(demande)
+    Cours.findAll.mockResolvedValue([{ id: 1, estObligatoire: true }])
     DossierEtudiant.findOne.mockImplementation(({ where }: { where: { matricule?: string } }) =>
       Promise.resolve(where.matricule ? null : dossier),
     )

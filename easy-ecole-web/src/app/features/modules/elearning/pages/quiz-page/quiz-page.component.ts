@@ -6,8 +6,7 @@ import { LocalStorageService } from 'src/app/core/services/local-storage.service
 
 @Component({
   selector: 'app-quiz-page',
-  templateUrl: './quiz-page.component.html',
-  styleUrls: ['./quiz-page.component.scss']
+  templateUrl: './quiz-page.component.html'
 })
 export class QuizPageComponent implements OnInit {
   quizList: any[] = [];

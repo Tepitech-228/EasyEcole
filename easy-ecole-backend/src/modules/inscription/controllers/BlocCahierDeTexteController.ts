@@ -63,7 +63,10 @@ export default class BlocCahierDeTexteController {
             if (!etablissementId) {
                 return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
             }
-            const coursDuSite = await Cours.findAll({ where: { etablissementId }, attributes: ["id"] });
+            const coursDuSite = await Cours.findAll({
+                where: { [Op.or]: [{ etablissementId }, { etablissementId: null }] },
+                attributes: ["id"],
+            });
             const cahiers = await CahierDeTexte.findAll({
                 where: {
                     [Op.or]: [

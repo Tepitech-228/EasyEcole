@@ -2,7 +2,13 @@ jest.mock("../../../modules/inscription/models/PointageTerminal", () => ({
   PointageTerminal: { findAll: jest.fn(), findOne: jest.fn() }
 }));
 jest.mock("../../../modules/inscription/models/HikvisionEnrollment", () => ({
-  HikvisionEnrollment: { findOrCreate: jest.fn(), update: jest.fn(), findAll: jest.fn() }
+  HikvisionEnrollment: {
+    findOrCreate: jest.fn(),
+    findOne: jest.fn(),
+    update: jest.fn(),
+    findAll: jest.fn(),
+    destroy: jest.fn()
+  }
 }));
 jest.mock("../../../modules/inscription/models/DossierEtudiant", () => ({
   DossierEtudiant: { findAll: jest.fn(), associations: { utilisateur: "utilisateur" } }
@@ -20,7 +26,7 @@ jest.mock("../../../modules/auth/models/SiteUtilisateur", () => ({
   SiteUtilisateur: { findOne: jest.fn(), findAll: jest.fn() }
 }));
 jest.mock("../../../modules/auth/models/Utilisateur", () => ({
-  Utilisateur: { findByPk: jest.fn(), associations: { apprenant: "apprenant" } }
+  Utilisateur: { findByPk: jest.fn(), findAll: jest.fn(), associations: { apprenant: "apprenant" } }
 }));
 jest.mock("../../../modules/inscription/services/HikvisionIsapiService", () => ({
   __esModule: true,
@@ -40,7 +46,10 @@ const { DemandeInscription } = require("../../../modules/inscription/models/Dema
 const HikvisionIsapiService = require("../../../modules/inscription/services/HikvisionIsapiService").default;
 
 describe("HikvisionEnrollmentService", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    Utilisateur.findAll.mockResolvedValue([]);
+  });
 
   it("queues biometric enrollment on every active terminal even without explicit consent", async () => {
     PointageTerminal.findAll.mockResolvedValue([{ id: 8 }, { id: 9 }]);
@@ -137,6 +146,78 @@ describe("HikvisionEnrollmentService", () => {
     }));
   });
 
+  it("queues an administrator by login identifier on assigned personnel terminals", async () => {
+    Utilisateur.findByPk.mockResolvedValue({
+      id: 62,
+      role: "admin",
+      identifiant: "admin-test",
+      photoDeProfil: "admin.jpg",
+      etablissementId: 3
+    });
+    SiteUtilisateur.findAll.mockResolvedValue([{ etablissementId: 3 }]);
+    PointageTerminal.findAll.mockResolvedValue([{ id: 11, etablissementId: 3 }]);
+    HikvisionEnrollment.findOrCreate.mockResolvedValue([{ statut: "en_attente" }, true]);
+
+    const queued = await HikvisionEnrollmentService.enqueueStaffProfile(62);
+
+    expect(queued).toBe(1);
+    expect(HikvisionEnrollment.findOrCreate).toHaveBeenCalledWith(expect.objectContaining({
+      where: { terminalId: 11, utilisateurId: 62 },
+      defaults: expect.objectContaining({
+        etablissementId: 3,
+        employeeNo: "admin-test"
+      })
+    }));
+  });
+
+  it("backfills administrators when a personnel terminal is added", async () => {
+    SiteUtilisateur.findAll.mockResolvedValue([{ utilisateurId: 62 }]);
+    Enseignant.findAll.mockResolvedValue([]);
+    PersonnelAdministratif.findAll.mockResolvedValue([]);
+    Utilisateur.findAll.mockResolvedValue([{
+      id: 62,
+      identifiant: "admin-test",
+      photoDeProfil: "admin.jpg"
+    }]);
+    HikvisionEnrollment.findOrCreate.mockResolvedValue([{ statut: "en_attente" }, true]);
+
+    await HikvisionEnrollmentService.enqueueEligibleProfilesForTerminal({
+      id: 11,
+      etablissementId: 3,
+      population: "personnel"
+    });
+
+    expect(HikvisionEnrollment.findOrCreate).toHaveBeenCalledWith(expect.objectContaining({
+      where: { terminalId: 11, utilisateurId: 62 },
+      defaults: expect.objectContaining({ employeeNo: "admin-test" })
+    }));
+  });
+
+  it("backfills existing assigned administrators to active personnel terminals on startup", async () => {
+    PointageTerminal.findAll.mockResolvedValue([{ id: 11, etablissementId: 3 }]);
+    SiteUtilisateur.findAll.mockResolvedValue([{ utilisateurId: 62 }]);
+    Utilisateur.findAll.mockResolvedValue([{
+      id: 62,
+      identifiant: "admin-test",
+      photoDeProfil: "admin.jpg"
+    }]);
+    HikvisionEnrollment.findOrCreate.mockResolvedValue([{
+      employeeNo: "admin-test",
+      update: jest.fn()
+    }, true]);
+
+    await HikvisionEnrollmentService.enqueueAdministratorsForActiveTerminals();
+
+    expect(HikvisionEnrollment.findOrCreate).toHaveBeenCalledWith(expect.objectContaining({
+      where: { terminalId: 11, utilisateurId: 62 },
+      defaults: expect.objectContaining({
+        etablissementId: 3,
+        employeeNo: "admin-test",
+        statut: "en_attente"
+      })
+    }));
+  });
+
   it("uses the staff profile photo and site assignment to queue biometric enrollment", async () => {
     Utilisateur.findByPk.mockResolvedValue({
       id: 61,
@@ -209,6 +290,44 @@ describe("HikvisionEnrollmentService", () => {
     });
   });
 
+  it("sends an assigned administrator's photo and login identifier to Hikvision", async () => {
+    const enrollment = {
+      id: 13,
+      terminalId: 11,
+      utilisateurId: 62,
+      etablissementId: 3,
+      employeeNo: "admin-test",
+      tentatives: 0,
+      update: jest.fn().mockResolvedValue(undefined)
+    };
+    const terminal = { id: 11, etablissementId: 3 };
+    HikvisionEnrollment.update
+      .mockResolvedValueOnce([0])
+      .mockResolvedValueOnce([1]);
+    HikvisionEnrollment.findAll.mockResolvedValue([enrollment]);
+    PointageTerminal.findOne.mockResolvedValue(terminal);
+    Utilisateur.findByPk.mockResolvedValue({
+      id: 62,
+      role: "admin",
+      nom: "Administrateur",
+      prenoms: "Test",
+      identifiant: "admin-test",
+      photoDeProfil: "admin.jpg",
+      etablissementId: 3
+    });
+    SiteUtilisateur.findOne.mockResolvedValue({});
+    HikvisionIsapiService.enrollPerson.mockResolvedValue(undefined);
+
+    await HikvisionEnrollmentService.processPending();
+
+    expect(HikvisionIsapiService.enrollPerson).toHaveBeenCalledWith(terminal, {
+      employeeNo: "admin-test",
+      name: "Test Administrateur",
+      photoFilename: "admin.jpg",
+      photoCategory: "personnel"
+    });
+  });
+
   it("moves an enrollment from an inactive terminal to the site's active terminal", async () => {
     const enrollment = {
       id: 68,
@@ -224,6 +343,7 @@ describe("HikvisionEnrollmentService", () => {
       .mockResolvedValueOnce([0])
       .mockResolvedValueOnce([1]);
     HikvisionEnrollment.findAll.mockResolvedValue([enrollment]);
+    HikvisionEnrollment.findOne.mockResolvedValue(null);
     PointageTerminal.findOne
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(activeTerminal);
@@ -245,6 +365,45 @@ describe("HikvisionEnrollmentService", () => {
       prochaineTentativeAt: expect.any(Date),
       derniereErreur: null
     });
+    expect(HikvisionIsapiService.enrollPerson).not.toHaveBeenCalled();
+  });
+
+  it("removes a duplicate queued enrollment instead of moving it onto an occupied terminal-user pair", async () => {
+    const enrollment = {
+      id: 104,
+      terminalId: 3,
+      utilisateurId: 116,
+      etablissementId: 5,
+      employeeNo: "ESA116",
+      tentatives: 1,
+      update: jest.fn().mockResolvedValue(undefined)
+    };
+    const existingEnrollment = {
+      id: 86,
+      terminalId: 7,
+      utilisateurId: 116,
+      employeeNo: "ESA116",
+      statut: "en_attente",
+      update: jest.fn().mockResolvedValue(undefined)
+    };
+    const activeTerminal = { id: 7, etablissementId: 5 };
+    HikvisionEnrollment.update
+      .mockResolvedValueOnce([0])
+      .mockResolvedValueOnce([1]);
+    HikvisionEnrollment.findAll.mockResolvedValue([enrollment]);
+    HikvisionEnrollment.findOne.mockResolvedValue(existingEnrollment);
+    PointageTerminal.findOne
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(activeTerminal);
+
+    await HikvisionEnrollmentService.processPending();
+
+    expect(HikvisionEnrollment.findOne).toHaveBeenCalledWith({
+      where: { terminalId: 7, utilisateurId: 116 }
+    });
+    expect(HikvisionEnrollment.destroy).toHaveBeenCalledWith({ where: { id: 104 } });
+    expect(existingEnrollment.update).not.toHaveBeenCalled();
+    expect(enrollment.update).not.toHaveBeenCalled();
     expect(HikvisionIsapiService.enrollPerson).not.toHaveBeenCalled();
   });
 

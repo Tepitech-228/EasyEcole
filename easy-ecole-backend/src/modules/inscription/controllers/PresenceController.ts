@@ -75,7 +75,7 @@ export default class PresenceController {
                 return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
             }
             const coursDuSite = await Cours.findAll({
-                where: { etablissementId },
+                where: { [Op.or]: [{ etablissementId }, { etablissementId: null }] },
                 attributes: ["id"],
             });
             const listesPresences = await ListePresence.findAll({
@@ -142,6 +142,7 @@ export default class PresenceController {
                         parcoursId: Number(listePresence.parcoursId),
                         niveauEtudeId: Number(listePresence.niveauEtudeId),
                         etablissementId: Number(listePresence.etablissementId),
+                        classeOption: listePresence.classeOption ?? null,
                     })).some(coursId => coursIds.includes(coursId))
                     : false;
                 if (!listePresence || (!coursIds.includes(listePresence.coursId) && !cohorteOk)) {
@@ -161,7 +162,13 @@ export default class PresenceController {
                 const etablissementId = await getSurveillantSiteId(req);
                 const listePresence = (presence as any).listePresence;
                 const cours = listePresence?.coursId
-                    ? await Cours.findOne({ where: { id: listePresence.coursId, etablissementId }, attributes: ["id"] })
+                    ? await Cours.findOne({
+                        where: {
+                            id: listePresence.coursId,
+                            [Op.or]: [{ etablissementId }, { etablissementId: null }],
+                        },
+                        attributes: ["id"],
+                    })
                     : null;
                 if (!etablissementId || (Number(listePresence?.etablissementId) !== etablissementId && !cours)) {
                     return res.status(403).json({ success: false, message: "Vous n'avez pas accès à cette présence" });

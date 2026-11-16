@@ -163,7 +163,13 @@ export default class DemandeInscriptionController {
             const matriculeEtudiant = typeof req.body?.matriculeEtudiant === 'string'
                 ? req.body.matriculeEtudiant.trim()
                 : '';
-            if (matriculeEtudiant && (matriculeEtudiant.length > 64 || /[\u0000-\u001f]/.test(matriculeEtudiant))) {
+            if (!matriculeEtudiant) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Veuillez saisir votre matricule étudiant avant de soumettre la demande.",
+                });
+            }
+            if (matriculeEtudiant.length > 64 || /[\u0000-\u001f]/.test(matriculeEtudiant)) {
                 return res.status(400).json({ success: false, message: "Veuillez saisir un matricule étudiant valide (64 caractères maximum)." });
             }
             if (matriculeEtudiant) {
@@ -222,8 +228,6 @@ export default class DemandeInscriptionController {
                     );
                     hikvisionEnrollmentWarning = "Le dossier est soumis, mais l'enrôlement sur la pointeuse n'a pas pu être planifié.";
                 }
-            } else if (!matriculeEtudiant) {
-                hikvisionEnrollmentWarning = "L'enrôlement sur la pointeuse sera planifié après la validation du paiement.";
             } else {
                 hikvisionEnrollmentWarning = "Le dossier est soumis, mais aucun site n'est associé pour planifier l'enrôlement sur la pointeuse.";
             }

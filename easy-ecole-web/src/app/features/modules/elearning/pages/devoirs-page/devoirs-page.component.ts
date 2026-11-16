@@ -7,8 +7,7 @@ import { LocalStorageService } from 'src/app/core/services/local-storage.service
 
 @Component({
   selector: 'app-devoirs-page',
-  templateUrl: './devoirs-page.component.html',
-  styleUrls: ['./devoirs-page.component.scss']
+  templateUrl: './devoirs-page.component.html'
 })
 export class DevoirsPageComponent implements OnInit {
   devoirs: any[] = [];

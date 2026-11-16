@@ -7,8 +7,7 @@ import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-chat-window',
-  templateUrl: './chat-window.component.html',
-  styleUrls: ['./chat-window.component.scss']
+  templateUrl: './chat-window.component.html'
 })
 export class ChatWindowComponent implements OnInit, OnDestroy {
   @Input() salon: any;

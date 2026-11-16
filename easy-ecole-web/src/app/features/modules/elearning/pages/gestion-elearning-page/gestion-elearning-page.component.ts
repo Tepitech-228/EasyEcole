@@ -5,8 +5,7 @@ import { BaseComponentClass } from 'src/app/core/base-component-class';
 
 @Component({
   selector: 'app-gestion-elearning-page',
-  templateUrl: './gestion-elearning-page.component.html',
-  styleUrls: ['./gestion-elearning-page.component.scss']
+  templateUrl: './gestion-elearning-page.component.html'
 })
 export class GestionElearningPageComponent extends BaseComponentClass implements OnInit {
   coursList: any[] = [];
@@ -14,6 +13,10 @@ export class GestionElearningPageComponent extends BaseComponentClass implements
   coursPedagogiques: any[] = [];
   annees: Array<{ id: number; libelle: string; active: boolean; anneeAcademiqueId: number | null }> = [];
   prixCredit = 0;
+  dateEffetTarif = new Date().toISOString().slice(0, 10);
+  savingTarif = false;
+  tarifError = '';
+  tarifSuccess = '';
   loading = false;
   creating = false;
   showCreateForm = false;
@@ -48,9 +51,37 @@ export class GestionElearningPageComponent extends BaseComponentClass implements
       },
       error: err => console.error('Impossible de charger les années e-learning:', err)
     });
-    this.http.get<{ prixCredit: number }>(`${environment.API_URL}/elearning/tarif-credit`).subscribe({
-      next: data => this.prixCredit = Number(data.prixCredit || 0),
-      error: err => console.error('Impossible de charger le tarif e-learning:', err)
+    this.http.get<{ prixCredit: number; dateEffet: string | null }>(`${environment.API_URL}/elearning/tarif-credit`).subscribe({
+      next: data => {
+        this.prixCredit = Number(data.prixCredit || 0);
+        if (data.dateEffet) this.dateEffetTarif = data.dateEffet.slice(0, 10);
+      },
+      error: () => this.tarifError = 'Le tarif e-learning n’a pas pu être chargé.'
+    });
+  }
+
+  enregistrerTarifCredit(): void {
+    this.tarifError = '';
+    this.tarifSuccess = '';
+    if (!Number.isFinite(this.prixCredit) || this.prixCredit <= 0 || !/^\d{4}-\d{2}-\d{2}$/.test(this.dateEffetTarif)) {
+      this.tarifError = 'Saisissez un prix positif et une date d’effet valide.';
+      return;
+    }
+
+    this.savingTarif = true;
+    this.http.post(`${environment.API_URL}/elearning/tarif-credit`, {
+      valeur: this.prixCredit,
+      dateEffet: this.dateEffetTarif
+    }).subscribe({
+      next: () => {
+        this.savingTarif = false;
+        this.tarifSuccess = 'Le prix du crédit e-learning a été enregistré.';
+        this.loadAnneesEtTarif();
+      },
+      error: err => {
+        this.savingTarif = false;
+        this.tarifError = err.error?.message || 'Le prix du crédit e-learning n’a pas pu être enregistré.';
+      }
     });
   }
 

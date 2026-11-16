@@ -120,7 +120,10 @@ export default class PresenceCoursParticipantController {
             if (!etablissementId) {
                 return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
             }
-            const cours = await Cours.findAll({ where: { etablissementId }, attributes: ["id"] });
+            const cours = await Cours.findAll({
+                where: { [Op.or]: [{ etablissementId }, { etablissementId: null }] },
+                attributes: ["id"],
+            });
             const listes = await ListePresence.findAll({
                 where: {
                     [Op.or]: [

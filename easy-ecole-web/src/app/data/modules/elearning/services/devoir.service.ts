@@ -13,6 +13,9 @@ export class DevoirService {
   create(data: FormData): Observable<any> { return this.http.post<any>(this.URL, data); }
   soumettre(id: string, formData: FormData): Observable<any> { return this.http.post<any>(`${this.URL}/${id}/soumettre`, formData); }
   noter(id: string, soumissionId: string, data: any): Observable<any> { return this.http.put<any>(`${this.URL}/${id}/noter/${soumissionId}`, data); }
+  publierNotes(id: string): Observable<{ success: boolean; publishedCount: number }> {
+    return this.http.put<{ success: boolean; publishedCount: number }>(`${this.URL}/${id}/publier-notes`, {});
+  }
   downloadSoumission(id: string, soumissionId: string): Observable<Blob> { return this.http.get(`${this.URL}/${id}/download/${soumissionId}`, { responseType: 'blob' }); }
   downloadSujet(id: string): Observable<Blob> { return this.http.get(`${this.URL}/${id}/sujet`, { responseType: 'blob' }); }
   delete(id: string): Observable<any> { return this.http.delete(`${this.URL}/${id}`); }

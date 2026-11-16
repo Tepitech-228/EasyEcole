@@ -44,7 +44,15 @@ export default class DevoirController {
           const soumission = await SoumissionDevoir.findOne({
             where: { devoirId: d.id, apprenantId: userId }
           });
-          result.push({ ...d.toJSON(), soumission: soumission || null });
+          const submissionData: Record<string, unknown> | null = soumission
+            ? { ...soumission.toJSON() }
+            : null;
+          if (submissionData && !submissionData.notePubliee) {
+            submissionData.note = null;
+            submissionData.commentaire = null;
+            submissionData.dateCorrection = null;
+          }
+          result.push({ ...d.toJSON(), soumission: submissionData });
         }
         return res.status(200).send(result);
       }
@@ -64,7 +72,11 @@ export default class DevoirController {
         where,
         include: [
           { association: Devoir.associations.cours },
-          { association: Devoir.associations.enseignant, attributes: ['id', 'nom', 'prenoms'] }
+          { association: Devoir.associations.enseignant, attributes: ['id', 'nom', 'prenoms'] },
+          {
+            association: "soumissions",
+            include: [{ association: "apprenant", attributes: ["id", "nom", "prenoms", "identifiant"] }],
+          },
         ],
         order: [['dateLimite', 'ASC']]
       });
@@ -103,6 +115,17 @@ export default class DevoirController {
 
       const payload = devoir.toJSON() as any;
       if (role === RolesUtilisateur.APPRENANT) delete payload.sujetFichier;
+      if (role === RolesUtilisateur.APPRENANT) {
+        soumissions = soumissions.map(soumission => {
+          const submissionData = soumission.toJSON() as any;
+          if (!submissionData.notePubliee) {
+            submissionData.note = null;
+            submissionData.commentaire = null;
+            submissionData.dateCorrection = null;
+          }
+          return submissionData;
+        });
+      }
       return res.status(200).send({ ...payload, soumissions });
     } catch (error) {
       return res.status(500).json({ success: false, error });
@@ -239,11 +262,48 @@ export default class DevoirController {
         commentaire: req.body.commentaire || null,
         dateCorrection: new Date(),
         corrigePar: userId,
+        notePubliee: false,
+        notePublieeLe: null,
+        notePublieePar: null,
       });
       await ElearningFinanceService.recordAudit(userId, role, "devoir.corrige", "soumission", Number(soumission.id), { devoirId: devoir.id, note });
       return res.status(200).send(soumission);
     } catch (error) {
       return res.status(400).json({ success: false, error });
+    }
+  }
+
+  static async publierNotes(req: Request, res: Response): Promise<Response> {
+    const { id: userId, role } = currentActor(req);
+    if (role !== RolesUtilisateur.ADMIN && role !== RolesUtilisateur.INSTITUTION) {
+      return res.status(403).json({ success: false, message: "La publication des notes est réservée à l'administration." });
+    }
+
+    try {
+      const devoir = await Devoir.findByPk(req.params.id);
+      if (!devoir) return res.status(404).json({ success: false, message: "Devoir non trouvé." });
+      const unpublishedCount = await SoumissionDevoir.count({
+        where: { devoirId: devoir.id, note: { [Op.ne]: null }, notePubliee: false },
+      });
+      if (unpublishedCount === 0) {
+        return res.status(409).json({ success: false, message: "Aucune nouvelle note corrigée à publier." });
+      }
+
+      const datePublication = new Date();
+      const [publishedCount] = await SoumissionDevoir.update({
+        notePubliee: true,
+        notePublieeLe: datePublication,
+        notePublieePar: userId,
+      }, {
+        where: { devoirId: devoir.id, note: { [Op.ne]: null }, notePubliee: false },
+      });
+      await ElearningFinanceService.recordAudit(userId, role, "devoir.notes.publiees", "devoir", devoir.id, {
+        nombreNotes: publishedCount,
+      });
+      return res.status(200).json({ success: true, publishedCount, datePublication });
+    } catch (error) {
+      console.error("[E-learning] Publication des notes du devoir impossible:", error);
+      return res.status(500).json({ success: false, message: "Impossible de publier les notes de ce devoir." });
     }
   }
 

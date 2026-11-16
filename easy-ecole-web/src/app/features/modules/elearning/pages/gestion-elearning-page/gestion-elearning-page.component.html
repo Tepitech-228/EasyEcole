@@ -1,5 +1,39 @@
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-  <app-header-title title="Gestion e-learning" subtitle="Gérer les cours en ligne, modules et supports pédagogiques"></app-header-title>
+<div class="mx-auto max-w-7xl space-y-5">
+  <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-600 px-6 py-7 text-white shadow-xl shadow-indigo-200 sm:px-8">
+    <div class="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-white/10 blur-2xl"></div>
+    <div class="relative">
+      <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-indigo-200">Administration e-learning</p>
+      <h1 class="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Gestion e-learning</h1>
+      <p class="mt-1 max-w-2xl text-sm text-indigo-100">Gérer les cours en ligne, modules et supports pédagogiques.</p>
+    </div>
+  </section>
+
+  <section *ngIf="canManageExams()" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+    <h2 class="text-base font-semibold text-gray-900 mb-1">Tarif des cours en ligne</h2>
+    <p class="text-sm text-gray-500 mb-4">
+      Définissez le prix d’un crédit. Le coût estimé de chaque cours est calculé à partir de son nombre de crédits.
+    </p>
+    <form (ngSubmit)="enregistrerTarifCredit()" class="flex flex-col sm:flex-row sm:items-end gap-3">
+      <div>
+        <label for="elearning-credit-price" class="block text-xs font-medium text-gray-600 mb-1">Prix par crédit (FCFA)</label>
+        <input id="elearning-credit-price" name="prixCredit" type="number" min="1" step="1"
+          [(ngModel)]="prixCredit" required
+          class="w-full sm:w-56 text-sm border border-gray-200 rounded-lg px-3 py-2">
+      </div>
+      <div>
+        <label for="elearning-credit-date" class="block text-xs font-medium text-gray-600 mb-1">Date d’effet</label>
+        <input id="elearning-credit-date" name="dateEffetTarif" type="date"
+          [(ngModel)]="dateEffetTarif" required
+          class="w-full sm:w-48 text-sm border border-gray-200 rounded-lg px-3 py-2">
+      </div>
+      <app-custom-button type="submit"
+        [disabled]="savingTarif || prixCredit <= 0 || !dateEffetTarif"
+        [text]="savingTarif ? 'Enregistrement…' : 'Enregistrer le tarif'"
+        color="indigo"></app-custom-button>
+    </form>
+    <p *ngIf="tarifError" class="mt-3 text-sm text-red-600" role="alert">{{ tarifError }}</p>
+    <p *ngIf="tarifSuccess" class="mt-3 text-sm text-green-700" role="status">{{ tarifSuccess }}</p>
+  </section>
 
   <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
     <div class="flex justify-between items-center flex-wrap gap-3">
@@ -77,10 +111,12 @@
           <option value="pdf">PDF</option>
           <option value="mixte">Mixte</option>
         </select>
+        <small class="text-gray-500">Ce format décrit les supports qui seront ajoutés aux modules après la création du cours.</small>
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-500 mb-1">Image du cours</label>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Image de couverture (facultative)</label>
         <input (change)="onFileSelected($event)" type="file" accept="image/*" class="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+        <small class="text-gray-500">Pour ajouter une vidéo MP4, créez d’abord le cours puis utilisez « Upload » pour l’ajouter à un module.</small>
       </div>
     </div>
     <div class="flex justify-end gap-3">

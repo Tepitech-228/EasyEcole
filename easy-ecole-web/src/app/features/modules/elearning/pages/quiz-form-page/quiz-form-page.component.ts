@@ -2,11 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { QuizService } from 'src/app/data/modules/elearning/services/quiz.service';
+import { CoursEnLigneService } from 'src/app/data/modules/elearning/services/cours-en-ligne.service';
 
 @Component({
   selector: 'app-quiz-form-page',
-  templateUrl: './quiz-form-page.component.html',
-  styleUrls: ['./quiz-form-page.component.scss']
+  templateUrl: './quiz-form-page.component.html'
 })
 export class QuizFormPageComponent implements OnInit {
   quizForm: FormGroup;
@@ -19,7 +19,8 @@ export class QuizFormPageComponent implements OnInit {
     private fb: FormBuilder,
     private router: Router,
     private route: ActivatedRoute,
-    private quizService: QuizService
+    private quizService: QuizService,
+    private coursService: CoursEnLigneService
   ) {
     this.quizForm = this.fb.group({
       titre: ['', Validators.required],
@@ -31,6 +32,10 @@ export class QuizFormPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.coursService.getAll().subscribe({
+      next: (data) => this.coursList = data,
+      error: () => this.coursList = []
+    });
     this.quizId = this.route.snapshot.paramMap.get('id');
     if (this.quizId) {
       this.isEdit = true;

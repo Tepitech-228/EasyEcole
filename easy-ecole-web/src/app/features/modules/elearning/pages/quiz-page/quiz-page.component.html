@@ -1,43 +1,76 @@
-<div class="quiz-page">
-  <div class="quiz-page__header">
-    <div>
-      <p class="quiz-page__subtitle">Évaluations</p>
-      <h2 class="quiz-page__title">Quiz et examens</h2>
-      <p class="quiz-page__desc">Passez vos évaluations à travers une interface simple, rapide et pensée pour un environnement universitaire.</p>
+<div class="space-y-6">
+  <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-600 px-6 py-8 text-white shadow-xl shadow-indigo-200 sm:px-8 sm:py-10">
+    <div class="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-white/10 blur-2xl"></div>
+    <div class="pointer-events-none absolute -bottom-24 left-1/3 h-56 w-56 rounded-full bg-fuchsia-400/20 blur-3xl"></div>
+
+    <div class="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-indigo-200">Évaluations</p>
+        <h2 class="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Quiz et examens</h2>
+        <p class="mt-2 max-w-2xl text-sm text-indigo-100">
+          Passez vos évaluations à travers une interface simple, rapide et pensée pour un environnement universitaire.
+        </p>
+      </div>
+      <button *ngIf="canManage()" (click)="createQuiz()"
+        class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 shadow-sm transition hover:bg-indigo-50">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+        Nouveau quiz
+      </button>
     </div>
-    <button *ngIf="canManage()" (click)="createQuiz()" class="btn btn--primary">Nouveau quiz</button>
+  </section>
+
+  <div *ngIf="loading" class="flex items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-14 text-sm text-slate-500 shadow-sm">
+    <span class="h-5 w-5 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600"></span>
+    Chargement des quiz…
   </div>
 
-  <div *ngIf="loading" class="spinner-wrapper">
-    <div class="spinner"></div>
+  <div *ngIf="!loading && quizList.length === 0" class="flex flex-col items-center rounded-2xl border border-slate-200 bg-white px-5 py-14 text-center shadow-sm">
+    <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-500">
+      <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M9 9a3 3 0 1 1 5 2.2c-1.1.8-2 1.3-2 2.8M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"></path></svg>
+    </span>
+    <h3 class="mt-4 text-sm font-semibold text-slate-900">Aucun quiz disponible</h3>
+    <p class="mt-1 max-w-md text-xs text-slate-500">Les quiz apparaîtront ici dès qu'ils auront été créés par vos enseignants.</p>
   </div>
 
-  <div *ngIf="!loading && quizList.length === 0" class="empty-state">Aucun quiz disponible pour le moment.</div>
+  <div *ngIf="!loading && quizList.length" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <article *ngFor="let quiz of quizList" class="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <p class="text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-500">Évaluation</p>
+          <h3 class="mt-1 truncate text-sm font-semibold text-slate-900">{{ quiz.titre }}</h3>
+        </div>
+        <span class="shrink-0 rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-semibold text-indigo-700">
+          {{ quiz.cours?.titre || '—' }}
+        </span>
+      </div>
 
-  <div class="quiz-page__grid">
-    <div *ngFor="let quiz of quizList" class="card quiz-card">
-      <div class="quiz-card__top">
-        <div>
-          <p class="quiz-card__label">Évaluation</p>
-          <h3 class="quiz-card__title">{{ quiz.titre }}</h3>
-        </div>
-        <span class="badge badge--info">{{ quiz.cours?.titre || '—' }}</span>
+      <p class="mt-2 line-clamp-2 text-xs leading-relaxed text-slate-500">{{ quiz.description }}</p>
+
+      <div class="mt-4 flex flex-wrap gap-1.5">
+        <span class="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-600">{{ quiz.nbQuestions || 0 }} questions</span>
+        <span class="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-600">{{ quiz.tempsLimite || '—' }} min</span>
+        <span class="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-600">{{ quiz.createdAt | date:'dd/MM/yyyy' }}</span>
       </div>
-      <p class="quiz-card__desc">{{ quiz.description }}</p>
-      <div class="quiz-card__meta">
-        <span class="quiz-card__tag">{{ quiz.nbQuestions || 0 }} questions</span>
-        <span class="quiz-card__tag">{{ quiz.tempsLimite || '—' }} min</span>
-        <span class="quiz-card__tag">{{ quiz.createdAt | date:'dd/MM/yyyy' }}</span>
-      </div>
-      <div *ngIf="quiz.reponse" class="quiz-card__score">
-        <div class="alert" [ngClass]="(quiz.reponse.score / quiz.reponse.total * 100) >= 70 ? 'alert--success' : (quiz.reponse.score / quiz.reponse.total * 100) >= 40 ? 'alert--warning' : 'alert--danger'">
-          Score: {{ quiz.reponse.score }}/{{ quiz.reponse.total }}
+
+      <div *ngIf="quiz.reponse" class="mt-4">
+        <div class="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold"
+          [ngClass]="(quiz.reponse.score / quiz.reponse.total * 100) >= 70 ? 'bg-emerald-50 text-emerald-700' : (quiz.reponse.score / quiz.reponse.total * 100) >= 40 ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'">
+          <span>Score obtenu</span>
+          <span>{{ quiz.reponse.score }}/{{ quiz.reponse.total }}</span>
         </div>
       </div>
-      <div class="quiz-card__actions">
-        <button *ngIf="canManage()" (click)="deleteQuiz(quiz.id)" class="btn btn--outline btn--outline-danger">Supprimer</button>
-        <button (click)="takeQuiz(quiz.id)" class="btn btn--primary">Commencer</button>
+
+      <div class="mt-auto flex items-center justify-between gap-2 pt-5">
+        <button *ngIf="canManage()" (click)="deleteQuiz(quiz.id)"
+          class="rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-rose-50">
+          Supprimer
+        </button>
+        <span *ngIf="!canManage()"></span>
+        <button (click)="takeQuiz(quiz.id)"
+          class="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700">
+          {{ quiz.reponse ? 'Recommencer' : 'Commencer' }}
+        </button>
       </div>
-    </div>
+    </article>
   </div>
 </div>

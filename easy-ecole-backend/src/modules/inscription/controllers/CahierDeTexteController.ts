@@ -46,7 +46,7 @@ export default class CahierDeTexteController {
                     return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
                 }
                 const coursDuSite = await Cours.findAll({
-                    where: { etablissementId },
+                    where: { [Op.or]: [{ etablissementId }, { etablissementId: null }] },
                     attributes: ["id"],
                 });
                 where[Op.or] = [

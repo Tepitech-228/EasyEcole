@@ -15,7 +15,6 @@ import { QuizPageComponent } from './pages/quiz-page/quiz-page.component';
 import { QuizFormPageComponent } from './pages/quiz-form-page/quiz-form-page.component';
 import { QuizDoPageComponent } from './pages/quiz-do-page/quiz-do-page.component';
 import { ProgressionPageComponent } from './pages/progression-page/progression-page.component';
-import { CertificatsPageComponent } from './pages/certificats-page/certificats-page.component';
 import { DevoirsPageComponent } from './pages/devoirs-page/devoirs-page.component';
 import { DevoirDetailPageComponent } from './pages/devoir-detail-page/devoir-detail-page.component';
 import { CoursPlayerPageComponent } from './pages/cours-player-page/cours-player-page.component';
@@ -25,6 +24,9 @@ import { SupportCardComponent } from './components/support-card/support-card.com
 import { ExamensAdminPageComponent } from './pages/examens-admin-page/examens-admin-page.component';
 import { MesExamensPageComponent } from './pages/mes-examens-page/mes-examens-page.component';
 import { CentresExamensPageComponent } from './pages/centres-examens-page/centres-examens-page.component';
+import { ElearningShellComponent } from './components/elearning-shell/elearning-shell.component';
+import { PublicationNotesPageComponent } from './pages/publication-notes-page/publication-notes-page.component';
+import { RelevesPageComponent } from './pages/releves-page/releves-page.component';
 
 @NgModule({
   declarations: [
@@ -39,7 +41,6 @@ import { CentresExamensPageComponent } from './pages/centres-examens-page/centre
     QuizFormPageComponent,
     QuizDoPageComponent,
     ProgressionPageComponent,
-    CertificatsPageComponent,
     DevoirsPageComponent,
     DevoirDetailPageComponent,
     CoursPlayerPageComponent,
@@ -48,7 +49,10 @@ import { CentresExamensPageComponent } from './pages/centres-examens-page/centre
     SupportCardComponent,
     ExamensAdminPageComponent,
     MesExamensPageComponent,
-    CentresExamensPageComponent
+    CentresExamensPageComponent,
+    ElearningShellComponent,
+    PublicationNotesPageComponent,
+    RelevesPageComponent
   ],
   imports: [
     CommonModule,

@@ -5,8 +5,7 @@ import { BaseComponentClass } from 'src/app/core/base-component-class';
 
 @Component({
   selector: 'app-mes-cours-page',
-  templateUrl: './mes-cours-page.component.html',
-  styleUrls: ['./mes-cours-page.component.scss']
+  templateUrl: './mes-cours-page.component.html'
 })
 export class MesCoursPageComponent extends BaseComponentClass implements OnInit {
   coursList: any[] = [];
@@ -37,6 +36,6 @@ export class MesCoursPageComponent extends BaseComponentClass implements OnInit 
   }
 
   coursImage(cours: any): string {
-    return cours.image ? `/elearning/cours/${cours.image}` : '';
+    return cours.image ? `${environment.API_BASE_URL}media/elearning/cours/${cours.image}` : '';
   }
 }

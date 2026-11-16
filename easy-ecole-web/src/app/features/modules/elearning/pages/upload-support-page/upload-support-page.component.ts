@@ -5,8 +5,7 @@ import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-upload-support-page',
-  templateUrl: './upload-support-page.component.html',
-  styleUrls: ['./upload-support-page.component.scss']
+  templateUrl: './upload-support-page.component.html'
 })
 export class UploadSupportPageComponent implements OnInit {
   coursId: string | null = null;
@@ -31,6 +30,16 @@ export class UploadSupportPageComponent implements OnInit {
 
   onFileSelected(event: any): void {
     this.selectedFile = event.target.files[0] || null;
+  }
+
+  onSupportTypeChange(): void {
+    this.selectedFile = null;
+  }
+
+  get acceptedFileTypes(): string {
+    if (this.supportType === 'video') return '.mp4,.webm,.ogg,video/mp4,video/webm,video/ogg';
+    if (this.supportType === 'pdf') return '.pdf,application/pdf';
+    return '.pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png';
   }
 
   upload(): void {

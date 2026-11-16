@@ -1,11 +1,23 @@
 import express from "express"
 import multer from "multer"
+import fs from "fs"
+import path from "path"
 import CoursEnLigneController from "../controllers/CoursEnLigneController"
 import Authenticate from "../../../core/middlewares/Authenticate"
 import { fileFilter, ALLOWED_IMAGE_TYPES } from "../../../core/config/upload"
 
+// Image de couverture des cours : dossier servi via /media/elearning/cours.
+// On conserve l'extension d'origine pour que le MIME soit correct à la lecture.
+const COURS_MEDIAS_DIR = path.resolve(process.cwd(), "public", "elearning", "cours")
+fs.mkdirSync(COURS_MEDIAS_DIR, { recursive: true })
 const upload = multer({
-    dest: "public/elearning/cours/",
+    storage: multer.diskStorage({
+        destination: (_req, _file, callback) => callback(null, COURS_MEDIAS_DIR),
+        filename: (_req, file, callback) => callback(
+            null,
+            `${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(file.originalname).toLowerCase()}`
+        )
+    }),
     fileFilter: fileFilter(ALLOWED_IMAGE_TYPES),
     limits: { fileSize: 10 * 1024 * 1024 }
 });

@@ -6,8 +6,7 @@ import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-cours-player-page',
-  templateUrl: './cours-player-page.component.html',
-  styleUrls: ['./cours-player-page.component.scss']
+  templateUrl: './cours-player-page.component.html'
 })
 export class CoursPlayerPageComponent implements OnInit, OnDestroy {
   cours: any = null;

@@ -5,6 +5,7 @@ import { SmsSender } from "./SmsSender"
 
 const env = process.env.NODE_ENV || 'development';
 export const EMAIL_SENDER_NAME = 'ESA ECOLE';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://easyecole.esaecole.com'
 
 /** Expéditeur déjà vérifié dans le compte Brevo (repli si MAIL_FROM/BREVO_FROM absents). */
 const BREVO_DEFAULT_SENDER = 'tepitechbuild@gmail.com'
@@ -376,8 +377,7 @@ export class EmailSender {
 
     public sendValidationPremiereEtape(email: string, username: string, demandeId: number): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200'
-        const link = `${frontendUrl}/inscription/demandes/${demandeId}`
+        const link = `${FRONTEND_URL}/inscription/demandes/${demandeId}`
         void SmsSender.envoyerParEmail(email, `${EMAIL_SENDER_NAME} - La première étape de votre inscription est validée. Complétez votre dossier pour finaliser votre demande.`)
         const template: EmailTemplateType = {
             title: 'Première étape validée',
@@ -392,7 +392,7 @@ export class EmailSender {
             from: this.getFromAddress(),
             to: email,
             encoding: 'UTF-8',
-            subject: `${EMAIL_SENDER_NAME}: Première étape de votre inscription validée`,
+            subject: `${EMAIL_SENDER_NAME}: Première étape de votre inscription validée, veuillez s'il vous plait contibuez en soumettant votre demande d'autorisation provisoire d'inscription et les documents complémentaires requis`,
             html: this.getEmailTemplate(template)
         }
         return this.sendMail(mailOptions)
@@ -400,8 +400,7 @@ export class EmailSender {
 
     public sendDocumentsComplementairesTransmis(email: string, username: string): Promise<void> {
         if (!this.transporter) return Promise.reject(new Error('SMTP non configuré'))
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200'
-        const link = `${frontendUrl}/inscription/mon-dossier`
+        const link = `${FRONTEND_URL}/inscription/mon-dossier`
         void SmsSender.envoyerParEmail(email, `${EMAIL_SENDER_NAME} - Vos documents ont été reçus. Votre dossier est en cours d'examen.`)
         const template: EmailTemplateType = {
             title: "Dossier en cours d'examen",
@@ -454,7 +453,7 @@ export class EmailSender {
             encoding: 'UTF-8',
             subject: `${EMAIL_SENDER_NAME}: Votre préinscription a été validée`,
             html: `<p>Bonjour <b>${username},</b></p>
-            <p>Votre dossier de préinscription a été validé par le comité d'orientation.</p>
+            <p>Votre dossier d'inscription a été validé par le comité d'orientation.</p>
             <p>Une autorisation provisoire d'inscription est disponible dans votre espace. Connectez-vous à la plateforme pour la télécharger.</p>
             <p>Vous pouvez maintenant procéder au paiement des frais d'inscription auprès de la banque muni de cette autorisation.</p>
             <p>Cordialement, <br> ${EMAIL_SENDER_NAME}</p>`
@@ -540,7 +539,7 @@ export class EmailSender {
             html: `<p>Bonjour <b>${nomParent},</b></p>
             <p>Votre compte parent a été créé avec succès pour le suivi de la scolarité de votre enfant.</p>
             <p>Vous pouvez vous connecter à l'Espace Parents avec les identifiants suivants:</p>
-            <p>URL de connexion: <a href="${process.env.FRONTEND_URL || 'http://localhost:4200'}/auth/login">${process.env.FRONTEND_URL || 'http://localhost:4200'}/auth/login</a></p>
+            <p>URL de connexion: <a href="${FRONTEND_URL}/auth/login">${FRONTEND_URL}/auth/login</a></p>
             <p>Identifiant: <strong>${identifiant}</strong></p>
             <p>Mot de passe: <strong>${motDePasse}</strong></p>
             <p><em>Pour des raisons de sécurité, veuillez changer votre mot de passe après votre première connexion.</em></p>

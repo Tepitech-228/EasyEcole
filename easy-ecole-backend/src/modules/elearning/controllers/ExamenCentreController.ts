@@ -10,6 +10,7 @@ import { Examen } from "../models/Examen";
 import { ReservationExamen } from "../models/ReservationExamen";
 import { SelectionCours } from "../models/SelectionCours";
 import { SessionExamen } from "../models/SessionExamen";
+import { NoteExamen } from "../models/NoteExamen";
 
 function actor(req: Request): { id: number; role: string } {
   return { id: Number((req as any).utilisateurId), role: String((req as any).utilisateurRole) };
@@ -232,6 +233,15 @@ export default class ExamenCentreController {
         include: [{ association: Examen.associations.cours, attributes: ["id", "code", "titre"] }],
         order: [["dateExamen", "ASC"]],
       });
+      const notesPubliees = await NoteExamen.findAll({
+        where: {
+          utilisateurId: current.id,
+          notePubliee: true,
+          examenId: { [Op.in]: examens.map(examen => Number(examen.id)) },
+        },
+        attributes: ["examenId", "note", "commentaire", "notePublieeLe"],
+      });
+      const noteParExamen = new Map(notesPubliees.map(note => [Number(note.examenId), note]));
       const result = [];
       for (const examen of examens) {
         const reservation = await ReservationExamen.findOne({
@@ -250,7 +260,17 @@ export default class ExamenCentreController {
           });
           if (reserved < examSession.capacite) available.push({ ...examSession.toJSON(), placesDisponibles: examSession.capacite - reserved });
         }
-        result.push({ ...examen.toJSON(), reservation, sessionsDisponibles: available });
+        const notePubliee = noteParExamen.get(Number(examen.id));
+        result.push({
+          ...examen.toJSON(),
+          reservation,
+          sessionsDisponibles: available,
+          resultat: notePubliee ? {
+            note: notePubliee.note,
+            commentaire: notePubliee.commentaire,
+            publieLe: notePubliee.notePublieeLe,
+          } : null,
+        });
       }
       return res.status(200).json(result);
     } catch (error: any) {

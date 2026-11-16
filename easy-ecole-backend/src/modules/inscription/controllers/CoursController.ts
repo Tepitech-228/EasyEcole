@@ -78,7 +78,7 @@ export default class CoursController {
                 if (!siteId) {
                     return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
                 }
-                (options.where as any).etablissementId = siteId;
+                (options.where as any)[Op.or] = [{ etablissementId: siteId }, { etablissementId: null }];
             }
             if (hasPagination) {
                 const { count, rows } = await Cours.findAndCountAll(options);
@@ -105,7 +105,7 @@ export default class CoursController {
         let options: FindOptions<InferAttributes<Cours>> = {}
         const etablissementId = Number((req as any).etablissementId);
         const siteFilter = Number.isSafeInteger(etablissementId) && etablissementId > 0
-            ? { etablissementId }
+            ? { [Op.or]: [{ etablissementId }, { etablissementId: null }] }
             : {};
         options = {
             include: [Cours.associations.classe],
@@ -159,7 +159,7 @@ export default class CoursController {
                 if (!siteId) {
                     return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
                 }
-                (options.where as any).etablissementId = siteId;
+                (options.where as any)[Op.or] = [{ etablissementId: siteId }, { etablissementId: null }];
             }
             const cours: Cours | null = await Cours.findOne(options);
 
@@ -231,10 +231,6 @@ export default class CoursController {
         if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
             return res.status(403).json({ success: false })
         }
-        const etablissementId = Number((req as any).etablissementId);
-        if (!Number.isSafeInteger(etablissementId) || etablissementId <= 0) {
-            return res.status(400).json({ success: false, message: "Sélectionnez un site avant de créer un cours." });
-        }
 
         if (!req.body.code) {
             const annee = new Date().getFullYear();
@@ -262,7 +258,7 @@ export default class CoursController {
             semestre: req.body.semestre,
             classeId: req.body.classeId,
             parcoursId: req.body.parcoursId,
-            etablissementId,
+            etablissementId: null,
             volumeHoraire: req.body.volumeHoraire,
             coefficient: req.body.coefficient,
         });
@@ -283,7 +279,9 @@ export default class CoursController {
         const options: FindOptions<InferAttributes<Cours>> = {
             where: {
                 id: req.params.id,
-                ...(Number.isSafeInteger(etablissementId) && etablissementId > 0 ? { etablissementId } : {})
+                ...(Number.isSafeInteger(etablissementId) && etablissementId > 0
+                    ? { [Op.or]: [{ etablissementId }, { etablissementId: null }] }
+                    : {})
             }
         };
         let cours: Cours | null = await Cours.findOne(options);
@@ -411,7 +409,9 @@ export default class CoursController {
             {
                 where: {
                     id: req.params.id,
-                    ...(Number.isSafeInteger(etablissementId) && etablissementId > 0 ? { etablissementId } : {})
+                    ...(Number.isSafeInteger(etablissementId) && etablissementId > 0
+                        ? { [Op.or]: [{ etablissementId }, { etablissementId: null }] }
+                        : {})
                 }
             }
         );

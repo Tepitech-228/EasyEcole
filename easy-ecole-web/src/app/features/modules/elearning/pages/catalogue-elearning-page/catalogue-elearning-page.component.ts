@@ -42,8 +42,7 @@ export interface ArbreNode {
 
 @Component({
   selector: 'app-catalogue-elearning-page',
-  templateUrl: './catalogue-elearning-page.component.html',
-  styleUrls: ['./catalogue-elearning-page.component.scss']
+  templateUrl: './catalogue-elearning-page.component.html'
 })
 export class CatalogueElearningPageComponent extends BaseComponentClass implements OnInit {
   private catalogue: ElearningCourse[] = [];

@@ -2,6 +2,7 @@ import { Association, CreationOptional, DataTypes, InferAttributes, InferCreatio
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../ElearningModule";
 import { CoursEnLigne } from "./CoursEnLigne";
+import { NoteExamen } from "./NoteExamen";
 
 export class Examen extends Model<InferAttributes<Examen>, InferCreationAttributes<Examen>> {
   declare id: CreationOptional<number>;
@@ -15,10 +16,12 @@ export class Examen extends Model<InferAttributes<Examen>, InferCreationAttribut
   declare statut: "brouillon" | "publie" | "termine";
   declare creePar: number;
   declare cours?: NonAttribute<CoursEnLigne>;
+  declare notes?: NonAttribute<NoteExamen[]>;
   declare readonly createdAt: CreationOptional<Date>;
   declare readonly updatedAt: CreationOptional<Date>;
   declare static associations: {
     cours: Association<Examen, CoursEnLigne>;
+    notes: Association<Examen, NoteExamen>;
   };
 }
 

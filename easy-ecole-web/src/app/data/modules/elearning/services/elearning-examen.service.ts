@@ -64,4 +64,8 @@ export class ElearningExamenService {
   saveGrade(id: number, data: { utilisateurId: number; note: number; commentaire?: string }): Observable<any> {
     return this.http.post(`${this.url}/${id}/notes`, data);
   }
+
+  publishGrades(id: number): Observable<{ success: boolean; publishedCount: number }> {
+    return this.http.put<{ success: boolean; publishedCount: number }>(`${this.url}/${id}/notes/publier`, {});
+  }
 }

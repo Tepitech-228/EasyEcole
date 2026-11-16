@@ -180,7 +180,7 @@ export class ListeCahiersDeTextePageComponent extends BaseComponentClass impleme
     this.listePresenceService.genererTousLesCahiers().subscribe({
       next: resultat => {
         this.generationMessage = resultat.cohortesTraitees === 0
-          ? 'Aucune filière avec niveau et cours rattaché à ce site.'
+          ? 'Aucun cahier créé : vérifiez que les classes du site sont reliées à une filière et un niveau, et qu’une UE est disponible.'
           : `${resultat.listesPresencesCrees} cahier(s) de présence et ${resultat.cahiersDeTexteCrees} cahier(s) de texte créé(s) pour ${resultat.cohortesTraitees} filière(s)/niveau(x).`
         this.getcahiersDeTexte()
       },

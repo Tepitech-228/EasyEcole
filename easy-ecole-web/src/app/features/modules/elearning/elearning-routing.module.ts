@@ -13,35 +13,44 @@ import { QuizPageComponent } from './pages/quiz-page/quiz-page.component';
 import { QuizFormPageComponent } from './pages/quiz-form-page/quiz-form-page.component';
 import { QuizDoPageComponent } from './pages/quiz-do-page/quiz-do-page.component';
 import { ProgressionPageComponent } from './pages/progression-page/progression-page.component';
-import { CertificatsPageComponent } from './pages/certificats-page/certificats-page.component';
 import { DevoirsPageComponent } from './pages/devoirs-page/devoirs-page.component';
 import { DevoirDetailPageComponent } from './pages/devoir-detail-page/devoir-detail-page.component';
 import { CatalogueElearningPageComponent } from './pages/catalogue-elearning-page/catalogue-elearning-page.component';
 import { ExamensAdminPageComponent } from './pages/examens-admin-page/examens-admin-page.component';
 import { MesExamensPageComponent } from './pages/mes-examens-page/mes-examens-page.component';
 import { CentresExamensPageComponent } from './pages/centres-examens-page/centres-examens-page.component';
+import { ElearningShellComponent } from './components/elearning-shell/elearning-shell.component';
+import { PublicationNotesPageComponent } from './pages/publication-notes-page/publication-notes-page.component';
+import { RelevesPageComponent } from './pages/releves-page/releves-page.component';
 
 const routes: Routes = [
-  { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-  { path: 'dashboard', component: MesCoursPageComponent },
-  { path: 'videos', component: CoursVideosPageComponent },
-  { path: 'pdfs', component: CoursPdfsPageComponent },
-  { path: 'quiz/nouveau', component: QuizFormPageComponent },
-  { path: 'quiz/:id', component: QuizDoPageComponent },
-  { path: 'quiz', component: QuizPageComponent },
-  { path: 'progression', component: ProgressionPageComponent },
-  { path: 'certificats', component: CertificatsPageComponent },
-  { path: 'devoirs/:id', component: DevoirDetailPageComponent },
-  { path: 'devoirs', component: DevoirsPageComponent },
-  { path: 'admin/gestion', component: GestionElearningPageComponent },
-  { path: 'admin/examens', component: ExamensAdminPageComponent },
-  { path: 'admin/centres', component: CentresExamensPageComponent },
-  { path: 'examens', component: MesExamensPageComponent },
-  { path: 'catalogue', component: CatalogueElearningPageComponent },
-  { path: ':id/player', component: CoursPlayerPageComponent },
-  { path: ':id/chat', component: ChatPageComponent },
-  { path: ':id/upload', component: UploadSupportPageComponent },
-  { path: ':id', component: CoursDetailsPageComponent }
+  {
+    path: '',
+    component: ElearningShellComponent,
+    children: [
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: 'dashboard', component: MesCoursPageComponent },
+      { path: 'videos', component: CoursVideosPageComponent },
+      { path: 'pdfs', component: CoursPdfsPageComponent },
+      { path: 'quiz/nouveau', component: QuizFormPageComponent },
+      { path: 'quiz/:id', component: QuizDoPageComponent },
+      { path: 'quiz', component: QuizPageComponent },
+      { path: 'progression', component: ProgressionPageComponent },
+      { path: 'releves', component: RelevesPageComponent },
+      { path: 'devoirs/:id', component: DevoirDetailPageComponent },
+      { path: 'devoirs', component: DevoirsPageComponent },
+      { path: 'admin/gestion', component: GestionElearningPageComponent },
+      { path: 'admin/examens', component: ExamensAdminPageComponent },
+      { path: 'admin/centres', component: CentresExamensPageComponent },
+      { path: 'admin/publications', component: PublicationNotesPageComponent },
+      { path: 'examens', component: MesExamensPageComponent },
+      { path: 'catalogue', component: CatalogueElearningPageComponent },
+      { path: ':id/player', component: CoursPlayerPageComponent },
+      { path: ':id/chat', component: ChatPageComponent },
+      { path: ':id/upload', component: UploadSupportPageComponent },
+      { path: ':id', component: CoursDetailsPageComponent }
+    ]
+  }
 ];
 
 @NgModule({

@@ -3,8 +3,7 @@ import { ProgressionService } from 'src/app/data/modules/elearning/services/prog
 
 @Component({
   selector: 'app-progression-page',
-  templateUrl: './progression-page.component.html',
-  styleUrls: ['./progression-page.component.scss']
+  templateUrl: './progression-page.component.html'
 })
 export class ProgressionPageComponent implements OnInit {
   data: any = null;

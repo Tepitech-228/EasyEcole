@@ -35,7 +35,13 @@ export default class ExamenController {
       const academicYearId = ElearningFinanceService.requireAcademicYearId(year);
       const examens = await Examen.findAll({
         where: { anneeAcademiqueId: academicYearId },
-        include: [{ association: Examen.associations.cours }],
+        include: [
+          { association: Examen.associations.cours },
+          {
+            association: Examen.associations.notes,
+            include: [{ association: NoteExamen.associations.apprenant, attributes: ["id", "nom", "prenoms", "identifiant"] }],
+          },
+        ],
         order: [["dateExamen", "ASC"]],
       });
       return res.status(200).json(examens);
@@ -163,6 +169,9 @@ export default class ExamenController {
           note,
           commentaire: req.body.commentaire ? String(req.body.commentaire) : null,
           saisiePar: Number((req as any).utilisateurId),
+          notePubliee: false,
+          notePublieeLe: null,
+          notePublieePar: null,
         });
       }
       await ElearningFinanceService.recordAudit(Number((req as any).utilisateurId), String((req as any).utilisateurRole), "examen.note.saisie", "note_examen", result.id, { examenId: examen.id, utilisateurId, note });
@@ -170,6 +179,41 @@ export default class ExamenController {
     } catch (error) {
       console.error("[E-learning] Saisie de la note d'examen impossible:", error);
       return res.status(500).json({ success: false, message: "Impossible d'enregistrer la note." });
+    }
+  }
+
+  static async publierNotes(req: Request, res: Response): Promise<Response> {
+    if (!isAdministrator(req)) return res.status(403).json({ success: false, message: "La publication des notes est réservée à l'administration." });
+    try {
+      const examen = await Examen.findByPk(req.params.id);
+      if (!examen) return res.status(404).json({ success: false, message: "Examen introuvable." });
+      const unpublishedCount = await NoteExamen.count({
+        where: { examenId: examen.id, notePubliee: false },
+      });
+      if (unpublishedCount === 0) {
+        return res.status(409).json({ success: false, message: "Aucune nouvelle note d'examen à publier." });
+      }
+
+      const datePublication = new Date();
+      const [publishedCount] = await NoteExamen.update({
+        notePubliee: true,
+        notePublieeLe: datePublication,
+        notePublieePar: Number((req as any).utilisateurId),
+      }, {
+        where: { examenId: examen.id, notePubliee: false },
+      });
+      await ElearningFinanceService.recordAudit(
+        Number((req as any).utilisateurId),
+        String((req as any).utilisateurRole),
+        "examen.notes.publiees",
+        "examen",
+        examen.id,
+        { nombreNotes: publishedCount },
+      );
+      return res.status(200).json({ success: true, publishedCount, datePublication });
+    } catch (error) {
+      console.error("[E-learning] Publication des notes d'examen impossible:", error);
+      return res.status(500).json({ success: false, message: "Impossible de publier les notes de cet examen." });
     }
   }
 }

@@ -117,7 +117,7 @@ export default class HikvisionEnrollmentService {
     });
     const siteUserIds = siteUsers.map(siteUser => Number(siteUser.utilisateurId));
 
-    const [enseignants, personnels] = await Promise.all([
+    const [enseignants, personnels, administrateurs] = await Promise.all([
       Enseignant.findAll({
         where: { utilisateurId: { [Op.in]: siteUserIds } },
         include: [{ association: Enseignant.associations.utilisateur }]
@@ -125,8 +125,21 @@ export default class HikvisionEnrollmentService {
       PersonnelAdministratif.findAll({
         where: { utilisateurId: { [Op.in]: siteUserIds } },
         include: [{ association: PersonnelAdministratif.associations.utilisateur }]
+      }),
+      Utilisateur.findAll({
+        where: { id: { [Op.in]: siteUserIds }, role: RolesUtilisateur.ADMIN },
+        attributes: ["id", "identifiant", "photoDeProfil"]
       })
     ]);
+
+    for (const administrateur of administrateurs) {
+      if (!administrateur.identifiant || !administrateur.photoDeProfil) continue;
+      await HikvisionEnrollmentService.enqueueForTerminalIfMissing(
+        terminal,
+        Number(administrateur.id),
+        String(administrateur.identifiant)
+      );
+    }
 
     for (const enseignant of enseignants) {
       if (
@@ -154,6 +167,32 @@ export default class HikvisionEnrollmentService {
         Number(personnel.utilisateurId),
         String(personnel.matricule)
       );
+    }
+  }
+
+  static async enqueueAdministratorsForActiveTerminals(): Promise<void> {
+    const terminals = await PointageTerminal.findAll({
+      where: { protocol: "hikvision_isapi", population: "personnel", actif: true },
+      attributes: ["id", "etablissementId"]
+    });
+    for (const terminal of terminals) {
+      const siteUsers = await SiteUtilisateur.findAll({
+        where: { etablissementId: terminal.etablissementId },
+        attributes: ["utilisateurId"]
+      });
+      const siteUserIds = siteUsers.map(siteUser => Number(siteUser.utilisateurId));
+      const administrateurs = await Utilisateur.findAll({
+        where: { id: { [Op.in]: siteUserIds }, role: RolesUtilisateur.ADMIN },
+        attributes: ["id", "identifiant", "photoDeProfil"]
+      });
+      for (const administrateur of administrateurs) {
+        if (!administrateur.identifiant || !administrateur.photoDeProfil) continue;
+        await HikvisionEnrollmentService.enqueueForTerminalIfMissing(
+          terminal,
+          Number(administrateur.id),
+          String(administrateur.identifiant)
+        );
+      }
     }
   }
 
@@ -186,6 +225,15 @@ export default class HikvisionEnrollmentService {
       });
       sites.push(...affectations.map(affectation => Number(affectation.etablissementId)));
       if (sites.length === 0 && personnel.etablissementId) sites.push(Number(personnel.etablissementId));
+    } else if (utilisateur.role === RolesUtilisateur.ADMIN) {
+      employeeNo = utilisateur.identifiant || null;
+      hasPhoto = Boolean(utilisateur.photoDeProfil);
+      const affectations = await SiteUtilisateur.findAll({
+        where: { utilisateurId },
+        attributes: ["etablissementId"]
+      });
+      sites.push(...affectations.map(affectation => Number(affectation.etablissementId)));
+      if (sites.length === 0 && utilisateur.etablissementId) sites.push(Number(utilisateur.etablissementId));
     } else {
       return 0;
     }
@@ -255,6 +303,35 @@ export default class HikvisionEnrollmentService {
     }
   }
 
+  private static async enqueueForTerminalIfMissing(
+    terminal: Pick<PointageTerminal, "id" | "etablissementId">,
+    utilisateurId: number,
+    employeeNo: string
+  ): Promise<void> {
+    const [enrollment, created] = await HikvisionEnrollment.findOrCreate({
+      where: { terminalId: terminal.id, utilisateurId },
+      defaults: {
+        terminalId: Number(terminal.id),
+        utilisateurId,
+        etablissementId: Number(terminal.etablissementId),
+        employeeNo,
+        statut: "en_attente",
+        tentatives: 0,
+        prochaineTentativeAt: new Date(),
+        derniereErreur: null
+      }
+    });
+    if (!created && enrollment.employeeNo !== employeeNo) {
+      await enrollment.update({
+        employeeNo,
+        statut: "en_attente",
+        tentatives: 0,
+        prochaineTentativeAt: new Date(),
+        derniereErreur: null
+      });
+    }
+  }
+
   static async processPending(): Promise<void> {
     if (HikvisionEnrollmentService.running) return;
     HikvisionEnrollmentService.running = true;
@@ -310,14 +387,66 @@ export default class HikvisionEnrollmentService {
         });
         const unavailableMessage = `Terminal ${enrollment.terminalId} absent ou inactif pour le site ${enrollment.etablissementId}.`;
         if (terminal) {
-          await HikvisionEnrollmentService.withDatabaseRetry(() => enrollment.update({
-            terminalId: Number(terminal!.id),
-            statut: "en_attente",
-            tentatives: 0,
-            prochaineTentativeAt: new Date(),
-            derniereErreur: null
-          }));
-          console.warn(`[Hikvision] ${unavailableMessage} Enrôlement ${enrollment.id} réaffecté au terminal actif ${terminal.id}.`);
+          const targetTerminalId = Number(terminal.id);
+          const existingEnrollment = await HikvisionEnrollmentService.withDatabaseRetry(
+            () => HikvisionEnrollment.findOne({
+              where: { terminalId: targetTerminalId, utilisateurId: enrollment.utilisateurId }
+            })
+          );
+          if (existingEnrollment) {
+            if (existingEnrollment.employeeNo !== enrollment.employeeNo) {
+              await HikvisionEnrollmentService.withDatabaseRetry(() => existingEnrollment.update({
+                employeeNo: enrollment.employeeNo,
+                statut: "en_attente",
+                tentatives: 0,
+                prochaineTentativeAt: new Date(),
+                derniereErreur: null
+              }));
+            }
+            await HikvisionEnrollmentService.withDatabaseRetry(
+              () => HikvisionEnrollment.destroy({ where: { id: enrollment.id } })
+            );
+          } else {
+            try {
+              await HikvisionEnrollmentService.withDatabaseRetry(() => enrollment.update({
+                terminalId: targetTerminalId,
+                statut: "en_attente",
+                tentatives: 0,
+                prochaineTentativeAt: new Date(),
+                derniereErreur: null
+              }));
+            } catch (error) {
+              const errorWithCauses = error as {
+                parent?: { code?: string };
+                original?: { code?: string };
+                code?: string;
+              };
+              const code = errorWithCauses?.parent?.code
+                || errorWithCauses?.original?.code
+                || errorWithCauses?.code;
+              if (code !== "ER_DUP_ENTRY") throw error;
+
+              const racedEnrollment = await HikvisionEnrollmentService.withDatabaseRetry(
+                () => HikvisionEnrollment.findOne({
+                  where: { terminalId: targetTerminalId, utilisateurId: enrollment.utilisateurId }
+                })
+              );
+              if (!racedEnrollment) throw error;
+              if (racedEnrollment.employeeNo !== enrollment.employeeNo) {
+                await HikvisionEnrollmentService.withDatabaseRetry(() => racedEnrollment.update({
+                  employeeNo: enrollment.employeeNo,
+                  statut: "en_attente",
+                  tentatives: 0,
+                  prochaineTentativeAt: new Date(),
+                  derniereErreur: null
+                }));
+              }
+              await HikvisionEnrollmentService.withDatabaseRetry(
+                () => HikvisionEnrollment.destroy({ where: { id: enrollment.id } })
+              );
+            }
+          }
+          console.warn(`[Hikvision] ${unavailableMessage} Enrôlement ${enrollment.id} transféré ou doublon résorbé pour le terminal actif ${terminal.id}.`);
         } else {
           await HikvisionEnrollmentService.withDatabaseRetry(() => enrollment.update({
             statut: "en_attente",
@@ -362,6 +491,18 @@ export default class HikvisionEnrollmentService {
           personnel.matricule !== enrollment.employeeNo
         ) {
           throw new Error("Le profil du personnel n'est plus rattaché à ce site ou son matricule a changé.");
+        }
+        photoFilename = utilisateur.photoDeProfil || null;
+        photoCategory = "personnel";
+      } else if (utilisateur.role === RolesUtilisateur.ADMIN) {
+        const affectation = await SiteUtilisateur.findOne({
+          where: { utilisateurId: utilisateur.id, etablissementId: enrollment.etablissementId }
+        });
+        if (
+          (!affectation && Number(utilisateur.etablissementId) !== Number(enrollment.etablissementId)) ||
+          utilisateur.identifiant !== enrollment.employeeNo
+        ) {
+          throw new Error("Le compte administrateur n'est plus rattaché à ce site ou son identifiant a changé.");
         }
         photoFilename = utilisateur.photoDeProfil || null;
         photoCategory = "personnel";

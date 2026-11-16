@@ -1,4 +1,5 @@
 import { mockRequest, mockResponse } from '../../helpers/express-mocks'
+import { Op } from 'sequelize'
 
 jest.mock('../../../modules/inscription/models/Cours', () => {
   const Cours: any = jest.fn()
@@ -122,7 +123,7 @@ describe('getAllCours', () => {
     await Ctrl.getAllCours(req, res)
 
     expect(Cours.findAll).toHaveBeenCalledWith(expect.objectContaining({
-      where: { etablissementId: 3 },
+      where: { [Op.or]: [{ etablissementId: 3 }, { etablissementId: null }] },
       include: [
         'classe',
         { association: 'enseignant', include: ['utilisateur'] },
@@ -166,7 +167,7 @@ describe('getCours', () => {
 
     expect(Cours.findOne).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: '1', etablissementId: 1 },
+        where: { id: '1', [Op.or]: [{ etablissementId: 1 }, { etablissementId: null }] },
         include: [
           'classe',
           'chapitresCours',
@@ -190,7 +191,7 @@ describe('getCours', () => {
 
     expect(Cours.findOne).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: '1', etablissementId: 1 },
+        where: { id: '1', [Op.or]: [{ etablissementId: 1 }, { etablissementId: null }] },
         include: [
           'classe',
           'chapitresCours',
@@ -237,13 +238,14 @@ describe('createCours', () => {
   })
 
   it('should return 200 on successful creation', async () => {
-    const req = mockRequest({ body: { code: 'C002', parcoursId: 1 }, utilisateurRole: 'admin', etablissementId: 1 } as any)
+    const req = mockRequest({ body: { code: 'C002', parcoursId: 1 }, utilisateurRole: 'admin' } as any)
     const res = mockResponse()
     ;(Cours.findOne as jest.Mock).mockResolvedValue(null)
     ;(Cours.create as jest.Mock).mockResolvedValue({ id: 1 })
 
     await Ctrl.createCours(req, res)
 
+    expect(Cours.create).toHaveBeenCalledWith(expect.objectContaining({ etablissementId: null }))
     expect(res.status).toHaveBeenCalledWith(201)
   })
 })
@@ -281,6 +283,22 @@ describe('updateCours', () => {
     expect(mockUpdate).toHaveBeenCalled()
     expect(res.status).toHaveBeenCalledWith(200)
   })
+
+  it('allows a site administrator to update a shared course', async () => {
+    const mockUpdate = jest.fn().mockResolvedValue({})
+    const existing = { id: 1, code: 'C001', update: mockUpdate }
+    const req = mockRequest({ params: { id: '1' }, body: { code: 'C001' }, utilisateurRole: 'institution', etablissementId: 3 } as any)
+    const res = mockResponse()
+    ;(Cours.findOne as jest.Mock).mockResolvedValue(existing)
+
+    await Ctrl.updateCours(req, res)
+
+    expect(Cours.findOne).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: '1', [Op.or]: [{ etablissementId: 3 }, { etablissementId: null }] },
+    }))
+    expect(mockUpdate).toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
 })
 
 describe('deleteCours', () => {
@@ -311,6 +329,21 @@ describe('deleteCours', () => {
 
     await Ctrl.deleteCours(req, res)
 
+    expect(mockCours.destroy).toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('allows a site administrator to delete a shared course', async () => {
+    const mockCours = { id: 1, destroy: jest.fn().mockResolvedValue(undefined) }
+    const req = mockRequest({ params: { id: '1' }, utilisateurRole: 'institution', etablissementId: 3 } as any)
+    const res = mockResponse()
+    ;(Cours.findOne as jest.Mock).mockResolvedValue(mockCours)
+
+    await Ctrl.deleteCours(req, res)
+
+    expect(Cours.findOne).toHaveBeenCalledWith({
+      where: { id: '1', [Op.or]: [{ etablissementId: 3 }, { etablissementId: null }] },
+    })
     expect(mockCours.destroy).toHaveBeenCalled()
     expect(res.status).toHaveBeenCalledWith(200)
   })

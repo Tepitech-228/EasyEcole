@@ -1,115 +1,136 @@
-<div class="catalogue-page">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
 
-    <!-- En-tête : titre + totaux -->
-    <div class="page-head">
-        <div class="page-head-left">
-            <h2>Catalogue des cours en ligne</h2>
-            <p>Supports et devoirs accessibles après sélection du cours</p>
+  <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-700 via-indigo-600 to-violet-600 px-6 py-8 sm:px-10 sm:py-10 shadow-lg">
+    <div class="absolute -top-24 -right-16 h-64 w-64 rounded-full bg-white/10 blur-2xl"></div>
+    <div class="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-100">Catalogue</p>
+        <h1 class="mt-2 text-2xl sm:text-3xl font-bold text-white">Cours en ligne</h1>
+        <p class="mt-2 max-w-xl text-sm text-indigo-100">Explorez le catalogue, sélectionnez vos cours et suivez vos supports et devoirs.</p>
+        <div class="mt-5 flex flex-wrap gap-2" *ngIf="totaux">
+          <span class="rounded-full bg-white/15 px-3 py-1.5 text-[11px] font-semibold text-white backdrop-blur-sm">{{ totaux.coursEnLigne }} cours en ligne</span>
+          <span class="rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-medium text-indigo-100">{{ totaux.coursEnLigneRattaches }} rattachés</span>
+          <span class="rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-medium text-indigo-100">{{ totaux.coursEnLigneNonRattaches }} non rattachés</span>
         </div>
+      </div>
 
-        <div *ngIf="isStudent && budget" class="budget-banner">
-            <div>
-                <strong>Budget e-learning — {{ budget.anneeAcademique }}</strong>
-                <span>Alloué : {{ budget.montantAlloue | number:'1.0-0' }} FCFA</span>
-                <span>Utilisé : {{ budget.montantConsomme | number:'1.0-0' }} FCFA</span>
-            </div>
-            <strong class="budget-balance">Disponible : {{ budget.soldeDisponible | number:'1.0-0' }} FCFA</strong>
+      <div *ngIf="isStudent && budget" class="w-full max-w-sm rounded-2xl bg-white/10 p-5 backdrop-blur-sm">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-indigo-100">Budget e-learning — {{ budget.anneeAcademique }}</p>
+            <p class="mt-2 text-xl font-bold text-white">{{ budget.soldeDisponible | number:'1.0-0' }} FCFA <span class="text-xs font-medium text-indigo-100">disponibles</span></p>
+          </div>
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-white">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>
+          </div>
         </div>
-        <p *ngIf="budgetError" class="error-state">{{ budgetError }}</p>
-        <p *ngIf="actionError" class="error-state">{{ actionError }}</p>
-        <p *ngIf="successMessage" class="success-state">{{ successMessage }}</p>
-        <div class="totaux" *ngIf="totaux">
-            <span class="totaux-badge total" title="Cours en ligne au total">{{ totaux.coursEnLigne }} cours en ligne</span>
-            <span class="totaux-badge rattaches" title="Cours en ligne rattachés à un cours">{{ totaux.coursEnLigneRattaches }} rattachés</span>
-            <span class="totaux-badge non-rattaches" title="Cours en ligne sans rattachement">{{ totaux.coursEnLigneNonRattaches }} non rattachés</span>
+        <div class="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/20">
+          <div class="h-full rounded-full bg-white transition-all" [style.width.%]="budget.montantAlloue ? (budget.montantConsomme / budget.montantAlloue * 100) : 0"></div>
         </div>
-    </div>
-
-    <!-- Recherche -->
-    <div class="toolbar">
-        <div class="search-box">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input
-                class="search-input"
-                type="text"
-                placeholder="Rechercher un cours en ligne par titre…"
-                [(ngModel)]="searchQuery"
-                (input)="applySearch()"
-            />
-            <button *ngIf="searchQuery" class="search-clear" (click)="clearSearch()" title="Effacer la recherche">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
+        <div class="mt-2 flex justify-between text-[11px] text-indigo-100">
+          <span>Utilisé : {{ budget.montantConsomme | number:'1.0-0' }} FCFA</span>
+          <span>Alloué : {{ budget.montantAlloue | number:'1.0-0' }} FCFA</span>
         </div>
-        <span class="result-count" *ngIf="!loading && !error">{{ leafCount(filteredTree) }} résultat(s)</span>
+      </div>
     </div>
+  </section>
 
-    <!-- États : chargement / erreur / vide -->
-    <div *ngIf="loading" class="loading-state">Chargement de l'arborescence…</div>
+  <div class="space-y-2">
+    <div *ngIf="budgetError" class="rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-xs font-medium text-rose-700">{{ budgetError }}</div>
+    <div *ngIf="actionError" class="rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-xs font-medium text-rose-700">{{ actionError }}</div>
+    <div *ngIf="successMessage" class="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-xs font-medium text-emerald-700">{{ successMessage }}</div>
+  </div>
 
-    <div *ngIf="!loading && error" class="error-state">
-        <p>Impossible de charger l'arborescence e-learning.</p>
-        <button class="retry-btn" (click)="loadArborescence()">Réessayer</button>
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div class="flex flex-1 items-center gap-3 rounded-2xl border border-gray-100 bg-white px-4 py-2.5 shadow-sm focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-colors sm:max-w-xl">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#9CA3AF" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="flex-1 border-0 bg-transparent text-sm outline-none focus:ring-0" type="text" placeholder="Rechercher un cours en ligne par titre…" [(ngModel)]="searchQuery" (input)="applySearch()" />
+      <button *ngIf="searchQuery" type="button" class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors" (click)="clearSearch()" title="Effacer la recherche">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
+    <span class="text-xs font-medium text-gray-500" *ngIf="!loading && !error">{{ leafCount(filteredTree) }} résultat(s)</span>
+  </div>
 
-    <div *ngIf="!loading && !error && filteredTree.length === 0" class="empty-state">
-        Aucun cours en ligne ne correspond à « {{ searchQuery }} ».
+  <div *ngIf="loading" class="rounded-3xl border border-gray-100 bg-white px-6 py-16 text-center shadow-sm">
+    <div class="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-indigo-100 border-t-indigo-600"></div>
+    <p class="mt-4 text-sm text-gray-500">Chargement de l'arborescence…</p>
+  </div>
+
+  <div *ngIf="!loading && error" class="rounded-3xl border border-dashed border-gray-200 bg-white px-6 py-16 text-center">
+    <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-500">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
     </div>
+    <p class="text-sm text-gray-600">Impossible de charger l'arborescence e-learning.</p>
+    <button type="button" class="mt-4 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700 transition-colors" (click)="loadArborescence()">Réessayer</button>
+  </div>
 
-    <!-- Arbre pliable -->
-    <div class="tree-panel" *ngIf="!loading && !error && filteredTree.length > 0">
-        <ng-container *ngFor="let node of filteredTree">
-            <ng-container *ngTemplateOutlet="treeNode; context: { node: node }"></ng-container>
+  <div *ngIf="!loading && !error && filteredTree.length === 0" class="rounded-3xl border border-dashed border-gray-200 bg-white px-6 py-16 text-center">
+    <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md">
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+    </div>
+    <p class="text-sm text-gray-500">Aucun cours en ligne ne correspond à « {{ searchQuery }} ».</p>
+  </div>
+
+  <div class="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm" *ngIf="!loading && !error && filteredTree.length > 0">
+    <ng-container *ngFor="let node of filteredTree">
+      <ng-container *ngTemplateOutlet="treeNode; context: { node: node }"></ng-container>
+    </ng-container>
+  </div>
+
+  <ng-template #treeNode let-node="node">
+    <div>
+      <div class="group flex cursor-pointer items-center gap-3 border-b border-gray-50 px-4 py-3 transition-colors hover:bg-gray-50/70 sm:px-5"
+           [ngClass]="{ 'bg-indigo-50/40': node.type === 'annee' }"
+           (click)="onNodeClick(node)">
+        <span class="flex h-6 w-6 shrink-0 items-center justify-center text-gray-400" (click)="$event.stopPropagation(); toggle(node)">
+          <svg *ngIf="node.children?.length" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform .2s" [style.transform]="node.expanded ? 'rotate(90deg)' : 'none'"><polyline points="9 18 15 12 9 6"/></svg>
+          <svg *ngIf="!node.children?.length" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/></svg>
+        </span>
+
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+              [ngClass]="node.type === 'coursEnLigne' ? 'bg-indigo-50 text-indigo-600' : node.type === 'nonRattaches' ? 'bg-amber-50 text-amber-600' : 'bg-gray-50 text-gray-500'">
+          <svg *ngIf="node.type === 'annee'" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <svg *ngIf="node.type === 'parcours'" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          <svg *ngIf="node.type === 'niveau'" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 1.1 2.7 3 6 3s6-1.9 6-3v-5"/></svg>
+          <svg *ngIf="node.type === 'classe'" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <svg *ngIf="node.type === 'cours'" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <svg *ngIf="node.type === 'coursEnLigne'" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+          <svg *ngIf="node.type === 'nonRattaches'" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        </span>
+
+        <span class="min-w-0 flex-1 truncate text-sm font-medium text-gray-800" [title]="node.label">{{ node.label }}</span>
+
+        <span *ngIf="node.type === 'coursEnLigne'" class="hidden items-center gap-3 sm:flex">
+          <span class="text-[11px] text-gray-400">{{ node.nbCredits }} crédit(s)</span>
+          <strong class="text-xs font-semibold text-gray-900">{{ node.coutTotal | number:'1.0-0' }} FCFA</strong>
+        </span>
+
+        <span *ngIf="node.type === 'coursEnLigne' && node.selection?.statut === 'acces_ouvert' && isStudent"
+              class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-600">
+          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          Acquis
+        </span>
+
+        <button *ngIf="node.type === 'coursEnLigne' && !node.selection && isStudent"
+                type="button"
+                class="rounded-xl bg-indigo-600 px-3.5 py-1.5 text-[11px] font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+                [disabled]="selectionLoadingId !== null || !budget || (node.coutTotal || 0) > budget.soldeDisponible"
+                (click)="choisirCours(node, $event)">
+          {{ selectionLoadingId === node.id ? 'Validation…' : 'Choisir' }}
+        </button>
+
+        <span *ngIf="node.type === 'nonRattaches'" class="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-600">Admin</span>
+        <span *ngIf="node.virtuel" class="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-medium text-gray-500">Sans classe</span>
+        <span *ngIf="node.compteur > 0" class="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-medium text-gray-500">{{ node.compteur }} cours en ligne</span>
+      </div>
+
+      <div *ngIf="node.expanded && node.children?.length" class="ml-8 border-l border-gray-100">
+        <ng-container *ngFor="let child of node.children">
+          <ng-container *ngTemplateOutlet="treeNode; context: { node: child }"></ng-container>
         </ng-container>
+      </div>
     </div>
-
-    <!-- Template récursif d'un nœud de l'arbre -->
-    <ng-template #treeNode let-node="node">
-        <div class="tree-node">
-            <div
-                class="node-row"
-                [class.virtual]="node.virtuel"
-                [class.leaf]="node.type === 'coursEnLigne'"
-                (click)="onNodeClick(node)"
-            >
-                <span class="toggle" (click)="$event.stopPropagation(); toggle(node)">
-                    <svg *ngIf="node.children?.length" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" [class.rotated]="node.expanded"><polyline points="9 18 15 12 9 6"/></svg>
-                    <svg *ngIf="!node.children?.length" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/></svg>
-                </span>
-                <span class="icon">
-                    <svg *ngIf="node.type === 'annee'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                    <svg *ngIf="node.type === 'parcours'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                    <svg *ngIf="node.type === 'niveau'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 1.1 2.7 3 6 3s6-1.9 6-3v-5"/></svg>
-                    <svg *ngIf="node.type === 'classe'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    <svg *ngIf="node.type === 'cours'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                    <svg *ngIf="node.type === 'coursEnLigne'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
-                    <svg *ngIf="node.type === 'nonRattaches'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                </span>
-                <span class="label" [title]="node.label">{{ node.label }}</span>
-                <span *ngIf="node.type === 'coursEnLigne'" class="course-pricing">
-                    <span>{{ node.nbCredits }} crédit(s)</span>
-                    <strong>{{ node.coutTotal | number:'1.0-0' }} FCFA</strong>
-                </span>
-                <span *ngIf="isStudent && node.type === 'coursEnLigne' && node.selection?.statut === 'acces_ouvert'" class="acquired-badge">Acquis</span>
-                <button *ngIf="isStudent && node.type === 'coursEnLigne' && !node.selection"
-                    type="button" class="choose-course"
-                    [disabled]="selectionLoadingId !== null || !budget || (node.coutTotal || 0) > budget.soldeDisponible"
-                    (click)="choisirCours(node, $event)">
-                    {{ selectionLoadingId === node.id ? 'Validation…' : 'Choisir' }}
-                </button>
-                <span *ngIf="node.type === 'nonRattaches'" class="admin-badge" title="Rubrique réservée aux administrateurs">Admin</span>
-                <span *ngIf="node.virtuel" class="virtual-badge" title="Classe virtuelle">Sans classe</span>
-                <span class="counts">
-                    <span *ngIf="node.compteur > 0" class="mini-badge" [title]="node.compteur + ' cours en ligne'">
-                        {{ node.compteur }} <span class="mini-badge-unit">cours en ligne</span>
-                    </span>
-                </span>
-            </div>
-            <div *ngIf="node.expanded && node.children?.length" class="children">
-                <ng-container *ngFor="let child of node.children">
-                    <ng-container *ngTemplateOutlet="treeNode; context: { node: child }"></ng-container>
-                </ng-container>
-            </div>
-        </div>
-    </ng-template>
+  </ng-template>
 
 </div>

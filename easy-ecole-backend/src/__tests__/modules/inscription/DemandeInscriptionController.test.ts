@@ -225,7 +225,9 @@ describe('DemandeInscriptionController.soumettreDemande', () => {
       statutPipeline: null,
       update: jest.fn().mockResolvedValue(undefined),
     }
-    ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue(demande)
+    ;(DemandeInscription.findOne as jest.Mock)
+      .mockResolvedValueOnce(demande)
+      .mockResolvedValueOnce(null)
     ;(DossierInscription.findAll as jest.Mock).mockResolvedValue([
       { id: 20, titre: 'Extrait de naissance', etape: 'premiere' },
       { id: 21, titre: 'Bordereau de paiement', etape: 'premiere' },
@@ -235,7 +237,7 @@ describe('DemandeInscriptionController.soumettreDemande', () => {
       utilisateurRole: 'apprenant',
       utilisateurId: 7,
       params: { id: '10' },
-      body: {},
+      body: { matriculeEtudiant: 'ET-2026-001' },
     } as any)
     const res = mockResponse()
 
@@ -337,7 +339,7 @@ describe('DemandeInscriptionController.soumettreDemande', () => {
     expect(DemandeInscription.findOne).toHaveBeenCalled()
   })
 
-  it('submits without a student matricule and defers Hikvision enrollment', async () => {
+  it('requires a student matricule before submission so Hikvision enrollment can be queued immediately', async () => {
     const demande = {
       id: 10,
       utilisateurId: 7,
@@ -358,12 +360,12 @@ describe('DemandeInscriptionController.soumettreDemande', () => {
 
     await Ctrl.soumettreDemande(req, res)
 
-    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.status).toHaveBeenCalledWith(400)
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-      success: true,
-      hikvisionEnrollmentQueued: false,
-      hikvisionEnrollmentWarning: expect.stringContaining('validation du paiement'),
+      success: false,
+      message: expect.stringContaining('matricule étudiant'),
     }))
+    expect(demande.update).not.toHaveBeenCalled()
     expect(HikvisionEnrollmentService.enqueueStudent).not.toHaveBeenCalled()
     expect(DossierEtudiant.findOne).not.toHaveBeenCalled()
   })

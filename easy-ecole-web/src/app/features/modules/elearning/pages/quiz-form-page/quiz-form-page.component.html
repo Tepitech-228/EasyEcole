@@ -1,60 +1,115 @@
-<div class="quiz-form-page">
-  <h2 class="quiz-form-page__title">{{ isEdit ? 'Modifier le quiz' : 'Créer un nouveau quiz' }}</h2>
+<div class="mx-auto max-w-4xl space-y-5">
+  <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-600 px-6 py-7 text-white shadow-xl shadow-indigo-200 sm:px-8 sm:py-8">
+    <div class="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-white/10 blur-2xl"></div>
+    <div class="pointer-events-none absolute -bottom-20 left-1/3 h-48 w-48 rounded-full bg-fuchsia-400/20 blur-3xl"></div>
+    <div class="relative">
+      <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-indigo-200">Éditeur de quiz</p>
+      <h2 class="mt-2 text-2xl font-bold tracking-tight">{{ isEdit ? 'Modifier le quiz' : 'Créer un nouveau quiz' }}</h2>
+      <p class="mt-2 max-w-xl text-sm text-indigo-100">
+        Composez un quiz, définissez la durée et ajoutez vos questions à choix multiples.
+      </p>
+    </div>
+  </section>
 
-  <div class="card">
-    <form [formGroup]="quizForm" (ngSubmit)="onSubmit()">
-      <div class="quiz-form-page__row">
-        <div class="form-group">
-          <label class="form-label">Titre du quiz</label>
-          <input formControlName="titre" type="text" class="form-input" placeholder="Ex: Algèbre - Chapitre 1">
-          <div *ngIf="submitted && quizForm.get('titre')?.invalid" class="alert alert--danger">Le titre est requis</div>
+  <form [formGroup]="quizForm" (ngSubmit)="onSubmit()" class="space-y-5">
+    <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <h3 class="text-sm font-semibold text-slate-900">Informations générales</h3>
+
+      <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div class="sm:col-span-2">
+          <label class="mb-1.5 block text-xs font-medium text-slate-600" for="quiz-titre">Titre du quiz</label>
+          <input id="quiz-titre" formControlName="titre" type="text"
+            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20"
+            placeholder="Ex : Algèbre — Chapitre 1" />
+          <p *ngIf="submitted && quizForm.get('titre')?.invalid" class="mt-1 text-xs font-medium text-rose-600">Le titre est requis.</p>
         </div>
-        <div class="form-group">
-          <label class="form-label">Temps limite (minutes)</label>
-          <input formControlName="tempsLimite" type="number" min="1" class="form-input form-input--short">
+
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-slate-600" for="quiz-duree">Temps limite (minutes)</label>
+          <input id="quiz-duree" formControlName="tempsLimite" type="number" min="1"
+            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20" />
+        </div>
+
+        <div class="sm:col-span-3">
+          <label class="mb-1.5 block text-xs font-medium text-slate-600" for="quiz-cours">Cours</label>
+          <select id="quiz-cours" formControlName="coursId"
+            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20">
+            <option value="">Sélectionnez un cours</option>
+            <option *ngFor="let c of coursList" [value]="c.id">{{ c.code ? c.code + ' — ' : '' }}{{ c.titre }}</option>
+          </select>
+          <p *ngIf="submitted && quizForm.get('coursId')?.invalid" class="mt-1 text-xs font-medium text-rose-600">Le cours est requis.</p>
+        </div>
+
+        <div class="sm:col-span-3">
+          <label class="mb-1.5 block text-xs font-medium text-slate-600" for="quiz-description">Description</label>
+          <textarea id="quiz-description" formControlName="description" rows="3"
+            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20"
+            placeholder="Décrivez le contenu du quiz"></textarea>
+          <p *ngIf="submitted && quizForm.get('description')?.invalid" class="mt-1 text-xs font-medium text-rose-600">La description est requise.</p>
         </div>
       </div>
+    </section>
 
-      <div class="form-group">
-        <label class="form-label">Description</label>
-        <textarea formControlName="description" rows="3" class="form-textarea" placeholder="Décrivez le contenu du quiz"></textarea>
-        <div *ngIf="submitted && quizForm.get('description')?.invalid" class="alert alert--danger">La description est requise</div>
+    <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 class="text-sm font-semibold text-slate-900">Questions</h3>
+          <p class="text-xs text-slate-500">{{ questions.length }} question(s) — options séparées par des virgules.</p>
+        </div>
+        <button type="button" (click)="addQuestion()"
+          class="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700">
+          <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+          Ajouter une question
+        </button>
       </div>
 
-      <div class="quiz-form-page__section">
-        <div class="quiz-form-page__section-header">
-          <h3 class="quiz-form-page__section-title">Questions</h3>
-          <button type="button" (click)="addQuestion()" class="btn btn--primary">Ajouter une question</button>
-        </div>
+      <div formArrayName="questions" class="mt-4 space-y-4">
+        <div *ngFor="let question of questions.controls; let i = index" [formGroupName]="i"
+          class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+          <div class="mb-3 flex items-center justify-between">
+            <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-100 text-xs font-bold text-indigo-700">{{ i + 1 }}</span>
+            <button *ngIf="questions.length > 1" type="button" (click)="removeQuestion(i)"
+              class="rounded-lg border border-rose-200 px-2.5 py-1 text-[11px] font-semibold text-rose-600 transition hover:bg-rose-50">
+              Supprimer
+            </button>
+          </div>
 
-        <div formArrayName="questions">
-          <div *ngFor="let question of questions.controls; let i = index" [formGroupName]="i" class="question-card">
-            <div class="question-card__header">
-              <h4 class="question-card__title">Question {{ i + 1 }}</h4>
-              <button *ngIf="questions.length > 1" type="button" (click)="removeQuestion(i)" class="btn btn--outline btn--outline-danger">Supprimer</button>
+          <div class="space-y-3">
+            <div>
+              <label class="mb-1 block text-[11px] font-medium text-slate-600">Texte de la question</label>
+              <input formControlName="texte" type="text"
+                class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20"
+                placeholder="Ex : Quelle est la solution de 2x + 5 = 13 ?" />
             </div>
-            <div class="form-group">
-              <label class="form-label">Texte de la question</label>
-              <input formControlName="texte" type="text" class="form-input" placeholder="Ex: Quelle est la solution de 2x+5=13 ?">
+            <div>
+              <label class="mb-1 block text-[11px] font-medium text-slate-600">Options (séparées par des virgules)</label>
+              <input formControlName="options" type="text"
+                class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20"
+                placeholder="Ex : x=2, x=4, x=6, x=8" />
             </div>
-            <div class="form-group">
-              <label class="form-label">Options (séparées par des virgules)</label>
-              <input formControlName="options" type="text" class="form-input" placeholder="Ex: x=2, x=4, x=6, x=8">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Bonne réponse (index 0-3)</label>
-              <input formControlName="reponseCorrecte" type="number" min="0" max="3" class="form-input form-input--short">
+            <div class="sm:w-48">
+              <label class="mb-1 block text-[11px] font-medium text-slate-600">Index de la bonne réponse (0-3)</label>
+              <input formControlName="reponseCorrecte" type="number" min="0" max="3"
+                class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20" />
             </div>
           </div>
         </div>
-
-        <div *ngIf="submitted && questions.invalid" class="alert alert--danger">Ajoutez au moins une question valide</div>
       </div>
 
-      <div class="quiz-form-page__actions">
-        <button type="submit" class="btn btn--primary">{{ isEdit ? 'Enregistrer' : 'Créer le quiz' }}</button>
-        <button type="button" (click)="cancel()" class="btn btn--outline">Annuler</button>
-      </div>
-    </form>
-  </div>
+      <p *ngIf="submitted && questions.invalid" class="mt-3 text-xs font-medium text-rose-600">
+        Ajoutez au moins une question valide.
+      </p>
+    </section>
+
+    <div class="flex flex-wrap gap-3">
+      <button type="submit"
+        class="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700">
+        {{ isEdit ? 'Enregistrer' : 'Créer le quiz' }}
+      </button>
+      <button type="button" (click)="cancel()"
+        class="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
+        Annuler
+      </button>
+    </div>
+  </form>
 </div>

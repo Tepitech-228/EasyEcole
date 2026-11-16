@@ -24,6 +24,21 @@ jest.mock('../../../modules/auth/models/Apprenant', () => ({
   Apprenant: { findAll: jest.fn().mockResolvedValue([]) },
 }))
 
+jest.mock('../../../modules/inscription/models/CursusApprenant', () => ({
+  CursusApprenant: {
+    findAll: jest.fn(),
+    associations: { utilisateur: 'utilisateur' },
+  },
+}))
+
+jest.mock('../../../modules/parent/models/ParentEnfant', () => ({
+  ParentEnfant: { findAll: jest.fn() },
+}))
+
+jest.mock('../../../core/helpers/NotificationHelper', () => ({
+  NotificationHelper: { envoyerNotificationMultiples: jest.fn().mockResolvedValue(undefined) },
+}))
+
 jest.mock('../../../modules/auth/models/SiteUtilisateur', () => ({
   SiteUtilisateur: { findOne: jest.fn() },
 }))
@@ -59,6 +74,9 @@ const { Seance } = require('../../../modules/inscription/models/Seance')
 const { Cours } = require('../../../modules/inscription/models/Cours')
 const { Enseignant } = require('../../../modules/auth/models/Enseignant')
 const { Apprenant } = require('../../../modules/auth/models/Apprenant')
+const { CursusApprenant } = require('../../../modules/inscription/models/CursusApprenant')
+const { ParentEnfant } = require('../../../modules/parent/models/ParentEnfant')
+const { NotificationHelper } = require('../../../core/helpers/NotificationHelper')
 const { SiteUtilisateur } = require('../../../modules/auth/models/SiteUtilisateur')
 const { getSurveillantSiteId } = require('../../../core/helpers/SurveillantSiteScope')
 const { Pointage } = require('../../../modules/inscription/models/Pointage')
@@ -80,6 +98,29 @@ describe('SeanceController.getAllSeances', () => {
       where: expect.objectContaining({
         etablissementId: 3,
         publieeLe: expect.objectContaining({ [require('sequelize').Op.ne]: null }),
+      }),
+    }))
+  })
+  it('limits learner schedules to their enrolled courses and class groups', async () => {
+    ;(CursusApprenant.findAll as jest.Mock).mockResolvedValue([{
+      classeId: 31,
+      demandeInscription: { cours: [{ id: 7 }, { id: 8 }] },
+    }])
+    ;(Seance.findAll as jest.Mock).mockResolvedValue([])
+    const res = mockResponse()
+
+    await SeanceController.getAllSeances(mockRequest({
+      utilisateurRole: 'apprenant',
+      utilisateurId: 101,
+    } as any), res)
+
+    expect(Seance.findAll).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        coursId: { [require('sequelize').Op.in]: [7, 8] },
+        [require('sequelize').Op.or]: [
+          { classeGroupeId: null },
+          { classeGroupeId: { [require('sequelize').Op.in]: [31] } },
+        ],
       }),
     }))
   })
@@ -410,5 +451,56 @@ describe('SeanceController.publierEmploiDuTemps', () => {
       where: { etablissementId: 3 },
     }))
     expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('notifies the teacher, learners, and parents from the selected class group for a global course', async () => {
+    ;(Seance.findAll as jest.Mock).mockResolvedValue([{
+      id: 20,
+      classeGroupeId: 31,
+      cours: { id: 7, intitule: 'Mathématiques', classeId: null },
+      enseignant: { utilisateur: { id: 8, nom: 'Prof', prenoms: 'Test' } },
+    }])
+    ;(CursusApprenant.findAll as jest.Mock).mockResolvedValue([
+      { utilisateur: { id: 101, nom: 'Eleve', prenoms: 'Un' } },
+      { utilisateur: { id: 102, nom: 'Eleve', prenoms: 'Deux' } },
+    ])
+    ;(Apprenant.findAll as jest.Mock).mockResolvedValue([{ id: 51, utilisateurId: 101 }])
+    ;(ParentEnfant.findAll as jest.Mock).mockResolvedValue([{ parentUtilisateurId: 201 }])
+    const res = mockResponse()
+
+    await SeanceController.publierEmploiDuTemps(mockRequest({
+      utilisateurRole: 'admin',
+      etablissementId: 3,
+    } as any), res)
+
+    expect(CursusApprenant.findAll).toHaveBeenCalledWith(expect.objectContaining({
+      where: { classeId: 31 },
+    }))
+    expect(NotificationHelper.envoyerNotificationMultiples).toHaveBeenCalledWith(
+      [8],
+      'edt_publie',
+      'Emploi du temps publié',
+      expect.any(String),
+      false,
+    )
+    expect(NotificationHelper.envoyerNotificationMultiples).toHaveBeenCalledWith(
+      [101, 102],
+      'edt_publie',
+      'Emploi du temps publié',
+      expect.any(String),
+      false,
+    )
+    expect(NotificationHelper.envoyerNotificationMultiples).toHaveBeenCalledWith(
+      [201],
+      'edt_publie',
+      'Emploi du temps publié',
+      expect.any(String),
+      false,
+    )
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      enseignantsNotifies: 1,
+      etudiantsNotifies: 2,
+      parentsNotifies: 1,
+    }))
   })
 })

@@ -4,8 +4,7 @@ import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-cours-videos-page',
-  templateUrl: './cours-videos-page.component.html',
-  styleUrls: ['./cours-videos-page.component.scss']
+  templateUrl: './cours-videos-page.component.html'
 })
 export class CoursVideosPageComponent implements OnInit {
   coursList: any[] = [];
@@ -33,5 +32,9 @@ export class CoursVideosPageComponent implements OnInit {
 
   get totalModules(): number {
     return this.filteredList.reduce((sum, c) => sum + (c.modules?.length || 0), 0);
+  }
+
+  mediaUrl(cours: any): string {
+    return cours.image ? `${environment.API_BASE_URL}media/elearning/cours/${cours.image}` : '';
   }
 }

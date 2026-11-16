@@ -70,7 +70,7 @@ async function resolveUtilisateur(employeeNo: string, etablissementId: number): 
   // On retrouve le profil en comparant les matricules normalises du site.
   const normalized = normalizeHikvisionEmployeeNo(employeeNo);
   if (normalized) {
-    const [siteDossiers, sitePersonnels, siteEnseignants] = await Promise.all([
+    const [siteDossiers, sitePersonnels, siteEnseignants, siteAdministrateurs] = await Promise.all([
       DossierEtudiant.findAll({
         where: { etablissementId },
         attributes: ["matricule", "utilisateurId"]
@@ -87,12 +87,21 @@ async function resolveUtilisateur(employeeNo: string, etablissementId: number): 
       Enseignant.findAll({
         where: { utilisateurId: { [Op.in]: siteUserIds } },
         attributes: ["matricule", "utilisateurId"]
+      }),
+      Utilisateur.findAll({
+        where: { id: { [Op.in]: siteUserIds }, role: RolesUtilisateur.ADMIN },
+        attributes: ["identifiant", "id"]
       })
     ]);
     const normalizedIds = new Set<number>();
     for (const profil of [...siteDossiers, ...sitePersonnels, ...siteEnseignants]) {
       if (profil.matricule && normalizeHikvisionEmployeeNo(String(profil.matricule)) === normalized) {
         normalizedIds.add(Number(profil.utilisateurId));
+      }
+    }
+    for (const administrateur of siteAdministrateurs) {
+      if (administrateur.identifiant && normalizeHikvisionEmployeeNo(String(administrateur.identifiant)) === normalized) {
+        normalizedIds.add(Number(administrateur.id));
       }
     }
     if (normalizedIds.size === 1) return Utilisateur.findByPk(Array.from(normalizedIds)[0]);
@@ -120,7 +129,11 @@ async function getUtilisateurPhoto(
         })
       ]);
       const photo = dossier?.photo || apprenant?.photo;
-      return photo ? { photo, photoType: "apprenant" } : null;
+      return photo
+        ? { photo, photoType: "apprenant" }
+        : utilisateur.photoDeProfil
+          ? { photo: utilisateur.photoDeProfil, photoType: "profile" }
+          : null;
     }
 
     if (utilisateur.role === RolesUtilisateur.ENSEIGNANT) {
@@ -128,7 +141,11 @@ async function getUtilisateurPhoto(
         where: { utilisateurId: utilisateur.id },
         attributes: ["photo"]
       });
-      return enseignant?.photo ? { photo: enseignant.photo, photoType: "enseignant" } : null;
+      return enseignant?.photo
+        ? { photo: enseignant.photo, photoType: "enseignant" }
+        : utilisateur.photoDeProfil
+          ? { photo: utilisateur.photoDeProfil, photoType: "profile" }
+          : null;
     }
 
     return utilisateur.photoDeProfil

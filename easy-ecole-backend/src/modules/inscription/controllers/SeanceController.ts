@@ -61,6 +61,26 @@ export default class SeanceController {
         return Number.isSafeInteger(etablissementId) && etablissementId > 0 ? etablissementId : null;
     }
 
+    private static async scopeApprenantSeances(utilisateurId: number): Promise<any> {
+        const cursus = await CursusApprenant.findAll({
+            where: { utilisateurId },
+            include: [{ association: 'demandeInscription', include: [{ association: 'cours' }] }]
+        });
+        const coursIds = cursus.flatMap(cursusApprenant =>
+            (cursusApprenant as any).demandeInscription?.cours?.map((cours: any) => cours.id) ?? []
+        );
+        const classeIds = [...new Set(cursus
+            .map(cursusApprenant => Number(cursusApprenant.classeId))
+            .filter(classeId => Number.isSafeInteger(classeId) && classeId > 0))];
+        return {
+            coursId: { [Op.in]: coursIds },
+            [Op.or]: [
+                { classeGroupeId: null },
+                ...(classeIds.length > 0 ? [{ classeGroupeId: { [Op.in]: classeIds } }] : []),
+            ],
+        };
+    }
+
     private static filtrerSeancesDuSite(where: any, etablissementId: number | null): void {
         if (etablissementId !== null) where.etablissementId = etablissementId;
     }
@@ -95,18 +115,10 @@ export default class SeanceController {
             let seances: Seance[];
             const role = (req as any).utilisateurRole;
             if (role === RolesUtilisateur.APPRENANT) {
-                const cursus = await CursusApprenant.findAll({
-                    where: { utilisateurId: (req as any).utilisateurId },
-                    include: [{ association: 'demandeInscription', include: [{ association: 'cours' }] }]
-                });
-                const coursIds = cursus.flatMap(c =>
-                    (c as any).demandeInscription?.cours?.map((dc: any) => dc.id) ?? []
-                );
-                if (options.where) {
-                    (options.where as any).coursId = { [Op.in]: coursIds };
-                } else {
-                    options.where = { coursId: { [Op.in]: coursIds } } as any;
-                }
+                options.where = {
+                    ...(options.where as any ?? {}),
+                    ...await SeanceController.scopeApprenantSeances(Number((req as any).utilisateurId)),
+                };
             } else if (role === RolesUtilisateur.ENSEIGNANT) {
                 const enseignant = await Enseignant.findOne({ where: { utilisateurId: (req as any).utilisateurId } });
                 if (enseignant) {
@@ -152,6 +164,12 @@ export default class SeanceController {
             } else {
                 (options.where as any).enseignantId = -1;
             }
+        }
+        else if ((req as any).utilisateurRole === RolesUtilisateur.APPRENANT) {
+            options.where = {
+                ...(options.where as any),
+                ...await SeanceController.scopeApprenantSeances(Number((req as any).utilisateurId)),
+            } as any;
         }
 
         try {
@@ -210,14 +228,10 @@ export default class SeanceController {
 
             const role = (req as any).utilisateurRole;
             if (role === RolesUtilisateur.APPRENANT) {
-                const cursus = await CursusApprenant.findAll({
-                    where: { utilisateurId: (req as any).utilisateurId },
-                    include: [{ association: 'demandeInscription', include: [{ association: 'cours' }] }]
-                });
-                const coursIds = cursus.flatMap(c =>
-                    (c as any).demandeInscription?.cours?.map((dc: any) => dc.id) ?? []
-                );
-                (options.where as any).coursId = { [Op.in]: coursIds };
+                options.where = {
+                    ...(options.where as any),
+                    ...await SeanceController.scopeApprenantSeances(Number((req as any).utilisateurId)),
+                } as any;
             } else if (role === RolesUtilisateur.ENSEIGNANT) {
                 const enseignant = await Enseignant.findOne({ where: { utilisateurId: (req as any).utilisateurId } });
                 if (enseignant) {
@@ -826,7 +840,7 @@ export default class SeanceController {
         const userIds = new Set<number>()
         const enseignantUtilisateurId = Number((full as any)?.enseignant?.utilisateur?.id)
         if (enseignantUtilisateurId) userIds.add(enseignantUtilisateurId)
-        const classeId = Number((full as any)?.cours?.classeId)
+        const classeId = Number(full?.classeGroupeId ?? (full as any)?.cours?.classeId)
         if (classeId) {
             const cursus = await CursusApprenant.findAll({ where: { classeId }, attributes: ['utilisateurId'] })
             for (const item of cursus) {
@@ -937,9 +951,10 @@ export default class SeanceController {
                 }
 
                 const cours = (seance as any).cours;
-                if (cours?.classeId) {
+                const classeId = Number(seance.classeGroupeId ?? cours?.classeId);
+                if (classeId) {
                     const cursusList = await CursusApprenant.findAll({
-                        where: { classeId: cours.classeId },
+                        where: { classeId },
                         include: [{ association: CursusApprenant.associations.utilisateur }]
                     });
                     for (const cursus of cursusList) {

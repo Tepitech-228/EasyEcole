@@ -14,6 +14,7 @@ export class CahierDeTexte {
   declare parcours?: Parcours
   declare niveauEtudeId?: string
   declare niveauEtude?: NiveauEtude
+  declare classeOption?: 'JOUR' | 'SOIR' | 'EN_LIGNE' | null
   declare etablissementId?: string
   declare enseignantId?: string
   declare enseignant?: Enseignant

@@ -4,8 +4,7 @@ import { QuizService } from 'src/app/data/modules/elearning/services/quiz.servic
 
 @Component({
   selector: 'app-quiz-do-page',
-  templateUrl: './quiz-do-page.component.html',
-  styleUrls: ['./quiz-do-page.component.scss']
+  templateUrl: './quiz-do-page.component.html'
 })
 export class QuizDoPageComponent implements OnInit, OnDestroy {
   quiz: any = null;

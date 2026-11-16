@@ -1,6 +1,7 @@
 import { Dialect, QueryTypes, Sequelize } from "sequelize";
 import { ensureUniqueIndexes, ensurePerformanceIndexes } from "./ensureUniqueIndexes";
 import { ensureBordereauFinance } from "./ensureBordereauFinance";
+import { ensureCahierClasseOption } from "./ensureCahierClasseOption";
 import { ensureReferenceData } from "./ensureReferenceData";
 const env = process.env.NODE_ENV || 'development';
 
@@ -326,6 +327,12 @@ export class DatabaseConnection {
                 await ensureBordereauFinance(this._sequelize);
             } catch (mixteError: any) {
                 console.warn('Warning (ensureBordereauFinance):', mixteError?.message || mixteError);
+            }
+
+            try {
+                await ensureCahierClasseOption(this._sequelize);
+            } catch (cahierSchemaError: any) {
+                console.error('Erreur (ensureCahierClasseOption):', cahierSchemaError?.message || cahierSchemaError);
             }
 
             // --- Seed automatique du socle autorisations (rôles, permissions,

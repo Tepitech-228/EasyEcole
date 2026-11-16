@@ -117,6 +117,9 @@ const limiter = rateLimit({
 })
 app.use(limiter)
 
+morgan.token('url', (req) =>
+    String(req.originalUrl || req.url || '').replace(/([?&]token=)[^&]*/gi, '$1[REDACTED]')
+)
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'))
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: false, limit: '10mb' }))
@@ -127,6 +130,7 @@ app.use('/media/photos/enseignants', express.static(path.resolve('public', 'auth
 app.use('/media/profiles', express.static(path.resolve('public', 'auth', 'profiles')))
 app.use('/media/scolarite/documents', Authenticate, express.static(path.resolve('public', 'scolarite', 'documents')))
 app.use('/media/inscription/bordereaux', express.static(path.resolve('public', 'inscription', 'bordereaux')))
+app.use('/media/elearning/cours', express.static(path.resolve('public', 'elearning', 'cours')))
 
 app.get('/logo-esa.png', (req, res) => {
   const filePath = path.resolve('public', 'logo-esa.png')
@@ -411,7 +415,12 @@ server.on("listening", async () => {
             console.error('[Hikvision] Traitement de la file des enrôlements impossible:', error);
         });
     };
-    runHikvisionEnrollments();
+    void HikvisionEnrollmentService.enqueueAdministratorsForActiveTerminals()
+        .then(runHikvisionEnrollments)
+        .catch(error => {
+            console.error('[Hikvision] Synchronisation initiale des administrateurs impossible:', error);
+            runHikvisionEnrollments();
+        });
     setInterval(runHikvisionEnrollments, 60_000);
     // Seed permissions
     await PermissionSeed.init();

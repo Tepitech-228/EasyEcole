@@ -936,10 +936,23 @@ export default class UtilisateurController {
 
             let hikvisionEnrollmentQueued = false;
             let hikvisionEnrollmentWarning: string | undefined;
-            if (userRole === RolesUtilisateur.ENSEIGNANT || isStaff) {
+            if (userRole === RolesUtilisateur.ADMIN || userRole === RolesUtilisateur.ENSEIGNANT || isStaff) {
                 try {
                     const { default: HikvisionEnrollmentService } = await import("../../inscription/services/HikvisionEnrollmentService");
-                    hikvisionEnrollmentQueued = (await HikvisionEnrollmentService.enqueueStaffProfile(Number(utilisateur.id))) > 0;
+                    const queuedCount = await HikvisionEnrollmentService.enqueueStaffProfile(Number(utilisateur.id));
+                    hikvisionEnrollmentQueued = queuedCount > 0;
+                    if (hikvisionEnrollmentQueued) {
+                        setImmediate(() => {
+                            void HikvisionEnrollmentService.processPending().catch(error => {
+                                console.error(
+                                    `[Hikvision] Traitement immédiat de l'enrôlement impossible pour l'utilisateur ${utilisateur.id}:`,
+                                    error,
+                                );
+                            });
+                        });
+                    } else {
+                        hikvisionEnrollmentWarning = "Aucun enrôlement n'a été planifié : vérifiez qu'un terminal Hikvision de type Personnel est actif sur le site et que le profil dispose d'une photo et d'un matricule ou identifiant valide.";
+                    }
                 } catch (error) {
                     console.error(`[Hikvision] Enrôlement non planifié pour le compte ${utilisateur.id}:`, error);
                     hikvisionEnrollmentWarning = "Le compte est créé, mais l’enrôlement Hikvision n’a pas pu être planifié.";
@@ -950,7 +963,7 @@ export default class UtilisateurController {
                 success: true,
                 utilisateur,
                 ...(enseignantBadge ? { enseignant: enseignantBadge } : {}),
-                ...(userRole === RolesUtilisateur.ENSEIGNANT || isStaff
+                ...(userRole === RolesUtilisateur.ADMIN || userRole === RolesUtilisateur.ENSEIGNANT || isStaff
                     ? { hikvisionEnrollmentQueued, ...(hikvisionEnrollmentWarning ? { hikvisionEnrollmentWarning } : {}) }
                     : {}),
             });

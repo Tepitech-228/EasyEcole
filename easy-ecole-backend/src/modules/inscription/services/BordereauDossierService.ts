@@ -951,9 +951,16 @@ export class BordereauDossierService {
         const parcoursFinal = getParcoursFinal(demande.parcoursChoisis)
         const parcoursData = parcoursFinal?.parcours
 
-        const coursDuParcours = parcoursFinal?.parcoursId
-            ? await Cours.findAll({ where: { parcoursId: parcoursFinal.parcoursId }, include: [Cours.associations.classe] })
-            : []
+        if (!parcoursFinal?.parcoursId) {
+            throw new Error("Aucun parcours final n'est défini pour cette demande")
+        }
+        const coursDuParcours = await Cours.findAll({
+            where: { parcoursId: parcoursFinal.parcoursId },
+            include: [Cours.associations.classe],
+        })
+        if (coursDuParcours.length === 0) {
+            throw new Error(`Aucune UE active n'est configurée pour le parcours "${parcoursData?.titre || parcoursFinal.parcoursId}". Importez les UE avant de valider l'inscription.`)
+        }
         const classeDerivee = coursDuParcours.find(c => c.classe?.id)?.classe ?? null
         // Option A (comité) : l'absence de classe ne bloque PAS la validation.
         // L'étudiant est validé (matricule définitif, dossier actif) avec une classe
