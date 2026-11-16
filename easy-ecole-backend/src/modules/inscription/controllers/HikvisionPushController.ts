@@ -209,6 +209,17 @@ async function traiterEvenement(terminal: PointageTerminal, eventId: number): Pr
       // Refus (paiement non à jour, compte non autorisé, déjà traité…) : on
       // notifie tout de même l’application pour qu’elle annonce le refus.
       if (recorded.mode === "refuse") {
+        const motifRefus = recorded.motifRefus || null;
+        const motifNormalise = motifRefus?.replace(/[’‘]/g, "'").toLowerCase() || "";
+        const nomComplet = [utilisateur.prenoms, utilisateur.nom]
+          .filter((partie): partie is string => Boolean(partie?.trim()))
+          .join(" ")
+          .trim();
+        const messageRefus = utilisateur.role === RolesUtilisateur.APPRENANT &&
+          motifNormalise.includes("aucun dossier d'inscription actif") &&
+          nomComplet
+          ? `Votre dossier est en cours de traitement, ${nomComplet}.`
+          : motifRefus;
         const broadcast = PointageRealtimeService.emitTerminalAttendance({
           utilisateurId: Number(utilisateur.id),
           nom: utilisateur.nom,
@@ -219,7 +230,7 @@ async function traiterEvenement(terminal: PointageTerminal, eventId: number): Pr
           time: pendingEvent.heure,
           mode: "refuse",
           etablissementId: Number(terminal.etablissementId),
-          motifRefus: recorded.motifRefus,
+          motifRefus: messageRefus,
           enseignantNonProgramme: recorded.enseignantNonProgramme,
           situationFinanciere: recorded.situationFinanciere,
           ...photo

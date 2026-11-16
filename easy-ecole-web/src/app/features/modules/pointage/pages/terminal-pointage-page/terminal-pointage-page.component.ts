@@ -505,6 +505,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       this.scanSuccess = ''
       const motifRefus = (event.motifRefus || '').replace(/[’‘]/g, "'").toLowerCase()
       const dossierEnTraitement = motifRefus.includes("aucun dossier d'inscription actif")
+        || motifRefus.includes('votre dossier est en cours de traitement')
       this.terminalRefusalInProgress = dossierEnTraitement
       const messageRefus = dossierEnTraitement && this.lastAttendanceName
         ? `Votre dossier est en cours de traitement, ${this.lastAttendanceName}.`
