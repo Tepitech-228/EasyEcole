@@ -1134,7 +1134,7 @@
       width: 300px;
       height: 300px;
       border: 3px solid #fff;
-      border-radius: 50%;
+      border-radius: 18px;
       box-shadow: 0 0 0 2px #cbd5e1;
     }
 
@@ -1307,6 +1307,17 @@
     .pointage-departure-actions { flex-direction: column-reverse; }
     .pointage-departure-actions .pointage-btn { width: 100%; }
   }
+}
+
+.pointage-state-card--error .pointage-success-person {
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+
+.pointage-state-card--error .pointage-success-details {
+  align-items: center;
+  text-align: center;
 }
 
 @media print {
