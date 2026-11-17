@@ -1066,7 +1066,7 @@
 
     &.is-paid { border-color: #86efac; background: #f0fdf7; }
     &.is-partial { border-color: #fbbf24; background: #fffbeb; }
-    &.is-unpaid { border-color: #fca5a5; background: #fff5f5; }
+    &.is-unpaid { border-color: #bc1907; background: #fff5f5; }
   }
 }
 
@@ -1131,10 +1131,10 @@
     .state-desc strong { color: #172b4d; font-weight: 700; }
 
     .pointage-success-photo {
-      width: 240px;
-      height: 240px;
+      width: 300px;
+      height: 300px;
       border: 3px solid #fff;
-      border-radius: 12px;
+      border-radius: 50%;
       box-shadow: 0 0 0 2px #cbd5e1;
     }
 
