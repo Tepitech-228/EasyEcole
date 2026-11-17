@@ -424,6 +424,14 @@ server.on("listening", async () => {
             console.error('[Hikvision] Synchronisation initiale des comptes sur les pointeuses impossible:', error);
             runHikvisionEnrollments();
         });
+    const reconcileStudentEnrollments = (): void => {
+        void HikvisionEnrollmentService.enqueueStudentsForActiveTerminals(true)
+            .then(runHikvisionEnrollments)
+            .catch(error => {
+                console.error('[Hikvision] Vérification périodique des enrôlements étudiants impossible:', error);
+            });
+    };
+    setInterval(reconcileStudentEnrollments, 5 * 60 * 1000);
     setInterval(runHikvisionEnrollments, 60_000);
     // Seed permissions
     await PermissionSeed.init();

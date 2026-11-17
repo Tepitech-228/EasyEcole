@@ -11,7 +11,7 @@ jest.mock("../../../modules/inscription/models/HikvisionEnrollment", () => ({
   }
 }));
 jest.mock("../../../modules/inscription/models/DossierEtudiant", () => ({
-  DossierEtudiant: { findAll: jest.fn(), associations: { utilisateur: "utilisateur" } }
+  DossierEtudiant: { findAll: jest.fn(), findOne: jest.fn(), associations: { utilisateur: "utilisateur" } }
 }));
 jest.mock("../../../modules/inscription/models/DemandeInscription", () => ({
   DemandeInscription: { findAll: jest.fn() }
@@ -256,6 +256,69 @@ describe("HikvisionEnrollmentService", () => {
       where: { terminalId: 8, utilisateurId: 42 },
       defaults: expect.objectContaining({ employeeNo: "ESA042" })
     }));
+  });
+
+  it("periodically rechecks submitted students without restarting completed enrollments", async () => {
+    const terminal = { id: 8, etablissementId: 3, population: "etudiant" as const };
+    PointageTerminal.findAll.mockResolvedValue([terminal]);
+    DossierEtudiant.findAll.mockResolvedValue([]);
+    DemandeInscription.findAll
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ utilisateurId: 42, matriculeEtudiant: "ESA042" }]);
+    const update = jest.fn();
+    HikvisionEnrollment.findOrCreate.mockResolvedValue([{
+      statut: "termine",
+      employeeNo: "ESA042",
+      update
+    }, false]);
+
+    await HikvisionEnrollmentService.enqueueStudentsForActiveTerminals(true);
+
+    expect(HikvisionEnrollment.findOrCreate).toHaveBeenCalledWith(expect.objectContaining({
+      where: { terminalId: 8, utilisateurId: 42 }
+    }));
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("uses the student dossier photo to enroll legacy applicants", async () => {
+    const enrollment = {
+      id: 21,
+      terminalId: 8,
+      utilisateurId: 42,
+      etablissementId: 3,
+      employeeNo: "ESA042",
+      tentatives: 0,
+      update: jest.fn().mockResolvedValue(undefined)
+    };
+    const terminal = { id: 8, etablissementId: 3 };
+    HikvisionEnrollment.update
+      .mockResolvedValueOnce([0])
+      .mockResolvedValueOnce([1]);
+    HikvisionEnrollment.findAll.mockResolvedValue([enrollment]);
+    PointageTerminal.findOne.mockResolvedValue(terminal);
+    Utilisateur.findByPk.mockResolvedValue({
+      id: 42,
+      role: "apprenant",
+      nom: "Doe",
+      prenoms: "Jane",
+      apprenant: { photo: null },
+      photoDeProfil: null
+    });
+    DossierEtudiant.findOne.mockResolvedValue({ photo: "legacy-student.jpg" });
+    HikvisionIsapiService.enrollPerson.mockResolvedValue(undefined);
+
+    await HikvisionEnrollmentService.processPending();
+
+    expect(HikvisionIsapiService.enrollPerson).toHaveBeenCalledWith(terminal, {
+      employeeNo: "ESA042",
+      name: "Jane Doe",
+      photoFilename: "legacy-student.jpg",
+      photoCategory: "apprenant"
+    });
+    expect(enrollment.update).toHaveBeenCalledWith({
+      statut: "termine",
+      derniereErreur: null
+    });
   });
 
   it("uses the staff profile photo and site assignment to queue biometric enrollment", async () => {

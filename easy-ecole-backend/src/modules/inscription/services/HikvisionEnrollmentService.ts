@@ -12,6 +12,7 @@ import HikvisionIsapiService from "./HikvisionIsapiService";
 
 export default class HikvisionEnrollmentService {
   private static running = false;
+  private static studentReconciliationRunning = false;
   private static readonly DATABASE_RETRY_ATTEMPTS = 3;
 
   private static async withDatabaseRetry<T>(operation: () => Promise<T>): Promise<T> {
@@ -76,7 +77,8 @@ export default class HikvisionEnrollmentService {
   }
 
   static async enqueueEligibleProfilesForTerminal(
-    terminal: Pick<PointageTerminal, "id" | "etablissementId" | "population">
+    terminal: Pick<PointageTerminal, "id" | "etablissementId" | "population">,
+    onlyMissing = false
   ): Promise<void> {
     if (terminal.population === "etudiant") {
       const dossiers = await DossierEtudiant.findAll({
@@ -97,7 +99,8 @@ export default class HikvisionEnrollmentService {
         await HikvisionEnrollmentService.enqueueForTerminal(
           terminal,
           Number(dossier.utilisateurId),
-          dossier.matricule
+          dossier.matricule,
+          onlyMissing
         );
       }
 
@@ -119,7 +122,8 @@ export default class HikvisionEnrollmentService {
         await HikvisionEnrollmentService.enqueueForTerminal(
           terminal,
           Number(demande.utilisateurId),
-          demande.matriculeEtudiant
+          demande.matriculeEtudiant,
+          onlyMissing
         );
       }
       return;
@@ -211,13 +215,19 @@ export default class HikvisionEnrollmentService {
     }
   }
 
-  static async enqueueStudentsForActiveTerminals(): Promise<void> {
-    const terminals = await PointageTerminal.findAll({
-      where: { protocol: "hikvision_isapi", population: "etudiant", actif: true },
-      attributes: ["id", "etablissementId", "population"]
-    });
-    for (const terminal of terminals) {
-      await HikvisionEnrollmentService.enqueueEligibleProfilesForTerminal(terminal);
+  static async enqueueStudentsForActiveTerminals(onlyMissing = false): Promise<void> {
+    if (HikvisionEnrollmentService.studentReconciliationRunning) return;
+    HikvisionEnrollmentService.studentReconciliationRunning = true;
+    try {
+      const terminals = await PointageTerminal.findAll({
+        where: { protocol: "hikvision_isapi", population: "etudiant", actif: true },
+        attributes: ["id", "etablissementId", "population"]
+      });
+      for (const terminal of terminals) {
+        await HikvisionEnrollmentService.enqueueEligibleProfilesForTerminal(terminal, onlyMissing);
+      }
+    } finally {
+      HikvisionEnrollmentService.studentReconciliationRunning = false;
     }
   }
 
@@ -302,7 +312,8 @@ export default class HikvisionEnrollmentService {
   private static async enqueueForTerminal(
     terminal: Pick<PointageTerminal, "id" | "etablissementId">,
     utilisateurId: number,
-    employeeNo: string
+    employeeNo: string,
+    onlyMissing = false
   ): Promise<void> {
     const [enrollment, created] = await HikvisionEnrollment.findOrCreate({
       where: { terminalId: terminal.id, utilisateurId },
@@ -317,7 +328,10 @@ export default class HikvisionEnrollmentService {
         derniereErreur: null
       }
     });
-    if (!created && (enrollment.statut === "termine" || enrollment.employeeNo !== employeeNo)) {
+    if (!created && (
+      enrollment.employeeNo !== employeeNo ||
+      (!onlyMissing && enrollment.statut === "termine")
+    )) {
       await enrollment.update({
         employeeNo,
         statut: "en_attente",
@@ -492,7 +506,14 @@ export default class HikvisionEnrollmentService {
       let photoFilename: string | null = null;
       let photoCategory: "apprenant" | "enseignant" | "personnel" = "apprenant";
       if (utilisateur.role === RolesUtilisateur.APPRENANT) {
-        photoFilename = utilisateur.apprenant?.photo || null;
+        const dossier = await DossierEtudiant.findOne({
+          where: {
+            utilisateurId: enrollment.utilisateurId,
+            etablissementId: enrollment.etablissementId
+          },
+          attributes: ["photo"]
+        });
+        photoFilename = dossier?.photo || utilisateur.apprenant?.photo || utilisateur.photoDeProfil || null;
       } else if (utilisateur.role === RolesUtilisateur.ENSEIGNANT) {
         const enseignant = await Enseignant.findOne({ where: { utilisateurId: utilisateur.id } });
         const affectation = await SiteUtilisateur.findOne({
