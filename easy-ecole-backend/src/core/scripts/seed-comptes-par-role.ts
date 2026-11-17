@@ -243,9 +243,14 @@ export async function seedComptesParRole(seqIn?: any): Promise<void> {
 
     console.log('\n═══ 4/6 Données de référence (dropdowns) ═══');
 
-    // 4a. Niveaux d'études (Licence 1-3, Master 1-2)
+    // 4a. Niveaux d'études
     console.log('  → ins_niveaux_etudes');
-    const niveaux = ['Licence 1', 'Licence 2', 'Licence 3', 'Master 1', 'Master 2'];
+    const niveaux = [
+        'Licence 1', 'Licence 2', 'Licence 3',
+        'Master 1', 'Master 2',
+        'BTS 1', 'BTS 2',
+        'MBA 1', 'MBA 2',
+    ];
     for (const libelle of niveaux) {
         await seq.query(
             "INSERT INTO `ins_niveaux_etudes` (`libelle`, `createdAt`, `updatedAt`) " +

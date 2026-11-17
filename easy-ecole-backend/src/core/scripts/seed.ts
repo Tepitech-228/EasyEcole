@@ -549,6 +549,10 @@ export async function seed() {
     const nivIns3 = await InsNiv.create({ libelle: 'Licence 3', description: 'Troisième année de Licence' });
     const nivIns4 = await InsNiv.create({ libelle: 'Master 1', description: 'Première année de Master' });
     const nivIns5 = await InsNiv.create({ libelle: 'Master 2', description: 'Deuxième année de Master' });
+    await InsNiv.create({ libelle: 'BTS 1', description: 'Première année de BTS' });
+    await InsNiv.create({ libelle: 'BTS 2', description: 'Deuxième année de BTS' });
+    await InsNiv.create({ libelle: 'MBA 1', description: 'Première année de MBA' });
+    await InsNiv.create({ libelle: 'MBA 2', description: 'Deuxième année de MBA' });
     console.log('  ✓ Niveaux d\'étude (Inscription)');
 
     const parcIns1 = await InsPar.create({ titre: 'Génie logiciel', description: 'Conception et développement de logiciels et applications', niveauEtudeId: nivIns1.id, type: 'LICENCE' });
