@@ -24,6 +24,8 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
   selectedBordereau?: Bordereau
   selectedFile?: File
   pdfBordereau?: Bordereau
+  imageRotation = 0
+  imageZoom = 1
 
   searchTerm = ''
   selectedStatus = ''
@@ -166,12 +168,27 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
 
   openPdfModal(bordereau: Bordereau): void {
     this.pdfBordereau = bordereau
+    this.reinitialiserImagePreview()
     this.showPdfModal = true
   }
 
   closePdfModal(): void {
     this.showPdfModal = false
     this.pdfBordereau = undefined
+    this.reinitialiserImagePreview()
+  }
+
+  tournerImagePreview(direction: -1 | 1): void {
+    this.imageRotation = (this.imageRotation + direction * 90 + 360) % 360
+  }
+
+  zoomerImagePreview(direction: -1 | 1): void {
+    this.imageZoom = Math.min(3, Math.max(0.5, this.imageZoom + direction * 0.25))
+  }
+
+  reinitialiserImagePreview(): void {
+    this.imageRotation = 0
+    this.imageZoom = 1
   }
 
   // Modals

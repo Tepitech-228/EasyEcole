@@ -154,8 +154,27 @@
 <app-custom-modal title="Bordereau" subtitle="Aperçu du fichier" (onCloseModal)="closePdfModal()" [center]="true" [showModal]="showPdfModal" [size]="'full'">
     <div class="w-full pdf-preview-shell">
         <div *ngIf="pdfBordereau && pdfBordereau.fichier" class="flex flex-col items-center">
+            <div *ngIf="isImageFile(pdfBordereau.fichier)" class="document-preview-controls" role="toolbar" aria-label="Outils de visualisation de la photo">
+                <button type="button" class="document-preview-control" (click)="tournerImagePreview(-1)" aria-label="Tourner à gauche" title="Tourner à gauche">
+                    <span class="material-symbols-outlined" aria-hidden="true">rotate_left</span>
+                </button>
+                <button type="button" class="document-preview-control" (click)="tournerImagePreview(1)" aria-label="Tourner à droite" title="Tourner à droite">
+                    <span class="material-symbols-outlined" aria-hidden="true">rotate_right</span>
+                </button>
+                <button type="button" class="document-preview-control" (click)="zoomerImagePreview(-1)" [disabled]="imageZoom <= 0.5" aria-label="Dézoomer" title="Dézoomer">
+                    <span class="material-symbols-outlined" aria-hidden="true">zoom_out</span>
+                </button>
+                <span class="document-preview-zoom" aria-live="polite">{{ imageZoom * 100 }}%</span>
+                <button type="button" class="document-preview-control" (click)="zoomerImagePreview(1)" [disabled]="imageZoom >= 3" aria-label="Zoomer" title="Zoomer">
+                    <span class="material-symbols-outlined" aria-hidden="true">zoom_in</span>
+                </button>
+                <button type="button" class="document-preview-control" (click)="reinitialiserImagePreview()" aria-label="Réinitialiser la photo">
+                    Réinitialiser
+                </button>
+            </div>
             <div *ngIf="isImageFile(pdfBordereau.fichier)" class="mb-4">
-                <img [src]="getBordereauUrl(pdfBordereau)" alt="Bordereau" class="pdf-preview-image">
+                <img [src]="getBordereauUrl(pdfBordereau)" alt="Bordereau" class="pdf-preview-image"
+                    [style.transform]="'rotate(' + imageRotation + 'deg) scale(' + imageZoom + ')'">
             </div>
             <div *ngIf="!isImageFile(pdfBordereau.fichier)" class="w-full">
                 <iframe [src]="getBordereauUrl(pdfBordereau)" title="Bordereau de paiement" class="pdf-preview-frame"></iframe>

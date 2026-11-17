@@ -223,6 +223,26 @@
                     <span class="material-symbols-outlined text-gray-500 text-sm">document_scanner</span>
                     <span class="text-xs font-semibold text-gray-600 uppercase tracking-wider">Bordereau soumis</span>
                 </div>
+                <div *ngIf="pdfBordereau?.fichier && isImageFile(pdfBordereau!.fichier!)"
+                    class="document-preview-controls" role="toolbar" aria-label="Outils de visualisation de la photo">
+                    <button type="button" class="document-preview-control" (click)="tournerImagePreview(-1)" aria-label="Tourner à gauche">
+                        <span class="material-symbols-outlined" aria-hidden="true">rotate_left</span>
+                        Tourner
+                    </button>
+                    <button type="button" class="document-preview-control" (click)="tournerImagePreview(1)" aria-label="Tourner à droite">
+                        <span class="material-symbols-outlined" aria-hidden="true">rotate_right</span>
+                    </button>
+                    <button type="button" class="document-preview-control" (click)="zoomerImagePreview(-1)" [disabled]="pdfImageZoom <= 0.5" aria-label="Dézoomer">
+                        <span class="material-symbols-outlined" aria-hidden="true">zoom_out</span>
+                    </button>
+                    <span class="document-preview-zoom" aria-live="polite">{{ pdfImageZoom * 100 }}%</span>
+                    <button type="button" class="document-preview-control" (click)="zoomerImagePreview(1)" [disabled]="pdfImageZoom >= 3" aria-label="Zoomer">
+                        <span class="material-symbols-outlined" aria-hidden="true">zoom_in</span>
+                    </button>
+                    <button type="button" class="document-preview-control" (click)="reinitialiserImagePreview()" aria-label="Réinitialiser la photo">
+                        Réinitialiser
+                    </button>
+                </div>
                 <div class="flex-1 min-h-0 pdf-preview-shell">
                     <div *ngIf="pdfPreviewLoading" class="flex h-full items-center justify-center text-gray-500">
                         Chargement du bordereau...
@@ -233,6 +253,7 @@
                     <img *ngIf="!pdfPreviewLoading && !pdfPreviewError && pdfPreviewUrl && isImageFile(pdfBordereau!.fichier!)"
                         [src]="pdfPreviewUrl"
                         class="pdf-preview-image"
+                        [style.transform]="'rotate(' + pdfImageRotation + 'deg) scale(' + pdfImageZoom + ')'"
                         alt="Bordereau">
                     <iframe *ngIf="!pdfPreviewLoading && !pdfPreviewError && pdfPreviewUrl && !isImageFile(pdfBordereau!.fichier!)"
                         [src]="pdfPreviewUrl"

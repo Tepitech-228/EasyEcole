@@ -48,6 +48,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
 
   selectedBordereau?: any
   imageJustificatifRotation = 0
+  imageJustificatifZoom = 1
   showSaisieModal = false
   showPreviewModal = false
   showMatriculeConfirmationModal = false
@@ -489,6 +490,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   private initialiserSaisieModal(bordereau: Bordereau): void {
     this.selectedBordereau = bordereau
     this.imageJustificatifRotation = 0
+    this.imageJustificatifZoom = 1
     this.selectedBordereauSafeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.getDocUrl(bordereau))
     const demande = (bordereau as any).demandeInscription
     const matriculeExistant = demande?.matriculeEtudiant
@@ -536,6 +538,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     this.showMatriculeConfirmationModal = false
     this.selectedBordereau = undefined
     this.imageJustificatifRotation = 0
+    this.imageJustificatifZoom = 1
     this.selectedBordereauSafeUrl = null
     this.error = false
     this.apiErrorMessage = ''
@@ -740,7 +743,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   closePreviewModal(): void {
     this.showPreviewModal = false
     this.previewResult = null
-    this.imageJustificatifRotation = 0
+    this.reinitialiserRotationImageJustificatif()
   }
 
   isImageFile(fichier: string): boolean {
@@ -751,8 +754,17 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     this.imageJustificatifRotation = (this.imageJustificatifRotation + 90) % 360
   }
 
+  tournerImageJustificatifGauche(): void {
+    this.imageJustificatifRotation = (this.imageJustificatifRotation + 270) % 360
+  }
+
+  zoomerImageJustificatif(direction: -1 | 1): void {
+    this.imageJustificatifZoom = Math.min(3, Math.max(0.5, this.imageJustificatifZoom + direction * 0.25))
+  }
+
   reinitialiserRotationImageJustificatif(): void {
     this.imageJustificatifRotation = 0
+    this.imageJustificatifZoom = 1
   }
 
   getDocUrl(bordereau: Bordereau): string {

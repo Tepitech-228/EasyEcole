@@ -33,6 +33,8 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   pdfPreviewUrl: SafeResourceUrl | null = null
   pdfPreviewLoading: boolean = false
   pdfPreviewError: string = ''
+  pdfImageRotation = 0
+  pdfImageZoom = 1
   private previewObjectUrl: string | null = null
   private previewSubscription?: Subscription
   successResult: { type: 'inscription' | 'scolarite' | 'rattrapage', matricule?: string, codeQuitus?: string } | null = null
@@ -522,8 +524,22 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
     return /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(fichier)
   }
 
+  tournerImagePreview(direction: -1 | 1): void {
+    this.pdfImageRotation = (this.pdfImageRotation + direction * 90 + 360) % 360
+  }
+
+  zoomerImagePreview(direction: -1 | 1): void {
+    this.pdfImageZoom = Math.min(3, Math.max(0.5, this.pdfImageZoom + direction * 0.25))
+  }
+
+  reinitialiserImagePreview(): void {
+    this.pdfImageRotation = 0
+    this.pdfImageZoom = 1
+  }
+
   openPdfModal(bordereau: Bordereau): void {
     this.clearPdfPreview()
+    this.reinitialiserImagePreview()
     this.pdfBordereau = bordereau
     this.showPdfModal = true
     this.pdfPreviewLoading = true
@@ -598,5 +614,6 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
     }
     this.pdfPreviewUrl = null
     this.pdfPreviewLoading = false
+    this.reinitialiserImagePreview()
   }
 }

@@ -13,6 +13,8 @@
 .document-preview-rotate {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  min-height: 36px;
   gap: 0.35rem;
   padding: 0.4rem 0.65rem;
   border: 1px solid #d1d5db;
@@ -26,9 +28,23 @@
     background: #f3f4f6;
   }
 
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
   .material-symbols-outlined {
     font-size: 1.1rem;
   }
+}
+
+.document-preview-zoom {
+  min-width: 3.5rem;
+  align-self: center;
+  color: #475569;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
 }
 
 .pdf-preview-image {

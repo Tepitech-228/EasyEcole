@@ -210,12 +210,24 @@
         <h3 class="text-sm font-semibold text-gray-800">Justificatif de paiement</h3>
       </div>
       <div *ngIf="selectedBordereau.fichier && isImageFile(selectedBordereau.fichier)" class="document-preview-toolbar">
+        <button type="button" class="document-preview-rotate" (click)="tournerImageJustificatifGauche()"
+                aria-label="Tourner l’image de 90 degrés vers la gauche" title="Tourner l’image à gauche">
+          <span class="material-symbols-outlined" aria-hidden="true">rotate_left</span>
+        </button>
         <button type="button" class="document-preview-rotate" (click)="tournerImageJustificatif()"
                 aria-label="Tourner l’image de 90 degrés vers la droite" title="Tourner l’image de 90°">
           <span class="material-symbols-outlined" aria-hidden="true">rotate_right</span>
-          Tourner
         </button>
-        <button *ngIf="imageJustificatifRotation !== 0" type="button" class="document-preview-rotate"
+        <button type="button" class="document-preview-rotate" (click)="zoomerImageJustificatif(-1)"
+                [disabled]="imageJustificatifZoom <= 0.5" aria-label="Dézoomer" title="Dézoomer">
+          <span class="material-symbols-outlined" aria-hidden="true">zoom_out</span>
+        </button>
+        <span class="document-preview-zoom" aria-live="polite">{{ imageJustificatifZoom * 100 }}%</span>
+        <button type="button" class="document-preview-rotate" (click)="zoomerImageJustificatif(1)"
+                [disabled]="imageJustificatifZoom >= 3" aria-label="Zoomer" title="Zoomer">
+          <span class="material-symbols-outlined" aria-hidden="true">zoom_in</span>
+        </button>
+        <button type="button" class="document-preview-rotate"
                 (click)="reinitialiserRotationImageJustificatif()" aria-label="Réinitialiser la rotation de l’image">
           Réinitialiser
         </button>
@@ -224,7 +236,7 @@
         <ng-container *ngIf="selectedBordereau.fichier; else noFile">
           <img *ngIf="isImageFile(selectedBordereau.fichier)" [src]="getDocUrl(selectedBordereau)"
                class="pdf-preview-image" [class.is-rotated-sideways]="imageJustificatifRotation % 180 !== 0"
-               [style.transform]="'rotate(' + imageJustificatifRotation + 'deg)'">
+               [style.transform]="'rotate(' + imageJustificatifRotation + 'deg) scale(' + imageJustificatifZoom + ')'">
           <iframe *ngIf="!isImageFile(selectedBordereau.fichier)" [src]="getDocUrlSafe(selectedBordereau)" title="Bordereau de paiement" class="pdf-preview-frame"></iframe>
         </ng-container>
         <ng-template #noFile><span class="text-sm text-gray-400">Aucun fichier disponible</span></ng-template>
@@ -430,12 +442,24 @@
     <div class="flex items-center justify-between gap-3 mb-2">
       <h3 class="text-sm font-semibold text-gray-800">Justificatif de paiement</h3>
       <div *ngIf="isImageFile(selectedBordereau.fichier)" class="document-preview-toolbar">
+        <button type="button" class="document-preview-rotate" (click)="tournerImageJustificatifGauche()"
+                aria-label="Tourner l’image de 90 degrés vers la gauche" title="Tourner l’image à gauche">
+          <span class="material-symbols-outlined" aria-hidden="true">rotate_left</span>
+        </button>
         <button type="button" class="document-preview-rotate" (click)="tournerImageJustificatif()"
                 aria-label="Tourner l’image de 90 degrés vers la droite" title="Tourner l’image de 90°">
           <span class="material-symbols-outlined" aria-hidden="true">rotate_right</span>
-          Tourner
         </button>
-        <button *ngIf="imageJustificatifRotation !== 0" type="button" class="document-preview-rotate"
+        <button type="button" class="document-preview-rotate" (click)="zoomerImageJustificatif(-1)"
+                [disabled]="imageJustificatifZoom <= 0.5" aria-label="Dézoomer" title="Dézoomer">
+          <span class="material-symbols-outlined" aria-hidden="true">zoom_out</span>
+        </button>
+        <span class="document-preview-zoom" aria-live="polite">{{ imageJustificatifZoom * 100 }}%</span>
+        <button type="button" class="document-preview-rotate" (click)="zoomerImageJustificatif(1)"
+                [disabled]="imageJustificatifZoom >= 3" aria-label="Zoomer" title="Zoomer">
+          <span class="material-symbols-outlined" aria-hidden="true">zoom_in</span>
+        </button>
+        <button type="button" class="document-preview-rotate"
                 (click)="reinitialiserRotationImageJustificatif()" aria-label="Réinitialiser la rotation de l’image">
           Réinitialiser
         </button>
@@ -445,7 +469,7 @@
       <img *ngIf="isImageFile(selectedBordereau.fichier)" [src]="getDocUrl(selectedBordereau)"
            alt="Justificatif de paiement" class="pdf-preview-image"
            [class.is-rotated-sideways]="imageJustificatifRotation % 180 !== 0"
-           [style.transform]="'rotate(' + imageJustificatifRotation + 'deg)'">
+           [style.transform]="'rotate(' + imageJustificatifRotation + 'deg) scale(' + imageJustificatifZoom + ')'">
       <iframe *ngIf="!isImageFile(selectedBordereau.fichier)" [src]="getDocUrlSafe(selectedBordereau)"
               title="Justificatif de paiement" class="pdf-preview-frame"></iframe>
     </div>

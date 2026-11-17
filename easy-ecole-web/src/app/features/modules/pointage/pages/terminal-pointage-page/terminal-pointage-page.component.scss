@@ -1315,6 +1315,21 @@
   text-align: center;
 }
 
+.pointage-state-card--error .pointage-success-photo {
+  padding: 7px;
+  border: 2px solid #568f98;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #e6f7f4, #edf4ff);
+  box-shadow:
+    0 0 0 4px rgba(167, 243, 208, 0.72),
+    0 0 0 7px rgba(49, 90, 150, 0.2),
+    0 16px 32px rgba(19, 35, 63, 0.18);
+}
+
+.pointage-state-card--error .pointage-success-photo img {
+  border-radius: 14px;
+}
+
 .pointage-state-card--error .pointage-success-details {
   align-items: center;
   text-align: center;

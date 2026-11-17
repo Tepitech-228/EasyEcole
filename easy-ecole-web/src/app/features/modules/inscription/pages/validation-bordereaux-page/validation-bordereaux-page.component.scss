@@ -12,6 +12,51 @@
 }
 .cabinet-workspace .cabinet-workspace-hero h1,
 .cabinet-workspace .cabinet-workspace-hero h2 { letter-spacing: -0.02em; }
+
+.document-preview-controls {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	padding: 0.6rem 1rem;
+	border-bottom: 1px solid #e5e7eb;
+	background: #fff;
+}
+
+.document-preview-control {
+	display: inline-flex;
+	min-height: 36px;
+	align-items: center;
+	justify-content: center;
+	gap: 0.35rem;
+	padding: 0.35rem 0.65rem;
+	border: 1px solid #dbe2ea;
+	border-radius: 0.5rem;
+	color: #334155;
+	background: #fff;
+	font-size: 0.8rem;
+	font-weight: 600;
+	cursor: pointer;
+
+	.material-symbols-outlined { font-size: 1.1rem; }
+
+	&:hover:not(:disabled) { background: #f1f5f9; }
+	&:disabled { cursor: not-allowed; opacity: 0.45; }
+}
+
+.document-preview-zoom {
+	min-width: 3.5rem;
+	color: #475569;
+	font-size: 0.8rem;
+	font-variant-numeric: tabular-nums;
+	text-align: center;
+}
+
+.pdf-preview-image { transition: transform 0.2s ease; }
+
 @media (max-width: 640px) {
 	.cabinet-workspace-hero { align-items: flex-start; flex-direction: column; }
+	.document-preview-controls { gap: 0.35rem; padding: 0.5rem; }
+	.document-preview-control { padding: 0.3rem 0.5rem; }
 }
