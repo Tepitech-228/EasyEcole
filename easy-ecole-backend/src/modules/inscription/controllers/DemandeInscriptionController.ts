@@ -1246,7 +1246,7 @@ export default class DemandeInscriptionController {
                 prenom: user.prenoms,
                 matricule: matriculeFinal,
                 dateNaissance: String(apprenant?.dateNaissance || ''),
-                photo: apprenant?.photo || dossierEtudiant.photo || user.photoDeProfil || undefined,
+                photo: dossierEtudiant.photo || apprenant?.photo || user.photoDeProfil || undefined,
                 classe: savedCursus.classe?.libelle || req.body.cursusApprenant?.classeLibelle || '',
                 filiere: parcoursChoisiFinal?.parcours?.titre || '',
                 anneeAcademique: savedCursus.anneeAcademique?.libelle || req.body.cursusApprenant?.anneeAcademiqueLibelle || '',

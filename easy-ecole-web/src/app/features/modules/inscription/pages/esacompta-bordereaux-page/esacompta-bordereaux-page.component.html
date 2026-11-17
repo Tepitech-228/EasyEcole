@@ -209,9 +209,22 @@
         <span class="material-symbols-outlined text-indigo-600">description</span>
         <h3 class="text-sm font-semibold text-gray-800">Justificatif de paiement</h3>
       </div>
+      <div *ngIf="selectedBordereau.fichier && isImageFile(selectedBordereau.fichier)" class="document-preview-toolbar">
+        <button type="button" class="document-preview-rotate" (click)="tournerImageJustificatif()"
+                aria-label="Tourner l’image de 90 degrés vers la droite" title="Tourner l’image de 90°">
+          <span class="material-symbols-outlined" aria-hidden="true">rotate_right</span>
+          Tourner
+        </button>
+        <button *ngIf="imageJustificatifRotation !== 0" type="button" class="document-preview-rotate"
+                (click)="reinitialiserRotationImageJustificatif()" aria-label="Réinitialiser la rotation de l’image">
+          Réinitialiser
+        </button>
+      </div>
       <div class="pdf-preview-shell rounded-lg border border-gray-200">
         <ng-container *ngIf="selectedBordereau.fichier; else noFile">
-          <img *ngIf="isImageFile(selectedBordereau.fichier)" [src]="getDocUrl(selectedBordereau)" class="pdf-preview-image">
+          <img *ngIf="isImageFile(selectedBordereau.fichier)" [src]="getDocUrl(selectedBordereau)"
+               class="pdf-preview-image" [class.is-rotated-sideways]="imageJustificatifRotation % 180 !== 0"
+               [style.transform]="'rotate(' + imageJustificatifRotation + 'deg)'">
           <iframe *ngIf="!isImageFile(selectedBordereau.fichier)" [src]="getDocUrlSafe(selectedBordereau)" title="Bordereau de paiement" class="pdf-preview-frame"></iframe>
         </ng-container>
         <ng-template #noFile><span class="text-sm text-gray-400">Aucun fichier disponible</span></ng-template>
@@ -413,6 +426,30 @@
 
 <!-- Modal Preview -->
 <app-custom-modal title="Aperçu du traitement" subtitle="Vérifiez la répartition avant validation" (onCloseModal)="closePreviewModal()" [center]="true" [showModal]="showPreviewModal">
+  <section *ngIf="selectedBordereau?.fichier" class="mb-5">
+    <div class="flex items-center justify-between gap-3 mb-2">
+      <h3 class="text-sm font-semibold text-gray-800">Justificatif de paiement</h3>
+      <div *ngIf="isImageFile(selectedBordereau.fichier)" class="document-preview-toolbar">
+        <button type="button" class="document-preview-rotate" (click)="tournerImageJustificatif()"
+                aria-label="Tourner l’image de 90 degrés vers la droite" title="Tourner l’image de 90°">
+          <span class="material-symbols-outlined" aria-hidden="true">rotate_right</span>
+          Tourner
+        </button>
+        <button *ngIf="imageJustificatifRotation !== 0" type="button" class="document-preview-rotate"
+                (click)="reinitialiserRotationImageJustificatif()" aria-label="Réinitialiser la rotation de l’image">
+          Réinitialiser
+        </button>
+      </div>
+    </div>
+    <div class="pdf-preview-shell rounded-lg border border-gray-200">
+      <img *ngIf="isImageFile(selectedBordereau.fichier)" [src]="getDocUrl(selectedBordereau)"
+           alt="Justificatif de paiement" class="pdf-preview-image"
+           [class.is-rotated-sideways]="imageJustificatifRotation % 180 !== 0"
+           [style.transform]="'rotate(' + imageJustificatifRotation + 'deg)'">
+      <iframe *ngIf="!isImageFile(selectedBordereau.fichier)" [src]="getDocUrlSafe(selectedBordereau)"
+              title="Justificatif de paiement" class="pdf-preview-frame"></iframe>
+    </div>
+  </section>
   <div *ngIf="previewResult" class="mb-6">
     <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
       <p class="text-sm font-medium text-green-800">Montant disponible : {{ formatCurrency(previewResult.montantDisponible) }}</p>

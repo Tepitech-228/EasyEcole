@@ -959,9 +959,9 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       }
     }
 
-    // Le montant total du premier bordereau doit couvrir les frais d'inscription,
-    // y compris si le recouvreur sélectionne une opération mixte ou scolarité.
-    if (estPremierBordereau) {
+    // Un paiement d'inscription peut être partiel. Pour une première opération
+    // mixte ou scolarité, le montant doit toutefois couvrir les frais d'inscription.
+    if (estPremierBordereau && (estMixte || estScolarite)) {
       const demandeGuard = await DemandeInscription.findOne({
         where: { utilisateurId: bordereau.utilisateurId },
         include: [{ association: DemandeInscription.associations.session, include: [Session.associations.fraisInscription] }],
@@ -969,13 +969,13 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       })
       const fraisInscriptionSessionGuard = (demandeGuard?.session?.fraisInscription || [])
         .reduce((sum, f) => sum + (f.montant || 0), 0)
-      if (montantPaiement <= fraisInscriptionSessionGuard) {
+      if (montantPaiement < fraisInscriptionSessionGuard) {
         await transaction.rollback()
         console.log(_rid, 'ERREUR 400: Montant du premier paiement', montantPaiement, '< frais inscription session', fraisInscriptionSessionGuard)
         return res.status(400).json({
           success: false,
           code: 'FRAIS_INSCRIPTION_INSUFFISANTS',
-          message: `Les frais saisis ne sont pas conformes. Veuillez saisir une somme supérieure aux frais d'inscription (${fraisInscriptionSessionGuard} FCFA).`
+          message: `Les frais saisis ne sont pas conformes. Veuillez saisir une somme au moins égale aux frais d'inscription (${fraisInscriptionSessionGuard} FCFA).`
         })
       }
     }

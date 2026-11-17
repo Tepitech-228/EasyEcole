@@ -1,6 +1,7 @@
 import { Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Utilisateur } from "../../auth/models/Utilisateur";
+import { Apprenant } from "../../auth/models/Apprenant";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { PersonnelAdministratif } from "../../auth/models/PersonnelAdministratif";
 import { SiteUtilisateur } from "../../auth/models/SiteUtilisateur";
@@ -86,6 +87,34 @@ export default class HikvisionEnrollmentService {
         include: [{ association: DossierEtudiant.associations.utilisateur }]
       });
       const utilisateurIds = dossiers.map(dossier => Number(dossier.utilisateurId));
+      const apprenants = utilisateurIds.length > 0
+        ? await Apprenant.findAll({
+            where: { utilisateurId: { [Op.in]: utilisateurIds } },
+            attributes: ["utilisateurId", "photo"]
+          })
+        : [];
+      const photosParUtilisateur = new Map(
+        apprenants
+          .filter(apprenant => Boolean(apprenant.photo))
+          .map(apprenant => [Number(apprenant.utilisateurId), apprenant.photo])
+      );
+      let photosAssociees = 0;
+      for (const dossier of dossiers) {
+        if (dossier.photo) continue;
+        const photo = photosParUtilisateur.get(Number(dossier.utilisateurId));
+        if (!photo) continue;
+        await dossier.update({ photo });
+        photosAssociees++;
+      }
+      if (photosAssociees > 0) {
+        console.info("[HIKVISION_STUDENT_PHOTO_LINK]", JSON.stringify({
+          resultat: "photos_apprenant_associees_aux_dossiers",
+          nombre: photosAssociees,
+          terminalId: Number(terminal.id),
+          etablissementId: Number(terminal.etablissementId)
+        }));
+      }
+
       // Seuls les dossiers validés sont éligibles à l'enrôlement sur la pointeuse étudiant.
       const demandes = await DemandeInscription.findAll({
         where: {
@@ -109,6 +138,9 @@ export default class HikvisionEnrollmentService {
           etablissementId: terminal.etablissementId,
           matriculeEtudiant: { [Op.ne]: null },
           [Op.or]: [
+            // Les demandes antérieures au pipeline ont statutPipeline=NULL et sont
+            // considérées comme soumises par le modèle.
+            { statutPipeline: null },
             { statutPipeline: { [Op.ne]: null } },
             { soumissionComite: true },
             { dateValidation: { [Op.ne]: null } }

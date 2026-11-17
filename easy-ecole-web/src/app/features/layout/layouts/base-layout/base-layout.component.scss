@@ -1,6 +1,12 @@
 main {
+    min-width: 0;
+
     #left {
         width: 260px !important;
+    }
+
+    #right {
+        min-width: 0;
     }
 
     @media (min-width: 1024px) {
@@ -11,6 +17,29 @@ main {
 
     #left, #right {
         transition: all .3s ease-in-out;
+    }
+}
+
+@media (max-width: 1023px) {
+    main {
+        min-height: 100vh;
+        min-height: 100dvh;
+
+        #left {
+            height: 100vh;
+            height: 100dvh;
+        }
+
+        #right {
+            height: auto !important;
+            min-height: 100vh;
+            min-height: 100dvh;
+
+            > div {
+                min-width: 0;
+                padding-bottom: calc(2.5rem + env(safe-area-inset-bottom));
+            }
+        }
     }
 }
 

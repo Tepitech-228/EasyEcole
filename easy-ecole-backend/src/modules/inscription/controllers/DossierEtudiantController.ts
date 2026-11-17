@@ -347,7 +347,7 @@ export default class DossierEtudiantController {
                     nom: utilisateur?.nom ?? '',
                     prenoms: utilisateur?.prenoms ?? '',
                     statut: dossier.statut,
-                    photo: apprenant?.photo ?? null,
+                    photo: dossier.photo || apprenant?.photo || null,
                     dateCreation: dossier.dateCreation,
                 })
             }
@@ -767,7 +767,7 @@ export default class DossierEtudiantController {
                 prenom: user.prenoms,
                 matricule: dossier.matricule,
                 dateNaissance: apprenant?.dateNaissance || '',
-                photo: apprenant?.photo || dossier.photo || user.photoDeProfil || undefined,
+                photo: dossier.photo || apprenant?.photo || user.photoDeProfil || undefined,
                 classe: (cursus as any)?.classe?.libelle || '',
                 filiere: (cursus as any)?.parcours?.titre || '',
                 anneeAcademique: (cursus as any)?.anneeAcademique?.libelle || '',

@@ -664,7 +664,26 @@
 
 /* ── Responsive ────────────────────────────────────────────────── */
 @media (max-width: 640px) {
-  .wizard-step { padding: 20px 16px; }
+  .wizard-page {
+    padding: 16px 12px 32px;
+  }
+
+  .wizard-step {
+    padding: 20px 14px;
+    min-width: 0;
+  }
+
+  .form-row,
+  .form-group,
+  .field-wrapper {
+    min-width: 0;
+  }
+
+  .form-control {
+    box-sizing: border-box;
+    max-width: 100%;
+    font-size: 16px;
+  }
 
   .doc-row {
     flex-wrap: wrap;

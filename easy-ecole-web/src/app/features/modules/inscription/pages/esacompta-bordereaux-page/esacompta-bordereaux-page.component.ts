@@ -47,6 +47,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   dataLoaded = false
 
   selectedBordereau?: any
+  imageJustificatifRotation = 0
   showSaisieModal = false
   showPreviewModal = false
   showMatriculeConfirmationModal = false
@@ -487,6 +488,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
 
   private initialiserSaisieModal(bordereau: Bordereau): void {
     this.selectedBordereau = bordereau
+    this.imageJustificatifRotation = 0
     this.selectedBordereauSafeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.getDocUrl(bordereau))
     const demande = (bordereau as any).demandeInscription
     const matriculeExistant = demande?.matriculeEtudiant
@@ -533,6 +535,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     this.showSaisieModal = false
     this.showMatriculeConfirmationModal = false
     this.selectedBordereau = undefined
+    this.imageJustificatifRotation = 0
     this.selectedBordereauSafeUrl = null
     this.error = false
     this.apiErrorMessage = ''
@@ -689,7 +692,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
       },
       error: (err) => {
         if (err?.error?.code === 'FRAIS_INSCRIPTION_INSUFFISANTS') {
-          this.toastService.error("Les frais saisis ne sont pas conformes. Veuillez saisir une somme supérieure aux frais d'inscription.")
+          this.toastService.error("Les frais saisis ne sont pas conformes. Veuillez saisir une somme au moins égale aux frais d'inscription.")
           return
         }
 
@@ -737,10 +740,19 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   closePreviewModal(): void {
     this.showPreviewModal = false
     this.previewResult = null
+    this.imageJustificatifRotation = 0
   }
 
   isImageFile(fichier: string): boolean {
     return /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(fichier)
+  }
+
+  tournerImageJustificatif(): void {
+    this.imageJustificatifRotation = (this.imageJustificatifRotation + 90) % 360
+  }
+
+  reinitialiserRotationImageJustificatif(): void {
+    this.imageJustificatifRotation = 0
   }
 
   getDocUrl(bordereau: Bordereau): string {

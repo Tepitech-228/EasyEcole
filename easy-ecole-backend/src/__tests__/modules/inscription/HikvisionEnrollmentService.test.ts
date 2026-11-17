@@ -28,6 +28,9 @@ jest.mock("../../../modules/auth/models/SiteUtilisateur", () => ({
 jest.mock("../../../modules/auth/models/Utilisateur", () => ({
   Utilisateur: { findByPk: jest.fn(), findAll: jest.fn(), associations: { apprenant: "apprenant" } }
 }));
+jest.mock("../../../modules/auth/models/Apprenant", () => ({
+  Apprenant: { findAll: jest.fn() }
+}));
 jest.mock("../../../modules/inscription/services/HikvisionIsapiService", () => ({
   __esModule: true,
   default: { enrollStudent: jest.fn(), enrollPerson: jest.fn() }
@@ -38,6 +41,7 @@ import HikvisionEnrollmentService from "../../../modules/inscription/services/Hi
 const { PointageTerminal } = require("../../../modules/inscription/models/PointageTerminal");
 const { HikvisionEnrollment } = require("../../../modules/inscription/models/HikvisionEnrollment");
 const { Utilisateur } = require("../../../modules/auth/models/Utilisateur");
+const { Apprenant } = require("../../../modules/auth/models/Apprenant");
 const { Enseignant } = require("../../../modules/auth/models/Enseignant");
 const { PersonnelAdministratif } = require("../../../modules/auth/models/PersonnelAdministratif");
 const { SiteUtilisateur } = require("../../../modules/auth/models/SiteUtilisateur");
@@ -49,6 +53,7 @@ describe("HikvisionEnrollmentService", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     Utilisateur.findAll.mockResolvedValue([]);
+    Apprenant.findAll.mockResolvedValue([]);
   });
 
   it("queues biometric enrollment on every active terminal even without explicit consent", async () => {
@@ -113,6 +118,7 @@ describe("HikvisionEnrollmentService", () => {
         etablissementId: 3,
         matriculeEtudiant: { [require("sequelize").Op.ne]: null },
         [require("sequelize").Op.or]: [
+          { statutPipeline: null },
           { statutPipeline: { [require("sequelize").Op.ne]: null } },
           { soumissionComite: true },
           { dateValidation: { [require("sequelize").Op.ne]: null } }
@@ -122,6 +128,33 @@ describe("HikvisionEnrollmentService", () => {
       order: [["updatedAt", "DESC"]]
     });
     expect(SiteUtilisateur.findAll).not.toHaveBeenCalled();
+  });
+
+  it("links existing learner photos to student dossiers without replacing an existing dossier photo", async () => {
+    const updateMissingPhoto = jest.fn().mockResolvedValue(undefined);
+    const updateExistingPhoto = jest.fn();
+    const terminal = { id: 8, etablissementId: 3, population: "etudiant" as const };
+    DossierEtudiant.findAll.mockResolvedValue([
+      { utilisateurId: 42, matricule: "ESA042", photo: null, update: updateMissingPhoto },
+      { utilisateurId: 43, matricule: "ESA043", photo: "already-linked.jpg", update: updateExistingPhoto }
+    ]);
+    Apprenant.findAll.mockResolvedValue([
+      { utilisateurId: 42, photo: "student-42.jpg" },
+      { utilisateurId: 43, photo: "student-43.jpg" }
+    ]);
+    DemandeInscription.findAll
+      .mockResolvedValueOnce([{ utilisateurId: 42 }, { utilisateurId: 43 }])
+      .mockResolvedValueOnce([]);
+    HikvisionEnrollment.findOrCreate.mockResolvedValue([{}, true]);
+
+    await HikvisionEnrollmentService.enqueueEligibleProfilesForTerminal(terminal);
+
+    expect(Apprenant.findAll).toHaveBeenCalledWith({
+      where: { utilisateurId: { [require("sequelize").Op.in]: [42, 43] } },
+      attributes: ["utilisateurId", "photo"]
+    });
+    expect(updateMissingPhoto).toHaveBeenCalledWith({ photo: "student-42.jpg" });
+    expect(updateExistingPhoto).not.toHaveBeenCalled();
   });
 
   it("backfills staff profiles without querying student enrollments on a personnel terminal", async () => {
@@ -256,6 +289,8 @@ describe("HikvisionEnrollmentService", () => {
       where: { terminalId: 8, utilisateurId: 42 },
       defaults: expect.objectContaining({ employeeNo: "ESA042" })
     }));
+    const demandeQuery = DemandeInscription.findAll.mock.calls[1][0];
+    expect(demandeQuery.where[require("sequelize").Op.or]).toContainEqual({ statutPipeline: null });
   });
 
   it("periodically rechecks submitted students without restarting completed enrollments", async () => {
