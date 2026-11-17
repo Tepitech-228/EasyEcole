@@ -566,7 +566,15 @@ export default class HikvisionEnrollmentService {
       await HikvisionEnrollmentService.withDatabaseRetry(
         () => enrollment.update({ statut: "termine", derniereErreur: null })
       );
-      console.info(`[Hikvision] Enrôlement terminé pour l'utilisateur ${utilisateur.id} sur le terminal ${terminal.id}.`);
+      console.info("[HIKVISION_ENROLLMENT_STATUS]", JSON.stringify({
+        statut: "termine",
+        resultat: "compte_cree_ou_mis_a_jour_sur_pointeuse",
+        utilisateurId: Number(utilisateur.id),
+        nom: `${utilisateur.prenoms} ${utilisateur.nom}`.trim(),
+        matricule: enrollment.employeeNo,
+        terminalId: Number(terminal.id),
+        etablissementId: Number(enrollment.etablissementId)
+      }));
     } catch (error) {
       const tentatives = Number(enrollment.tentatives) + 1;
       const delayMinutes = Math.min(6 * 60, Math.pow(2, Math.min(tentatives, 9)));
@@ -578,7 +586,17 @@ export default class HikvisionEnrollmentService {
           derniereErreur: message.slice(0, 500)
         })
       );
-      console.error(`[Hikvision] Échec de l'enrôlement ${enrollment.id} (tentative ${tentatives}):`, error);
+      console.error("[HIKVISION_ENROLLMENT_STATUS]", JSON.stringify({
+        statut: "en_attente",
+        resultat: "echec_nouvelle_tentative_programmee",
+        enrollmentId: Number(enrollment.id),
+        utilisateurId: Number(enrollment.utilisateurId),
+        matricule: enrollment.employeeNo,
+        terminalId: Number(enrollment.terminalId),
+        tentative: tentatives,
+        prochainEssaiDansMinutes: delayMinutes,
+        erreur: message.slice(0, 500)
+      }));
     }
   }
 }
