@@ -414,6 +414,8 @@ Le niveau de parcours utilise le type de parcours (par exemple `LICENCE` ou `MAS
 
 Au démarrage, après les migrations SQL, le backend copie les fichiers historiques vers `documents/uploads/` et met à jour leurs références en base. Les fichiers d'origine et les anciens dossiers ne sont jamais supprimés. La racine `documents/uploads/` est créée automatiquement, puis les sous-dossiers d'un étudiant sont créés au premier dépôt ou traitement de document. Cette migration est activée par défaut dans les stacks Docker; la désactiver avec `STUDENT_UPLOAD_LAYOUT_MIGRATION_ON_BOOT=false` laisse les anciennes références et les nouveaux chemins tels quels.
 
+Le traitement des anciennes photos étudiantes est indépendant et activé par défaut avec `STUDENT_PHOTO_MIGRATION_ON_BOOT=true`. Il utilise `documents/uploads/legacy/auth/etudiants` comme source, renomme les photos et copie une version nommée dans le dossier personnel de chaque étudiant. Les logs `[entrypoint][PHOTOS]` indiquent le démarrage, le résultat de chaque étape ou si le traitement n'a pas été exécuté. Si une migration SQL empêche d'atteindre cette étape, l'entrypoint indique explicitement que le traitement photo n'a pas été fait.
+
 Pour contrôler manuellement le résultat depuis le conteneur backend, la première commande affiche un aperçu sans rien modifier ; la seconde applique la copie non destructive :
 
 ```sh

@@ -337,21 +337,101 @@ export default class ApprenantController {
             return res.status(400).json({ success: false, message: "Photo requise" })
         }
 
+        let renamedPhoto: { filename: string; previousFilename: string; previousPath: string } | null = null
+        let photoCopyWarning: string | undefined
         try {
             if (apprenant) {
+                const utilisateur = await Utilisateur.findByPk(Number(apprenant.utilisateurId))
+                const { EtudiantUploadStorageService } = await import(
+                    "../../inscription/services/EtudiantUploadStorageService"
+                )
+                renamedPhoto = EtudiantUploadStorageService.renameUploadedStudentPhoto(photo, {
+                    id: Number(utilisateur?.id || apprenant.utilisateurId),
+                    nom: utilisateur?.nom || "",
+                    prenoms: utilisateur?.prenoms || "",
+                    matricule: apprenant.matriculeEtudiant || utilisateur?.identifiant,
+                })
                 await apprenant.update({ photo: photo.filename })
+                try {
+                    const treeFolders = await EtudiantUploadStorageService.resolveTreeFolders({
+                        utilisateurId: apprenant.utilisateurId,
+                        etablissementId: utilisateur?.etablissementId,
+                    })
+                    const storedPath = EtudiantUploadStorageService.copyLegacyStudentPhoto(
+                        photo.path,
+                        {
+                            id: Number(utilisateur?.id || apprenant.utilisateurId),
+                            nom: utilisateur?.nom || "",
+                            prenoms: utilisateur?.prenoms || "",
+                            matricule: apprenant.matriculeEtudiant || utilisateur?.identifiant,
+                        },
+                        treeFolders,
+                    )
+                    console.info(`[APPRENANT_PHOTO][COPIE][OK] utilisateur=${apprenant.utilisateurId} fichier=${storedPath}`)
+                } catch (copyError) {
+                    photoCopyWarning = "La photo a été enregistrée, mais sa copie dans le dossier étudiant a échoué."
+                    console.error(
+                        `[APPRENANT_PHOTO][COPIE][ÉCHEC] utilisateur=${apprenant.utilisateurId}:`,
+                        copyError,
+                    )
+                }
             } else if ((req as any).utilisateurRole == RolesUtilisateur.APPRENANT) {
                 const utilisateur = await Utilisateur.findByPk((req as any).utilisateurId)
                 if (!utilisateur) {
                     return res.status(404).json({ success: false, message: "Utilisateur non trouvé" })
                 }
+                const { EtudiantUploadStorageService } = await import(
+                    "../../inscription/services/EtudiantUploadStorageService"
+                )
+                renamedPhoto = EtudiantUploadStorageService.renameUploadedStudentPhoto(photo, {
+                    id: Number(utilisateur.id),
+                    nom: utilisateur.nom,
+                    prenoms: utilisateur.prenoms,
+                    matricule: utilisateur.identifiant,
+                })
                 await utilisateur.update({ photoDeProfil: photo.filename })
+                try {
+                    const treeFolders = await EtudiantUploadStorageService.resolveTreeFolders({
+                        utilisateurId: utilisateur.id,
+                        etablissementId: utilisateur.etablissementId,
+                    })
+                    const storedPath = EtudiantUploadStorageService.copyLegacyStudentPhoto(
+                        photo.path,
+                        {
+                            id: Number(utilisateur.id),
+                            nom: utilisateur.nom,
+                            prenoms: utilisateur.prenoms,
+                            matricule: utilisateur.identifiant,
+                        },
+                        treeFolders,
+                    )
+                    console.info(`[APPRENANT_PHOTO][COPIE][OK] utilisateur=${utilisateur.id} fichier=${storedPath}`)
+                } catch (copyError) {
+                    photoCopyWarning = "La photo a été enregistrée, mais sa copie dans le dossier étudiant a échoué."
+                    console.error(
+                        `[APPRENANT_PHOTO][COPIE][ÉCHEC] utilisateur=${utilisateur.id}:`,
+                        copyError,
+                    )
+                }
             } else {
                 return res.status(404).json({ success: false, message: "Apprenant non trouvé" })
             }
 
-            return res.status(200).json({ success: true })
+            return res.status(200).json({
+                success: true,
+                ...(photoCopyWarning ? { photoCopyWarning } : {}),
+            })
         } catch (error) {
+            if (renamedPhoto) {
+                try {
+                    const { EtudiantUploadStorageService } = await import(
+                        "../../inscription/services/EtudiantUploadStorageService"
+                    )
+                    EtudiantUploadStorageService.restoreUploadedStudentPhoto(photo, renamedPhoto)
+                } catch (restoreError) {
+                    console.error('[APPRENANT_PHOTO] Impossible de restaurer le fichier après échec :', restoreError)
+                }
+            }
             console.error('[APPRENANT_PHOTO] Échec de l’enregistrement de la photo :', error)
             return res.status(500).json({ success: false, message: "La photo n’a pas pu être enregistrée" })
         }

@@ -155,7 +155,7 @@ async function buildRenamePlans(legacyDirectory: string): Promise<RenamePlan[]> 
             matricule: studentDossiers[0]?.matricule || learner?.matriculeEtudiant || student.identifiant,
         };
         const sourcePath = path.join(legacyDirectory, sourceFilename);
-        const desiredFilename = EtudiantUploadStorageService.getLegacyStudentPhotoFilename(
+        const desiredFilename = EtudiantUploadStorageService.getStudentPhotoFilename(
             sourcePath,
             identity,
         );

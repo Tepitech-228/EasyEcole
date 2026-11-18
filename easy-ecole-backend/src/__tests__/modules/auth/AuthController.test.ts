@@ -42,6 +42,21 @@ jest.mock('../../../modules/auth/models/SiteUtilisateur', () => ({
   SiteUtilisateur: { findOrCreate: jest.fn(), findOne: jest.fn() },
 }))
 
+jest.mock('../../../modules/inscription/services/EtudiantUploadStorageService', () => ({
+  EtudiantUploadStorageService: {
+    renameUploadedStudentPhoto: jest.fn((file: Express.Multer.File) => {
+      const previousFilename = file.filename
+      const previousPath = file.path
+      file.filename = 'PHOTO_NOM_PRENOM_MATRICULE.jpg'
+      file.path = '/uploads/PHOTO_NOM_PRENOM_MATRICULE.jpg'
+      return { filename: file.filename, previousFilename, previousPath }
+    }),
+    restoreUploadedStudentPhoto: jest.fn(),
+    resolveTreeFolders: jest.fn().mockResolvedValue(['2026-2027', 'Site']),
+    copyLegacyStudentPhoto: jest.fn().mockReturnValue('uploads/student-photo.jpg'),
+  },
+}))
+
 jest.mock('../../../core/helpers/EmailSender', () => ({
   EmailSender: {
     getInstance: jest.fn().mockReturnValue({
@@ -70,6 +85,7 @@ const { Utilisateur } = require('../../../modules/auth/models/Utilisateur')
 const { Enseignant } = require('../../../modules/auth/models/Enseignant')
 const { SiteUtilisateur } = require('../../../modules/auth/models/SiteUtilisateur')
 const { Etablissement } = require('../../../modules/etablissement/models/Etablissement')
+const { EtudiantUploadStorageService } = require('../../../modules/inscription/services/EtudiantUploadStorageService')
 beforeEach(() => {
   jest.clearAllMocks()
   ;(Utilisateur.findAll as jest.Mock).mockResolvedValue([])
@@ -513,6 +529,43 @@ describe('AuthController.updateProfile', () => {
 
     expect(mockUtilUpdate).toHaveBeenCalledWith({ photoDeProfil: 'photo.jpg' })
     expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('renomme la photo de profil d’un apprenant avant de l’enregistrer', async () => {
+    const profile = {
+      filename: 'a1b2c3.jpg',
+      path: '/uploads/a1b2c3.jpg',
+      originalname: 'photo.jpg',
+    } as Express.Multer.File
+    const utilisateur = {
+      id: 1,
+      nom: 'Nom',
+      prenoms: 'Prenom',
+      identifiant: 'MATRICULE',
+      role: RolesUtilisateur.APPRENANT,
+      etablissementId: 2,
+      update: mockUtilUpdate,
+    }
+    const req = mockRequest({
+      utilisateurRole: 'apprenant',
+      utilisateurId: 1,
+      files: { profile: [profile] },
+    } as any)
+    const res = mockResponse()
+    ;(Utilisateur.findOne as jest.Mock).mockResolvedValue(utilisateur)
+    mockUtilUpdate.mockResolvedValue({})
+
+    await AuthController.updateProfile(req, res)
+
+    expect(EtudiantUploadStorageService.renameUploadedStudentPhoto).toHaveBeenCalledWith(
+      profile,
+      { id: 1, nom: 'Nom', prenoms: 'Prenom', matricule: 'MATRICULE' },
+    )
+    expect(mockUtilUpdate).toHaveBeenCalledWith({
+      photoDeProfil: 'PHOTO_NOM_PRENOM_MATRICULE.jpg',
+    })
+    expect(EtudiantUploadStorageService.copyLegacyStudentPhoto).toHaveBeenCalled()
+    expect(res.json).toHaveBeenCalledWith({ success: true })
   })
 })
 

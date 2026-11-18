@@ -474,14 +474,70 @@ await utilisateur.save()
       if (profile) {
         let utilisateur: Utilisateur | null = await Utilisateur.findOne(options);
         if (utilisateur != null) {
-          await utilisateur.update({ photoDeProfil: profile.filename })
-            .then(async () => {
-              return res.status(200).json({ success: false });
-            })
-            .catch((error) => {
-              return res.status(400).json({ success: false, message: "Erreur lors de la mise à jour du profil" });
+          let renamedPhoto: {
+            filename: string;
+            previousFilename: string;
+            previousPath: string;
+          } | null = null;
+          let photoCopyWarning: string | undefined;
+          let storageService: typeof import("../../inscription/services/EtudiantUploadStorageService").EtudiantUploadStorageService | undefined;
+
+          if (utilisateur.role === RolesUtilisateur.APPRENANT) {
+            const { EtudiantUploadStorageService } = await import(
+              "../../inscription/services/EtudiantUploadStorageService"
+            );
+            storageService = EtudiantUploadStorageService;
+            renamedPhoto = storageService.renameUploadedStudentPhoto(profile, {
+              id: Number(utilisateur.id),
+              nom: utilisateur.nom,
+              prenoms: utilisateur.prenoms,
+              matricule: utilisateur.identifiant,
             });
-          return null
+          }
+
+          try {
+            await utilisateur.update({ photoDeProfil: profile.filename });
+          } catch (error) {
+            if (renamedPhoto && storageService) {
+              storageService.restoreUploadedStudentPhoto(profile, renamedPhoto);
+            }
+            console.error("Erreur lors de la mise à jour du profil :", error);
+            return res.status(400).json({
+              success: false,
+              message: "Erreur lors de la mise à jour du profil",
+            });
+          }
+
+          if (renamedPhoto && storageService) {
+            try {
+              const treeFolders = await storageService.resolveTreeFolders({
+                utilisateurId: utilisateur.id,
+                etablissementId: utilisateur.etablissementId,
+              });
+              const storedPath = storageService.copyLegacyStudentPhoto(
+                profile.path,
+                {
+                  id: Number(utilisateur.id),
+                  nom: utilisateur.nom,
+                  prenoms: utilisateur.prenoms,
+                  matricule: utilisateur.identifiant,
+                },
+                treeFolders,
+              );
+              console.info(`[APPRENANT_PHOTO][COPIE][OK] utilisateur=${utilisateur.id} fichier=${storedPath}`);
+            } catch (copyError) {
+              photoCopyWarning = "La photo a été enregistrée, mais sa copie dans le dossier étudiant a échoué.";
+              console.error(
+                `[APPRENANT_PHOTO][COPIE][ÉCHEC] utilisateur=${utilisateur.id}:`,
+                copyError,
+              );
+            }
+          }
+
+          return res.status(200).json({
+            success: true,
+            ...(photoCopyWarning ? { photoCopyWarning } : {}),
+          });
         }
         else {
           return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });

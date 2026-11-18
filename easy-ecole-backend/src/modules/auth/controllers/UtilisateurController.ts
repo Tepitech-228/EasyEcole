@@ -363,6 +363,7 @@ export default class UtilisateurController {
     static async adminUpdateUtilisateur(req: Request, res: Response): Promise<Response> {
         let transaction: Transaction | null = null;
         let transactionCommitted = false;
+        let renamedStudentPhoto: { filename: string; previousFilename: string; previousPath: string } | null = null;
         try {
             const role = (req as any).utilisateurRole;
             if (role !== RolesUtilisateur.ADMIN && role !== RolesUtilisateur.INSTITUTION) {
@@ -462,6 +463,24 @@ export default class UtilisateurController {
             }
             if (userRole === RolesUtilisateur.APPRENANT && (!req.body.dateNaissance || !req.body.lieuNaissance)) {
                 return res.status(400).json({ success: false, message: "La date et le lieu de naissance sont obligatoires pour un apprenant." });
+            }
+
+            if (req.file && userRole === RolesUtilisateur.APPRENANT) {
+                const { EtudiantUploadStorageService } = await import(
+                    "../../inscription/services/EtudiantUploadStorageService"
+                );
+                const apprenant = await Apprenant.findOne({
+                    where: { utilisateurId: utilisateur.id },
+                });
+                renamedStudentPhoto = EtudiantUploadStorageService.renameUploadedStudentPhoto(req.file, {
+                    id: Number(utilisateur.id),
+                    nom,
+                    prenoms,
+                    matricule: apprenant?.matriculeEtudiant
+                        || req.body.matriculeEtudiant
+                        || req.body.matricule
+                        || identifiant,
+                });
             }
 
             transaction = await DatabaseConnection.getInstance().sequelize.transaction();
@@ -605,13 +624,63 @@ export default class UtilisateurController {
 
             await transaction.commit();
             transactionCommitted = true;
-            return res.status(200).json({ success: true, message: "Compte et profil mis à jour." });
+
+            let studentPhotoCopyWarning: string | undefined;
+            if (req.file && userRole === RolesUtilisateur.APPRENANT) {
+                try {
+                    const { EtudiantUploadStorageService } = await import(
+                        "../../inscription/services/EtudiantUploadStorageService"
+                    );
+                    const apprenant = await Apprenant.findOne({
+                        where: { utilisateurId: utilisateur.id },
+                    });
+                    const treeFolders = await EtudiantUploadStorageService.resolveTreeFolders({
+                        utilisateurId: utilisateur.id,
+                        etablissementId: siteIds[0],
+                    });
+                    const storedPath = EtudiantUploadStorageService.copyLegacyStudentPhoto(
+                        req.file.path,
+                        {
+                            id: Number(utilisateur.id),
+                            nom,
+                            prenoms,
+                            matricule: apprenant?.matriculeEtudiant
+                                || req.body.matriculeEtudiant
+                                || req.body.matricule
+                                || identifiant,
+                        },
+                        treeFolders,
+                    );
+                    console.info(`[APPRENANT_PHOTO][COPIE][OK] utilisateur=${utilisateur.id} fichier=${storedPath}`);
+                } catch (copyError) {
+                    studentPhotoCopyWarning = "Le compte est mis à jour, mais la copie de la photo dans le dossier étudiant a échoué.";
+                    console.error(
+                        `[APPRENANT_PHOTO][COPIE][ÉCHEC] utilisateur=${utilisateur.id}:`,
+                        copyError,
+                    );
+                }
+            }
+            return res.status(200).json({
+                success: true,
+                message: "Compte et profil mis à jour.",
+                ...(studentPhotoCopyWarning ? { studentPhotoCopyWarning } : {}),
+            });
         } catch (error) {
             if (transaction && !transactionCommitted) {
                 try {
                     await transaction.rollback();
                 } catch (rollbackError) {
                     console.error("Erreur rollback mise à jour utilisateur:", rollbackError);
+                }
+            }
+            if (renamedStudentPhoto && req.file) {
+                try {
+                    const { EtudiantUploadStorageService } = await import(
+                        "../../inscription/services/EtudiantUploadStorageService"
+                    );
+                    EtudiantUploadStorageService.restoreUploadedStudentPhoto(req.file, renamedStudentPhoto);
+                } catch (restoreError) {
+                    console.error("[APPRENANT_PHOTO] Impossible de restaurer le fichier après échec:", restoreError);
                 }
             }
             if (UtilisateurController.isUniqueViolation(error)) {
@@ -744,6 +813,20 @@ export default class UtilisateurController {
                     photoDeProfil: photo.filename,
                     etablissementId: affectations[0] || null,
                 }, { transaction });
+                if (userRole === RolesUtilisateur.APPRENANT) {
+                    const { EtudiantUploadStorageService } = await import(
+                        "../../inscription/services/EtudiantUploadStorageService"
+                    );
+                    EtudiantUploadStorageService.renameUploadedStudentPhoto(photo, {
+                        id: Number(utilisateur.id),
+                        nom: utilisateur.nom,
+                        prenoms: utilisateur.prenoms,
+                        matricule: req.body.matriculeEtudiant
+                            || req.body.matricule
+                            || utilisateur.identifiant,
+                    });
+                    await utilisateur.update({ photoDeProfil: photo.filename }, { transaction });
+                }
                 if (affectations.length) {
                     await SiteUtilisateur.bulkCreate(affectations.map(etablissementId => ({
                         utilisateurId: utilisateur.id,
@@ -916,6 +999,38 @@ export default class UtilisateurController {
                 });
             }
 
+            let studentPhotoCopyWarning: string | undefined;
+            if (userRole === RolesUtilisateur.APPRENANT) {
+                try {
+                    const { EtudiantUploadStorageService } = await import(
+                        "../../inscription/services/EtudiantUploadStorageService"
+                    );
+                    const treeFolders = await EtudiantUploadStorageService.resolveTreeFolders({
+                        utilisateurId: utilisateur.id,
+                        etablissementId: affectations[0],
+                    });
+                    const storedPath = EtudiantUploadStorageService.copyLegacyStudentPhoto(
+                        photo.path,
+                        {
+                            id: Number(utilisateur.id),
+                            nom: utilisateur.nom,
+                            prenoms: utilisateur.prenoms,
+                            matricule: req.body.matriculeEtudiant
+                                || req.body.matricule
+                                || utilisateur.identifiant,
+                        },
+                        treeFolders,
+                    );
+                    console.info(`[APPRENANT_PHOTO][COPIE][OK] utilisateur=${utilisateur.id} fichier=${storedPath}`);
+                } catch (error) {
+                    studentPhotoCopyWarning = "Le compte est créé, mais la copie de la photo dans le dossier étudiant a échoué.";
+                    console.error(
+                        `[APPRENANT_PHOTO][COPIE][ÉCHEC] utilisateur=${utilisateur.id}:`,
+                        error,
+                    );
+                }
+            }
+
             if (userRole === RolesUtilisateur.ENSEIGNANT && enseignant) {
                 try {
                     enseignantBadge = await EnseignantBadgeService.ensureIdentity(
@@ -972,6 +1087,7 @@ export default class UtilisateurController {
             return res.status(201).json({
                 success: true,
                 utilisateur,
+                ...(studentPhotoCopyWarning ? { studentPhotoCopyWarning } : {}),
                 ...(enseignantBadge ? { enseignant: enseignantBadge } : {}),
                 ...(userRole === RolesUtilisateur.ADMIN || userRole === RolesUtilisateur.ENSEIGNANT || isStaff
                     ? { hikvisionEnrollmentQueued, ...(hikvisionEnrollmentWarning ? { hikvisionEnrollmentWarning } : {}) }

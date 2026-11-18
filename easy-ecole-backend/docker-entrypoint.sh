@@ -1,4 +1,5 @@
 #!/bin/sh
+echo "[entrypoint][START] Démarrage du backend."
 # =============================================================================
 # docker-entrypoint.sh — Entrypoint Dokploy
 #
@@ -34,6 +35,8 @@
 # =============================================================================
 
 set -e
+PHOTO_MIGRATION_COMPLETED=false
+trap 'if [ "$PHOTO_MIGRATION_COMPLETED" != "true" ]; then echo "[entrypoint][PHOTOS][NON FAIT] Entrypoint interrompu avant la fin du traitement photo."; fi' EXIT
 
 # -----------------------------------------------------------------------------
 # 0a. REPARATION DES DROITS DES BIND MOUNTS (phase root, une seule fois)
@@ -408,16 +411,15 @@ elif [ "${STUDENT_UPLOAD_LAYOUT_MIGRATION_ON_BOOT:-true}" != "true" ]; then
   echo "[entrypoint] Migration automatique des fichiers étudiants désactivée."
 fi
 
-# Les anciennes photos sont montées depuis uploads/_legacy/public vers
-# /app/public. Renommer d'abord les photos associées (avec mise à jour des
-# références en base), puis en copier une version lisible dans le dossier
-# documentaire de chaque étudiant. Les deux opérations sont idempotentes.
-if [ "${MIGRATIONS_ON_BOOT:-true}" = "true" ] && [ "${STUDENT_UPLOAD_LAYOUT_MIGRATION_ON_BOOT:-true}" = "true" ]; then
-  LEGACY_STUDENT_PHOTO_DIRECTORY="${LEGACY_STUDENT_PHOTO_DIRECTORY:-/app/public/auth/apprenants/photos}"
+# Les photos legacy sont stockées dans le volume documentaire. Ce traitement
+# est indépendant des migrations SQL et de la migration générale des fichiers.
+if [ "${STUDENT_PHOTO_MIGRATION_ON_BOOT:-true}" = "true" ]; then
+  LEGACY_STUDENT_PHOTO_DIRECTORY="${LEGACY_STUDENT_PHOTO_DIRECTORY:-${DOCUMENTS_STORAGE_DIR:-/app/documents}/uploads/legacy/auth/etudiants}"
   export LEGACY_STUDENT_PHOTO_DIRECTORY
+  echo "[entrypoint][PHOTOS][DÉBUT] Source=$LEGACY_STUDENT_PHOTO_DIRECTORY"
 
   if [ ! -d "$LEGACY_STUDENT_PHOTO_DIRECTORY" ]; then
-    echo "[entrypoint][PHOTOS][NON FAIT] Dossier legacy absent : $LEGACY_STUDENT_PHOTO_DIRECTORY"
+    echo "[entrypoint][PHOTOS][NON FAIT] Dossier source absent : $LEGACY_STUDENT_PHOTO_DIRECTORY"
   else
     echo "[entrypoint][PHOTOS][RENOMMAGE] Début dans $LEGACY_STUDENT_PHOTO_DIRECTORY..."
     if command -v timeout >/dev/null 2>&1; then
@@ -445,9 +447,10 @@ if [ "${MIGRATIONS_ON_BOOT:-true}" = "true" ] && [ "${STUDENT_UPLOAD_LAYOUT_MIGR
       echo "[entrypoint][PHOTOS][COPIE][ÉCHEC] Traitement incomplet; consultez les erreurs ci-dessus. Il sera retenté au prochain démarrage."
     fi
   fi
-elif [ "${MIGRATIONS_ON_BOOT:-true}" != "true" ] || [ "${STUDENT_UPLOAD_LAYOUT_MIGRATION_ON_BOOT:-true}" != "true" ]; then
-  echo "[entrypoint][PHOTOS][NON FAIT] Migration des photos désactivée par la configuration."
+else
+  echo "[entrypoint][PHOTOS][NON FAIT] Désactivé par STUDENT_PHOTO_MIGRATION_ON_BOOT=false."
 fi
+PHOTO_MIGRATION_COMPLETED=true
 
 # `|| echo` neutralise volontairement `set -e` sur ces lignes : les seeds
 # ne doivent pas empêcher l'application de démarrer. Le runner de

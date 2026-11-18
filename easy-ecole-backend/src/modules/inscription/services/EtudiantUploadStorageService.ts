@@ -183,7 +183,7 @@ export class EtudiantUploadStorageService {
         return path.join(studentFolder, "Dossier-info-personelles", "Photos", filename);
     }
 
-    static getLegacyStudentPhotoFilename(sourcePath: string, identity: EtudiantUploadIdentity): string {
+    static getStudentPhotoFilename(sourcePath: string, identity: EtudiantUploadIdentity): string {
         const studentName = [
             this.safeSegment(identity.nom, 70),
             this.safeSegment(identity.prenoms, 80),
@@ -191,6 +191,56 @@ export class EtudiantUploadStorageService {
         ].join("_");
         const extension = path.extname(sourcePath).toLowerCase() || this.detectPhotoExtension(sourcePath);
         return `PHOTO_${studentName}${extension}`;
+    }
+
+    static renameUploadedStudentPhoto(
+        file: Express.Multer.File,
+        identity: EtudiantUploadIdentity,
+    ): { filename: string; previousFilename: string; previousPath: string } {
+        const sourcePath = path.resolve(file.path);
+        if (!fs.existsSync(sourcePath)) {
+            throw new Error(`Photo téléversée introuvable : ${path.basename(sourcePath)}`);
+        }
+
+        const directory = path.dirname(sourcePath);
+        const desiredFilename = this.getStudentPhotoFilename(sourcePath, identity);
+        const extension = path.extname(desiredFilename);
+        const base = path.basename(desiredFilename, extension);
+        let filename = desiredFilename;
+        let suffix = 2;
+        while (
+            path.resolve(directory, filename) !== sourcePath
+            && fs.existsSync(path.join(directory, filename))
+        ) {
+            filename = `${base}_${suffix++}${extension}`;
+        }
+
+        const destinationPath = path.join(directory, filename);
+        if (destinationPath !== sourcePath) {
+            fs.copyFileSync(sourcePath, destinationPath, fs.constants.COPYFILE_EXCL);
+            try {
+                fs.unlinkSync(sourcePath);
+            } catch (error) {
+                fs.unlinkSync(destinationPath);
+                throw error;
+            }
+        }
+
+        const previousFilename = file.filename;
+        file.filename = filename;
+        file.path = destinationPath;
+        return { filename, previousFilename, previousPath: sourcePath };
+    }
+
+    static restoreUploadedStudentPhoto(
+        file: Express.Multer.File,
+        previous: { previousFilename: string; previousPath: string },
+    ): void {
+        if (path.resolve(file.path) !== path.resolve(previous.previousPath)) {
+            fs.renameSync(file.path, previous.previousPath);
+        }
+        file.filename = previous.previousFilename;
+        file.path = previous.previousPath;
     }
 
     static copyLegacyStudentPhoto(

@@ -29,6 +29,18 @@ jest.mock('../../../modules/auth/models/Utilisateur', () => ({
   },
 }))
 
+jest.mock('../../../modules/inscription/services/EtudiantUploadStorageService', () => ({
+  EtudiantUploadStorageService: {
+    renameUploadedStudentPhoto: jest.fn((file: Express.Multer.File) => ({
+      filename: file.filename,
+      previousFilename: file.filename,
+      previousPath: file.path,
+    })),
+    resolveTreeFolders: jest.fn().mockResolvedValue(['2026-2027', 'Site']),
+    copyLegacyStudentPhoto: jest.fn().mockReturnValue('uploads/student-photo.jpg'),
+  },
+}))
+
 jest.mock('../../../modules/auth/models/AdresseApprenant', () => ({ AdresseApprenant: {} }))
 jest.mock('../../../modules/auth/models/InformationsParentsApprenant', () => ({ InformationsParentsApprenant: {} }))
 jest.mock('../../../modules/auth/models/IdentiteApprenant', () => ({ IdentiteApprenant: {} }))

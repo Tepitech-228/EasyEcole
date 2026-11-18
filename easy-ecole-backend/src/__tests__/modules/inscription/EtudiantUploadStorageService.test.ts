@@ -162,6 +162,30 @@ describe("EtudiantUploadStorageService", () => {
         expect(fs.readFileSync(path.resolve(process.cwd(), firstReference), "utf8")).toBe("document historique");
     });
 
+    it("copies a newly uploaded student photo into the personal folder", () => {
+        const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "easyecole-student-photo-"));
+        temporaryDirectories.push(temporaryDirectory);
+        const sourcePath = path.join(temporaryDirectory, "PHOTO_Diallo_Aminata_ESA-123.jpg");
+        fs.writeFileSync(sourcePath, "student photo");
+
+        const copiedPath = EtudiantUploadStorageService.copyLegacyStudentPhoto(
+            sourcePath,
+            {
+                id: 21,
+                nom: "Diallo",
+                prenoms: "Aminata",
+                matricule: "ESA-123",
+            },
+            ["2026-2027", "Site", "LICENCE", "L1", "Informatique"],
+        );
+
+        const destination = path.resolve(process.cwd(), copiedPath);
+        expect(destination).toContain(path.join("Dossier-info-personelles", "Photos"));
+        expect(path.basename(destination)).toBe("PHOTO_Diallo_Aminata_ESA-123.jpg");
+        expect(fs.readFileSync(destination, "utf8")).toBe("student photo");
+        expect(fs.existsSync(sourcePath)).toBe(true);
+    });
+
     it("removes a stored student document from the shared uploads root", () => {
         const storedPath = path.join(studentRoot, "Dossiers", "document.pdf");
         fs.mkdirSync(path.dirname(storedPath), { recursive: true });
