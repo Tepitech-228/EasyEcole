@@ -153,6 +153,86 @@ export class EtudiantUploadStorageService {
         );
     }
 
+    static getStudentPhotoDestination(
+        sourcePath: string,
+        identity: EtudiantUploadIdentity,
+        treeFolders: string[],
+    ): string {
+        if (!fs.existsSync(sourcePath)) {
+            throw new Error(`Photo étudiante introuvable : ${path.basename(sourcePath)}`);
+        }
+
+        const studentName = [
+            this.safeSegment(identity.nom, 70),
+            this.safeSegment(identity.prenoms, 80),
+            this.safeSegment(identity.matricule || `ID${identity.id}`, 80),
+        ].join("_");
+        const studentFolder = path.resolve(
+            this.studentRoot,
+            ...treeFolders.map(folder => this.safeSegment(folder)),
+            "Etudiants",
+            studentName,
+        );
+        if (!studentFolder.startsWith(`${this.studentRoot}${path.sep}`)) {
+            throw new Error("Chemin de stockage étudiant invalide");
+        }
+
+        const sourceExtension = path.extname(sourcePath).toLowerCase();
+        const photoExtension = sourceExtension || this.detectPhotoExtension(sourcePath);
+        const filename = `PHOTO_${studentName}${photoExtension}`;
+        return path.join(studentFolder, "Dossier-info-personelles", "Photos", filename);
+    }
+
+    static copyLegacyStudentPhoto(
+        sourcePath: string,
+        identity: EtudiantUploadIdentity,
+        treeFolders: string[],
+    ): string {
+        const destination = this.getStudentPhotoDestination(sourcePath, identity, treeFolders);
+        const destinationFolder = path.dirname(destination);
+        fs.mkdirSync(destinationFolder, { recursive: true });
+
+        const sourceHash = createHash("sha256").update(fs.readFileSync(sourcePath)).digest("hex");
+        const destinationBase = path.basename(destination, path.extname(destination));
+        const extension = path.extname(destination);
+        let candidate = destination;
+        let suffix = 2;
+
+        while (fs.existsSync(candidate)) {
+            const existingHash = createHash("sha256").update(fs.readFileSync(candidate)).digest("hex");
+            if (existingHash === sourceHash) {
+                return path.relative(process.cwd(), candidate).replace(/\\/g, "/");
+            }
+            candidate = path.join(destinationFolder, `${destinationBase}_${suffix}${extension}`);
+            suffix++;
+        }
+
+        fs.copyFileSync(sourcePath, candidate, fs.constants.COPYFILE_EXCL);
+        return path.relative(process.cwd(), candidate).replace(/\\/g, "/");
+    }
+
+    private static detectPhotoExtension(filePath: string): string {
+        const fileDescriptor = fs.openSync(filePath, "r");
+        const header = Buffer.alloc(32);
+        try {
+            fs.readSync(fileDescriptor, header, 0, header.length, 0);
+        } finally {
+            fs.closeSync(fileDescriptor);
+        }
+
+        if (header[0] === 0xff && header[1] === 0xd8 && header[2] === 0xff) return ".jpg";
+        if (header.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return ".png";
+        if (header.toString("ascii", 0, 3) === "GIF") return ".gif";
+        if (header.toString("ascii", 0, 4) === "RIFF" && header.toString("ascii", 8, 12) === "WEBP") return ".webp";
+        if (header.toString("ascii", 0, 2) === "BM") return ".bmp";
+        if (header.toString("ascii", 4, 12).includes("ftyp")) {
+            const brand = header.toString("ascii", 8, 16);
+            if (brand.startsWith("avif") || brand.startsWith("avis")) return ".avif";
+            if (brand.startsWith("heic") || brand.startsWith("heix")) return ".heic";
+        }
+        return "";
+    }
+
     private static storeSource(
         sourcePath: string,
         originalname: string,

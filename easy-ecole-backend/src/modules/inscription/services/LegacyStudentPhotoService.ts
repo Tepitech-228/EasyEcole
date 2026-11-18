@@ -23,6 +23,29 @@ export default class LegacyStudentPhotoService {
     return path.join(getDocumentsRoot(), "uploads", "legacy", "auth", "etudiants");
   }
 
+  static getLegacyPhotoDirectory(): string {
+    return LegacyStudentPhotoService.getPhotoDirectory();
+  }
+
+  static async resolvePhotoReference(
+    photoReference: string | null | undefined,
+    photoDirectory: string = LegacyStudentPhotoService.getPhotoDirectory()
+  ): Promise<string | null> {
+    if (!photoReference?.trim()) return null;
+    const filename = path.basename(photoReference.trim().replace(/\\/g, "/"));
+    if (!filename || filename === "." || filename === "..") return null;
+    const sourcePath = path.join(photoDirectory, filename);
+    try {
+      const stats = await fs.promises.stat(sourcePath);
+      return stats.isFile() ? filename : null;
+    } catch (error: any) {
+      if (error?.code !== "ENOENT") {
+        console.error("[LegacyStudentPhotoService] Impossible de vérifier une référence photo :", error);
+      }
+      return null;
+    }
+  }
+
   static async findByStudentName(
     nom: string,
     prenoms: string,

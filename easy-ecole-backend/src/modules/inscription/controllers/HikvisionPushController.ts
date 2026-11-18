@@ -179,6 +179,8 @@ async function getUtilisateurPhoto(
         })
       ]);
       const photo = dossier?.photo || apprenant?.photo;
+      const legacyPhoto = await LegacyStudentPhotoService.resolvePhotoReference(photo);
+      if (legacyPhoto) return { photo: legacyPhoto, photoType: "legacy-apprenant" };
       return photo
         ? { photo, photoType: "apprenant" }
         : await LegacyStudentPhotoService.findByStudentName(utilisateur.nom, utilisateur.prenoms)

@@ -95,6 +95,8 @@ export default class PointageController {
                 attributes: ['photo']
             });
             const photoApprenant = photoDossier || apprenant?.photo;
+            const photoLegacy = await LegacyStudentPhotoService.resolvePhotoReference(photoApprenant);
+            if (photoLegacy) return { photo: photoLegacy, photoType: 'legacy-apprenant' };
             return photoApprenant
                 ? { photo: photoApprenant, photoType: 'apprenant' }
                 : await LegacyStudentPhotoService.findByStudentName(utilisateur.nom, utilisateur.prenoms)

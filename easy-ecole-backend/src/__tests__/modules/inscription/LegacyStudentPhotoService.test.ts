@@ -28,4 +28,24 @@ describe("LegacyStudentPhotoService", () => {
     await expect(LegacyStudentPhotoService.findByStudentName("Doe", "Jane", photoDirectory))
       .resolves.toBeNull();
   });
+
+  it("resolves a hash-named legacy photo using the stored database reference", async () => {
+    fs.writeFileSync(path.join(photoDirectory, "a1b2c3d4e5f6"), "photo");
+
+    await expect(LegacyStudentPhotoService.resolvePhotoReference(
+      "uploads/legacy/auth/etudiants/a1b2c3d4e5f6",
+      photoDirectory,
+    )).resolves.toBe("a1b2c3d4e5f6");
+  });
+
+  it("does not resolve a path whose file is outside the legacy photo folder", async () => {
+    const outsideDirectory = path.join(photoDirectory, "outside");
+    fs.mkdirSync(outsideDirectory);
+    fs.writeFileSync(path.join(outsideDirectory, "a1b2c3d4e5f6"), "photo");
+
+    await expect(LegacyStudentPhotoService.resolvePhotoReference(
+      "outside/a1b2c3d4e5f6",
+      photoDirectory,
+    )).resolves.toBeNull();
+  });
 });
