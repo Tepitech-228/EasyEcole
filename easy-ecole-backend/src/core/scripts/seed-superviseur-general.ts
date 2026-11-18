@@ -43,6 +43,14 @@ async function seedSuperviseurGeneral(): Promise<void> {
         });
       }
     }
+    const permissionReaffectation = await Permission.findOne({ where: { key: 'action.inscription.cursus.modifier' } });
+    if (!permissionReaffectation) {
+      throw new Error('Permission de réaffectation de filière introuvable.');
+    }
+    await RolePermission.findOrCreate({
+      where: { roleId: role.id, permissionId: permissionReaffectation.id },
+      defaults: { roleId: role.id, permissionId: permissionReaffectation.id }
+    });
 
     const [existingByLogin, existingByEmail] = await Promise.all([
       Utilisateur.findOne({ where: { identifiant: IDENTIFIANT }, paranoid: false }),

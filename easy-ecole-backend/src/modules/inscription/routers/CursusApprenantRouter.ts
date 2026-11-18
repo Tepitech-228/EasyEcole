@@ -3,6 +3,7 @@ import express from "express"
 import CursusApprenantController from "../controllers/CursusApprenantController"
 import Authenticate from "../../../core/middlewares/Authenticate";
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
+import { AuthPilotagePedagogique } from "../../../core/middlewares/AuthPilotagePedagogique";
 import CheckPermission from "../../../core/middlewares/CheckPermission";
 
 const router = express.Router()
@@ -138,6 +139,7 @@ router
  *         description: Cursus apprenant mis à jour
  */
     .put('/:id', [AuthInstitution, CheckPermission('action.inscription.cursus.modifier')], CursusApprenantController.updateCursusApprenant)
+    .patch('/:id/reaffectation', [AuthPilotagePedagogique, CheckPermission('action.inscription.cursus.modifier')], CursusApprenantController.reaffecterFiliere)
 
 /**
  * @openapi

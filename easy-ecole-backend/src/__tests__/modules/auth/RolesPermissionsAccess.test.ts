@@ -79,6 +79,17 @@ describe('ROLE_PERMISSIONS d’administration', () => {
     expect(groupePointage?.items.some(item => item.label === 'Terminal' && item.route === '/pointage')).toBe(true)
   })
 
+  it('autorise le Superviseur Général à réaffecter un étudiant dans une autre filière', () => {
+    const reaffectation = MENU_CONFIG
+      .flatMap(pole => pole.groups)
+      .flatMap(group => group.items)
+      .find(item => item.route === '/scolarite/reaffectation-filiere')
+
+    expect(reaffectation?.allowedRoles).toContain(RolesUtilisateur.SUPERVISEUR_GENERAL)
+    expect(reaffectation?.roleRestricted).toBe(true)
+    expect(ROLE_PERMISSIONS['Superviseur Général']).toContain('action.inscription.cursus.modifier')
+  })
+
   it('réserve les menus de caisse au recouvrement et garde la file d’impression au secrétariat', () => {
     const poleSecretariat = MENU_CONFIG.find(pole => pole.label === 'Secretariat')
     const poleRecouvrement = MENU_CONFIG.find(pole => pole.label === 'Recouvrement')

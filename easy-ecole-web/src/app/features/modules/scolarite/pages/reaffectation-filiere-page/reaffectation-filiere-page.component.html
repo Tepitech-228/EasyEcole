@@ -1,0 +1,103 @@
+<div class="page-container reaffectation-page">
+  <app-header-title
+    title="Réaffectation de filière"
+    subtitle="Choisissez un étudiant pour modifier immédiatement la filière de son cursus actif.">
+  </app-header-title>
+
+  <app-custom-alert *ngIf="errorMessage" [show]="true" [title]="errorMessage" type="danger" [inline]="true"></app-custom-alert>
+  <app-custom-alert *ngIf="successMessage" [show]="true" [title]="successMessage" type="success" [inline]="true"></app-custom-alert>
+
+  <div *ngIf="selectedCursus as cursus" class="card reaffectation-editor">
+    <div class="card-header reaffectation-editor__header">
+      <div class="reaffectation-editor__icon material-symbols-outlined" aria-hidden="true">sync_alt</div>
+      <div>
+        <h2 class="card-title">Changer la filière de {{ nomEtudiant(cursus) }}</h2>
+        <p class="card-subtitle">
+        Filière actuelle : {{ cursus.parcours?.titre || cursus.intituleParcours || 'Non renseignée' }}
+        <span *ngIf="cursus.parcours?.type"> — {{ cursus.parcours?.type }}</span>
+        </p>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="reaffectation-editor__form">
+        <label class="form-label" for="filiereCible">Nouvelle filière</label>
+        <select id="filiereCible" class="form-select" [(ngModel)]="selectedParcoursId">
+          <option value="">-- Choisir une filière --</option>
+          <option *ngFor="let parcours of parcoursDuMemeCycle" [value]="parcours.id">
+            {{ parcours.titre }}{{ parcours.grade ? ' — ' + parcours.grade : '' }}
+          </option>
+        </select>
+        <p class="reaffectation-editor__note">
+          Seules les filières du même cycle sont proposées. La classe actuelle sera retirée ; les cours, notes et présences déjà enregistrés seront conservés.
+        </p>
+      </div>
+      <div class="reaffectation-editor__actions">
+        <button type="button" class="btn btn-secondary" (click)="annulerSelection()" [disabled]="saving">Annuler</button>
+        <button type="button" class="btn btn-primary" (click)="reaffecter()" [disabled]="!selectedParcoursId || saving">
+          {{ saving ? 'Enregistrement...' : 'Confirmer la réaffectation' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card student-list-card">
+    <div class="card-header student-list-card__header">
+      <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <h2 class="card-title">Étudiants</h2>
+          <p class="card-subtitle">{{ total }} cursus actif(s)</p>
+        </div>
+        <div class="student-list-card__search">
+          <input
+            type="search"
+            class="form-input"
+            placeholder="Rechercher un étudiant..."
+            [(ngModel)]="searchQuery"
+            (keyup.enter)="rechercher()">
+          <button type="button" class="btn btn-secondary" (click)="rechercher()">Rechercher</button>
+        </div>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <div *ngIf="loading" class="reaffectation-state" role="status">Chargement des étudiants...</div>
+      <div *ngIf="!loading && cursusList.length === 0" class="reaffectation-state">
+        Aucun étudiant trouvé.
+      </div>
+      <div *ngIf="!loading && cursusList.length > 0" class="overflow-x-auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Étudiant</th>
+              <th>Année académique</th>
+              <th>Cycle / niveau</th>
+              <th>Filière actuelle</th>
+              <th>Classe</th>
+              <th class="text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let cursus of cursusList">
+              <td class="font-medium">{{ nomEtudiant(cursus) }}</td>
+              <td>{{ cursus.anneeAcademique?.libelle || '—' }}</td>
+              <td>{{ cursus.parcours?.type || '—' }} / {{ cursus.niveauEtude?.libelle || '—' }}</td>
+              <td>{{ cursus.parcours?.titre || cursus.intituleParcours || '—' }}</td>
+              <td>{{ cursus.classe?.libelle || '—' }}</td>
+              <td class="student-list-card__action">
+                <button type="button" class="btn btn-primary btn-sm reaffectation-button" (click)="selectionnerEtudiant(cursus)">
+                  Réaffecter
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="!loading && totalPages > 1" class="reaffectation-pagination">
+        <span class="text-sm text-gray-600">Page {{ currentPage }} sur {{ totalPages }}</span>
+        <div class="flex gap-2">
+          <button type="button" class="btn btn-secondary btn-sm" (click)="pagePrecedente()" [disabled]="currentPage <= 1">Précédent</button>
+          <button type="button" class="btn btn-secondary btn-sm" (click)="pageSuivante()" [disabled]="currentPage >= totalPages">Suivant</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -70,6 +70,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                     { label: 'Equivalences', route: '/bulletins/equivalences', icon: 'swap_horiz', permissionKey: 'menu.evaluations.equivalences', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
                     { label: 'Dispenses', route: '/bulletins/dispenses', icon: 'file_copy', permissionKey: 'menu.evaluations.dispenses', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.ADMIN] },
                     { label: 'Reorientation', route: '/scolarite/reorientation', icon: 'swap_horiz', permissionKey: 'menu.scolarite.reorientation', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
+                    { label: 'Réaffectation filière', route: '/scolarite/reaffectation-filiere', icon: 'sync_alt', permissionKey: 'menu.scolarite.reorientation', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.SUPERVISEUR_GENERAL, RolesUtilisateur.ADMIN], roleRestricted: true },
                     { label: 'Reclamations', route: '/scolarite/mes-reclamations', icon: 'feedback', permissionKey: 'menu.scolarite.reclamations', allowedRoles: [RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN] },
                     { label: 'Traiter reclam.', route: '/scolarite/traiter-reclamations', icon: 'gavel', permissionKey: 'menu.scolarite.traiter-reclamations', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN] },
                 ]

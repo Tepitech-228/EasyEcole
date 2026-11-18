@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CountOptions, FindOptions, InferAttributes, Op } from "sequelize";
+import { CountOptions, FindOptions, InferAttributes, literal, Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { CursusApprenant } from "../models/CursusApprenant";
 import { Utilisateur } from "../../auth/models/Utilisateur";
@@ -54,6 +54,13 @@ export default class CursusApprenantController {
             }
             if ((req.query.classeId as string)) {
                 where.classeId = req.query.classeId;
+            }
+            if (req.query.latestPerStudent === 'true') {
+                where.id = {
+                    [Op.in]: literal(
+                        '(SELECT MAX(id) FROM `ins_cursus_apprenants` WHERE `deletedAt` IS NULL GROUP BY `utilisateurId`)'
+                    )
+                };
             }
             if ((req.query.search as string)) {
                 apprenantWhere = {
@@ -302,6 +309,89 @@ export default class CursusApprenantController {
         }
 
         return null
+    }
+
+    static async reaffecterFiliere(req: Request, res: Response): Promise<Response> {
+        const cursusId = Number(req.params.id);
+        const parcoursId = Number(req.body?.parcoursId);
+        if (!Number.isSafeInteger(cursusId) || cursusId <= 0 || !Number.isSafeInteger(parcoursId) || parcoursId <= 0) {
+            return res.status(400).json({ success: false, message: "Identifiant de cursus ou de filière invalide" });
+        }
+
+        const siteScope = CursusApprenantController.getSiteScope(req);
+        if (siteScope === undefined) {
+            return res.status(403).json({ success: false, message: "Aucun site actif autorisé" });
+        }
+
+        const transaction = await CursusApprenant.sequelize!.transaction();
+        try {
+            const where: any = { id: cursusId };
+            if (siteScope !== null) where.etablissementId = siteScope;
+
+            const cursus = await CursusApprenant.findOne({
+                where,
+                include: [CursusApprenant.associations.parcours],
+                transaction,
+                lock: transaction.LOCK.UPDATE
+            });
+            if (!cursus) {
+                await transaction.rollback();
+                return res.status(404).json({ success: false, message: "Cursus actif introuvable" });
+            }
+
+            const cursusActif = await CursusApprenant.findOne({
+                where: { utilisateurId: cursus.utilisateurId },
+                order: [['id', 'DESC']],
+                transaction
+            });
+            if (!cursusActif || cursusActif.id !== cursus.id) {
+                await transaction.rollback();
+                return res.status(409).json({ success: false, message: "Seul le cursus actif de l'étudiant peut être réaffecté" });
+            }
+
+            const parcoursCible = await Parcours.findByPk(parcoursId, { transaction });
+            if (!parcoursCible) {
+                await transaction.rollback();
+                return res.status(404).json({ success: false, message: "Filière cible introuvable" });
+            }
+            if (
+                siteScope !== null
+                && parcoursCible.etablissementId !== null
+                && parcoursCible.etablissementId !== siteScope
+            ) {
+                await transaction.rollback();
+                return res.status(403).json({ success: false, message: "Cette filière n'est pas disponible pour votre établissement" });
+            }
+            if (!cursus.parcours?.type || parcoursCible.type !== cursus.parcours.type) {
+                await transaction.rollback();
+                return res.status(400).json({ success: false, message: "La filière cible doit appartenir au même cycle d'études" });
+            }
+            if (cursus.parcoursId === parcoursCible.id) {
+                await transaction.rollback();
+                return res.status(400).json({ success: false, message: "L'étudiant est déjà inscrit dans cette filière" });
+            }
+
+            await cursus.update({
+                parcoursId: parcoursCible.id,
+                intituleParcours: parcoursCible.titre,
+                classeId: null
+            }, { transaction });
+            await cursus.reload({
+                include: [CursusApprenant.associations.parcours],
+                transaction
+            });
+            await transaction.commit();
+
+            return res.status(200).json({
+                success: true,
+                message: "Filière de l'étudiant mise à jour",
+                data: cursus
+            });
+        } catch (error) {
+            await transaction.rollback();
+            console.error("Erreur lors de la réaffectation de filière", error);
+            return res.status(500).json({ success: false, message: "Erreur interne lors de la réaffectation" });
+        }
     }
 
     static async deleteCursusApprenant(req: Request, res: Response): Promise<Response | null> {

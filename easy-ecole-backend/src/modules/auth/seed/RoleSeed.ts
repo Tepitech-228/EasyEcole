@@ -229,6 +229,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
         'action.cours.enseignant.creer', 'action.cours.enseignant.modifier',
         'action.inscription.salle.creer', 'action.inscription.salle.modifier',
         'action.inscription.salle.supprimer',
+        'action.inscription.cursus.modifier',
         'action.evaluation.bulletin.generer', 'action.evaluation.bulletin.publier',
         'action.evaluation.deliberation.organiser', 'action.evaluation.deliberation.creer',
         'action.evaluation.deliberation.modifier', 'action.evaluation.deliberation.charger-resultats',
@@ -248,13 +249,17 @@ export class RoleSeed {
                     ? 0
                     : await RolePermission.count({ where: { roleId: role.id } });
                 const synchroniserPermissionsRecouvrement = roleData.nom === 'ESA Compta' && existingPermissionCount > 0;
+                const synchroniserPermissionReaffectation = roleData.nom === 'Superviseur Général' && existingPermissionCount > 0;
                 if (
                     existingPermissionCount > 0
                     && roleData.nom !== 'Surveillant'
                     && !synchroniserPermissionsRecouvrement
+                    && !synchroniserPermissionReaffectation
                 ) continue;
 
-                const permissionKeys = roleData.nom === 'Surveillant' && existingPermissionCount > 0
+                const permissionKeys = roleData.nom === 'Superviseur Général' && existingPermissionCount > 0
+                    ? ['action.inscription.cursus.modifier']
+                    : roleData.nom === 'Surveillant' && existingPermissionCount > 0
                     ? [
                         'menu.administration.utilisateurs',
                         'action.administration.utilisateur.creer',

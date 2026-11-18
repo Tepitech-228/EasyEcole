@@ -47,6 +47,10 @@ export class CursusApprenantService {
     return this.httpClient.put<CursusApprenant>(`${this.SERVICE_URL}/${cursusApprenant.id!}`, cursusApprenant)
   }
 
+  reaffecterFiliere(cursusId: string, parcoursId: string): Observable<any> {
+    return this.httpClient.patch(`${this.SERVICE_URL}/${cursusId}/reaffectation`, { parcoursId })
+  }
+
   delete(id: string): Observable<any> {
     return this.httpClient.delete(`${this.SERVICE_URL}/${id}`)
   }

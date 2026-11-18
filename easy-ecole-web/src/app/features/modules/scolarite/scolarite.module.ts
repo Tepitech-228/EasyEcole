@@ -34,6 +34,7 @@ import { ComiteDemandesDocumentsPageComponent } from './pages/comite-demandes-do
 import { PaiementDocumentsWizardPageComponent } from './pages/paiement-documents-wizard-page/paiement-documents-wizard-page.component';
 import { FileImpressionDocumentsPageComponent } from './pages/file-impression-documents-page/file-impression-documents-page.component';
 import { TarifsDocumentsPageComponent } from './pages/tarifs-documents-page/tarifs-documents-page.component';
+import { ReaffectationFilierePageComponent } from './pages/reaffectation-filiere-page/reaffectation-filiere-page.component';
 
 @NgModule({
   declarations: [
@@ -63,7 +64,8 @@ import { TarifsDocumentsPageComponent } from './pages/tarifs-documents-page/tari
     ComiteDemandesDocumentsPageComponent,
     PaiementDocumentsWizardPageComponent,
     FileImpressionDocumentsPageComponent,
-    TarifsDocumentsPageComponent
+    TarifsDocumentsPageComponent,
+    ReaffectationFilierePageComponent
   ],
   imports: [
     CommonModule,
