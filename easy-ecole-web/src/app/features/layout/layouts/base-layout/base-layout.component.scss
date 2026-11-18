@@ -22,12 +22,17 @@ main {
 
 @media (max-width: 1023px) {
     main {
+        height: auto;
         min-height: 100vh;
         min-height: 100dvh;
 
         #left {
-            height: 100vh;
-            height: 100dvh;
+            top: 0;
+            bottom: 0;
+            height: auto;
+            box-sizing: border-box;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
         #right {
@@ -35,9 +40,13 @@ main {
             min-height: 100vh;
             min-height: 100dvh;
 
+            > nav {
+                padding-top: env(safe-area-inset-top);
+            }
+
             > div {
                 min-width: 0;
-                padding-bottom: calc(2.5rem + env(safe-area-inset-bottom));
+                padding-bottom: 2.5rem;
             }
         }
     }

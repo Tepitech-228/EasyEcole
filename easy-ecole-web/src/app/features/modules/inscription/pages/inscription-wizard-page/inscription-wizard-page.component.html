@@ -110,7 +110,7 @@
       Le parcours e-learning ne passe pas par le pôle pédagogique présentiel. Après le dépôt du dossier, la validation du comité et le recouvrement, vous choisirez vos UE en ligne.
     </div>
 
-    <div class="mt-4">
+    <div class="wizard-actions mt-4">
       <button class="btn btn-primary" [disabled]="!phase1Complete" (click)="passerEtape2()">
         Continuer
         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -203,7 +203,7 @@
         </span>
       </div>
 
-      <div class="mt-4">
+      <div class="wizard-actions mt-4">
         <button class="btn btn-primary" [disabled]="!documentsComplets || (modeCorrection !== 'comite' && !bordereauPret)"
                 (click)="modeCorrection ? passerEtape4DepuisCorrection() : passerEtape3()">
           {{ modeCorrection ? 'Valider la correction et continuer' : 'Soumettre les pièces' }}
@@ -340,14 +340,16 @@
           Le site choisi doit être actif et correspondre au niveau académique sélectionné.
         </small>
       </div>
-      <button class="btn btn-primary"
-              [disabled]="photoUploadEnCours"
-              (click)="passerEtape4()">
-        {{ photoUploadEnCours ? 'Téléversement de la photo…' : 'Valider et continuer' }}
-        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-        </svg>
-      </button>
+      <div class="wizard-actions">
+        <button class="btn btn-primary"
+                [disabled]="photoUploadEnCours"
+                (click)="passerEtape4()">
+          {{ photoUploadEnCours ? 'Téléversement de la photo…' : 'Valider et continuer' }}
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -432,7 +434,7 @@
       <p>Après validation de votre inscription, votre photo sera transmise au terminal biométrique Hikvision de l'établissement afin d'y créer votre profil de reconnaissance faciale. Cette opération est réalisée de façon systématique, conformément au règlement de l'établissement.</p>
     </div>
 
-    <div class="mt-4">
+    <div class="wizard-actions mt-4">
       <button class="btn btn-primary" [disabled]="submitting" (click)="ouvrirConfirmationSoumission()">
         {{ submitting ? 'Soumission…' : "Soumettre la demande d'autorisation provisoire" }}
         <svg *ngIf="!submitting" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">

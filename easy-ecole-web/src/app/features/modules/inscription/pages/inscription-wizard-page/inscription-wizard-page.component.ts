@@ -1155,6 +1155,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.errorMessage = ''
     this.etape = 2
     this.sauvegarder()
+    this.remonterAuDebutDuWizard()
     // Si une session est déjà sélectionnée (auto-depuis la route), recharger
     // les documents requis pour cette session avec le grade maintenant choisi.
     if (this.sessionSelectionneeId && this.documentsRequis.length === 0) {
@@ -1210,6 +1211,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.errorMessage = ''
     this.etape = 4
     this.sauvegarder()
+    this.remonterAuDebutDuWizard()
   }
 
   /**
@@ -1233,6 +1235,7 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     this.errorMessage = ''
     this.etape = 4
     this.sauvegarder()
+    this.remonterAuDebutDuWizard()
   }
 
   /** Note sous le selecteur de session en mode correction. */
@@ -1247,6 +1250,14 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     if (this.demandeVerrouillee) return
     this.etape = etape
     this.sauvegarder()
+    this.remonterAuDebutDuWizard()
+  }
+
+  private remonterAuDebutDuWizard(): void {
+    if (typeof document === 'undefined' || typeof window === 'undefined') return
+    window.requestAnimationFrame(() => {
+      document.querySelector<HTMLElement>('.wizard-page')?.scrollIntoView({ block: 'start' })
+    })
   }
 
   // ---------------------------------------------------------------------------
