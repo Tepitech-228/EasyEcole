@@ -37,6 +37,7 @@ describe('TerminalPointagePageComponent', () => {
   };
 
   beforeEach(async () => {
+    localStorage.removeItem(TerminalPointagePageComponent.ATTENDANCE_STREAM_FILTER_STORAGE_KEY);
     terminalAttendanceEvents = new Subject<TerminalAttendanceEvent>();
     pointageService = jasmine.createSpyObj<PointageService>(
       'PointageService',
@@ -249,7 +250,7 @@ describe('TerminalPointagePageComponent', () => {
     const component = fixture.componentInstance;
     component.loading = false;
     component.loadError = '';
-    component.attendanceStreamFilter = 'etudiant';
+    component.persistAttendanceStreamFilter('etudiant');
     fixture.detectChanges();
 
     const staffEvent: TerminalAttendanceEvent = {
@@ -270,16 +271,27 @@ describe('TerminalPointagePageComponent', () => {
     terminalAttendanceEvents.next({ ...staffEvent, role: 'apprenant', employeeNoString: 'ESA001' });
     expect(component.lastAttendanceName).toBe('Jane Doe');
 
-    component.attendanceStreamFilter = 'personnel';
+    component.persistAttendanceStreamFilter('personnel');
     terminalAttendanceEvents.next({ ...staffEvent, role: 'apprenant', employeeNoString: 'ESA002' });
     expect(component.lastAttendanceName).toBe('Jane Doe');
     terminalAttendanceEvents.next(staffEvent);
     expect(component.lastAttendanceName).toBe('Jane Doe');
     expect(component.lastAttendanceRoleCode).toBe('enseignant');
 
-    component.attendanceStreamFilter = 'tous';
+    component.persistAttendanceStreamFilter('tous');
     terminalAttendanceEvents.next({ ...staffEvent, role: 'apprenant', employeeNoString: 'ESA003' });
     expect(component.lastAttendanceRoleCode).toBe('apprenant');
+  });
+
+  it('restores the selected Hikvision filter after the terminal page is recreated', () => {
+    fixture.componentInstance.persistAttendanceStreamFilter('personnel');
+    expect(localStorage.getItem(TerminalPointagePageComponent.ATTENDANCE_STREAM_FILTER_STORAGE_KEY))
+      .toBe('personnel');
+
+    fixture.destroy();
+    fixture = TestBed.createComponent(TerminalPointagePageComponent);
+
+    expect(fixture.componentInstance.attendanceStreamFilter).toBe('personnel');
   });
 
   it('announces a saved Hikvision attendance event received over Socket.IO', () => {

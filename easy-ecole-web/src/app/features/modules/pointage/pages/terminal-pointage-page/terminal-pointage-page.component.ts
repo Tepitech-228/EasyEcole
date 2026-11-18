@@ -54,6 +54,7 @@ type TerminalAttendanceFilter = 'personnel' | 'etudiant' | 'tous';
   styleUrls: ['./terminal-pointage-page.component.scss']
 })
 export class TerminalPointagePageComponent extends BaseComponentClass implements OnDestroy {
+  static readonly ATTENDANCE_STREAM_FILTER_STORAGE_KEY = 'easyEcole.pointage.terminal.attendanceStreamFilter'
   private static readonly PERSONNEL_ROLES = new Set<string>(
     Object.values(RolesUtilisateur).filter(role =>
       role !== RolesUtilisateur.APPRENANT && role !== RolesUtilisateur.PARENT
@@ -178,6 +179,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   ) {
     super()
     this.isAdmin = this.rolesValue.isAdmin
+    this.attendanceStreamFilter = this.loadAttendanceStreamFilter()
     this.loadTodayPointage()
     if (this.isAdmin) this.chargerConfigurationTerminaux()
     this.socketService.connect()
@@ -552,6 +554,19 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
 
   private isPersonnelRole(role: string | undefined): boolean {
     return !!role && TerminalPointagePageComponent.PERSONNEL_ROLES.has(role.toLowerCase())
+  }
+
+  private loadAttendanceStreamFilter(): TerminalAttendanceFilter {
+    const savedFilter = localStorage.getItem(TerminalPointagePageComponent.ATTENDANCE_STREAM_FILTER_STORAGE_KEY)
+    return savedFilter === 'etudiant' || savedFilter === 'personnel' || savedFilter === 'tous'
+      ? savedFilter
+      : 'tous'
+  }
+
+  persistAttendanceStreamFilter(value: TerminalAttendanceFilter): void {
+    if (value !== 'etudiant' && value !== 'personnel' && value !== 'tous') return
+    this.attendanceStreamFilter = value
+    localStorage.setItem(TerminalPointagePageComponent.ATTENDANCE_STREAM_FILTER_STORAGE_KEY, value)
   }
 
   private doitAfficherEvenementTerminal(event: TerminalAttendanceEvent): boolean {

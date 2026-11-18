@@ -22,7 +22,8 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
         <p>Les événements exclus ne déclenchent ni affichage, ni son, ni annonce vocale. Les scans QR locaux restent inchangés.</p>
       </div>
     </div>
-    <select id="pointageStreamFilter" class="pointage-stream-filter__select" [(ngModel)]="attendanceStreamFilter">
+    <select id="pointageStreamFilter" class="pointage-stream-filter__select" [(ngModel)]="attendanceStreamFilter"
+      (ngModelChange)="persistAttendanceStreamFilter($event)">
       <option value="etudiant">ÉTUDIANT</option>
       <option value="personnel">PERSONNEL</option>
       <option value="tous">TOUS</option>
