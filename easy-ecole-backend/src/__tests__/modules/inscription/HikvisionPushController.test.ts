@@ -17,7 +17,7 @@ jest.mock("../../../modules/inscription/models/DossierEtudiant", () => ({
   DossierEtudiant: { findAll: jest.fn(), findOne: jest.fn() }
 }));
 jest.mock("../../../modules/inscription/models/DemandeInscription", () => ({
-  DemandeInscription: { findAll: jest.fn() }
+  DemandeInscription: { findAll: jest.fn(), findOne: jest.fn() }
 }));
 jest.mock("../../../modules/inscription/models/PointageTerminal", () => ({
   PointageTerminal: { findOne: jest.fn() }
@@ -48,7 +48,10 @@ jest.mock("../../../modules/inscription/services/HikvisionDiagnosticLogger", () 
   logHikvisionDiagnostic: jest.fn()
 }));
 
-import { resolveUtilisateur } from "../../../modules/inscription/controllers/HikvisionPushController";
+import {
+  resolveMatriculeAffichage,
+  resolveUtilisateur
+} from "../../../modules/inscription/controllers/HikvisionPushController";
 
 const { Utilisateur } = require("../../../modules/auth/models/Utilisateur");
 const { PersonnelAdministratif } = require("../../../modules/auth/models/PersonnelAdministratif");
@@ -66,6 +69,50 @@ describe("resolveUtilisateur", () => {
     PersonnelAdministratif.findAll.mockResolvedValue([]);
     Enseignant.findAll.mockResolvedValue([]);
     Utilisateur.findAll.mockResolvedValue([]);
+  });
+
+  describe("resolveMatriculeAffichage", () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it("uses the learner's full matricule, preserving its separators, instead of the normalized terminal PIN", async () => {
+      DossierEtudiant.findOne.mockResolvedValue({ matricule: "2026-L1-J-26-ESA" });
+
+      await expect(resolveMatriculeAffichage(
+        { id: 43, role: "apprenant" } as any,
+        3,
+        "2026L1J26ESA"
+      )).resolves.toBe("2026-L1-J-26-ESA");
+
+      expect(DossierEtudiant.findOne).toHaveBeenCalledWith({
+        where: { utilisateurId: 43, etablissementId: 3 },
+        attributes: ["matricule"],
+        order: [["updatedAt", "DESC"]]
+      });
+      expect(DemandeInscription.findOne).not.toHaveBeenCalled();
+    });
+
+    it("uses a submitted learner matricule when no student dossier exists yet", async () => {
+      DossierEtudiant.findOne.mockResolvedValue(null);
+      DemandeInscription.findOne.mockResolvedValue({ matriculeEtudiant: "2026-L1-J-26-ESA" });
+
+      await expect(resolveMatriculeAffichage(
+        { id: 43, role: "apprenant" } as any,
+        3,
+        "2026L1J26ESA"
+      )).resolves.toBe("2026-L1-J-26-ESA");
+    });
+
+    it("keeps the existing PIN for non-learner terminal attendance", async () => {
+      await expect(resolveMatriculeAffichage(
+        { id: 43, role: "enseignant" } as any,
+        3,
+        "ENS043"
+      )).resolves.toBe("ENS043");
+
+      expect(DossierEtudiant.findOne).not.toHaveBeenCalled();
+    });
   });
 
   it("resolves a submitted learner before a DossierEtudiant exists", async () => {

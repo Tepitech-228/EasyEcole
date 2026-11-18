@@ -127,6 +127,40 @@ export async function resolveUtilisateur(employeeNo: string, etablissementId: nu
   return null;
 }
 
+export async function resolveMatriculeAffichage(
+  utilisateur: Utilisateur,
+  etablissementId: number,
+  terminalPin: string
+): Promise<string> {
+  if (utilisateur.role !== RolesUtilisateur.APPRENANT) return terminalPin;
+
+  const dossier = await DossierEtudiant.findOne({
+    where: { utilisateurId: utilisateur.id, etablissementId },
+    attributes: ["matricule"],
+    order: [["updatedAt", "DESC"]]
+  });
+  if (dossier?.matricule) return String(dossier.matricule);
+
+  const demande = await DemandeInscription.findOne({
+    where: {
+      utilisateurId: utilisateur.id,
+      etablissementId,
+      matriculeEtudiant: { [Op.ne]: null }
+    },
+    attributes: ["matriculeEtudiant"],
+    order: [["updatedAt", "DESC"]]
+  });
+  if (demande?.matriculeEtudiant) return String(demande.matriculeEtudiant);
+
+  const apprenant = await Apprenant.findOne({
+    where: { utilisateurId: utilisateur.id },
+    attributes: ["matriculeEtudiant"]
+  });
+  return apprenant?.matriculeEtudiant
+    ? String(apprenant.matriculeEtudiant)
+    : terminalPin;
+}
+
 async function getUtilisateurPhoto(
   utilisateur: Utilisateur,
   etablissementId: number
@@ -204,6 +238,11 @@ async function traiterEvenement(terminal: PointageTerminal, eventId: number): Pr
       return;
     }
     const photo = await getUtilisateurPhoto(utilisateur, Number(terminal.etablissementId));
+    const matriculeAffichage = await resolveMatriculeAffichage(
+      utilisateur,
+      Number(terminal.etablissementId),
+      pendingEvent.pin
+    );
 
     if (!recorded.recorded) {
       // Refus (paiement non à jour, compte non autorisé, déjà traité…) : on
@@ -225,7 +264,7 @@ async function traiterEvenement(terminal: PointageTerminal, eventId: number): Pr
           nom: utilisateur.nom,
           prenoms: utilisateur.prenoms,
           role: utilisateur.role,
-          employeeNoString: pendingEvent.pin,
+          employeeNoString: matriculeAffichage,
           date: pendingEvent.date,
           time: pendingEvent.heure,
           mode: "refuse",
@@ -270,7 +309,7 @@ async function traiterEvenement(terminal: PointageTerminal, eventId: number): Pr
       nom: utilisateur.nom,
       prenoms: utilisateur.prenoms,
       role: utilisateur.role,
-      employeeNoString: pendingEvent.pin,
+      employeeNoString: matriculeAffichage,
       date: pendingEvent.date,
       time: pendingEvent.heure,
       mode: recorded.mode,
