@@ -46,6 +46,8 @@ interface DepartureResultPopup {
   minutesSupplementaires: number | null;
 }
 
+type TerminalAttendanceFilter = 'personnel' | 'etudiant' | 'tous';
+
 @Component({
   selector: 'app-terminal-pointage-page',
   templateUrl: './terminal-pointage-page.component.html',
@@ -86,6 +88,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
   selfDepartureSaving: boolean = false
   voiceAnnouncementsEnabled: boolean = true
   voiceError: string = ''
+  attendanceStreamFilter: TerminalAttendanceFilter = 'tous'
   lastAttendanceName: string = ''
   lastAttendanceRole: string = ''
   lastAttendanceRoleCode: string = ''
@@ -179,7 +182,9 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     if (this.isAdmin) this.chargerConfigurationTerminaux()
     this.socketService.connect()
     this.terminalAttendanceSubscription = this.socketService.onTerminalAttendance().subscribe(event => {
-      this.ngZone.run(() => this.afficherPointageHikvision(event))
+      if (this.doitAfficherEvenementTerminal(event)) {
+        this.ngZone.run(() => this.afficherPointageHikvision(event))
+      }
     })
     this.verifierAnnoncePermanence()
     this.permanenceAnnouncementTimer = window.setInterval(() => this.verifierAnnoncePermanence(), 15000)
@@ -547,6 +552,14 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
 
   private isPersonnelRole(role: string | undefined): boolean {
     return !!role && TerminalPointagePageComponent.PERSONNEL_ROLES.has(role.toLowerCase())
+  }
+
+  private doitAfficherEvenementTerminal(event: TerminalAttendanceEvent): boolean {
+    if (this.attendanceStreamFilter === 'tous') return true
+    if (this.attendanceStreamFilter === 'etudiant') {
+      return String(event.role || '').toLowerCase() === String(RolesUtilisateur.APPRENANT).toLowerCase()
+    }
+    return this.isPersonnelRole(event.role)
   }
 
   private demanderConfirmationDepartTerminal(event: TerminalAttendanceEvent): void {

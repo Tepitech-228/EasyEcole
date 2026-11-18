@@ -245,6 +245,43 @@ describe('TerminalPointagePageComponent', () => {
     expect(fixture.nativeElement.querySelector('.pointage-self-empty')).toBeNull();
   });
 
+  it('filters Hikvision events by the selected population without affecting QR scans', () => {
+    const component = fixture.componentInstance;
+    component.loading = false;
+    component.loadError = '';
+    component.attendanceStreamFilter = 'etudiant';
+    fixture.detectChanges();
+
+    const staffEvent: TerminalAttendanceEvent = {
+      utilisateurId: 31,
+      nom: 'Doe',
+      prenoms: 'Jane',
+      role: 'enseignant',
+      employeeNoString: 'ENS031',
+      date: '2026-10-17',
+      time: '08:15:30',
+      mode: 'arrivee',
+      etablissementId: 1
+    };
+    terminalAttendanceEvents.next(staffEvent);
+    expect(component.lastAttendanceName).toBe('');
+    expect(component.scanSuccess).toBe('');
+
+    terminalAttendanceEvents.next({ ...staffEvent, role: 'apprenant', employeeNoString: 'ESA001' });
+    expect(component.lastAttendanceName).toBe('Jane Doe');
+
+    component.attendanceStreamFilter = 'personnel';
+    terminalAttendanceEvents.next({ ...staffEvent, role: 'apprenant', employeeNoString: 'ESA002' });
+    expect(component.lastAttendanceName).toBe('Jane Doe');
+    terminalAttendanceEvents.next(staffEvent);
+    expect(component.lastAttendanceName).toBe('Jane Doe');
+    expect(component.lastAttendanceRoleCode).toBe('enseignant');
+
+    component.attendanceStreamFilter = 'tous';
+    terminalAttendanceEvents.next({ ...staffEvent, role: 'apprenant', employeeNoString: 'ESA003' });
+    expect(component.lastAttendanceRoleCode).toBe('apprenant');
+  });
+
   it('announces a saved Hikvision attendance event received over Socket.IO', () => {
     const speak = spyOn(window.speechSynthesis, 'speak');
     pointageService.getToday.and.returnValue(of(null));
