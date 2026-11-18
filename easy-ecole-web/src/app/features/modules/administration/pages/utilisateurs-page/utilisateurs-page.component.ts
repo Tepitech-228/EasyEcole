@@ -28,6 +28,7 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
   availableSites: SiteUtilisateur[] = []
   sitesLoading: boolean = false
   sitesError: string = ''
+  private sitesLoadRequestId = 0
 
   showDeleteModal: boolean = false
   deletingUser: any = null
@@ -181,6 +182,7 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
       if (this.siteSelectionRequired && this.sitesSelectionnes.length === 0 && this.availableSites.length === 1) {
         this.formData.siteIds = [Number(this.availableSites[0].id)]
       }
+      this.loadAvailableSites(role)
       return
     }
     this.formData = {
@@ -192,6 +194,7 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
     if (this.siteSelectionRequired && this.sitesSelectionnes.length === 0 && this.availableSites.length === 1) {
       this.formData.siteIds = [Number(this.availableSites[0].id)]
     }
+    this.loadAvailableSites(role)
   }
 
   private buildEditFormData(user: any, role: RolesUtilisateur): Record<string, any> {
@@ -288,12 +291,16 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
     this.selectedPhoto = input.files?.[0] || null
   }
 
-  private loadAvailableSites(): void {
+  private loadAvailableSites(role: RolesUtilisateur = this.formData.role): void {
+    const requestId = ++this.sitesLoadRequestId
     this.sitesLoading = true
     this.sitesError = ''
-    this.authService.getSitesMoi().subscribe({
+    this.authService.getSitesMoi(this.editingUser ? undefined : role).subscribe({
       next: sites => {
+        if (requestId !== this.sitesLoadRequestId) return
         this.availableSites = sites
+        const availableSiteIds = new Set(sites.map(site => Number(site.id)))
+        this.formData.siteIds = this.sitesSelectionnes.filter(siteId => availableSiteIds.has(siteId))
         this.sitesLoading = false
         if (!this.editingUser && sites.length === 1) {
           this.formData.siteIds = [Number(sites[0].id)]
@@ -302,6 +309,7 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
         }
       },
       error: () => {
+        if (requestId !== this.sitesLoadRequestId) return
         this.availableSites = []
         this.sitesLoading = false
         this.sitesError = 'Les sites autorisés ne peuvent pas être chargés. Réessayez avant d’enregistrer.'

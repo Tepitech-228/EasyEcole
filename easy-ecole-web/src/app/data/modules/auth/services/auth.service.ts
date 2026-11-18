@@ -28,8 +28,9 @@ export class AuthService {
     return this.httpClient.post(`${this.SERVICE_URL}/login`, utilisateur)
   }
 
-  getSitesMoi(): Observable<SiteUtilisateur[]> {
-    return this.httpClient.get<SiteUtilisateur[]>(`${this.SERVICE_URL}/utilisateurs/moi/sites`);
+  getSitesMoi(role?: string): Observable<SiteUtilisateur[]> {
+    const params = role ? new HttpParams().set('role', role) : undefined;
+    return this.httpClient.get<SiteUtilisateur[]>(`${this.SERVICE_URL}/utilisateurs/moi/sites`, { params });
   }
 
   definirSiteActif(etablissementId: number): Observable<{ accessToken: string; etablissementId: number }> {

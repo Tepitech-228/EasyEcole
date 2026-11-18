@@ -83,6 +83,13 @@ export default class UtilisateurController {
                 const sites = await Etablissement.findAll({ where: { actif: true }, order: [['nom', 'ASC']] });
                 return res.status(200).json(sites);
             }
+            if (
+                role === RolesUtilisateur.SURVEILLANT
+                && req.query.role === RolesUtilisateur.ENSEIGNANT
+            ) {
+                const sites = await Etablissement.findAll({ where: { actif: true }, order: [['nom', 'ASC']] });
+                return res.status(200).json(sites);
+            }
             const affectations = await SiteUtilisateur.findAll({
                 where: { utilisateurId: req.utilisateurId! },
                 attributes: ['etablissementId']
@@ -677,7 +684,10 @@ export default class UtilisateurController {
                         message: "Sélectionnez au moins un site auquel vous êtes affecté."
                     });
                 }
-                const sitesAccessibles = await UtilisateurController.sitesAccessibles(req);
+                const sitesAccessibles = role === RolesUtilisateur.SURVEILLANT && userRole === RolesUtilisateur.ENSEIGNANT
+                    ? (await Etablissement.findAll({ where: { actif: true }, attributes: ['id'] }))
+                        .map(site => Number(site.id))
+                    : await UtilisateurController.sitesAccessibles(req);
                 if (affectations.some(etablissementId => !sitesAccessibles.includes(etablissementId))) {
                     return res.status(403).json({
                         success: false,

@@ -45,12 +45,36 @@ jest.mock('../../../modules/auth/models/Enseignant', () => ({
   Enseignant: { create: jest.fn() },
 }))
 
+jest.mock('../../../modules/auth/services/EnseignantBadgeService', () => ({
+  EnseignantBadgeService: { ensureIdentity: jest.fn() },
+}))
+
+jest.mock('../../../modules/inscription/services/HikvisionEnrollmentService', () => ({
+  __esModule: true,
+  default: {
+    enqueueStaffProfile: jest.fn().mockResolvedValue(0),
+    processPending: jest.fn().mockResolvedValue(undefined),
+  },
+}))
+
 jest.mock('../../../modules/auth/models/Apprenant', () => ({
   Apprenant: { create: jest.fn() },
 }))
 
 jest.mock('../../../modules/auth/models/PersonnelAdministratif', () => ({
   PersonnelAdministratif: { create: jest.fn() },
+}))
+
+jest.mock('../../../modules/auth/models/ComiteOrientation', () => ({
+  ComiteOrientation: { create: jest.fn() },
+}))
+
+jest.mock('../../../modules/auth/models/Institution', () => ({
+  Institution: { create: jest.fn() },
+}))
+
+jest.mock('../../../modules/auth/models/CaissierBanque', () => ({
+  CaissierBanque: { create: jest.fn() },
 }))
 
 jest.mock('../../../modules/etablissement/models/Etablissement', () => ({
@@ -63,6 +87,8 @@ jest.mock('../../../modules/auth/models/SiteUtilisateur', () => ({
 
 const { Utilisateur } = require('../../../modules/auth/models/Utilisateur')
 const { PersonnelAdministratif } = require('../../../modules/auth/models/PersonnelAdministratif')
+const { Enseignant } = require('../../../modules/auth/models/Enseignant')
+const { EnseignantBadgeService } = require('../../../modules/auth/services/EnseignantBadgeService')
 const { Etablissement } = require('../../../modules/etablissement/models/Etablissement')
 const { SiteUtilisateur } = require('../../../modules/auth/models/SiteUtilisateur')
 const { DatabaseConnection } = require('../../../core/helpers/DatabaseConnection')
@@ -174,6 +200,74 @@ describe('UtilisateurController.getUtilisateur', () => {
 })
 
 describe('UtilisateurController.adminCreateUtilisateur site scope', () => {
+  it('autorise un surveillant à créer un enseignant sur plusieurs sites actifs', async () => {
+    const req = mockRequest({
+      utilisateurRole: 'surveillant',
+      utilisateurId: 12,
+      etablissementId: 1,
+      body: {
+        nom: 'Enseignant',
+        prenoms: 'Test',
+        email: 'enseignant@example.com',
+        identifiant: 'enseignant-test',
+        motDePasse: 'secret123',
+        role: 'enseignant',
+        siteIds: [1, 2],
+        matricule: 'ENS-001',
+      },
+      file: { filename: 'photo.jpg', path: 'public/auth/profiles/photo.jpg' },
+    } as any)
+    const res = mockResponse()
+    const enseignant = { id: 33, utilisateurId: 50, matricule: 'ENS-001' }
+    ;(Utilisateur.findOne as jest.Mock).mockResolvedValue(null)
+    ;(Etablissement.findAll as jest.Mock)
+      .mockResolvedValueOnce([{ id: 1 }, { id: 2 }])
+      .mockResolvedValueOnce([{ id: 1 }, { id: 2 }])
+    ;(Utilisateur.create as jest.Mock).mockResolvedValue({ id: 50, nom: 'Enseignant' })
+    ;(Enseignant.create as jest.Mock).mockResolvedValue(enseignant)
+    ;(EnseignantBadgeService.ensureIdentity as jest.Mock).mockResolvedValue({
+      matricule: 'ENS-001',
+      qrCode: '50.png',
+    })
+
+    await UtilisateurController.adminCreateUtilisateur(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(201)
+    expect(SiteUtilisateur.bulkCreate).toHaveBeenCalledWith([
+      { utilisateurId: 50, etablissementId: 1, affectePar: 12 },
+      { utilisateurId: 50, etablissementId: 2, affectePar: 12 },
+    ], expect.anything())
+    expect(EnseignantBadgeService.ensureIdentity).toHaveBeenCalledWith(enseignant, 1)
+  })
+
+  it('garde la restriction des sites affectés pour les autres comptes créés par un surveillant', async () => {
+    const req = mockRequest({
+      utilisateurRole: 'surveillant',
+      utilisateurId: 12,
+      etablissementId: 1,
+      body: {
+        nom: 'Personnel',
+        prenoms: 'Test',
+        email: 'personnel@example.com',
+        identifiant: 'personnel-test',
+        motDePasse: 'secret123',
+        role: 'personnel_administratif',
+        siteIds: [2],
+      },
+    } as any)
+    const res = mockResponse()
+    ;(Utilisateur.findOne as jest.Mock).mockResolvedValue(null)
+    ;(Etablissement.findAll as jest.Mock)
+      .mockResolvedValueOnce([{ id: 2 }])
+      .mockResolvedValueOnce([{ id: 1 }])
+    ;(SiteUtilisateur.findAll as jest.Mock).mockResolvedValue([{ etablissementId: 1 }])
+
+    await UtilisateurController.adminCreateUtilisateur(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(Utilisateur.create).not.toHaveBeenCalled()
+  })
+
   it('refuse à une institution de créer un utilisateur sur un site non affecté', async () => {
     const req = mockRequest({
       utilisateurRole: 'institution',
@@ -538,5 +632,46 @@ describe('UtilisateurController.getSitesMoi for applicants', () => {
       order: [['nom', 'ASC']],
     })
     expect(res.json).toHaveBeenCalledWith(sites)
+  })
+})
+
+describe('UtilisateurController.getSitesMoi for surveillants', () => {
+  it('returns all active sites only when the target role is enseignant', async () => {
+    const req = mockRequest({
+      utilisateurId: 12,
+      utilisateurRole: 'surveillant',
+      query: { role: 'enseignant' },
+    } as any)
+    const res = mockResponse()
+    const sites = [{ id: 1, nom: 'Site 1' }, { id: 2, nom: 'Site 2' }]
+    ;(Etablissement.findAll as jest.Mock).mockResolvedValue(sites)
+
+    await UtilisateurController.getSitesMoi(req, res)
+
+    expect(Etablissement.findAll).toHaveBeenCalledWith({
+      where: { actif: true },
+      order: [['nom', 'ASC']],
+    })
+    expect(res.json).toHaveBeenCalledWith(sites)
+    expect(SiteUtilisateur.findAll).not.toHaveBeenCalled()
+  })
+
+  it('keeps the assigned-site list for other target roles', async () => {
+    const req = mockRequest({
+      utilisateurId: 12,
+      utilisateurRole: 'surveillant',
+      etablissementId: 1,
+      query: { role: 'personnel_administratif' },
+    } as any)
+    const res = mockResponse()
+    ;(SiteUtilisateur.findAll as jest.Mock).mockResolvedValue([{ etablissementId: 1 }])
+    ;(Etablissement.findAll as jest.Mock).mockResolvedValue([{ id: 1, nom: 'Site 1' }])
+
+    await UtilisateurController.getSitesMoi(req, res)
+
+    expect(Etablissement.findAll).toHaveBeenCalledWith({
+      where: { id: { [Op.in]: [1] }, actif: true },
+      order: [['nom', 'ASC']],
+    })
   })
 })
