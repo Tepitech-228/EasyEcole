@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { FindOptions, InferAttributes, Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
+import LegacyStudentPhotoService from "../services/LegacyStudentPhotoService";
 import { Pointage } from "../models/Pointage";
 import { PointageScan } from "../models/PointageScan";
 import { SeancePointage } from "../models/SeancePointage";
@@ -96,7 +97,12 @@ export default class PointageController {
             const photoApprenant = photoDossier || apprenant?.photo;
             return photoApprenant
                 ? { photo: photoApprenant, photoType: 'apprenant' }
-                : { photo: utilisateur.photoDeProfil || '', photoType: 'profile' };
+                : await LegacyStudentPhotoService.findByStudentName(utilisateur.nom, utilisateur.prenoms)
+                    .then(photo => photo
+                        ? { photo, photoType: 'legacy-apprenant' }
+                        : utilisateur.photoDeProfil
+                            ? { photo: utilisateur.photoDeProfil, photoType: 'profile' }
+                            : { photo: '', photoType: 'profile' });
         }
         if (utilisateur.role === RolesUtilisateur.ENSEIGNANT) {
             const enseignant = await Enseignant.findOne({

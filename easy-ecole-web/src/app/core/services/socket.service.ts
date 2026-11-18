@@ -34,7 +34,7 @@ export interface TerminalAttendanceEvent {
     motifDepart?: string | null;
   };
   photo?: string;
-  photoType?: 'apprenant' | 'enseignant' | 'profile';
+  photoType?: 'apprenant' | 'enseignant' | 'profile' | 'legacy-apprenant';
 }
 
 @Injectable({

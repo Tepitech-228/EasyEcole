@@ -17,6 +17,7 @@ import PointageTerminalTokenService from "../services/PointageTerminalTokenServi
 import { normalizeHikvisionEmployeeNo } from "../services/HikvisionIsapiService";
 import { isHikvisionHeartbeat, parseHikvisionPushEvent } from "../services/HikvisionPushEventParser";
 import { logHikvisionDiagnostic } from "../services/HikvisionDiagnosticLogger";
+import LegacyStudentPhotoService from "../services/LegacyStudentPhotoService";
 
 function normalizedIp(ip: string): string {
   return ip.startsWith("::ffff:") ? ip.slice(7) : ip;
@@ -164,7 +165,7 @@ export async function resolveMatriculeAffichage(
 async function getUtilisateurPhoto(
   utilisateur: Utilisateur,
   etablissementId: number
-): Promise<{ photo: string; photoType: "apprenant" | "enseignant" | "profile" } | null> {
+): Promise<{ photo: string; photoType: "apprenant" | "enseignant" | "profile" | "legacy-apprenant" } | null> {
   try {
     if (utilisateur.role === RolesUtilisateur.APPRENANT) {
       const [dossier, apprenant] = await Promise.all([
@@ -180,9 +181,12 @@ async function getUtilisateurPhoto(
       const photo = dossier?.photo || apprenant?.photo;
       return photo
         ? { photo, photoType: "apprenant" }
-        : utilisateur.photoDeProfil
-          ? { photo: utilisateur.photoDeProfil, photoType: "profile" }
-          : null;
+        : await LegacyStudentPhotoService.findByStudentName(utilisateur.nom, utilisateur.prenoms)
+          .then(legacyPhoto => legacyPhoto
+            ? { photo: legacyPhoto, photoType: "legacy-apprenant" }
+            : utilisateur.photoDeProfil
+              ? { photo: utilisateur.photoDeProfil, photoType: "profile" }
+              : null)
     }
 
     if (utilisateur.role === RolesUtilisateur.ENSEIGNANT) {

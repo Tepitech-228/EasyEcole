@@ -36,7 +36,7 @@ import HikvisionPushController from './modules/inscription/controllers/Hikvision
 import PointageRealtimeService from './modules/inscription/services/PointageRealtimeService'
 import HikvisionEnrollmentService from './modules/inscription/services/HikvisionEnrollmentService'
 import HikvisionAlertStreamService from './modules/inscription/services/HikvisionAlertStreamService'
-import { logStorageMountStatus } from './core/services/DocumentStorageService'
+import { getDocumentsRoot, logStorageMountStatus } from './core/services/DocumentStorageService'
 
 // ── Dernière barrière de diagnostic (cf. audit erreurs silencieuses §28) ──
 // Ces handlers ne remplacent PAS la gestion locale des erreurs : ils garantissent
@@ -126,6 +126,7 @@ app.use(express.urlencoded({ extended: false, limit: '10mb' }))
 
 // Restricted static serving — only media subdirectories, NOT qr-codes or cartes
 app.use('/media/photos/apprenants', express.static(path.resolve('public', 'auth', 'apprenants', 'photos')))
+app.use('/media/photos/legacy-apprenants', express.static(path.join(getDocumentsRoot(), 'uploads', 'legacy', 'auth', 'etudiants')))
 app.use('/media/photos/enseignants', express.static(path.resolve('public', 'auth', 'enseignants', 'photos')))
 app.use('/media/profiles', express.static(path.resolve('public', 'auth', 'profiles')))
 app.use('/media/scolarite/documents', Authenticate, express.static(path.resolve('public', 'scolarite', 'documents')))

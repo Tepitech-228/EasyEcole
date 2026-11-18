@@ -1415,11 +1415,13 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
 
   private buildPhotoUrl(photo?: string | null, photoType?: string): string {
     if (!photo) return ''
-    const photoBase = photoType === 'enseignant'
-      ? this.TEACHER_PHOTOS_PATH
-      : photoType === 'profile'
-        ? this.PROFILE_PHOTOS_PATH
-        : this.PHOTOS_PATH
+    const photoBase = photoType === 'legacy-apprenant'
+      ? `${environment.API_BASE_URL.replace(/\/$/, '')}/media/photos/legacy-apprenants/`
+      : photoType === 'enseignant'
+        ? this.TEACHER_PHOTOS_PATH
+        : photoType === 'profile'
+          ? this.PROFILE_PHOTOS_PATH
+          : this.PHOTOS_PATH
     return photoBase + encodeURIComponent(photo)
   }
 

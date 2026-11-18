@@ -30,7 +30,7 @@ export interface TerminalAttendanceUpdate {
     confirmationToken?: string;
   };
   photo?: string;
-  photoType?: "apprenant" | "enseignant" | "profile";
+  photoType?: "apprenant" | "enseignant" | "profile" | "legacy-apprenant";
 }
 
 export interface TerminalAttendanceBroadcastResult {
