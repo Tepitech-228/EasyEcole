@@ -408,6 +408,47 @@ elif [ "${STUDENT_UPLOAD_LAYOUT_MIGRATION_ON_BOOT:-true}" != "true" ]; then
   echo "[entrypoint] Migration automatique des fichiers étudiants désactivée."
 fi
 
+# Les anciennes photos sont montées depuis uploads/_legacy/public vers
+# /app/public. Renommer d'abord les photos associées (avec mise à jour des
+# références en base), puis en copier une version lisible dans le dossier
+# documentaire de chaque étudiant. Les deux opérations sont idempotentes.
+if [ "${MIGRATIONS_ON_BOOT:-true}" = "true" ] && [ "${STUDENT_UPLOAD_LAYOUT_MIGRATION_ON_BOOT:-true}" = "true" ]; then
+  LEGACY_STUDENT_PHOTO_DIRECTORY="${LEGACY_STUDENT_PHOTO_DIRECTORY:-/app/public/auth/apprenants/photos}"
+  export LEGACY_STUDENT_PHOTO_DIRECTORY
+
+  if [ ! -d "$LEGACY_STUDENT_PHOTO_DIRECTORY" ]; then
+    echo "[entrypoint][PHOTOS][NON FAIT] Dossier legacy absent : $LEGACY_STUDENT_PHOTO_DIRECTORY"
+  else
+    echo "[entrypoint][PHOTOS][RENOMMAGE] Début dans $LEGACY_STUDENT_PHOTO_DIRECTORY..."
+    if command -v timeout >/dev/null 2>&1; then
+      if timeout 600 node /app/lib/modules/inscription/scripts/rename-legacy-student-photos.js --apply; then
+        echo "[entrypoint][PHOTOS][RENOMMAGE][OK] Traitement terminé."
+      else
+        echo "[entrypoint][PHOTOS][RENOMMAGE][ÉCHEC] Traitement incomplet; consultez les erreurs ci-dessus. Il sera retenté au prochain démarrage."
+      fi
+    elif node /app/lib/modules/inscription/scripts/rename-legacy-student-photos.js --apply; then
+      echo "[entrypoint][PHOTOS][RENOMMAGE][OK] Traitement terminé."
+    else
+      echo "[entrypoint][PHOTOS][RENOMMAGE][ÉCHEC] Traitement incomplet; consultez les erreurs ci-dessus. Il sera retenté au prochain démarrage."
+    fi
+
+    echo "[entrypoint][PHOTOS][COPIE] Début de la copie dans les dossiers étudiants..."
+    if command -v timeout >/dev/null 2>&1; then
+      if timeout 600 node /app/lib/modules/inscription/scripts/copy-legacy-student-photos.js --apply; then
+        echo "[entrypoint][PHOTOS][COPIE][OK] Traitement terminé."
+      else
+        echo "[entrypoint][PHOTOS][COPIE][ÉCHEC] Traitement incomplet; consultez les erreurs ci-dessus. Il sera retenté au prochain démarrage."
+      fi
+    elif node /app/lib/modules/inscription/scripts/copy-legacy-student-photos.js --apply; then
+      echo "[entrypoint][PHOTOS][COPIE][OK] Traitement terminé."
+    else
+      echo "[entrypoint][PHOTOS][COPIE][ÉCHEC] Traitement incomplet; consultez les erreurs ci-dessus. Il sera retenté au prochain démarrage."
+    fi
+  fi
+elif [ "${MIGRATIONS_ON_BOOT:-true}" != "true" ] || [ "${STUDENT_UPLOAD_LAYOUT_MIGRATION_ON_BOOT:-true}" != "true" ]; then
+  echo "[entrypoint][PHOTOS][NON FAIT] Migration des photos désactivée par la configuration."
+fi
+
 # `|| echo` neutralise volontairement `set -e` sur ces lignes : les seeds
 # ne doivent pas empêcher l'application de démarrer. Le runner de
 # migrations ci-dessus, lui, reste bloquant.

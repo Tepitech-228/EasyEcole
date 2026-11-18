@@ -285,6 +285,9 @@ async function main(): Promise<void> {
             `Terminé : ${renamed} photo(s) ${applyChanges ? "renommée(s)" : "à renommer"}, `
             + `${skipped} ignorée(s), ${failures.length} erreur(s).`,
         );
+        if (renamed === 0 && failures.length === 0) {
+            console.log("Aucune photo legacy à renommer; les photos référencées sont déjà nommées ou non associables.");
+        }
         if (failures.length > 0) process.exitCode = 1;
     } finally {
         await sequelize.close();

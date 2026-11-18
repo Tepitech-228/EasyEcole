@@ -9,6 +9,9 @@ import { EtudiantUploadStorageService } from "../services/EtudiantUploadStorageS
 import { DossierEtudiant } from "../models/DossierEtudiant";
 
 const applyChanges = process.argv.includes("--apply");
+const legacyDirectory = process.env.LEGACY_STUDENT_PHOTO_DIRECTORY?.trim()
+    ? path.resolve(process.env.LEGACY_STUDENT_PHOTO_DIRECTORY)
+    : LegacyStudentPhotoService.getLegacyPhotoDirectory();
 let copied = 0;
 let skipped = 0;
 const failures: string[] = [];
@@ -46,6 +49,7 @@ async function main(): Promise<void> {
         console.log(applyChanges
             ? "Copie des anciennes photos étudiantes : MODE APPLICATION (les originaux sont conservés)."
             : "Copie des anciennes photos étudiantes : aperçu uniquement. Ajoutez --apply pour copier.");
+        console.log(`Dossier source des photos : ${legacyDirectory}`);
 
         for (const student of students) {
             try {
@@ -59,12 +63,12 @@ async function main(): Promise<void> {
 
                 let sourcePath: string | null = null;
                 for (const reference of photoReferences) {
-                    const filename = await LegacyStudentPhotoService.resolvePhotoReference(reference);
+                    const filename = await LegacyStudentPhotoService.resolvePhotoReference(
+                        reference,
+                        legacyDirectory,
+                    );
                     if (filename) {
-                        sourcePath = path.join(
-                            LegacyStudentPhotoService.getLegacyPhotoDirectory(),
-                            filename,
-                        );
+                        sourcePath = path.join(legacyDirectory, filename);
                         break;
                     }
                 }
@@ -112,6 +116,9 @@ async function main(): Promise<void> {
             `Terminé : ${copied} photo(s) ${applyChanges ? "copiée(s)" : "à copier"}, `
             + `${skipped} étudiant(s) sans référence legacy et ${failures.length} erreur(s).`,
         );
+        if (copied === 0 && failures.length === 0) {
+            console.log("Aucune copie de photo legacy nécessaire ou possible pour les étudiants référencés.");
+        }
         if (failures.length > 0) process.exitCode = 1;
     } finally {
         await sequelize.close();
