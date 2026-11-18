@@ -1,38 +1,29 @@
 import { Injectable } from '@angular/core';
-import { Subject } from 'rxjs';
-
-export interface Toast {
-  id: number
-  type: 'success' | 'warning' | 'error' | 'info'
-  message: string
-}
+import { ErrorModalService } from './error-modal.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ToastService {
 
-  private toasts = new Subject<Toast>()
-  toasts$ = this.toasts.asObservable()
-
-  private counter = 0
+  constructor(private errorModalService: ErrorModalService) { }
 
   success(message: string): void {
-    this.toasts.next({ id: ++this.counter, type: 'success', message })
+    this.errorModalService.showSuccess(message);
   }
 
-  error(message: string): void {
-    this.toasts.next({ id: ++this.counter, type: 'error', message })
+  error(message: string, statusCode: number = 0): void {
+    this.errorModalService.showError(message, [], statusCode, 'error');
   }
 
   /** Notification d'avertissement (orange) — ex. accès refusé (403). */
-  warning(message: string): void {
-    this.toasts.next({ id: ++this.counter, type: 'warning', message })
+  warning(message: string, statusCode: number = 409): void {
+    this.errorModalService.showWarning(message, [], statusCode);
   }
 
   /** Notification info (bleue) */
   info(message: string): void {
-    this.toasts.next({ id: ++this.counter, type: 'info', message })
+    this.errorModalService.showInfo(message);
   }
 
 }

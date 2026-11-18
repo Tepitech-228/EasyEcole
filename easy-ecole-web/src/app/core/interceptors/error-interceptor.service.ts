@@ -3,7 +3,6 @@ import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
-import { ToastService } from '../services/toast.service';
 import { LocalStorageService } from '../services/local-storage.service';
 import { ErrorModalService } from '../services/error-modal.service';
 import * as jwtDecode from 'jwt-decode';
@@ -11,7 +10,7 @@ import * as jwtDecode from 'jwt-decode';
 /**
  * Dernière barrière côté frontend : aucune erreur HTTP ne doit disparaître.
  * - journalise l'erreur (console.error avec contexte) ;
- * - notifie l'utilisateur via le ToastService si aucun message local ne l'a fait ;
+ * - notifie l'utilisateur via le modal global ;
  * - 401 : vérifie côté client si le JWT est expiré AVANT de supprimer le token ;
  *   si le JWT n'est PAS expiré, on suppose une erreur transitoire (DB, réseau…)
  *   et on NE déconnecte PAS l'utilisateur ;
@@ -23,22 +22,21 @@ export class ErrorInterceptorService implements HttpInterceptor {
 
   /** Messages lisibles selon le statut HTTP (utilisé si la réponse n'en fournit pas). */
   private static readonly MESSAGES: Record<number, string> = {
-    0: 'Serveur injoignable — vérifiez votre connexion',
-    400: 'Requête invalide',
+    0: 'Impossible de contacter le serveur. Vérifiez votre connexion Internet.',
+    400: 'Les informations envoyées sont incorrectes. Vérifiez les champs puis réessayez.',
     401: 'Session expirée, veuillez vous reconnecter',
-    403: "Accès refusé",
-    404: 'Ressource non trouvée',
-    409: 'Conflit — l\'opération existe déjà ou est incohérente',
-    422: 'Données invalides',
+    403: "Vous n’êtes pas autorisé à effectuer cette action.",
+    404: 'L’élément demandé est introuvable. Actualisez la page puis réessayez.',
+    409: 'Les données ont changé ou cette action entre en conflit avec une opération existante. Actualisez la page puis réessayez.',
+    422: 'Certains champs sont incomplets ou incorrects. Vérifiez les informations puis réessayez.',
     423: 'Compte temporairement bloqué',
-    500: 'Erreur interne du serveur',
-    502: 'Service indisponible',
-    503: 'Service indisponible',
-    504: 'Délai dépassé'
+    500: 'Une erreur technique empêche de terminer cette opération. Réessayez dans quelques instants.',
+    502: 'Le service est temporairement indisponible. Réessayez dans quelques instants.',
+    503: 'Le service est temporairement indisponible. Réessayez dans quelques instants.',
+    504: 'Le serveur met trop de temps à répondre. Réessayez dans quelques instants.'
   };
 
   constructor(
-    private toast: ToastService,
     private router: Router,
     private localStorageService: LocalStorageService,
     private errorModalService: ErrorModalService
@@ -100,7 +98,9 @@ export class ErrorInterceptorService implements HttpInterceptor {
     return next.handle(req).pipe(
       catchError((err: HttpErrorResponse) => {
         const backendMessage: string = err?.error?.message || err?.error?.error || (err?.error?.alreadySignUp ? 'Vous avez déjà une inscription dans cette session.' : '');
-        const message = backendMessage || ErrorInterceptorService.MESSAGES[err.status] || `Erreur ${err.status}`;
+        const message = err.status >= 500
+          ? 'Une erreur technique empêche de terminer cette opération. Réessayez dans quelques instants.'
+          : backendMessage || ErrorInterceptorService.MESSAGES[err.status] || `Erreur ${err.status}`;
 
         console.error(`[HTTP_ERROR] ${req.method} ${req.urlWithParams} → ${err.status}`, {
           code: err?.error?.code,
@@ -117,7 +117,6 @@ export class ErrorInterceptorService implements HttpInterceptor {
            if (sessionRevokedServer) {
              // Révocation explicite côté serveur (tokenVersion désynchronisé, signature
              // refusée…) : le jeton ne peut plus être réutilisé → reconnexion propre.
-             this.toast.error('Session expirée, veuillez vous reconnecter');
              this.errorModalService.showUnauthorized('Votre session a expiré. Veuillez vous reconnecter.');
              this.localStorageService.remove(LocalStorageService.AUTH_TOKEN);
              if (!this.router.url.startsWith('/auth')) {
@@ -125,7 +124,6 @@ export class ErrorInterceptorService implements HttpInterceptor {
              }
            } else if (hasToken && tokenExpiredClient) {
              // Un jeton est présent mais expiré côté client → il faut le renouveler.
-             this.toast.error('Session expirée, veuillez vous reconnecter');
              this.errorModalService.showUnauthorized('Votre session a expiré. Veuillez vous reconnecter.');
              this.localStorageService.remove(LocalStorageService.AUTH_TOKEN);
              if (!this.router.url.startsWith('/auth')) {
@@ -151,7 +149,6 @@ export class ErrorInterceptorService implements HttpInterceptor {
                'Erreur probablement transitoire — pas de déconnexion.',
                { url: req.urlWithParams, backendMessage }
              );
-             this.toast.error('Erreur temporaire, veuillez réessayer');
              this.errorModalService.showError('Erreur temporaire, veuillez réessayer', undefined, 401, 'warning');
            }
          } else if (!req.url.includes('/auth/login')) {
@@ -161,24 +158,24 @@ export class ErrorInterceptorService implements HttpInterceptor {
            // refus d'accès, pas d'une panne : plus visible que le succès vert, moins
            // alarmiste que le rouge (réservé aux vraies erreurs).
            if (err.status === 403) {
-             this.toast.warning(message);
              this.errorModalService.showError(message, undefined, 403, 'warning');
            } else if (err.status === 422) {
-             // Erreurs de validation (422) : modal scrollable avec liste des détails
-             const validationErrors: string[] = err?.error?.errors || err?.error?.detail || [message];
-             this.toast.error(message);
+             const validationErrors = this.getValidationMessages(err, message);
              this.errorModalService.showValidationErrors(validationErrors, message);
            } else if (err.status >= 500) {
-             // Erreurs serveur (500+) : modal scrollable avec stack trace
-             this.toast.error(message);
+             // Les détails techniques ne sont pas exposés dans le message utilisateur.
              this.errorModalService.showServerError(err, message);
            } else if (err.status === 400) {
-             // Erreur 400 avec liste d'erreurs d'import/validation
-             const detailErrors: string[] = err?.error?.errors || err?.error?.detail || [message];
-             this.toast.error(message);
-             this.errorModalService.showError(message, detailErrors.length > 0 ? detailErrors : undefined, 400, 'error');
+             const detailErrors = this.getValidationMessages(err, message);
+             this.errorModalService.showError(message, detailErrors.length > 0 ? detailErrors : undefined, 400, 'warning');
+           } else if (err.status === 409) {
+             this.errorModalService.showError(
+               message || 'Les données ont changé et cette opération ne peut pas être effectuée.',
+               undefined,
+               409,
+               'warning'
+             );
            } else {
-             this.toast.error(message);
              this.errorModalService.showError(message, undefined, err.status);
            }
          }
@@ -186,5 +183,16 @@ export class ErrorInterceptorService implements HttpInterceptor {
         return throwError(() => err);
       })
     );
+  }
+
+  private getValidationMessages(error: HttpErrorResponse, fallback: string): string[] {
+    const rawDetails = error?.error?.errors || error?.error?.detail;
+    if (!Array.isArray(rawDetails)) return [fallback];
+
+    const messages = rawDetails
+      .map(detail => typeof detail === 'string' ? detail : detail?.message || detail?.msg)
+      .filter((detail): detail is string => typeof detail === 'string' && detail.trim().length > 0);
+
+    return messages.length > 0 ? messages : [fallback];
   }
 }

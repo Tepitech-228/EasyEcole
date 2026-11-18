@@ -75,18 +75,10 @@ export class ProgressInterceptorService implements HttpInterceptor {
           })
         }
 
-        // Toast pour les mutations uniquement (évite les doublons pour les GET)
-        if (MUTATION_METHODS.includes(req.method)) {
-          // Un 403 (accès refusé) est notifié en ORANGE (warning) : refus d'accès,
-          // pas une panne — moins alarmiste que le rouge.
-          if (error.status === 403) {
-            this.toastService.warning(message)
-          } else {
-            this.toastService.error(message)
-          }
-        } else if (error.status >= 500) {
-          // Afficher aussi les erreurs serveur sur les GET
-          this.toastService.error(message)
+        // L'intercepteur d'erreurs affiche les erreurs API. Le login est exclu
+        // de cet intercepteur et conserve donc sa notification ici.
+        if (req.url.includes('/auth/login')) {
+          this.toastService.error(message, error.status)
         }
 
         return throwError(() => error)

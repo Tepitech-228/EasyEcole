@@ -27,7 +27,6 @@ import { NgSelectModule } from '@ng-select/ng-select';
 import { ListePresenceCardComponent } from './components/liste-presence-card/liste-presence-card.component';
 import { CahierDeTexteCardComponent } from './components/cahier-de-texte-card/cahier-de-texte-card.component';
 import { LoadingSpinnerComponent } from './components/loading-spinner/loading-spinner.component';
-import { ToastContainerComponent } from './components/toast-container/toast-container.component';
 import { HasPermissionDirective } from '../core/directives/has-permission.directive';
 import { SidebarNavComponent } from './sidebar-nav/sidebar-nav.component';
 import { DossierViewComponent } from './components/dossier-view/dossier-view.component';
@@ -57,7 +56,6 @@ import { SignaturePadComponent } from '../features/modules/bulletins/components/
     ListePresenceCardComponent,
     CahierDeTexteCardComponent,
     LoadingSpinnerComponent,
-    ToastContainerComponent,
     SidebarNavComponent,
     DossierViewComponent,
     FiltersAnneeNiveauParcoursComponent,
@@ -115,7 +113,6 @@ import { SignaturePadComponent } from '../features/modules/bulletins/components/
     ListePresenceCardComponent,
     CahierDeTexteCardComponent,
     LoadingSpinnerComponent,
-    ToastContainerComponent,
     SidebarNavComponent,
     DossierViewComponent,
     FiltersAnneeNiveauParcoursComponent,

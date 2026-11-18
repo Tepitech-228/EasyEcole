@@ -14,11 +14,11 @@ export interface ErrorModalEvent {
   /** Code HTTP du statut */
   statusCode: number;
   /** Type visuel du modal */
-  type: 'error' | 'warning' | 'info';
+  type: 'success' | 'error' | 'warning' | 'info';
 }
 
 /**
- * Service de gestion d'erreurs via modaux Bootstrap centrés.
+ * Service global de messages de réussite, d'avertissement et d'erreur.
  *
  * Fonctionnalités :
  * - Affichage de modaux centrés pour erreurs simples (400, 403, 404, 401)
@@ -42,10 +42,9 @@ export class ErrorModalService {
   /** Observable publique pour déclencher la reconnexion */
   reconnect$ = this.reconnectSubject.asObservable();
 
-  /** File d'attente pour les erreurs simultanées */
+  /** File d'attente pour les notifications simultanées */
   private queue: ErrorModalEvent[] = [];
-  /** Indicateur si un modal est actuellement affiché */
-  private isProcessing: boolean = false;
+  private activeEvent: ErrorModalEvent | null = null;
 
   constructor() { }
 
@@ -54,8 +53,7 @@ export class ErrorModalService {
   // ========================
 
   /**
-   * Affiche un modal d'erreur simple.
-   * Utilise la variante "centered" (modal-dialog modal-dialog-centered).
+   * Affiche un message global avec son niveau de gravité.
    *
    * @param message Message à afficher
    * @param details Liste optionnelle de détails
@@ -71,6 +69,36 @@ export class ErrorModalService {
       type
     };
     this.enqueue(event);
+  }
+
+  showSuccess(message: string, details: string[] = []): void {
+    this.enqueue({
+      title: 'Opération réussie',
+      message,
+      details,
+      statusCode: 200,
+      type: 'success'
+    });
+  }
+
+  showWarning(message: string, details: string[] = [], statusCode: number = 409): void {
+    this.enqueue({
+      title: this.getTitle(statusCode, 'warning'),
+      message,
+      details,
+      statusCode,
+      type: 'warning'
+    });
+  }
+
+  showInfo(message: string, details: string[] = []): void {
+    this.enqueue({
+      title: 'Information',
+      message,
+      details,
+      statusCode: 0,
+      type: 'info'
+    });
   }
 
   /**
@@ -92,31 +120,18 @@ export class ErrorModalService {
   }
 
   /**
-   * Affiche un modal scrollable pour une erreur serveur (500+).
-   * Utilise la variante "scrollable" avec stack trace si disponible.
+   * Affiche une erreur serveur sans exposer de détails techniques internes.
    *
    * @param error Objet d'erreur HTTP
-   * @param message Message optionnel
+   * @param message Message compréhensible destiné à l'utilisateur
    */
   showServerError(error: any, message?: string): void {
     const statusCode = error?.status || 500;
-    const errorDetails: string[] = [];
-
-    // Extrait les détails de l'erreur si disponibles
-    if (error?.error?.message) {
-      errorDetails.push(error.error.message);
-    }
-    if (error?.error?.stack) {
-      errorDetails.push(error.error.stack);
-    }
-    if (error?.message && !errorDetails.includes(error.message)) {
-      errorDetails.push(error.message);
-    }
 
     const event: ErrorModalEvent = {
       title: 'Erreur serveur',
-      message: message || 'Une erreur interne s\'est produite. Veuillez réessayer.',
-      details: errorDetails.length > 0 ? errorDetails : [`Code: ${statusCode}`],
+      message: message || 'Une erreur technique empêche de terminer cette opération.',
+      details: [`Code de référence : ${statusCode}`],
       statusCode,
       type: 'error'
     };
@@ -156,36 +171,42 @@ export class ErrorModalService {
    * Si un modal est déjà affiché, l'erreur est mise en attente.
    */
   private enqueue(event: ErrorModalEvent): void {
-    this.queue.push(event);
-
-    if (!this.isProcessing) {
-      this.processQueue();
-    }
-  }
-
-  /**
-   * Traite la file d'attente séquentiellement.
-   * Un modal à la fois pour éviter les conflits visuels.
-   */
-  private processQueue(): void {
-    if (this.queue.length === 0) {
-      this.isProcessing = false;
+    const pending = [this.activeEvent, ...this.queue].filter((item): item is ErrorModalEvent => !!item);
+    if (pending.some(item => item.message === event.message)) {
       return;
     }
 
-    this.isProcessing = true;
-    const event = this.queue.shift()!;
+    const genericSuccessMessage = 'Opération effectuée avec succès';
+    const queuedGenericSuccess = this.queue.findIndex(item =>
+      item.type === 'success' && item.message === genericSuccessMessage
+    );
+    if (event.type === 'success' && event.message !== genericSuccessMessage) {
+      if (this.activeEvent?.type === 'success' && this.activeEvent.message === genericSuccessMessage) {
+        this.activeEvent = event;
+        this.modalEventSubject.next(event);
+        return;
+      }
+      if (queuedGenericSuccess !== -1) {
+        this.queue.splice(queuedGenericSuccess, 1, event);
+        return;
+      }
+    }
 
-    // Émet l'événement au composant modal
-    this.modalEventSubject.next(event);
+    this.queue.push(event);
+    this.presentNext();
+  }
 
-    // Simule un délai avant de traiter la prochaine erreur
-    // Le modal se ferme quand l'utilisateur clique sur "Fermer"
-    // La prochaine erreur sera traitée après fermeture
-    // Pour éviter la pile infinie, on utilise un timer court
-    setTimeout(() => {
-      this.processQueue();
-    }, 500);
+  dismissCurrent(): void {
+    this.activeEvent = null;
+    this.presentNext();
+  }
+
+  private presentNext(): void {
+    if (this.activeEvent || this.queue.length === 0) return;
+    this.activeEvent = this.queue.shift() || null;
+    if (this.activeEvent) {
+      this.modalEventSubject.next(this.activeEvent);
+    }
   }
 
   // ========================
@@ -197,14 +218,18 @@ export class ErrorModalService {
    */
   private getTitle(statusCode: number, type: string): string {
     const titles: Record<number, Record<string, string>> = {
-      400: { error: 'Requête invalide', warning: 'Données incorrectes', info: 'Information' },
+      0: { error: 'Connexion impossible', warning: 'Vérifiez votre connexion', info: 'Information' },
+      200: { success: 'Opération réussie', warning: 'Information', error: 'Erreur', info: 'Information' },
+      400: { error: 'Action impossible', warning: 'Vérification nécessaire', info: 'Information' },
       401: { error: 'Session expirée', warning: 'Session expirée', info: 'Session' },
       403: { error: 'Accès refusé', warning: 'Accès refusé', info: 'Accès' },
-      404: { error: 'Ressource non trouvée', warning: 'Ressource introuvable', info: 'Information' },
+      404: { error: 'Élément introuvable', warning: 'Élément introuvable', info: 'Information' },
+      409: { error: 'Conflit de données', warning: 'Vérification nécessaire', info: 'Information' },
       422: { error: 'Données invalides', warning: 'Erreurs de validation', info: 'Validation' },
       500: { error: 'Erreur interne du serveur', warning: 'Erreur serveur', info: 'Serveur' },
       502: { error: 'Service indisponible', warning: 'Service temporairement indisponible', info: 'Service' },
-      503: { error: 'Service indisponible', warning: 'Service temporairement indisponible', info: 'Service' }
+      503: { error: 'Service indisponible', warning: 'Service temporairement indisponible', info: 'Service' },
+      504: { error: 'Délai dépassé', warning: 'Réponse trop longue', info: 'Service' }
     };
 
     return titles[statusCode]?.[type] || `Erreur ${statusCode}`;

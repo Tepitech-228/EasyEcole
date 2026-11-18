@@ -1,9 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Subject, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ErrorModalService, ErrorModalEvent } from 'src/app/core/services/error-modal.service';
-
-type ModalSize = 'simple' | 'scrollable';
 
 @Component({
   selector: 'app-error-modal',
@@ -14,8 +12,7 @@ export class ErrorModalComponent implements OnInit, OnDestroy {
 
   /** Visibilité du modal */
   isVisible: boolean = false;
-  /** Taille du modal selon le type d'erreur */
-  modalSize: ModalSize = 'simple';
+  modalSize: 'simple' | 'scrollable' = 'simple';
 
   /** Props du modal */
   title: string = '';
@@ -23,7 +20,7 @@ export class ErrorModalComponent implements OnInit, OnDestroy {
   details: string[] = [];
   statusCode: number = 0;
   showDetails: boolean = false;
-  type: 'error' | 'warning' | 'info' = 'error';
+  type: 'success' | 'error' | 'warning' | 'info' = 'error';
 
   /** Texte du bouton de basculement détails */
   detailsToggleText: string = 'Voir détails';
@@ -68,6 +65,7 @@ export class ErrorModalComponent implements OnInit, OnDestroy {
       (this.details.some(d => d.length > 80) || this.details.length >= 3);
     const isServerError = this.statusCode >= 500;
     this.modalSize = (hasLongDetails || isServerError) ? 'scrollable' : 'simple';
+    this.showDetails = this.modalSize === 'scrollable' && this.details.length > 0;
 
     this.detailsToggleText = this.showDetails ? 'Masquer les détails' : 'Voir détails';
     this.isVisible = true;
@@ -83,6 +81,7 @@ export class ErrorModalComponent implements OnInit, OnDestroy {
     this.statusCode = 0;
     this.type = 'error';
     this.showReconnectButton = false;
+    this.errorModalService.dismissCurrent();
   }
 
   /** Bascule l'affichage des détails (simple ↔ scrollable) */
@@ -105,6 +104,7 @@ export class ErrorModalComponent implements OnInit, OnDestroy {
   /** Retourne les classes Tailwind pour la bordure gauche du modal selon le type d'erreur */
   get modalTypeClass(): string {
     switch (this.type) {
+      case 'success': return 'border-l-4 border-emerald-500';
       case 'warning': return 'border-l-4 border-orange-500';
       case 'info': return 'border-l-4 border-cyan-500';
       default: return 'border-l-4 border-red-500';
@@ -114,24 +114,18 @@ export class ErrorModalComponent implements OnInit, OnDestroy {
   /** Retourne les classes Tailwind pour le conteneur de l'icône selon le type d'erreur */
   get iconTypeClass(): string {
     switch (this.type) {
+      case 'success': return 'bg-emerald-50 text-emerald-600';
       case 'warning': return 'bg-orange-50 text-orange-600';
       case 'info': return 'bg-cyan-50 text-cyan-600';
       default: return 'bg-red-50 text-red-600';
     }
   }
 
-  /** Retourne les classes Tailwind pour les items de la liste de détails selon le type d'erreur */
-  get detailItemClass(): string {
-    switch (this.type) {
-      case 'warning': return 'border-l-[3px] border-l-orange-500 bg-orange-50';
-      case 'info': return 'border-l-[3px] border-l-cyan-500 bg-cyan-50';
-      default: return 'border-l-[3px] border-l-red-500 bg-red-50';
-    }
-  }
-
   /** Retourne l'icône SVG sécurisée selon le type d'erreur */
   get typeIcon(): SafeHtml {
     switch (this.type) {
+      case 'success':
+        return this.sanitizer.bypassSecurityTrustHtml('<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>');
       case 'error':
         return this.sanitizer.bypassSecurityTrustHtml('<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>');
       case 'warning':
