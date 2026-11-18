@@ -183,6 +183,16 @@ export class EtudiantUploadStorageService {
         return path.join(studentFolder, "Dossier-info-personelles", "Photos", filename);
     }
 
+    static getLegacyStudentPhotoFilename(sourcePath: string, identity: EtudiantUploadIdentity): string {
+        const studentName = [
+            this.safeSegment(identity.nom, 70),
+            this.safeSegment(identity.prenoms, 80),
+            this.safeSegment(identity.matricule || `ID${identity.id}`, 80),
+        ].join("_");
+        const extension = path.extname(sourcePath).toLowerCase() || this.detectPhotoExtension(sourcePath);
+        return `PHOTO_${studentName}${extension}`;
+    }
+
     static copyLegacyStudentPhoto(
         sourcePath: string,
         identity: EtudiantUploadIdentity,
