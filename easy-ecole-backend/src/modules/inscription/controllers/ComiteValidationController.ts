@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { Op, Transaction } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
+import { SiteUtilisateur } from "../../auth/models/SiteUtilisateur";
+import { Etablissement } from "../../etablissement/models/Etablissement";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { EmailSender } from "../../../core/helpers/EmailSender";
 import { DemandeInscription } from "../models/DemandeInscription";
@@ -158,6 +160,49 @@ const inclureTout = (opts: { sessionInterne?: boolean; parcoursInterne?: boolean
 ]
 
 export default class ComiteValidationController {
+    private static async validerFiltreSite(
+        req: Request,
+        res: Response,
+    ): Promise<{ etablissementId: number | null; erreur?: Response }> {
+        const valeur = req.query.etablissementId;
+        if (valeur === undefined || valeur === null || valeur === '') {
+            return { etablissementId: null };
+        }
+
+        const etablissementId = Number(valeur);
+        if (!Number.isSafeInteger(etablissementId) || etablissementId <= 0) {
+            return {
+                etablissementId: null,
+                erreur: res.status(400).json({ success: false, message: "Identifiant de site invalide." }),
+            };
+        }
+
+        const site = await Etablissement.findOne({
+            where: { id: etablissementId, actif: true },
+            attributes: ["id"],
+        });
+        if (!site) {
+            return {
+                etablissementId: null,
+                erreur: res.status(403).json({ success: false, message: "Site invalide ou inaccessible." }),
+            };
+        }
+
+        if ((req as any).utilisateurRole !== RolesUtilisateur.ADMIN) {
+            const affectation = await SiteUtilisateur.findOne({
+                where: { utilisateurId: (req as any).utilisateurId, etablissementId },
+                attributes: ["id"],
+            });
+            if (!affectation) {
+                return {
+                    etablissementId: null,
+                    erreur: res.status(403).json({ success: false, message: "Vous n’êtes pas affecté à ce site." }),
+                };
+            }
+        }
+
+        return { etablissementId };
+    }
 
     /**
      * GET /comite-validations/dossiers
@@ -177,10 +222,15 @@ export default class ComiteValidationController {
             if (role != RolesUtilisateur.COMITE_ORIENTATION && role != RolesUtilisateur.ADMIN) {
                 return res.status(403).json({ success: false })
             }
+            const filtreSite = await ComiteValidationController.validerFiltreSite(req, res);
+            if (filtreSite.erreur) return filtreSite.erreur;
 
             const where: any = req.query.tous === 'true'
                 ? { statutPipeline: { [Op.ne]: null } }
                 : { statutPipeline: { [Op.in]: STATUTS_COMITE } }
+            if (filtreSite.etablissementId !== null) {
+                where.etablissementId = filtreSite.etablissementId;
+            }
 
             // ── Filtres ──
             // Un paramètre vide ou non valide est simplement ignoré : on préfère
@@ -234,7 +284,10 @@ export default class ComiteValidationController {
             const utilisateurIds = demandes.map(d => d.utilisateurId)
             const bordereaux = utilisateurIds.length
                 ? await Bordereau.findAll({
-                    where: { utilisateurId: { [Op.in]: utilisateurIds as any } },
+                    where: {
+                        utilisateurId: { [Op.in]: utilisateurIds as any },
+                        ...(filtreSite.etablissementId !== null ? { etablissementId: filtreSite.etablissementId } : {}),
+                    },
                     include: [Bordereau.associations.typeOperation],
                     order: [['dateSoumission', 'DESC']],
                 })
@@ -317,9 +370,14 @@ export default class ComiteValidationController {
             if (role != RolesUtilisateur.COMITE_ORIENTATION && role != RolesUtilisateur.ADMIN) {
                 return res.status(403).json({ success: false })
             }
+            const filtreSite = await ComiteValidationController.validerFiltreSite(req, res);
+            if (filtreSite.erreur) return filtreSite.erreur;
 
             const demande = await DemandeInscription.findOne({
-                where: { id: req.params.id },
+                where: {
+                    id: req.params.id,
+                    ...(filtreSite.etablissementId !== null ? { etablissementId: filtreSite.etablissementId } : {}),
+                },
                 include: inclureTout(),
             })
             if (!demande) {
@@ -327,7 +385,10 @@ export default class ComiteValidationController {
             }
 
             const bordereaux = await Bordereau.findAll({
-                where: { utilisateurId: demande.utilisateurId },
+                where: {
+                    utilisateurId: demande.utilisateurId,
+                    ...(filtreSite.etablissementId !== null ? { etablissementId: filtreSite.etablissementId } : {}),
+                },
                 include: [Bordereau.associations.typeOperation],
                 order: [['dateSoumission', 'DESC']],
             })
@@ -1037,9 +1098,14 @@ export default class ComiteValidationController {
             if (role != RolesUtilisateur.COMITE_ORIENTATION && role != RolesUtilisateur.ADMIN) {
                 return res.status(403).json({ success: false })
             }
+            const filtreSite = await ComiteValidationController.validerFiltreSite(req, res);
+            if (filtreSite.erreur) return filtreSite.erreur;
 
             const demande = await DemandeInscription.findOne({
-                where: { id: req.params.id },
+                where: {
+                    id: req.params.id,
+                    ...(filtreSite.etablissementId !== null ? { etablissementId: filtreSite.etablissementId } : {}),
+                },
                 include: inclureTout(),
             })
             if (!demande) {
@@ -1051,7 +1117,10 @@ export default class ComiteValidationController {
 
             // 1. Bordereaux (fichiers uploadés)
             const bordereaux = await Bordereau.findAll({
-                where: { utilisateurId: demande.utilisateurId },
+                where: {
+                    utilisateurId: demande.utilisateurId,
+                    ...(filtreSite.etablissementId !== null ? { etablissementId: filtreSite.etablissementId } : {}),
+                },
                 order: [['dateSoumission', 'ASC']],
             })
             for (const b of bordereaux) {

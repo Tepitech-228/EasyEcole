@@ -361,7 +361,43 @@ describe('SeanceController.deleteSeance', () => {
   })
 })
 
+describe('SeanceController.getPlanning', () => {
+  it('limits teacher agenda to the active site', async () => {
+    ;(Enseignant.findOne as jest.Mock).mockResolvedValue({ id: 12 })
+    ;(Seance.findAll as jest.Mock).mockResolvedValue([])
+    const res = mockResponse()
+
+    await SeanceController.getPlanning(mockRequest({
+      utilisateurRole: 'enseignant',
+      utilisateurId: 42,
+      etablissementId: 3,
+      query: { semaineDebut: '2026-03-02', semaineFin: '2026-03-08' },
+    } as any), res)
+
+    expect(Seance.findAll).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        enseignantId: 12,
+        etablissementId: 3,
+        publieeLe: expect.objectContaining({ [require('sequelize').Op.ne]: null }),
+      }),
+    }))
+  })
+})
+
 describe('SeanceController.getRetardsEnseignants', () => {
+  it('limite les alertes au site actif', async () => {
+    ;(Seance.findAll as jest.Mock).mockResolvedValue([])
+    ;(SeancePointage.findAll as jest.Mock).mockResolvedValue([])
+    ;(Pointage.findAll as jest.Mock).mockResolvedValue([])
+    const res = mockResponse()
+
+    await SeanceController.getRetardsEnseignants(mockRequest({ etablissementId: 3 }), res)
+
+    expect(Seance.findAll).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ etablissementId: 3 }),
+    }))
+  })
+
   it('utilise le pointage de séance en priorité', async () => {
     ;(Seance.findAll as jest.Mock).mockResolvedValue([{
       id: 7,

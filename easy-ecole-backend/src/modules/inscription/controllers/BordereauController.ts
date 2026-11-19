@@ -63,6 +63,14 @@ export const hasChoixFinal = (parcoursChoisis?: Array<{ choixFinal?: any; parcou
 
 const BORDEREAU_INSCRIPTION_ACTIF_STATUTS = ['en_attente', 'en_saisie_comptable', 'valide', 'traite'] as const;
 
+function getCabinetSiteWhere(req: Request): { etablissementId?: number } | null {
+    if ((req as any).utilisateurRole !== RolesUtilisateur.CABINET_COMPTABLE) return {};
+    const etablissementId = Number((req as any).etablissementId);
+    return Number.isSafeInteger(etablissementId) && etablissementId > 0
+        ? { etablissementId }
+        : null;
+}
+
 export const getParcoursFinal = <T extends { choixFinal?: any; parcoursId?: number | string | null }>(parcoursChoisis?: Array<T> | null): T | undefined => {
     if (!Array.isArray(parcoursChoisis) || parcoursChoisis.length === 0) return undefined;
 
@@ -106,11 +114,16 @@ export default class BordereauController {
     constructor() { }
 
     static async getAllBordereaux(req: Request, res: Response): Promise<Response> {
+        const cabinetSiteWhere = getCabinetSiteWhere(req);
+        if (!cabinetSiteWhere) {
+            return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+        }
         const page = Math.max(1, parseInt(req.query.page as string) || 1);
         const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
         const offset = (page - 1) * limit;
 
         let options: FindOptions<InferAttributes<Bordereau>> = {
+            where: cabinetSiteWhere,
             include: [
                 { association: Bordereau.associations.echeance, include: [Echeance.associations.dossierEtudiant] },
                 Bordereau.associations.utilisateur,
@@ -154,7 +167,7 @@ export default class BordereauController {
             && statutsDemandes.includes('en_attente')
         ) {
             const utilisateurId = Number((req as any).utilisateurId);
-            const siteScope = role === RolesUtilisateur.ADMIN && hasActiveSite
+            const siteScope = (role === RolesUtilisateur.ADMIN || role === RolesUtilisateur.CABINET_COMPTABLE) && hasActiveSite
                 ? etablissementId
                 : undefined;
             try {
@@ -242,8 +255,12 @@ export default class BordereauController {
     }
 
     static async getBordereau(req: Request, res: Response): Promise<Response> {
+        const cabinetSiteWhere = getCabinetSiteWhere(req);
+        if (!cabinetSiteWhere) {
+            return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+        }
         let options: FindOptions<InferAttributes<Bordereau>> = {
-            where: { id: req.params.id },
+            where: { id: req.params.id, ...cabinetSiteWhere },
             include: [
                 { association: Bordereau.associations.echeance, include: [Echeance.associations.dossierEtudiant] },
                 Bordereau.associations.utilisateur,
@@ -471,6 +488,10 @@ export default class BordereauController {
         if (role != RolesUtilisateur.CABINET_COMPTABLE && role != RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false })
         }
+        const cabinetSiteWhere = getCabinetSiteWhere(req);
+        if (!cabinetSiteWhere) {
+            return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+        }
 
         // ── Transaction + verrou de ligne (anti double-soumission) ──
         // La route n'était pas transactionnelle : deux clics simultanés passaient les
@@ -482,7 +503,8 @@ export default class BordereauController {
         const transaction = await DatabaseConnection.getInstance().sequelize.transaction();
 
         try {
-            let bordereau: Bordereau | null = await Bordereau.findByPk(req.params.id, {
+            let bordereau: Bordereau | null = await Bordereau.findOne({
+                where: { id: req.params.id, ...cabinetSiteWhere },
                 transaction,
                 lock: transaction.LOCK.UPDATE,
                 include: [
@@ -553,7 +575,11 @@ export default class BordereauController {
             }
 
             // ── Contrôle d'unicité (identique à FinanceRouter) : éviter un doublon sur référence/numéro ──
-            const whereClause: any = { id: { [Op.ne]: bordereau.id }, deletedAt: null };
+            const whereClause: any = {
+                id: { [Op.ne]: bordereau.id },
+                deletedAt: null,
+                ...cabinetSiteWhere,
+            };
             const orConditions: any[] = [];
             if (refBancaire) orConditions.push({ referenceBancaire: refBancaire });
             if (numBordereau) orConditions.push({ numeroBordereau: numBordereau });
@@ -620,6 +646,10 @@ export default class BordereauController {
         if (role != RolesUtilisateur.CABINET_COMPTABLE && role != RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false })
         }
+        const cabinetSiteWhere = getCabinetSiteWhere(req);
+        if (!cabinetSiteWhere) {
+            return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+        }
 
         // ── Transaction + verrou de ligne (anti double-soumission) ──
         // Même discipline que la validation : deux clics simultanés sur « Rejeter »
@@ -632,7 +662,8 @@ export default class BordereauController {
         const transaction = await DatabaseConnection.getInstance().sequelize.transaction();
 
         try {
-            let bordereau: Bordereau | null = await Bordereau.findByPk(req.params.id, {
+            let bordereau: Bordereau | null = await Bordereau.findOne({
+                where: { id: req.params.id, ...cabinetSiteWhere },
                 transaction,
                 lock: transaction.LOCK.UPDATE,
                 include: [
@@ -721,6 +752,10 @@ export default class BordereauController {
         if (role != RolesUtilisateur.CABINET_COMPTABLE && role != RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false })
         }
+        const cabinetSiteWhere = getCabinetSiteWhere(req);
+        if (!cabinetSiteWhere) {
+            return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+        }
 
         const { ids, statut, commentaire } = req.body;
 
@@ -751,7 +786,8 @@ export default class BordereauController {
             let count = 0;
             const traites: Bordereau[] = [];
             for (const id of ids) {
-                const bordereau = await Bordereau.findByPk(id, {
+                const bordereau = await Bordereau.findOne({
+                    where: { id, ...cabinetSiteWhere },
                     transaction,
                     lock: transaction.LOCK.UPDATE,
                     include: [Bordereau.associations.utilisateur]
@@ -829,7 +865,12 @@ export default class BordereauController {
 
     static downloadBordereau(req: Request, res: Response): void {
         res.removeHeader('X-Frame-Options');
-        Bordereau.findByPk(req.params.id).then((bordereau) => {
+        const cabinetSiteWhere = getCabinetSiteWhere(req);
+        if (!cabinetSiteWhere) {
+            res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+            return;
+        }
+        Bordereau.findOne({ where: { id: req.params.id, ...cabinetSiteWhere } }).then((bordereau) => {
             if (!bordereau || !bordereau.fichier) {
                 res.status(404).json({ success: false, message: "Fichier non trouvé" })
                 return
@@ -884,11 +925,16 @@ export default class BordereauController {
         if (role != RolesUtilisateur.CABINET_COMPTABLE && role != RolesUtilisateur.ADMIN) {
             return res.status(403).json({ success: false })
         }
+        const cabinetSiteWhere = getCabinetSiteWhere(req);
+        if (!cabinetSiteWhere) {
+            return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+        }
 
         const transaction = await DatabaseConnection.getInstance().sequelize.transaction()
 
         try {
-            let bordereau: Bordereau | null = await Bordereau.findByPk(req.params.id, {
+            let bordereau: Bordereau | null = await Bordereau.findOne({
+                where: { id: req.params.id, ...cabinetSiteWhere },
                 transaction,
                 lock: transaction.LOCK.UPDATE,
                 include: [
@@ -957,7 +1003,11 @@ export default class BordereauController {
             }
 
             // ── Contrôle d'unicité (identique à FinanceRouter) : éviter un doublon sur référence/numéro ──
-            const whereClause: any = { id: { [Op.ne]: bordereau.id }, deletedAt: null };
+            const whereClause: any = {
+                id: { [Op.ne]: bordereau.id },
+                deletedAt: null,
+                ...cabinetSiteWhere,
+            };
             const orConditions: any[] = [];
             if (refBancaire) orConditions.push({ referenceBancaire: refBancaire });
             if (numBordereau) orConditions.push({ numeroBordereau: numBordereau });

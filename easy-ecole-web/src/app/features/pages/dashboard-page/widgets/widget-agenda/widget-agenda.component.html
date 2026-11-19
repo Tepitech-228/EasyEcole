@@ -9,9 +9,9 @@
   <div class="agenda-list" *ngIf="events.length > 0">
     <div class="agenda-item" *ngFor="let event of events">
       <div class="agenda-time">
-        <span class="time-start">{{ event.heureDebut | date:'HH:mm' }}</span>
+        <span class="time-start">{{ heureEvent(event, event.heureDebut) | date:'HH:mm' }}</span>
         <span class="time-sep">-</span>
-        <span class="time-end">{{ event.heureFin | date:'HH:mm' }}</span>
+        <span class="time-end">{{ heureEvent(event, event.heureFin) | date:'HH:mm' }}</span>
       </div>
       <div class="agenda-dot"></div>
       <div class="agenda-body">

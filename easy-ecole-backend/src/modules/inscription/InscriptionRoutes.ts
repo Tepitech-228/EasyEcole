@@ -13,6 +13,7 @@ import DemandeInscriptionRouter from "./routers/DemandeInscriptionRouter"
 import ReponseInscriptionRouter from "./routers/ReponseInscriptionRouter"
 import FraisInscriptionRouter from "./routers/FraisInscriptionRouter"
 import Authenticate from "../../core/middlewares/Authenticate";
+import { RequireCabinetComptableSite } from "../../core/middlewares/RequireCabinetComptableSite";
 import { cache } from "../../core/middlewares/CacheMiddleware";
 import { InscriptionComplete } from "../../core/middlewares/InscriptionComplete";
 import PaiementInscriptionRouter from "./routers/PaiementInscriptionRouter";
@@ -122,11 +123,11 @@ router
     // ⚠️ Routes critiques placées AVANT les montages racine pour éviter
     //    que .use('/', ..., InscriptionComplete) n'intercepte toutes les requêtes.
     .use('/pre-inscriptions', [Authenticate], PreInscriptionRouter)
-    .use('/bordereaux', [Authenticate], BordereauRouter)
+    .use('/bordereaux', [Authenticate, RequireCabinetComptableSite], BordereauRouter)
     // Routes financières ESA-COMPTA : saisie comptable, imputation, bordereaux à traiter
     .use('/finance', [Authenticate], FinanceRouter)
     // Cabinet comptable : vérification et validation des bordereaux
-    .use('/cabinet-comptable', [Authenticate], CabinetComptableRouter)
+    .use('/cabinet-comptable', [Authenticate, RequireCabinetComptableSite], CabinetComptableRouter)
     // Types d'opérations de bordereau
     .use('/types-operations-bordereau', [Authenticate], TypeOperationBordereauRouter)
     // Validation finale des dossiers par le comité (comite-validations/dossiers)
@@ -160,7 +161,7 @@ router
     // Routes d'onboarding : elles doivent passer avant les montages racine
     // protégés par InscriptionComplete.
     .use('/paiement', [Authenticate], PaiementStatutRouter)
-    .get('/dashboard', [Authenticate, cache(30)], DashboardController.getDashboard)
+    .get('/dashboard', [Authenticate], DashboardController.getDashboard)
     // Montages racine — ne serviront que pour les routes qui n'ont pas matché ci-dessus
     .use('/', [Authenticate, InscriptionComplete], PresenceEnseignantRouter)
     .use('/', [Authenticate, InscriptionComplete], AbsenceCoursRouter)

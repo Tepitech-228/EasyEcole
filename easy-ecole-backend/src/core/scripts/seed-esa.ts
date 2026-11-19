@@ -91,6 +91,26 @@ export async function seedEsa(): Promise<void> {
     { titre: 'Agro business', type: 'LICENCE', categorie: 'Agriculture et Agro-alimentaire', dureeDeFormation: '3/y' },
     { titre: 'Modélisation économétrique et analyse des données', type: 'LICENCE', categorie: 'Économie et Finance', dureeDeFormation: '3/y' },
     { titre: 'Diplomatie, protocole et relations publiques', type: 'LICENCE', categorie: 'Communication et Médias', dureeDeFormation: '3/y' },
+    { titre: 'Comptabilité et gestion des entreprises', type: 'LICENCE', categorie: 'Comptabilité et Finance', dureeDeFormation: '3/y' },
+    { titre: 'Communication des entreprises', type: 'LICENCE', categorie: 'Communication et Médias', dureeDeFormation: '3/y' },
+    { titre: 'Assistant de gestion PME/PMI', type: 'LICENCE', categorie: 'Commerce et Gestion', dureeDeFormation: '3/y' },
+    { titre: 'Secrétariat de direction', type: 'LICENCE', categorie: 'Administration et Affaires Publiques', dureeDeFormation: '3/y' },
+    { titre: 'Action commerciale et force de vente', type: 'LICENCE', categorie: 'Commerce et Gestion', dureeDeFormation: '3/y' },
+    { titre: 'Gestion des collectivités locales', type: 'LICENCE', categorie: 'Administration et Affaires Publiques', dureeDeFormation: '3/y' },
+    { titre: 'Informatique de gestion (développeur d\'application)', type: 'LICENCE', categorie: 'Sciences et Technologies', dureeDeFormation: '3/y' },
+    { titre: 'Informatique de gestion (administrateur de réseaux locaux d\'entreprise)', type: 'LICENCE', categorie: 'Sciences et Technologies', dureeDeFormation: '3/y' },
+    { titre: 'Télécommunications', type: 'LICENCE', categorie: 'Sciences et Technologies', dureeDeFormation: '3/y' },
+    { titre: 'Maintenance informatique et réseaux', type: 'LICENCE', categorie: 'Sciences et Technologies', dureeDeFormation: '3/y' },
+    { titre: 'Géomètre topographe', type: 'LICENCE', categorie: 'Ingénierie et Génie', dureeDeFormation: '3/y' },
+    { titre: 'Assurance', type: 'LICENCE', categorie: 'Économie et Finance', dureeDeFormation: '3/y' },
+    { titre: 'Finance banque', type: 'LICENCE', categorie: 'Économie et Finance', dureeDeFormation: '3/y' },
+    { titre: 'Restauration', type: 'LICENCE', categorie: 'Tourisme, Hôtellerie et Loisirs', dureeDeFormation: '3/y' },
+    { titre: 'Hôtellerie', type: 'LICENCE', categorie: 'Tourisme, Hôtellerie et Loisirs', dureeDeFormation: '3/y' },
+    { titre: 'Génie thermique', type: 'LICENCE', categorie: 'Ingénierie et Génie', dureeDeFormation: '3/y' },
+    { titre: 'Electromécanique', type: 'LICENCE', categorie: 'Ingénierie et Génie', dureeDeFormation: '3/y' },
+    { titre: 'Electronique', type: 'LICENCE', categorie: 'Sciences et Technologies', dureeDeFormation: '3/y' },
+    { titre: 'Electrotechnique', type: 'LICENCE', categorie: 'Ingénierie et Génie', dureeDeFormation: '3/y' },
+    { titre: 'Tourisme et loisirs', type: 'LICENCE', categorie: 'Tourisme, Hôtellerie et Loisirs', dureeDeFormation: '3/y' },
 
     { titre: 'Gestion des entreprises', type: 'MBA', categorie: 'Commerce et Gestion', dureeDeFormation: '2/y' },
     { titre: 'Leadership, gouvernance et performance des équipes', type: 'MBA', categorie: 'Commerce et Gestion', dureeDeFormation: '2/y' },
@@ -127,7 +147,7 @@ export async function seedEsa(): Promise<void> {
   ];
 
   const masterSeed = parcoursSeed
-    .filter(parcours => parcours.type === 'LICENCE')
+    .filter(parcours => parcours.type === 'LICENCE' || parcours.type === 'MBA')
     .map(parcours => ({
       ...parcours,
       type: 'MASTER' as const,
@@ -204,9 +224,9 @@ export async function seedEsa(): Promise<void> {
       where: { titre: { [Op.in]: expectedTitles } },
       transaction
     });
-    if (expectedTitles.length !== 105 || orientationCount !== 105 || inscriptionCount !== 105) {
+    if (expectedTitles.length !== 147 || orientationCount !== 147 || inscriptionCount !== 147) {
       throw new Error(
-        `Nombre de parcours ESA inattendu: titres=${expectedTitles.length}, orientation=${orientationCount}, inscription=${inscriptionCount} (attendu: 105 chacun).`
+        `Nombre de parcours ESA inattendu: titres=${expectedTitles.length}, orientation=${orientationCount}, inscription=${inscriptionCount} (attendu: 147 chacun).`
       );
     }
     console.log(`✓ Parcours ESA présents: orientation=${orientationCount}, inscription=${inscriptionCount}.`);

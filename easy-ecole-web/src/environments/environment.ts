@@ -16,6 +16,8 @@ const apiUrl: string = apiBaseUrl + "api/v1"
 
 export const environment = {
   production: false,
+  /** URL publique utilisée pour les liens envoyés par email depuis un environnement local. */
+  publicUrl: 'https://easyecole.esaecole.com',
 
   /** URL de base de l'API (utilisée par l'HttpInterceptor pour préfixer toutes les requêtes) */
   apiUrl: apiUrl,

@@ -6,6 +6,7 @@ import { EtatsDePresence } from "../../../core/enums/EtatsDePresence";
 import { Apprenant } from "../../auth/models/Apprenant";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { Utilisateur } from "../../auth/models/Utilisateur";
+import { SiteUtilisateur } from "../../auth/models/SiteUtilisateur";
 import { CursusApprenant } from "../models/CursusApprenant";
 import { DemandeInscription } from "../models/DemandeInscription";
 import { ComiteVote } from "../models/ComiteVote";
@@ -53,11 +54,11 @@ class DashboardController {
 
             switch (role) {
                 case RolesUtilisateur.ADMIN:
-                    return res.json(await DashboardController.getAdminDashboard());
+                    return res.json(await DashboardController.getAdminDashboard(req.etablissementId));
                 case RolesUtilisateur.INSTITUTION:
                     return res.json(await DashboardController.getInstitutionDashboard());
                 case RolesUtilisateur.ENSEIGNANT:
-                    return res.json(await DashboardController.getEnseignantDashboard(utilisateurId));
+                    return res.json(await DashboardController.getEnseignantDashboard(utilisateurId, req.etablissementId));
                 case RolesUtilisateur.APPRENANT:
                     return res.json(await DashboardController.getApprenantDashboard(utilisateurId));
                 case RolesUtilisateur.CABINET_COMPTABLE:
@@ -69,52 +70,132 @@ class DashboardController {
                 case RolesUtilisateur.RESSOURCES_HUMAINES:
                     return res.json(await DashboardController.getRHDashboard());
                 default:
-                    return res.json(await DashboardController.getDefaultDashboard(utilisateurId));
+                    return res.json(await DashboardController.getDefaultDashboard(utilisateurId, req.etablissementId));
             }
         } catch (error) {
             return res.status(500).json({ success: false, message: 'Erreur dashboard', error });
         }
     }
 
-    private static async getAdminDashboard() {
+    private static async getAdminDashboard(etablissementId?: number | null) {
         const annee = new Date().getFullYear();
         const debutAnnee = new Date(annee, 0, 1);
         const finAnnee = new Date(annee, 11, 31, 23, 59, 59);
+        const siteId = Number.isSafeInteger(Number(etablissementId)) && Number(etablissementId) > 0
+            ? Number(etablissementId)
+            : undefined;
+        const siteWhere = siteId === undefined ? {} : { etablissementId: siteId };
+        const siteTeacherIds = siteId === undefined
+            ? undefined
+            : (await SiteUtilisateur.findAll({
+                where: { etablissementId: siteId },
+                attributes: ['utilisateurId'],
+                raw: true,
+            })).map(row => Number(row.utilisateurId));
+        const now = new Date();
 
-        const [totalApprenants, totalEnseignants, totalSessions, demandesEnAttente, recentDemandes, demandesParMois, cursusActifs, totalClasses, totalCours, totalPaiements, echeancesImpayees] = await Promise.all([
-            Apprenant.count(),
-            Enseignant.count(),
-            DemandeInscription.count(),
-            PreInscription.count({ where: { statut: 'en_attente' } }),
+        const [totalApprenants, totalEnseignants, totalSessions, sessionsOuvertes, demandesEnAttente, demandesValidees, demandesRejetees, recentDemandes, demandesParMois, cursusActifs, totalClasses, totalCours, totalPaiements, echeancesImpayees] = await Promise.all([
+            siteId === undefined
+                ? Apprenant.count()
+                : CursusApprenant.count({ where: siteWhere, distinct: true, col: 'utilisateurId' }),
+            siteTeacherIds === undefined
+                ? Enseignant.count()
+                : Enseignant.count({ where: { utilisateurId: { [Op.in]: siteTeacherIds } } }),
+            Session.count({ where: siteWhere }),
+            Session.count({
+                where: {
+                    ...siteWhere,
+                    dateDebut: { [Op.lte]: now },
+                    dateFin: { [Op.gte]: now },
+                },
+            }),
+            PreInscription.count({
+                where: { statut: 'en_attente' },
+                include: [{
+                    association: PreInscription.associations.demandeInscription,
+                    where: siteWhere,
+                    required: siteId !== undefined,
+                }],
+            }),
+            PreInscription.count({
+                where: { statut: 'valide' },
+                include: [{
+                    association: PreInscription.associations.demandeInscription,
+                    where: siteWhere,
+                    required: siteId !== undefined,
+                }],
+            }),
+            PreInscription.count({
+                where: { statut: 'rejete' },
+                include: [{
+                    association: PreInscription.associations.demandeInscription,
+                    where: siteWhere,
+                    required: siteId !== undefined,
+                }],
+            }),
             DemandeInscription.findAll({
+                where: siteWhere,
                 order: [['dateDemande', 'DESC']],
                 limit: 5,
-                include: [{ association: 'preInscription', attributes: ['statut'] }],
+                include: [
+                    { association: DemandeInscription.associations.utilisateur, attributes: ['nom', 'prenoms'] },
+                    { association: DemandeInscription.associations.preInscription, attributes: ['statut'] },
+                ],
                 attributes: ['id', 'dateDemande', 'matricule'],
             }),
-            DemandeInscription.count({
-                where: { dateDemande: { [Op.between]: [debutAnnee, finAnnee] } },
+            DemandeInscription.findAll({
+                where: { ...siteWhere, dateDemande: { [Op.between]: [debutAnnee, finAnnee] } },
+                attributes: [
+                    [fn('MONTH', col('dateDemande')), 'mois'],
+                    [fn('COUNT', col('id')), 'total'],
+                ],
                 group: [fn('MONTH', col('dateDemande'))],
+                raw: true,
             }),
             CursusApprenant.findAll({
-                attributes: ['parcoursId'],
-                include: [{ association: CursusApprenant.associations.parcours, attributes: ['titre'] }],
+                where: siteWhere,
+                attributes: ['utilisateurId', 'parcoursId', 'intituleParcours', 'createdAt'],
+                include: [{ association: CursusApprenant.associations.parcours, attributes: ['id', 'titre'] }],
+                order: [['createdAt', 'DESC'], ['id', 'DESC']],
             }),
-            Classe.count(),
-            Cours.count(),
-            PaiementInscription.count(),
-            Echeance.count({ where: { statut: { [Op.in]: ['impaye', 'partiel'] } } }),
+            Classe.count({ where: siteWhere }),
+            Cours.count({ where: siteWhere }),
+            siteId === undefined
+                ? PaiementInscription.count()
+                : PaiementInscription.count({
+                    include: [{
+                        association: PaiementInscription.associations.demandeInscription,
+                        where: siteWhere,
+                        required: true,
+                    }],
+                }),
+            Echeance.count({
+                where: { statut: { [Op.in]: ['impaye', 'partiel'] } },
+                include: siteId === undefined ? [] : [{
+                    association: Echeance.associations.dossierEtudiant,
+                    where: siteWhere,
+                    required: true,
+                }],
+            }),
         ]);
 
-        // 12 valeurs (Jan → Déc) pour le graphique "Pré-inscriptions" du dashboard admin
+        // 12 valeurs (Jan → Déc) pour le graphique des demandes du site actif.
         const moisCounts: number[] = Array(12).fill(0);
-        for (const g of (demandesParMois as any[])) {
-            const mois = Number(g.dateDemande);
-            if (mois >= 1 && mois <= 12) moisCounts[mois - 1] = g.count;
+        for (const g of demandesParMois as any[]) {
+            const mois = Number(g.mois);
+            if (mois >= 1 && mois <= 12) moisCounts[mois - 1] = Number(g.total);
+        }
+
+        const derniersCursusParEtudiant = new Map<number, CursusApprenant>();
+        for (const cursus of cursusActifs) {
+            const utilisateurId = Number(cursus.utilisateurId);
+            if (!derniersCursusParEtudiant.has(utilisateurId)) {
+                derniersCursusParEtudiant.set(utilisateurId, cursus);
+            }
         }
 
         const etudiantsParFiliereMap = new Map<string, number>();
-        for (const cursus of cursusActifs) {
+        for (const cursus of derniersCursusParEtudiant.values()) {
             const libelle = cursus.parcours?.titre || cursus.intituleParcours || `Filière ${cursus.parcoursId}`;
             etudiantsParFiliereMap.set(libelle, (etudiantsParFiliereMap.get(libelle) || 0) + 1);
         }
@@ -143,7 +224,12 @@ class DashboardController {
                 echeancesImpayees,
                 totalSessions,
                 demandesEnAttente,
-                sessionsOuvertes: totalSessions,
+                sessionsOuvertes,
+                demandesParStatut: {
+                    validees: demandesValidees,
+                    enAttente: demandesEnAttente,
+                    rejetees: demandesRejetees,
+                },
                 demandesParMois: moisCounts,
                 etudiantsParFiliere,
                 recentDemandes: await Promise.all(recentDemandes.map(async (d) => {
@@ -174,35 +260,130 @@ class DashboardController {
         };
     }
 
-    private static async getEnseignantDashboard(utilisateurId: number) {
+    private static async getEnseignantDashboard(utilisateurId: number, etablissementId?: number | null) {
         const today = new Date();
         const todayStr = today.toISOString().slice(0, 10);
-        const todayName = DAYS[today.getDay()];
+        const todayName = String(today.getUTCDay() || 7);
+        const dayOfWeek = today.getUTCDay() || 7;
+        const weekStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+        weekStart.setUTCDate(weekStart.getUTCDate() - dayOfWeek + 1);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setUTCDate(weekEnd.getUTCDate() + 6);
+        const weekStartStr = weekStart.toISOString().slice(0, 10);
+        const weekEndStr = weekEnd.toISOString().slice(0, 10);
+        const siteId = Number.isSafeInteger(Number(etablissementId)) && Number(etablissementId) > 0
+            ? Number(etablissementId)
+            : undefined;
+        const siteWhere = siteId === undefined ? {} : { etablissementId: siteId };
+        const coursSiteWhere = siteId === undefined
+            ? {}
+            : { [Op.or]: [{ etablissementId: siteId }, { etablissementId: null }] };
+        const enseignant = await Enseignant.findOne({ where: { utilisateurId } });
 
-        const seances = await Seance.findAll({
-            where: { enseignantId: utilisateurId, jourSemaine: todayName },
-            include: [
-                { association: 'cours', attributes: ['id', 'intitule'] },
-                { association: 'salleDeClasse', attributes: ['id', 'libelle'] },
-            ],
-            order: [['heureDebut', 'ASC']],
-        });
+        const [seances, seancesSemaine, listeNotes, totalCours, totalApprenants] = enseignant
+            ? await Promise.all([
+                Seance.findAll({
+                    where: {
+                        enseignantId: enseignant.id,
+                        jourSemaine: todayName,
+                        dateDebut: { [Op.lte]: todayStr },
+                        dateFin: { [Op.gte]: todayStr },
+                        ...siteWhere,
+                    },
+                    include: [
+                        { association: 'cours', attributes: ['id', 'intitule'] },
+                        { association: 'salleDeClasse', attributes: ['id', 'libelle'] },
+                    ],
+                    order: [['heureDebut', 'ASC']],
+                }),
+                Seance.findAll({
+                    where: {
+                        enseignantId: enseignant.id,
+                        jourSemaine: { [Op.in]: DAYS.slice(1).map((_, index) => String(index + 1)) },
+                        dateDebut: { [Op.lte]: weekEndStr },
+                        dateFin: { [Op.gte]: weekStartStr },
+                        ...siteWhere,
+                    },
+                    attributes: ['jourSemaine'],
+                    raw: true,
+                }),
+                ListeNoteEvaluation.findAll({
+                    where: {
+                        enseignantId: enseignant.id,
+                        statutGestion: 'publie',
+                        saisieBloquee: false,
+                    },
+                    attributes: ['id', 'coursId'],
+                    include: [{
+                        association: ListeNoteEvaluation.associations.cours,
+                        attributes: ['id', 'intitule'],
+                        where: coursSiteWhere,
+                        required: true,
+                    }],
+                }),
+                Cours.count({ where: { enseignantId: enseignant.id, ...coursSiteWhere } }),
+                CoursParticipant.count({
+                    distinct: true,
+                    col: 'utilisateurId',
+                    include: [{
+                        association: CoursParticipant.associations.cours,
+                        where: { enseignantId: enseignant.id, ...coursSiteWhere },
+                        required: true,
+                    }],
+                }),
+            ])
+            : [[], [], [], 0, 0];
 
         const nextSeance = seances.find(s => {
             const debut = new Date(`${todayStr}T${s.heureDebut}`);
             return debut.getTime() > today.getTime();
         });
 
-        const listeNotes: any[] = await ListeNoteEvaluation.findAll({
-            include: [{ association: 'cours', attributes: ['id', 'intitule'] }],
-            limit: 5,
+        const evaluationIds = listeNotes.map((liste: any) => Number(liste.id));
+        const courseIds = listeNotes.map((liste: any) => Number(liste.coursId));
+        const [participantsParCours, notesPubliees] = evaluationIds.length
+            ? await Promise.all([
+                CoursParticipant.findAll({
+                    where: { coursId: { [Op.in]: courseIds } },
+                    attributes: ['coursId', [fn('COUNT', col('id')), 'total']],
+                    group: ['coursId'],
+                    raw: true,
+                }),
+                NoteEvaluation.findAll({
+                    where: {
+                        listeNoteEvaluationId: { [Op.in]: evaluationIds },
+                        note: { [Op.ne]: null },
+                    },
+                    attributes: ['listeNoteEvaluationId', [fn('COUNT', col('id')), 'total']],
+                    group: ['listeNoteEvaluationId'],
+                    raw: true,
+                }),
+            ])
+            : [[], []];
+        const participantsByCourse = new Map<number, number>(
+            (participantsParCours as any[]).map(row => [Number(row.coursId), Number(row.total)])
+        );
+        const publishedNotesByEvaluation = new Map<number, number>(
+            (notesPubliees as any[]).map(row => [Number(row.listeNoteEvaluationId), Number(row.total)])
+        );
+        let totalNotesSaisies = 0;
+        let totalNotesASaisir = 0;
+        const notesASaisir = listeNotes.flatMap((liste: any) => {
+            const totalParticipants = participantsByCourse.get(Number(liste.coursId)) || 0;
+            const saisies = publishedNotesByEvaluation.get(Number(liste.id)) || 0;
+            const aSaisir = Math.max(totalParticipants - saisies, 0);
+            totalNotesSaisies += saisies;
+            totalNotesASaisir += aSaisir;
+            return aSaisir > 0 ? [{
+                id: liste.id,
+                cours: liste.cours?.intitule || 'Cours',
+                aSaisir,
+            }] : [];
         });
-
-        const enseignant = await Enseignant.findOne({ where: { utilisateurId } });
-        const totalCours = enseignant ? await Cours.count({ where: { enseignantId: enseignant.id } }) : 0;
-        const totalApprenants = enseignant ? await CoursParticipant.count({
-            include: [{ association: 'cours', where: { enseignantId: enseignant.id } }]
-        }) : 0;
+        const agendaParJour = DAYS.slice(1).map((jour, index) => ({
+            jour: jour.slice(0, 3),
+            total: seancesSemaine.filter(seance => String(seance.jourSemaine) === String(index + 1)).length,
+        }));
 
         return {
             success: true,
@@ -221,10 +402,10 @@ class DashboardController {
                     heureDebut: nextSeance.heureDebut,
                     salle: nextSeance.salleDeClasse?.libelle || nextSeance.salle || '',
                 } : null,
-                notesASaisir: listeNotes.map((l: any) => ({
-                    id: l.id,
-                    cours: l.cours?.intitule || 'Cours',
-                })),
+                notesASaisir,
+                totalNotesSaisies,
+                totalNotesASaisir,
+                agendaParJour,
                 totalCours,
                 totalApprenants,
             }
@@ -762,11 +943,21 @@ class DashboardController {
         };
     }
 
-    private static async getDefaultDashboard(utilisateurId: number) {
-        const todayName = DAYS[new Date().getDay()];
+    private static async getDefaultDashboard(utilisateurId: number, etablissementId?: number | null) {
+        const today = new Date();
+        const todayName = String(today.getUTCDay() || 7);
+        const todayStr = today.toISOString().slice(0, 10);
+        const siteId = Number.isSafeInteger(Number(etablissementId)) && Number(etablissementId) > 0
+            ? Number(etablissementId)
+            : undefined;
 
         const seances = await Seance.findAll({
-            where: { jourSemaine: todayName },
+            where: {
+                jourSemaine: todayName,
+                dateDebut: { [Op.lte]: todayStr },
+                dateFin: { [Op.gte]: todayStr },
+                ...(siteId === undefined ? {} : { etablissementId: siteId }),
+            },
             include: [
                 { association: 'cours', attributes: ['id', 'intitule'] },
                 { association: 'salleDeClasse', attributes: ['id', 'libelle'] },

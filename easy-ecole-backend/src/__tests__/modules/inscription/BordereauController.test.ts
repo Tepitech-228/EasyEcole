@@ -144,6 +144,29 @@ const { DatabaseConnection } = require('../../../core/helpers/DatabaseConnection
 import Ctrl from '../../../modules/inscription/controllers/BordereauController'
 
 describe('BordereauController.getAllBordereaux', () => {
+  it('limits cabinet accounts to the active site', async () => {
+    const req = mockRequest({ utilisateurRole: 'cabinet_comptable', utilisateurId: 12, etablissementId: 42 } as any)
+    const res = mockResponse()
+    ;(Bordereau.findAndCountAll as jest.Mock).mockResolvedValue({ rows: [], count: 0 })
+
+    await Ctrl.getAllBordereaux(req, res)
+
+    expect(Bordereau.findAndCountAll).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ etablissementId: 42 }),
+    }))
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('refuses cabinet access when no active site is selected', async () => {
+    const req = mockRequest({ utilisateurRole: 'cabinet_comptable', utilisateurId: 12, etablissementId: null } as any)
+    const res = mockResponse()
+
+    await Ctrl.getAllBordereaux(req, res)
+
+    expect(Bordereau.findAndCountAll).not.toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(403)
+  })
+
   it('allows ESA_COMPTA to see audited bordereaux without an active site', async () => {
     const req = mockRequest({ utilisateurRole: 'esa_compta', etablissementId: null } as any)
     const res = mockResponse()
@@ -153,6 +176,26 @@ describe('BordereauController.getAllBordereaux', () => {
 
     expect(Bordereau.findAndCountAll).toHaveBeenCalledTimes(1)
     expect(res.status).toHaveBeenCalledWith(200)
+  })
+})
+
+describe('BordereauController.getBordereau', () => {
+  it('includes the active site in the lookup for cabinet accounts', async () => {
+    const req = mockRequest({
+      utilisateurRole: 'cabinet_comptable',
+      utilisateurId: 12,
+      etablissementId: 42,
+      params: { id: '99' },
+    } as any)
+    const res = mockResponse()
+    ;(Bordereau.findOne as jest.Mock).mockResolvedValue(null)
+
+    await Ctrl.getBordereau(req, res)
+
+    expect(Bordereau.findOne).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ id: '99', etablissementId: 42 }),
+    }))
+    expect(res.status).toHaveBeenCalledWith(404)
   })
 })
 

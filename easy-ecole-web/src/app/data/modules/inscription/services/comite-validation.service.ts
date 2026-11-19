@@ -61,6 +61,7 @@ export interface FiltresComite {
   filiere?: string | null
   parcoursId?: string | null
   niveauId?: string | null
+  etablissementId?: string | null
 }
 
 export interface AutorisationProvisoireInput {
@@ -93,6 +94,7 @@ export class ComiteValidationService {
     if (filtres.filiere) params = params.set('filiere', filtres.filiere)
     if (filtres.parcoursId) params = params.set('parcoursId', filtres.parcoursId)
     if (filtres.niveauId) params = params.set('niveauId', filtres.niveauId)
+    if (filtres.etablissementId) params = params.set('etablissementId', filtres.etablissementId)
 
     return this.httpClient.get<{ data: DossierComite[]; meta?: { total: number; tronque: boolean } }>(
       `${this.SERVICE_URL}/dossiers`,
@@ -100,8 +102,10 @@ export class ComiteValidationService {
     )
   }
 
-  detailDossier(id: number | string): Observable<{ data: DossierComite }> {
-    return this.httpClient.get<{ data: DossierComite }>(`${this.SERVICE_URL}/dossiers/${id}`)
+  detailDossier(id: number | string, etablissementId?: string | null): Observable<{ data: DossierComite }> {
+    let params = new HttpParams()
+    if (etablissementId) params = params.set('etablissementId', etablissementId)
+    return this.httpClient.get<{ data: DossierComite }>(`${this.SERVICE_URL}/dossiers/${id}`, { params })
   }
 
   decider(
@@ -131,8 +135,10 @@ export class ComiteValidationService {
    * d'authentification, et l'intergiciel backend n'accepte le token en query
    * string que sur une liste blanche de chemins (il fuit dans les logs).
    */
-  telechargerPdfFusionne(id: number | string): Observable<Blob> {
-    return this.httpClient.get(`${this.SERVICE_URL}/dossiers/${id}/pdf-fusionne`, { responseType: 'blob' })
+  telechargerPdfFusionne(id: number | string, etablissementId?: string | null): Observable<Blob> {
+    let params = new HttpParams()
+    if (etablissementId) params = params.set('etablissementId', etablissementId)
+    return this.httpClient.get(`${this.SERVICE_URL}/dossiers/${id}/pdf-fusionne`, { params, responseType: 'blob' })
   }
 
 }

@@ -18,6 +18,8 @@ const apiUrl: string = apiBaseUrl + "api/v1"
 
 export const environment = {
   production: true,
+  /** URL publique de repli quand un email est déclenché depuis localhost. */
+  publicUrl: 'https://easyecole.esaecole.com',
 
   /** URL de base de l'API (utilis�e par l'HttpInterceptor pour pr�fixer toutes les requ�tes) */
   apiUrl: apiUrl,

@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { SeanceService } from 'src/app/data/modules/inscription/services/seance.service';
-import { PlanningEvent } from 'src/app/data/modules/inscription/models/Seance.model';
+import { getPlanningEventDateTime, PlanningEvent } from 'src/app/data/modules/inscription/models/Seance.model';
 
 @Component({
   selector: 'app-widget-prochain-cours',
@@ -30,10 +30,11 @@ export class WidgetProchainCoursComponent implements OnInit, OnDestroy {
     this.seanceService.getPlanning(dateStr, dateStr).subscribe({
       next: (data) => {
         const events = (data || []).sort((a, b) =>
-          new Date(a.heureDebut).getTime() - new Date(b.heureDebut).getTime()
+          getPlanningEventDateTime(a.date, a.heureDebut).getTime()
+          - getPlanningEventDateTime(b.date, b.heureDebut).getTime()
         )
         const now = today.getTime()
-        this.nextEvent = events.find(e => new Date(e.heureDebut).getTime() > now) || null
+        this.nextEvent = events.find(e => getPlanningEventDateTime(e.date, e.heureDebut).getTime() > now) || null
         this.updateCountdown()
         this.loading = false
       },
@@ -44,13 +45,14 @@ export class WidgetProchainCoursComponent implements OnInit, OnDestroy {
   private updateCountdown(): void {
     if (!this.nextEvent) return
     this.minutesAvant = Math.max(0, Math.floor(
-      (new Date(this.nextEvent.heureDebut).getTime() - Date.now()) / 60000
+      (getPlanningEventDateTime(this.nextEvent.date, this.nextEvent.heureDebut).getTime() - Date.now()) / 60000
     ))
   }
 
   get heureDebut(): string {
     return this.nextEvent?.heureDebut
-      ? new Date(this.nextEvent.heureDebut).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+      ? getPlanningEventDateTime(this.nextEvent.date, this.nextEvent.heureDebut)
+        .toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
       : ''
   }
 }

@@ -238,14 +238,13 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
   get adminDoughnutData(): any {
     const total = this.dashboardData.totalApprenants || 0;
     const ens = this.dashboardData.totalEnseignants || 0;
-    const other = Math.max(0, (this.dashboardData.totalPersonnels || 0) - ens);
     return {
-      labels: ['Apprenants', 'Enseignants', 'Autres'],
+      labels: ['Apprenants', 'Enseignants'],
       datasets: [{
-        data: [total, ens, other > 0 ? other : 0],
-        backgroundColor: ['#3b82f6', '#10b981', '#6366f1'],
-        hoverBackgroundColor: ['#2563eb', '#059669', '#4f46e5'],
-        borderColor: ['#ffffff', '#ffffff', '#ffffff'],
+        data: [total, ens],
+        backgroundColor: ['#3b82f6', '#10b981'],
+        hoverBackgroundColor: ['#2563eb', '#059669'],
+        borderColor: ['#ffffff', '#ffffff'],
         borderWidth: 4,
         hoverOffset: 10,
       }]
@@ -290,14 +289,11 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
   }
 
   get adminDemandStatusChartData(): any {
-    const demandes = this.dashboardData.recentDemandes || [];
-    const validees = demandes.filter((d: any) => d.preInscription?.statut === 'valide').length;
-    const rejetees = demandes.filter((d: any) => d.preInscription?.statut === 'rejete').length;
-    const enAttente = Math.max(0, demandes.length - validees - rejetees);
+    const statuts = this.dashboardData.demandesParStatut || {};
     return {
       labels: ['Validées', 'En attente', 'Rejetées'],
       datasets: [{
-        data: [validees, enAttente, rejetees],
+        data: [statuts.validees || 0, statuts.enAttente || 0, statuts.rejetees || 0],
         backgroundColor: ['#087f8c', '#e0a11a', '#dc5a5a'],
         hoverBackgroundColor: ['#05636d', '#c4870d', '#b94343'],
         borderColor: '#ffffff',
@@ -654,13 +650,12 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
 
   // ─── Enseignant Charts ─────────────────────────────────
   get enseignantBarData(): any {
-    const agenda = this.dashboardData.agenda || [];
-    const jours = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+    const agendaParJour = this.dashboardData.agendaParJour || [];
     return {
-      labels: jours,
+      labels: agendaParJour.map((jour: any) => jour.jour),
       datasets: [{
         label: 'Cours',
-        data: jours.map(() => agenda.length),
+        data: agendaParJour.map((jour: any) => jour.total),
         backgroundColor: ['rgba(16, 185, 129, 0.85)', 'rgba(16, 185, 129, 0.7)', 'rgba(16, 185, 129, 0.85)', 'rgba(16, 185, 129, 0.7)', 'rgba(16, 185, 129, 0.85)', 'rgba(16, 185, 129, 0.3)'],
         borderColor: '#10b981',
         borderWidth: 2,
@@ -684,12 +679,10 @@ export class DashboardPageComponent extends BaseComponentClass implements OnInit
   };
 
   get enseignantDoughnutData(): any {
-    const aSaisir = this.dashboardData.notesASaisir?.length || 0;
-    const saisies = Math.max(8 - aSaisir, 0);
     return {
       labels: ['Notes saisies', 'Notes à saisir'],
       datasets: [{
-        data: [saisies || 5, aSaisir || 3],
+        data: [this.dashboardData.totalNotesSaisies || 0, this.dashboardData.totalNotesASaisir || 0],
         backgroundColor: ['#10b981', '#f59e0b'],
         hoverBackgroundColor: ['#059669', '#d97706'],
         borderWidth: 0,

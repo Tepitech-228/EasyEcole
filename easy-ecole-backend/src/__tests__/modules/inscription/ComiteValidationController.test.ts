@@ -62,6 +62,8 @@ const { Utilisateur } = require('../../../modules/auth/models/Utilisateur')
 const { DossierEtudiant } = require('../../../modules/inscription/models/DossierEtudiant')
 const { Bordereau } = require('../../../modules/inscription/models/Bordereau')
 const { BordereauDossierService } = require('../../../modules/inscription/services/BordereauDossierService')
+const { SiteUtilisateur } = require('../../../modules/auth/models/SiteUtilisateur')
+const { Etablissement } = require('../../../modules/etablissement/models/Etablissement')
 
 import Ctrl from '../../../modules/inscription/controllers/ComiteValidationController'
 
@@ -79,6 +81,8 @@ beforeEach(() => {
   ;(Utilisateur.count as jest.Mock).mockResolvedValue(3)
   ;(ComiteVote.findOne as jest.Mock).mockResolvedValue(null)
   ;(ComiteVote.create as jest.Mock).mockResolvedValue({ id: 1 })
+  DemandeInscription.findAll = jest.fn()
+  DemandeInscription.count = jest.fn()
   ;(Utilisateur.findByPk as jest.Mock).mockResolvedValue({
     email: 'etudiant@esa.ci',
     nom: 'Kouassi',
@@ -212,6 +216,74 @@ describe('ComiteValidationController.decider — correction demandée', () => {
     expect(res.status).toHaveBeenCalledWith(400)
     expect(mockTransaction.rollback).toHaveBeenCalled()
     expect(DemandeInscriptionDossier.update).not.toHaveBeenCalled()
+  })
+})
+
+describe('ComiteValidationController — filtre par site', () => {
+  it('limite les dossiers et les bordereaux au site demandé', async () => {
+    const demande = {
+      id: 11,
+      utilisateurId: 90,
+      typeDemande: 'inscription',
+      get: jest.fn().mockReturnValue({ id: 11, utilisateurId: 90 }),
+    }
+    const demandeFindAll = DemandeInscription.findAll as jest.Mock
+    const demandeCount = DemandeInscription.count as jest.Mock
+    const bordereauFindAll = jest.spyOn(Bordereau, 'findAll').mockResolvedValue([] as never)
+    const etablissementFindOne = jest.spyOn(Etablissement, 'findOne').mockResolvedValue({ id: 4 } as never)
+    const affectationFindOne = jest.spyOn(SiteUtilisateur, 'findOne').mockResolvedValue({ id: 8 } as never)
+    demandeFindAll.mockResolvedValue([demande])
+    demandeCount.mockResolvedValue(1)
+    jest.spyOn(ComiteVote, 'findAll').mockResolvedValue([] as never)
+    jest.spyOn(DossierEtudiant, 'findAll').mockResolvedValue([] as never)
+    const req = mockRequest({
+      query: { etablissementId: '4' },
+      utilisateurId: 22,
+      utilisateurRole: RolesUtilisateur.COMITE_ORIENTATION,
+    })
+    const res = mockResponse()
+
+    try {
+      await Ctrl.listerDossiers(req, res)
+
+      expect(demandeFindAll).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({ etablissementId: 4 }),
+      }))
+      expect(bordereauFindAll).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({ etablissementId: 4 }),
+      }))
+      expect(affectationFindOne).toHaveBeenCalledWith(expect.objectContaining({
+        where: { utilisateurId: 22, etablissementId: 4 },
+      }))
+      expect(res.status).toHaveBeenCalledWith(200)
+    } finally {
+      bordereauFindAll.mockRestore()
+      etablissementFindOne.mockRestore()
+      affectationFindOne.mockRestore()
+      jest.restoreAllMocks()
+    }
+  })
+
+  it('refuse au membre du comité un site auquel il n’est pas affecté', async () => {
+    const etablissementFindOne = jest.spyOn(Etablissement, 'findOne').mockResolvedValue({ id: 4 } as never)
+    const affectationFindOne = jest.spyOn(SiteUtilisateur, 'findOne').mockResolvedValue(null as never)
+    const req = mockRequest({
+      query: { etablissementId: '4' },
+      utilisateurId: 22,
+      utilisateurRole: RolesUtilisateur.COMITE_ORIENTATION,
+    })
+    const res = mockResponse()
+
+    try {
+      await Ctrl.listerDossiers(req, res)
+
+      expect(res.status).toHaveBeenCalledWith(403)
+      expect(DemandeInscription.findAll).not.toHaveBeenCalled()
+    } finally {
+      etablissementFindOne.mockRestore()
+      affectationFindOne.mockRestore()
+      jest.restoreAllMocks()
+    }
   })
 })
 

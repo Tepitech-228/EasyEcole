@@ -3,6 +3,7 @@ import { MenuService, MenuPole, MenuGroup } from 'src/app/core/services/menu.ser
 import { AuthService, SiteUtilisateur } from 'src/app/data/modules/auth/services/auth.service';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 import { JwtTokenService } from 'src/app/core/services/jwt-token.service';
+import { RolesUtilisateur } from 'src/app/data/enums/RolesUtilisateur';
 
 @Component({
   selector: 'app-sidebar-nav',
@@ -24,6 +25,7 @@ export class SidebarNavComponent implements OnInit {
   siteActifId: number | null = null;
   siteLoading = false;
   siteError = '';
+  isStudent = false;
 
 
   private poleColors: Record<string, string> = {
@@ -81,26 +83,45 @@ export class SidebarNavComponent implements OnInit {
         this.activePoleLabel = poles[0].label;
       }
     });
-    this.authService.getSitesMoi().subscribe({
-      next: sites => {
-        this.sites = sites;
-        const token = this.localStorage.get(LocalStorageService.AUTH_TOKEN);
-        if (token) {
-          this.jwtTokenService.setToken(token);
-          const tokenData = this.jwtTokenService.getDecodeToken() as { etablissementId?: string | number };
-          const tokenSiteId = Number(tokenData?.etablissementId);
+    const token = this.localStorage.get(LocalStorageService.AUTH_TOKEN);
+    if (token) {
+      this.jwtTokenService.setToken(token);
+      const tokenData = this.jwtTokenService.getDecodeToken() as {
+        role?: string;
+        etablissementId?: string | number;
+      };
+      this.isStudent = tokenData?.role === RolesUtilisateur.APPRENANT;
+      const tokenSiteId = Number(tokenData?.etablissementId);
+
+      if (this.isStudent) {
+        this.siteActifId = Number.isSafeInteger(tokenSiteId) && tokenSiteId > 0
+          ? tokenSiteId
+          : null;
+        return;
+      }
+
+      this.authService.getSitesMoi().subscribe({
+        next: sites => {
+          this.sites = sites;
           this.siteActifId = sites.some(site => Number(site.id) === tokenSiteId)
             ? tokenSiteId
             : null;
+          if (!this.siteActifId && sites.length === 1) {
+            this.activerSite(sites[0].id);
+          }
+        },
+        error: () => {
+          this.siteError = 'Les sites disponibles n’ont pas pu être chargés.';
         }
-        if (!this.siteActifId && sites.length === 1) {
-          this.activerSite(sites[0].id);
+      });
+    } else {
+      this.authService.getSitesMoi().subscribe({
+        next: sites => { this.sites = sites; },
+        error: () => {
+          this.siteError = 'Les sites disponibles n’ont pas pu être chargés.';
         }
-      },
-      error: () => {
-        this.siteError = 'Les sites disponibles n’ont pas pu être chargés.';
-      }
-    });
+      });
+    }
   }
 
   changerSite(event: Event): void {

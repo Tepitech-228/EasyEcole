@@ -18,7 +18,10 @@ import { Seance } from "../models/Seance";
 import { SeancePointage } from "../models/SeancePointage";
 import PointageTerminalTokenService from "../services/PointageTerminalTokenService";
 import SeancePointageConfirmationService from "../services/SeancePointageConfirmationService";
-import { depasseDelaiGraceDepart } from "../services/SeancePointageRulesService";
+import {
+    depasseDelaiGraceDepart,
+    depasseFenetreDebut
+} from "../services/SeancePointageRulesService";
 import { VerificationPaiementService } from "../services/VerificationPaiementService";
 import SituationFinanciereService, { SituationFinanciere } from "../services/SituationFinanciereService";
 
@@ -414,7 +417,6 @@ export default class PointageTerminalController {
 
         const dateValue = new Date(`${log.date}T00:00:00.000Z`);
         const jour = dateValue.getUTCDay() || 7;
-        const heureEnMinutes = minutesHeure(heureReelle);
         const seances = await Seance.findAll({
             where: {
                 enseignantId: Number(enseignant.id),
@@ -429,37 +431,41 @@ export default class PointageTerminalController {
             transaction,
             lock: transaction.LOCK.UPDATE
         });
-        const seancesEnCours = seances.filter(seance => {
+        const seancesEligibles = seances.filter(seance => {
             const debut = minutesHeure(seance.heureDebut);
             const fin = minutesHeure(seance.heureFin);
-            return debut >= 0 && fin > debut && heureEnMinutes >= debut && heureEnMinutes < fin;
+            return debut >= 0
+                && fin > debut
+                && depasseFenetreDebut(heureReelle, seance.heureDebut) === false;
         });
-        if (seancesEnCours.length === 0) {
+        const pointagesExistants = seancesEligibles.length > 0
+            ? await SeancePointage.findAll({
+                where: { seanceId: { [Op.in]: seancesEligibles.map(seance => Number(seance.id)) }, date: log.date },
+                attributes: ["seanceId", "heureDebutReelle", "heureFinReelle"],
+                transaction,
+                lock: transaction.LOCK.UPDATE
+            })
+            : [];
+        const seancesNonPointees = seancesEligibles.filter(seance =>
+            !pointagesExistants.some(pointage => Number(pointage.seanceId) === Number(seance.id)
+                && (pointage.heureDebutReelle || pointage.heureFinReelle))
+        );
+        if (seancesNonPointees.length === 0) {
             return {
                 pointage: null,
                 motifRefus: "Vous n’êtes pas programmé à cette heure. Aucun pointage n’a été enregistré.",
                 nonProgramme: true
             };
         }
-        if (seancesEnCours.length > 1) {
+        if (seancesNonPointees.length > 1) {
             return {
                 pointage: null,
                 motifRefus: "Plusieurs cours sont programmés à cette heure. Aucun pointage n’a été enregistré."
             };
         }
 
-        const seance = seancesEnCours[0];
-        const pointageExistant = await SeancePointage.findOne({
-            where: { seanceId: Number(seance.id), date: log.date },
-            transaction,
-            lock: transaction.LOCK.UPDATE
-        });
-        if (pointageExistant?.heureDebutReelle || pointageExistant?.heureFinReelle) {
-            return {
-                pointage: null,
-                motifRefus: "Ce cours a déjà été pointé aujourd’hui. Aucun nouveau pointage n’a été enregistré."
-            };
-        }
+        const seance = seancesNonPointees[0];
+        const pointageExistant = pointagesExistants.find(pointage => Number(pointage.seanceId) === Number(seance.id));
 
         if (pointageExistant) {
             await pointageExistant.update({ heureDebutReelle: heureReelle }, { transaction });

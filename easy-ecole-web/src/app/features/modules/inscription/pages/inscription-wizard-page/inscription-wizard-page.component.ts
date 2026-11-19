@@ -580,7 +580,14 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
   }
 
   get typesDisponibles(): Array<{ type: string; grades: any[] }> {
-    return this.arborescence
+    const ordreTypes = ['LICENCE', 'MASTER', 'MBA', 'BTS', 'DOCTORAT']
+    return [...this.arborescence].sort((a, b) => {
+      const ordreA = ordreTypes.indexOf(a.type)
+      const ordreB = ordreTypes.indexOf(b.type)
+      const rangA = ordreA === -1 ? ordreTypes.length : ordreA
+      const rangB = ordreB === -1 ? ordreTypes.length : ordreB
+      return rangA - rangB || a.type.localeCompare(b.type, 'fr', { sensitivity: 'base' })
+    })
   }
 
   get gradesDisponibles(): Array<{ grade: string; filieres: FiliereSelection[] }> {
@@ -630,7 +637,10 @@ export class InscriptionWizardPageComponent extends BaseComponentClass implement
     for (const g of t.grades) {
       filieres.push(...g.filieres)
     }
-    return filieres
+    return filieres.sort((a, b) =>
+      a.titre.localeCompare(b.titre, 'fr', { sensitivity: 'base' })
+      || (a.grade || '').localeCompare(b.grade || '', 'fr', { numeric: true, sensitivity: 'base' })
+    )
   }
 
   /**

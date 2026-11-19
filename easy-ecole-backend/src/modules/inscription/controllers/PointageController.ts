@@ -24,7 +24,13 @@ import QRCode from 'qrcode';
 import ExcelJS from "exceljs";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { JWT_SECRET } from "../../../core/config/jwt";
-import { depasseDelaiGraceDepart, estDepartAnticipe, validerMotifDepart } from "../services/SeancePointageRulesService";
+import {
+    depasseDelaiGraceDepart,
+    depasseFenetreDebut,
+    estDepartAnticipe,
+    normaliserHeureFin,
+    validerMotifDepart
+} from "../services/SeancePointageRulesService";
 import SeancePointagePlanningService from "../services/SeancePointagePlanningService";
 import { AlignmentType, Document, PageOrientation, Packer, Paragraph, Table, TableCell, TableLayoutType, TableRow, TextRun, WidthType } from "docx";
 
@@ -1158,6 +1164,15 @@ export default class PointageController {
                     message: "Le motif de départ doit contenir au maximum 500 caractères."
                 });
             }
+            const heureFinEffective = normaliserHeureFin(confirmation.heureFin, seance.heureFin);
+            if (!heureFinEffective) {
+                await transaction.rollback();
+                return res.status(409).json({
+                    success: false,
+                    code: "INVALID_SCHEDULE",
+                    message: "L’horaire de fin du cours est invalide. Aucun départ n’a été enregistré."
+                });
+            }
 
             const pointage = await Pointage.findOne({
                 where: { utilisateurId: confirmation.utilisateurId, date: confirmation.date },
@@ -1190,10 +1205,10 @@ export default class PointageController {
                 transaction
             );
             await pointageSeance.update({
-                heureFinReelle: confirmation.heureFin,
+                heureFinReelle: heureFinEffective,
                 motifDepart
             }, { transaction });
-            await pointage.update({ heureDepart: confirmation.heureFin }, { transaction });
+            await pointage.update({ heureDepart: heureFinEffective }, { transaction });
             await transaction.commit();
             return res.status(200).json({ pointage, navigationCours });
         } catch (error) {
@@ -1231,7 +1246,6 @@ export default class PointageController {
             });
         }
 
-        const heureEnMinutes = minutesHeure(heure);
         const dateValue = new Date(`${date}T00:00:00.000Z`);
         const jour = String(dateValue.getUTCDay() || 7);
         const transaction = await Pointage.sequelize!.transaction();
@@ -1343,13 +1357,27 @@ export default class PointageController {
                 transaction,
                 lock: transaction.LOCK.UPDATE
             });
-            const seancesEnCours = seances.filter(seance => {
+            const seancesEligibles = seances.filter(seance => {
                 const debut = minutesHeure(seance.heureDebut);
                 const fin = minutesHeure(seance.heureFin);
-                return debut >= 0 && fin > debut && heureEnMinutes >= debut && heureEnMinutes < fin;
+                return debut >= 0
+                    && fin > debut
+                    && depasseFenetreDebut(heure, seance.heureDebut) === false;
             });
+            const pointagesExistants = seancesEligibles.length > 0
+                ? await SeancePointage.findAll({
+                    where: { seanceId: { [Op.in]: seancesEligibles.map(seance => Number(seance.id)) }, date },
+                    attributes: ["seanceId", "heureDebutReelle", "heureFinReelle"],
+                    transaction,
+                    lock: transaction.LOCK.UPDATE
+                })
+                : [];
+            const seancesNonPointees = seancesEligibles.filter(seance =>
+                !pointagesExistants.some(pointage => Number(pointage.seanceId) === Number(seance.id)
+                    && (pointage.heureDebutReelle || pointage.heureFinReelle))
+            );
 
-            if (seancesEnCours.length === 0) {
+            if (seancesNonPointees.length === 0) {
                 await transaction.rollback();
                 return res.status(403).json({
                     success: false,
@@ -1357,7 +1385,7 @@ export default class PointageController {
                     message: "Vous n’êtes pas programmé à cette heure. Aucun pointage n’a été enregistré."
                 });
             }
-            if (seancesEnCours.length > 1) {
+            if (seancesNonPointees.length > 1) {
                 await transaction.rollback();
                 return res.status(409).json({
                     success: false,
@@ -1366,20 +1394,8 @@ export default class PointageController {
                 });
             }
 
-            const seance = seancesEnCours[0];
-            const pointageSeance = await SeancePointage.findOne({
-                where: { seanceId: Number(seance.id), date },
-                transaction,
-                lock: transaction.LOCK.UPDATE
-            });
-            if (pointageSeance?.heureDebutReelle || pointageSeance?.heureFinReelle) {
-                await transaction.rollback();
-                return res.status(409).json({
-                    success: false,
-                    code: "SESSION_ALREADY_RECORDED",
-                    message: "Ce cours a déjà été pointé aujourd’hui. Aucun nouveau pointage n’a été enregistré."
-                });
-            }
+            const seance = seancesNonPointees[0];
+            const pointageSeance = pointagesExistants.find(pointage => Number(pointage.seanceId) === Number(seance.id));
 
             if (pointageSeance) {
                 await pointageSeance.update({ heureDebutReelle: heure }, { transaction });

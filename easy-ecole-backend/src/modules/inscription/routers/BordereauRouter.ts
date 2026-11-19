@@ -14,7 +14,10 @@ import { creerHandlersAffectationBordereau } from "../controllers/BordereauAffec
 const affectationAuditHandlers = creerHandlersAffectationBordereau(
   "audit",
   req => {
-    if ((req as any).utilisateurRole !== RolesUtilisateur.ADMIN) return undefined;
+    if (
+      (req as any).utilisateurRole !== RolesUtilisateur.ADMIN
+      && (req as any).utilisateurRole !== RolesUtilisateur.CABINET_COMPTABLE
+    ) return undefined;
     const siteId = Number((req as any).etablissementId);
     return Number.isSafeInteger(siteId) && siteId > 0 ? siteId : undefined;
   },
@@ -115,6 +118,9 @@ router
          }
 
          const whereClause: any = { deletedAt: null };
+         if ((req as any).utilisateurRole === RolesUtilisateur.CABINET_COMPTABLE) {
+           whereClause.etablissementId = Number((req as any).etablissementId);
+         }
          const orConditions: any[] = [];
          if (referenceBancaire) orConditions.push({ referenceBancaire });
          if (numeroBordereau) orConditions.push({ numeroBordereau });

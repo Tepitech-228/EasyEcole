@@ -1,6 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { SeanceService } from 'src/app/data/modules/inscription/services/seance.service';
-import { PlanningEvent } from 'src/app/data/modules/inscription/models/Seance.model';
+import { getPlanningEventDateTime, PlanningEvent } from 'src/app/data/modules/inscription/models/Seance.model';
 
 @Component({
   selector: 'app-widget-agenda',
@@ -26,7 +26,8 @@ export class WidgetAgendaComponent implements OnInit {
     this.seanceService.getPlanning(dateStr, dateStr, this.enseignantId, this.classeId).subscribe({
       next: (data) => {
         this.events = (data || []).sort((a, b) =>
-          new Date(a.heureDebut).getTime() - new Date(b.heureDebut).getTime()
+          getPlanningEventDateTime(a.date, a.heureDebut).getTime()
+          - getPlanningEventDateTime(b.date, b.heureDebut).getTime()
         )
         this.loading = false
       },
@@ -36,7 +37,12 @@ export class WidgetAgendaComponent implements OnInit {
 
   get heureDebut(): string {
     return this.events[0]?.heureDebut
-      ? new Date(this.events[0].heureDebut).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+      ? getPlanningEventDateTime(this.events[0].date, this.events[0].heureDebut)
+        .toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
       : ''
+  }
+
+  heureEvent(event: PlanningEvent, time: Date): Date {
+    return getPlanningEventDateTime(event.date, time)
   }
 }

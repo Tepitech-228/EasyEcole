@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { CountOptions, FindOptions, InferAttributes, Op, literal, fn, col } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { JoursSemaine } from "../../../core/enums/JoursSemaine";
+import { EtatsDePresence } from "../../../core/enums/EtatsDePresence";
 import { Seance } from "../models/Seance";
 import { Cours } from "../models/Cours";
 import { Enseignant } from "../../auth/models/Enseignant";
@@ -178,7 +179,7 @@ export default class SeanceController {
                 const siteId = await getSurveillantSiteId(req);
                 if (!siteId) return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
                 SeanceController.filtrerSeancesDuSite(options.where as any, siteId);
-            } else if (![RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.SUPERVISEUR_GENERAL, RolesUtilisateur.ADMIN].includes(role)) {
+            } else {
                 SeanceController.filtrerSeancesDuSite(options.where as any, SeanceController.siteActifId(req));
             }
             if (!SeanceController.peutGererPlanning(req)) {
@@ -268,7 +269,7 @@ export default class SeanceController {
                 const siteId = await getSurveillantSiteId(req);
                 if (!siteId) return res.status(403).json({ success: false, message: "Aucun site actif autorisé pour ce surveillant" });
                 SeanceController.filtrerSeancesDuSite(options.where as any, siteId);
-            } else if (![RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.SUPERVISEUR_GENERAL, RolesUtilisateur.ADMIN].includes(role)) {
+            } else {
                 SeanceController.filtrerSeancesDuSite(options.where as any, SeanceController.siteActifId(req));
             }
             if (!SeanceController.peutGererPlanning(req)) {
@@ -389,11 +390,19 @@ export default class SeanceController {
     static async getVolumesHoraires(req: Request, res: Response): Promise<Response> {
         try {
             const coursWhere: any = {}
+            const etablissementId = SeanceController.siteActifId(req)
+            if (etablissementId !== null) coursWhere.etablissementId = etablissementId
             if (req.query.coursId) coursWhere.id = req.query.coursId
             if (req.query.classeId) coursWhere.classeId = req.query.classeId
             const cours = await Cours.findAll({ where: coursWhere, attributes: ['id', 'code', 'intitule', 'volumeHoraire'] })
             const result = await Promise.all(cours.map(async (ue) => {
-                const seances = await Seance.findAll({ where: { coursId: ue.id }, attributes: ['id', 'enseignantId', 'jourSemaine', 'dateDebut', 'dateFin', 'heureDebut', 'heureFin'] })
+                const seances = await Seance.findAll({
+                    where: {
+                        coursId: ue.id,
+                        ...(etablissementId === null ? {} : { etablissementId }),
+                    },
+                    attributes: ['id', 'enseignantId', 'jourSemaine', 'dateDebut', 'dateFin', 'heureDebut', 'heureFin'],
+                })
                 const consomme = await SeanceController.heuresEffectuees(seances)
                 const prevu = Number(ue.volumeHoraire || 0)
                 return {
@@ -419,8 +428,13 @@ export default class SeanceController {
             const semestre = req.query.semestre ? String(req.query.semestre) : null
             const debut = `${month}-01`
             const fin = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).toISOString().slice(0, 10)
+            const etablissementId = SeanceController.siteActifId(req)
             const seances = await Seance.findAll({
-                where: { dateDebut: { [Op.lte]: fin }, dateFin: { [Op.gte]: debut } },
+                where: {
+                    dateDebut: { [Op.lte]: fin },
+                    dateFin: { [Op.gte]: debut },
+                    ...(etablissementId === null ? {} : { etablissementId }),
+                },
                 include: [{ association: Seance.associations.enseignant, include: [Enseignant.associations.utilisateur] }, { association: Seance.associations.cours }]
             })
             const result = new Map<number, any>()
@@ -455,8 +469,14 @@ export default class SeanceController {
             const now = new Date()
             const today = now.toISOString().split('T')[0]
             const heure = now.toISOString().slice(11, 19)
+            const etablissementId = SeanceController.siteActifId(req)
             const seances = await Seance.findAll({
-                where: { dateDebut: { [Op.lte]: today }, dateFin: { [Op.gte]: today }, heureDebut: { [Op.lte]: heure } },
+                where: {
+                    dateDebut: { [Op.lte]: today },
+                    dateFin: { [Op.gte]: today },
+                    heureDebut: { [Op.lte]: heure },
+                    ...(etablissementId === null ? {} : { etablissementId }),
+                },
                 include: [{ association: Seance.associations.cours }, { association: Seance.associations.enseignant, include: [Enseignant.associations.utilisateur] }]
             })
             const seanceIds = seances.map(seance => seance.id)
@@ -529,17 +549,23 @@ export default class SeanceController {
                 const jourIso = date.toISOString().slice(0, 10)
                 const pointageSeance = indexSeance.get(`${seance.id}|${jourIso}`) as any
                 if (pointageSeance?.heureDebutReelle && pointageSeance?.heureFinReelle) {
+                    const debutPrevu = SeanceController.minutes(seance.heureDebut)
+                    const finPrevue = SeanceController.minutes(seance.heureFin)
                     const debutEffectif = Math.max(SeanceController.minutes(pointageSeance.heureDebutReelle), SeanceController.minutes(seance.heureDebut))
                     const finEffective = Math.min(SeanceController.minutes(pointageSeance.heureFinReelle), SeanceController.minutes(seance.heureFin))
-                    if (finEffective > debutEffectif) total += (finEffective - debutEffectif) / 60
+                    const dureeEffective = Math.max(0, Math.min(finPrevue - debutPrevu, finEffective - debutEffectif))
+                    total += dureeEffective / 60
                     continue
                 }
                 const cle = `${seance.enseignant?.utilisateurId || seance.enseignantId}|${jourIso}`
                 const pointage = indexQR.get(cle) as any
                 if (pointage?.heureArrivee && pointage?.heureDepart) {
+                    const debutPrevu = SeanceController.minutes(seance.heureDebut)
+                    const finPrevue = SeanceController.minutes(seance.heureFin)
                     const debutEffectif = Math.max(SeanceController.minutes(pointage.heureArrivee), SeanceController.minutes(seance.heureDebut))
                     const finEffective = Math.min(SeanceController.minutes(pointage.heureDepart), SeanceController.minutes(seance.heureFin))
-                    if (finEffective > debutEffectif) total += (finEffective - debutEffectif) / 60
+                    const dureeEffective = Math.max(0, Math.min(finPrevue - debutPrevu, finEffective - debutEffectif))
+                    total += dureeEffective / 60
                 }
             }
         }
@@ -551,7 +577,7 @@ export default class SeanceController {
         return heures * 60 + minutes
     }
 
-    private static async getTeacherAttendanceStatus(enseignantId: number, utilisateurId: number): Promise<object> {
+    private static async getTeacherAttendanceStatus(enseignantId: number, utilisateurId: number, etablissementId: number | null): Promise<object> {
         const now = new Date()
         const today = now.toISOString().slice(0, 10)
         const dayNumber = now.getUTCDay() || 7
@@ -561,7 +587,8 @@ export default class SeanceController {
                 enseignantId,
                 jourSemaine: String(dayNumber),
                 dateDebut: { [Op.lte]: today },
-                dateFin: { [Op.gte]: today }
+                dateFin: { [Op.gte]: today },
+                ...(etablissementId === null ? {} : { etablissementId }),
             },
             attributes: ['id', 'heureDebut', 'heureFin'],
             order: [['heureDebut', 'ASC']]
@@ -1034,12 +1061,18 @@ export default class SeanceController {
             }
 
             const enseignantId = enseignant.id as any;
+            const etablissementId = SeanceController.siteActifId(req);
             const pointageDuJour = await SeanceController.getTeacherAttendanceStatus(
                 Number(enseignant.id),
-                Number(utilisateurId)
+                Number(utilisateurId),
+                etablissementId
             );
 
-            const nbCoursAssignes = await Cours.count({ where: { enseignantId } });
+            const coursWhere = {
+                enseignantId,
+                ...(etablissementId === null ? {} : { etablissementId }),
+            };
+            const nbCoursAssignes = await Cours.count({ where: coursWhere });
 
             const now = new Date();
             const dayOfWeek = now.getDay();
@@ -1055,7 +1088,8 @@ export default class SeanceController {
                 where: {
                     enseignantId,
                     dateDebut: { [Op.lte]: weekEnd },
-                    dateFin: { [Op.gte]: weekStart }
+                    dateFin: { [Op.gte]: weekStart },
+                    ...(etablissementId === null ? {} : { etablissementId }),
                 },
                 include: [
                     { association: Seance.associations.cours },
@@ -1065,34 +1099,48 @@ export default class SeanceController {
             });
 
             const coursIds = await Cours.findAll({
-                where: { enseignantId },
+                where: coursWhere,
                 attributes: ['id']
             }).then(c => c.map(c => c.id));
 
-            const evaluationsSansNotes: any[] = [];
-            if (coursIds.length > 0) {
-                const listes = await ListeNoteEvaluation.findAll({
+            const listes = coursIds.length > 0
+                ? await ListeNoteEvaluation.findAll({
+                    where: { coursId: { [Op.in]: coursIds }, statutGestion: 'publie' },
+                    attributes: ['id', 'coursId'],
+                    include: [{ association: ListeNoteEvaluation.associations.cours, required: true }],
+                })
+                : [];
+            const listeIds = listes.map(liste => Number(liste.id));
+            const notesPubliees = listeIds.length > 0
+                ? await NoteEvaluation.findAll({
+                    where: {
+                        listeNoteEvaluationId: { [Op.in]: listeIds },
+                        note: { [Op.ne]: null },
+                    },
+                    attributes: ['listeNoteEvaluationId', [fn('COUNT', col('id')), 'total']],
+                    group: ['listeNoteEvaluationId'],
+                    raw: true,
+                })
+                : [];
+            const participantsParCours = coursIds.length > 0
+                ? await CoursParticipant.findAll({
                     where: { coursId: { [Op.in]: coursIds } },
-                    include: [
-                        { association: ListeNoteEvaluation.associations.cours },
-                        {
-                            association: ListeNoteEvaluation.associations.notesEvaluation,
-                            required: false,
-                            where: { note: null }
-                        }
-                    ]
-                });
-                for (const liste of listes) {
-                    if ((liste as any).notesEvaluation && (liste as any).notesEvaluation.length > 0) {
-                        evaluationsSansNotes.push(liste);
-                    }
-                }
-            }
-
-            const listeIds = await ListeNoteEvaluation.findAll({
-                where: { coursId: { [Op.in]: coursIds } },
-                attributes: ['id']
-            }).then(l => l.map(l => l.id));
+                    attributes: ['coursId', [fn('COUNT', col('id')), 'total']],
+                    group: ['coursId'],
+                    raw: true,
+                })
+                : [];
+            const notesPublieesParListe = new Map<number, number>(
+                (notesPubliees as any[]).map(row => [Number(row.listeNoteEvaluationId), Number(row.total)])
+            );
+            const participantsByCourse = new Map<number, number>(
+                (participantsParCours as any[]).map(row => [Number(row.coursId), Number(row.total)])
+            );
+            const evaluationsSansNotes = listes.filter(liste => {
+                const totalParticipants = participantsByCourse.get(Number(liste.coursId)) || 0;
+                const totalNotes = notesPublieesParListe.get(Number(liste.id)) || 0;
+                return totalParticipants > totalNotes;
+            });
 
             const dernieresNotesSaisies = await NoteEvaluation.findAll({
                 where: {
@@ -1120,7 +1168,16 @@ export default class SeanceController {
                 if (coursParticipantIds.length === 0) continue;
 
                 const totalPresences = await PresenceCoursParticipant.count({
-                    where: { coursParticipantId: { [Op.in]: coursParticipantIds } }
+                    where: {
+                        coursParticipantId: { [Op.in]: coursParticipantIds },
+                        etatDePresence: {
+                            [Op.in]: [
+                                EtatsDePresence.PRESENT,
+                                EtatsDePresence.ABSENT,
+                                EtatsDePresence.ABSENCE_JUSTIFIEE,
+                            ],
+                        },
+                    }
                 });
 
                 const absences = await PresenceCoursParticipant.count({

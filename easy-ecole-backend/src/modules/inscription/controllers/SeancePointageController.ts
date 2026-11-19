@@ -3,7 +3,15 @@ import { Op } from "sequelize";
 import { Seance } from "../models/Seance";
 import { SeancePointage } from "../models/SeancePointage";
 import { Enseignant } from "../../auth/models/Enseignant";
-import { depasseDelaiGraceDepart, estDepartAnticipe, validerMotifDepart } from "../services/SeancePointageRulesService";
+import {
+  calculerDureeSeanceEffective,
+  DELAI_GRACE_POINTAGE_SECONDES,
+  depasseDelaiGraceDepart,
+  depasseFenetreDebut,
+  estDepartAnticipe,
+  normaliserHeureFin,
+  validerMotifDepart,
+} from "../services/SeancePointageRulesService";
 import SeancePointagePlanningService from "../services/SeancePointagePlanningService";
 
 function dateIso(value: unknown): string {
@@ -87,26 +95,23 @@ export default class SeancePointageController {
 
       const maintenant = new Date();
       const heure = heureUtc(maintenant);
-      const debutPrevu = minutes(context.seance.heureDebut);
-      const finPrevue = minutes(context.seance.heureFin);
-      const heureActuelle = minutes(heure);
-      if (heureActuelle < debutPrevu) {
-        const minutesRestantes = debutPrevu - heureActuelle;
+      const fenetreDebutDepassee = depasseFenetreDebut(heure, context.seance.heureDebut);
+      if (fenetreDebutDepassee === null) {
+        return res.status(409).json({ success: false, code: "INVALID_SCHEDULE", message: "L’horaire de début du cours est invalide." });
+      }
+      if (fenetreDebutDepassee) {
+        const debutPlusMarge = minutes(context.seance.heureDebut) - DELAI_GRACE_POINTAGE_SECONDES / 60;
+        const minutesRestantes = Math.max(0, debutPlusMarge - minutes(heure));
         return res.status(409).json({
           success: false,
           code: "TOO_EARLY",
           minutesRestantes,
           cours: (context.seance as any).cours?.intitule || context.seance.titre,
-          message: `Votre prochain cours débute dans ${minutesRestantes} minutes.`,
+          message: `Le pointage du début sera possible dans ${minutesRestantes} minutes.`,
         });
       }
-      if (heureActuelle >= finPrevue) {
-        return res.status(409).json({
-          success: false,
-          code: "SESSION_ENDED",
-          message: "L'heure prévue de cette séance est dépassée; son début ne peut plus être pointé.",
-        });
-      }
+      const heureActuelle = minutes(heure);
+      const debutPrevu = minutes(context.seance.heureDebut);
 
       const [pointage] = await SeancePointage.findOrCreate({
         where: { seanceId: context.seance.id, date: context.date },
@@ -157,6 +162,13 @@ export default class SeancePointageController {
       }
 
       const heure = heureUtc(new Date());
+      if (minutes(heure) < minutes(pointage.heureDebutReelle)) {
+        return res.status(409).json({
+          success: false,
+          code: "END_BEFORE_START",
+          message: "La fin de séance ne peut pas être pointée avant son début réel.",
+        });
+      }
       const departHorsDelai = depasseDelaiGraceDepart(heure, context.seance.heureFin);
       if (departHorsDelai === null) {
         return res.status(409).json({ success: false, code: "INVALID_SCHEDULE", message: "L’horaire de fin du cours est invalide." });
@@ -171,6 +183,19 @@ export default class SeancePointageController {
       const departAnticipe = estDepartAnticipe(heure, context.seance.heureFin);
       if (departAnticipe === null) {
         return res.status(409).json({ success: false, code: "INVALID_SCHEDULE", message: "L’horaire de fin du cours est invalide." });
+      }
+      const heureFinEffective = normaliserHeureFin(heure, context.seance.heureFin);
+      if (!heureFinEffective) {
+        return res.status(409).json({ success: false, code: "INVALID_SCHEDULE", message: "L’horaire de fin du cours est invalide." });
+      }
+      const dureeEffective = calculerDureeSeanceEffective(
+        pointage.heureDebutReelle,
+        heureFinEffective,
+        context.seance.heureDebut,
+        context.seance.heureFin,
+      );
+      if (!dureeEffective) {
+        return res.status(409).json({ success: false, code: "INVALID_SCHEDULE", message: "Les horaires de pointage de la séance sont invalides." });
       }
       const motifDepart = req.body?.motifDepart === undefined
         ? null
@@ -197,7 +222,7 @@ export default class SeancePointageController {
         Number(context.seance.id)
       );
       const [updated] = await SeancePointage.update(
-        { heureFinReelle: heure, motifDepart },
+        { heureFinReelle: heureFinEffective, motifDepart },
         { where: { id: pointage.id, heureFinReelle: null } },
       );
       if (!updated) {
@@ -205,17 +230,19 @@ export default class SeancePointageController {
       }
 
       const debutReel = minutes(pointage.heureDebutReelle);
-      const finReelle = minutes(heure);
       const finPrevue = minutes(context.seance.heureFin);
       return res.status(200).json({
         success: true,
-        statut: finReelle < finPrevue ? "termine_en_avance" : "termine",
+        statut: minutes(heureFinEffective) < finPrevue ? "termine_en_avance" : "termine",
         heureDebutReelle: pointage.heureDebutReelle,
-        heureFinReelle: heure,
+        heureFinReelle: heureFinEffective,
+        heureDebutEffective: dureeEffective.heureDebutEffective,
+        heureFinEffective: dureeEffective.heureFinEffective,
+        retardMinutes: Math.max(0, debutReel - minutes(context.seance.heureDebut)),
         motifDepart,
         navigationCours,
-        dureeMinutes: Math.max(0, finReelle - debutReel),
-        departAnticipeMinutes: Math.max(0, finPrevue - finReelle),
+        dureeMinutes: dureeEffective.dureeMinutes,
+        departAnticipeMinutes: Math.max(0, finPrevue - minutes(heureFinEffective)),
         message: "Fin de séance enregistrée.",
       });
     } catch (error) {

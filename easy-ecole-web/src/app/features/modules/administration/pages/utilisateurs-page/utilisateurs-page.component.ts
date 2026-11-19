@@ -300,7 +300,11 @@ export class UtilisateursPageComponent extends BaseComponentClass implements OnI
         if (requestId !== this.sitesLoadRequestId) return
         this.availableSites = sites
         const availableSiteIds = new Set(sites.map(site => Number(site.id)))
-        this.formData.siteIds = this.sitesSelectionnes.filter(siteId => availableSiteIds.has(siteId))
+        this.formData.siteIds = !this.editingUser
+          && this.rolesValue.isSurveillant
+          && role === RolesUtilisateur.ENSEIGNANT
+          ? sites.map(site => Number(site.id))
+          : this.sitesSelectionnes.filter(siteId => availableSiteIds.has(siteId))
         this.sitesLoading = false
         if (!this.editingUser && sites.length === 1) {
           this.formData.siteIds = [Number(sites[0].id)]

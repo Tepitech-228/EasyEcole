@@ -9,6 +9,7 @@ import { NiveauEtudeService } from 'src/app/data/modules/inscription/services/ni
 import { NiveauEtude } from 'src/app/data/modules/inscription/models/NiveauEtude.model';
 import { AnneeAcademiqueService } from 'src/app/data/modules/inscription/services/annee-academique.service';
 import { AnneeAcademique } from 'src/app/data/modules/inscription/models/AnneeAcademique.model';
+import { AuthService, SiteUtilisateur } from 'src/app/data/modules/auth/services/auth.service';
 import { Subscription, forkJoin, of, Subject } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
@@ -32,6 +33,7 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
   loading: boolean = true
   error: boolean = false
   apiErrorMessage: string = ''
+  sitesErrorMessage: string = ''
 
   afficherTous: boolean = false
 
@@ -78,7 +80,8 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
     private sanitizer: DomSanitizer,
     private parcoursService: ParcoursService,
     private niveauService: NiveauEtudeService,
-    private anneeService: AnneeAcademiqueService
+    private anneeService: AnneeAcademiqueService,
+    private authService: AuthService
   ) {
     super()
   }
@@ -90,7 +93,8 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
   anneesAcademiques: AnneeAcademique[] = []
   niveauxEtude: NiveauEtude[] = []
   listeParcours: Parcours[] = []
-  filtres: FiltresComite = { anneeId: '', filiere: '', parcoursId: '', niveauId: '' }
+  sitesDisponibles: SiteUtilisateur[] = []
+  filtres: FiltresComite = { anneeId: '', filiere: '', parcoursId: '', niveauId: '', etablissementId: '' }
   metaTotal: number | null = null
   listeTronquee: boolean = false
   referentielsCharges: boolean = false
@@ -143,7 +147,7 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
   }
 
   reinitialiserFiltres(): void {
-    this.filtres = { anneeId: '', filiere: '', parcoursId: '', niveauId: '' }
+    this.filtres = { anneeId: '', filiere: '', parcoursId: '', niveauId: '', etablissementId: '' }
     this.changementFiltres.next()
   }
 
@@ -166,6 +170,17 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
 
   ngOnInit(): void {
     this.chargerReferentiels()
+    this.abonnements.push(
+      this.authService.getSitesMoi().subscribe({
+        next: sites => {
+          this.sitesDisponibles = sites || []
+          this.sitesErrorMessage = ''
+        },
+        error: err => {
+          this.sitesErrorMessage = err?.error?.message || 'Impossible de charger la liste des sites.'
+        }
+      })
+    )
 
     this.abonnements.push(
       this.changementFiltres.pipe(
@@ -246,7 +261,7 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
     this.showDetailModal = true
     this.loadingDetail = true
     if (d.id === undefined) return
-    this.comiteService.detailDossier(d.id).subscribe({
+    this.comiteService.detailDossier(d.id, this.filtres.etablissementId).subscribe({
       next: (res) => { this.detailComplet = res.data; this.loadingDetail = false },
       error: () => { this.loadingDetail = false }
     })
@@ -386,7 +401,7 @@ export class ComiteValidationPageComponent extends BaseComponentClass implements
     this.telechargementPdf = true
     this.apiErrorMessage = ''
 
-    this.comiteService.telechargerPdfFusionne(d.id).subscribe({
+    this.comiteService.telechargerPdfFusionne(d.id, this.filtres.etablissementId).subscribe({
       next: (blob) => {
         this.telechargementPdf = false
         if (!blob || blob.size === 0) {

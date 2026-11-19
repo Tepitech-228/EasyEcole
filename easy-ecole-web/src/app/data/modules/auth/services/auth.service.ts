@@ -41,7 +41,7 @@ export class AuthService {
   }
 
   register(utilisateur: Utilisateur): Observable<any> {
-    const redirectTo: string = window.location.origin + '/auth/confirmation-email'
+    const redirectTo: string = this.getPublicUrl() + '/auth/confirmation-email'
     let queryParams: HttpParams = new HttpParams()
     queryParams = queryParams.append("redirectTo", redirectTo)
     return this.httpClient.post(`${this.SERVICE_URL}/register`, utilisateur, { params: queryParams })
@@ -69,7 +69,7 @@ export class AuthService {
   }
 
   sendEmailConfirmLink(): Observable<any> {
-    const redirectTo = window.location.origin + '/auth/confirmation-email'
+    const redirectTo = this.getPublicUrl() + '/auth/confirmation-email'
     const params = new HttpParams().set('redirectTo', redirectTo)
     return this.httpClient.get(`${this.SERVICE_URL}/send-email-confirm-link`, { params })
   }
@@ -80,9 +80,16 @@ export class AuthService {
   }
 
   sendPasswordResetLink(email: string): Observable<any> {
-    const redirectTo = window.location.origin + '/auth/reinitialisation-mot-de-passe'
+    const redirectTo = this.getPublicUrl() + '/auth/reinitialisation-mot-de-passe'
     const params = new HttpParams().set('email', email).set('redirectTo', redirectTo)
     return this.httpClient.get(`${this.SERVICE_URL}/send-password-reset-link`, { params })
+  }
+
+  private getPublicUrl(): string {
+    const hostname = window.location.hostname.toLowerCase()
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]'
+      ? environment.publicUrl
+      : window.location.origin
   }
 
   resetPasswordWithToken(token: string, motDePasse: string): Observable<any> {

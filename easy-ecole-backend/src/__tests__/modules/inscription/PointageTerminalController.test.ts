@@ -220,7 +220,7 @@ describe("PointageTerminalController ADMS", () => {
     expect(SeancePointage.create).not.toHaveBeenCalled();
   });
 
-  it("records the start of the teacher's scheduled course and daily arrival", async () => {
+  it("records a late start after the scheduled course end", async () => {
     Utilisateur.findByPk.mockResolvedValue({ id: 42, role: "enseignant", etablissementId: 3 });
     Enseignant.findOne.mockResolvedValue({ id: 9 });
     Seance.findAll.mockResolvedValue([{
@@ -240,7 +240,7 @@ describe("PointageTerminalController ADMS", () => {
       {
         pin: "42",
         date: "2026-10-17",
-        time: "08:15:30",
+        time: "10:30:00",
         statusCode: 5,
         verifyType: 75,
         utilisateurId: 42
@@ -254,14 +254,14 @@ describe("PointageTerminalController ADMS", () => {
         action: "debut",
         seanceId: 81,
         cours: "Mathématiques",
-        heureReelle: "08:15:30"
+        heureReelle: "10:30:00"
       }
     });
     expect(SeancePointage.create).toHaveBeenCalledWith(expect.objectContaining({
       seanceId: 81,
       utilisateurId: 42,
       enseignantId: "9",
-      heureDebutReelle: "08:15:30",
+      heureDebutReelle: "10:30:00",
       heureFinReelle: null
     }), expect.objectContaining({ transaction }));
     expect(Seance.findAll).toHaveBeenCalledWith(expect.objectContaining({

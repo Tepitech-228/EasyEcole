@@ -49,6 +49,13 @@ export interface PlanningEvent {
   statutPointage?: 'a_venir' | 'en_cours' | 'en_retard' | 'termine' | 'termine_en_avance' | 'absent'
 }
 
+export function getPlanningEventDateTime(date: string, timeValue: Date | string): Date {
+  const time = timeValue instanceof Date
+    ? timeValue.toISOString().slice(11, 19)
+    : String(timeValue).slice(0, 8)
+  return new Date(`${date}T${time}`)
+}
+
 export interface ConflitSeance {
   type: 'enseignant' | 'salle' | 'classe'
   message: string
