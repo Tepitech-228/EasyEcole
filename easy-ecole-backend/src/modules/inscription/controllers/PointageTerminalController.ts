@@ -20,7 +20,8 @@ import PointageTerminalTokenService from "../services/PointageTerminalTokenServi
 import SeancePointageConfirmationService from "../services/SeancePointageConfirmationService";
 import {
     depasseDelaiGraceDepart,
-    depasseFenetreDebut
+    depasseFenetreDebut,
+    normaliserHeureDebut
 } from "../services/SeancePointageRulesService";
 import { VerificationPaiementService } from "../services/VerificationPaiementService";
 import SituationFinanciereService, { SituationFinanciere } from "../services/SituationFinanciereService";
@@ -52,6 +53,7 @@ export interface AttendanceProcessingResult {
         heureDebutPrevue: string;
         heureFinPrevue: string;
         heureDebutReelle: string;
+        heureDebutEffective: string | null;
         heureFinReelle: string | null;
         heureReelle: string;
         confirmationToken?: string;
@@ -65,6 +67,7 @@ interface TeacherSessionPointage {
     heureDebutPrevue: string;
     heureFinPrevue: string;
     heureDebutReelle: string;
+    heureDebutEffective: string | null;
     heureFinReelle: string | null;
     heureReelle: string;
     confirmationToken?: string;
@@ -358,6 +361,7 @@ export default class PointageTerminalController {
             heureDebutPrevue: heurePointage(seance.heureDebut),
             heureFinPrevue: heurePointage(seance.heureFin),
             heureDebutReelle,
+            heureDebutEffective: normaliserHeureDebut(heureDebutReelle, seance.heureDebut),
             heureFinReelle,
             heureReelle,
             confirmationToken

@@ -28,6 +28,7 @@ export interface TerminalAttendanceEvent {
     heureDebutPrevue: string;
     heureFinPrevue: string;
     heureDebutReelle: string;
+    heureDebutEffective?: string | null;
     heureFinReelle: string | null;
     heureReelle: string;
     confirmationToken?: string;

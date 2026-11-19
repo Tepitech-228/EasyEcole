@@ -103,6 +103,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                     // ── Cours & Enseignants ──
                     { label: 'Enseignants', route: '/cours/enseignants', icon: 'cycle', permissionKey: 'menu.cours.enseignants', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN, RolesUtilisateur.SUPERVISEUR_GENERAL] },
                     { label: "Unités d'enseignements", route: '/cours/cours', icon: 'book', permissionKey: 'menu.cours.liste', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN, RolesUtilisateur.SUPERVISEUR_GENERAL] },
+                    { label: 'Affectations UE/ECUE', route: '/cours/affectations-ecue', icon: 'person_add', permissionKey: 'menu.cours.affectations-ecue', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ADMIN, RolesUtilisateur.SUPERVISEUR_GENERAL] },
                     { label: 'Cahiers de texte', route: '/cours/cahiers-de-texte', icon: 'note_stack', permissionKey: 'menu.cours.cahiers-de-texte', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.ENSEIGNANT, RolesUtilisateur.APPRENANT, RolesUtilisateur.ADMIN, RolesUtilisateur.SUPERVISEUR_GENERAL, RolesUtilisateur.SURVEILLANT] },
 
                     // ── Présences & Notes ──

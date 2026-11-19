@@ -10,6 +10,7 @@ import { SalleDeClasse } from "../models/SalleDeClasse";
 import { CursusApprenant } from "../models/CursusApprenant";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { NotificationHelper } from "../../../core/helpers/NotificationHelper";
+import { EmailSender } from "../../../core/helpers/EmailSender";
 import { ListeNoteEvaluation } from "../models/ListeNoteEvaluation";
 import { NoteEvaluation } from "../models/NoteEvaluation";
 import { CoursParticipant } from "../models/CoursParticipant";
@@ -23,6 +24,7 @@ import { ParentEnfant } from "../../parent/models/ParentEnfant";
 import { SiteUtilisateur } from "../../auth/models/SiteUtilisateur";
 import { SeancePointage } from "../models/SeancePointage";
 import { getSurveillantSiteId } from "../../../core/helpers/SurveillantSiteScope";
+import { normaliserHeureDebut } from "../services/SeancePointageRulesService";
 
 function dateIso(value: unknown): string {
     return value instanceof Date ? value.toISOString().slice(0, 10) : String(value).slice(0, 10);
@@ -359,6 +361,9 @@ export default class SeanceController {
                 const pointage = pointagesParSeanceEtDate.get(`${event.seanceId}-${event.date}`);
                 event.pointage = pointage ? {
                     heureDebutReelle: pointage.heureDebutReelle,
+                    heureDebutEffective: pointage.heureDebutReelle
+                        ? normaliserHeureDebut(pointage.heureDebutReelle, event.heureDebut)
+                        : null,
                     heureFinReelle: pointage.heureFinReelle,
                     motifDepart: pointage.motifDepart,
                 } : null;
@@ -962,19 +967,32 @@ export default class SeanceController {
             });
             await Seance.update({ publieeLe: new Date() }, { where });
 
-            const enseignantsNotifies = new Set<number>();
-            const enseignantsNotifications: { id: number; nom: string; nbSeances: number }[] = [];
+            const enseignantsNotifications: {
+                id: number;
+                nom: string;
+                email: string;
+                nbSeances: number;
+                seances: Seance[];
+            }[] = [];
             const etudiantsNotifications: { id: number; nom: string; nbSeances: number }[] = [];
 
             for (const seance of seances) {
                 const enseignant = (seance as any).enseignant;
-                if (enseignant?.utilisateur?.id && !enseignantsNotifies.has(enseignant.utilisateur.id)) {
-                    enseignantsNotifies.add(enseignant.utilisateur.id);
-                    enseignantsNotifications.push({
-                        id: enseignant.utilisateur.id,
-                        nom: `${enseignant.utilisateur.prenoms} ${enseignant.utilisateur.nom}`,
-                        nbSeances: 1
-                    });
+                const utilisateur = enseignant?.utilisateur;
+                if (utilisateur?.id) {
+                    let notificationEnseignant = enseignantsNotifications.find(item => item.id === utilisateur.id);
+                    if (!notificationEnseignant) {
+                        notificationEnseignant = {
+                            id: utilisateur.id,
+                            nom: `${utilisateur.prenoms || ''} ${utilisateur.nom || ''}`.trim(),
+                            email: utilisateur.email || '',
+                            nbSeances: 0,
+                            seances: [],
+                        };
+                        enseignantsNotifications.push(notificationEnseignant);
+                    }
+                    notificationEnseignant.nbSeances++;
+                    notificationEnseignant.seances.push(seance);
                 }
 
                 const cours = (seance as any).cours;
@@ -1019,6 +1037,9 @@ export default class SeanceController {
                     false
                 );
             }
+            for (const enseignant of enseignantsNotifications) {
+                await SeanceController.notifierEnseignantParEmail(enseignant);
+            }
 
             if (etudiantIds.length > 0) {
                 await NotificationHelper.envoyerNotificationMultiples(
@@ -1049,6 +1070,61 @@ export default class SeanceController {
             });
         } catch (error) {
             return res.status(500).json({ success: false, error });
+        }
+    }
+
+    private static async notifierEnseignantParEmail(enseignant: {
+        nom: string;
+        email: string;
+        nbSeances: number;
+        seances: Seance[];
+    }): Promise<void> {
+        if (!enseignant.email) {
+            console.warn(`[Seance][email] adresse manquante pour l'enseignant ${enseignant.nom || '(sans nom)'}`);
+            return;
+        }
+
+        const sender = EmailSender.getInstance();
+        if (!sender.isConfigured()) {
+            console.warn(`[Seance][email] service d'e-mail non configuré; notification non envoyée à ${enseignant.email}`);
+            return;
+        }
+
+        const jours: Record<string, string> = {
+            [JoursSemaine.LUNDI]: 'Lundi',
+            [JoursSemaine.MARDI]: 'Mardi',
+            [JoursSemaine.MERCREDI]: 'Mercredi',
+            [JoursSemaine.JEUDI]: 'Jeudi',
+            [JoursSemaine.VENDREDI]: 'Vendredi',
+            [JoursSemaine.SAMEDI]: 'Samedi',
+            [JoursSemaine.DIMANCHE]: 'Dimanche',
+        };
+        const formatDate = (value: unknown): string => {
+            const [year, month, day] = dateIso(value).split('-');
+            return year && month && day ? `${day}/${month}/${year}` : String(value || '');
+        };
+        const detailsSeances = enseignant.seances.map(seance => {
+            const cours = (seance as any).cours;
+            const periode = `${formatDate(seance.dateDebut)} au ${formatDate(seance.dateFin)}`;
+            return [
+                `- ${cours?.intitule || seance.titre || 'Séance sans intitulé'}`,
+                `${jours[String(seance.jourSemaine)] || seance.jourSemaine}`,
+                `${String(seance.heureDebut).slice(0, 5)}-${String(seance.heureFin).slice(0, 5)}`,
+                `salle ${seance.salle || 'non précisée'}`,
+                `du ${periode}`,
+            ].join(' | ');
+        }).join('\n');
+
+        try {
+            await sender.sendMail({
+                from: `Easy Ecole <${process.env.MAIL_FROM || process.env.SMTP_USER || 'no-reply@easyecole.com'}>`,
+                to: enseignant.email,
+                encoding: 'UTF-8',
+                subject: 'Emploi du temps publié',
+                text: `Bonjour ${enseignant.nom || 'Enseignant'},\n\nVotre emploi du temps vient d'être publié. Vous avez ${enseignant.nbSeances} séance(s) programmée(s) :\n\n${detailsSeances}\n\nConsultez votre agenda dans Easy Ecole.\n\nCordialement,\nEasy Ecole`,
+            });
+        } catch (error) {
+            console.error(`[Seance][email] échec d'envoi à ${enseignant.email}:`, error);
         }
     }
 

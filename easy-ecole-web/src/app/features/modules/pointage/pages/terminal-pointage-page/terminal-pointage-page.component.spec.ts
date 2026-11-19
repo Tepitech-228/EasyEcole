@@ -529,6 +529,44 @@ describe('TerminalPointagePageComponent', () => {
       .toContain('Votre prochain cours sur le site Campus principal est en salle B12, à l’étage 2e étage à 10:00.');
   });
 
+  it('calculates course time from the scheduled start when the teacher scanned early', () => {
+    pointageService.getToday.and.returnValue(of(null));
+    fixture.detectChanges();
+    terminalAttendanceEvents.next({
+      utilisateurId: 42,
+      nom: 'Doe',
+      prenoms: 'Jane',
+      role: 'enseignant',
+      employeeNoString: 'ENS042',
+      date: '2026-10-18',
+      time: '11:40:00',
+      mode: 'passage',
+      etablissementId: 1,
+      seancePointage: {
+        action: 'fin',
+        seanceId: 81,
+        cours: 'Mathématiques',
+        heureDebutPrevue: '10:40:00',
+        heureFinPrevue: '11:40:00',
+        heureDebutReelle: '10:31:00',
+        heureDebutEffective: '10:40:00',
+        heureFinReelle: null,
+        heureReelle: '11:40:00',
+        confirmationToken: 'course-end-token'
+      }
+    });
+
+    expect(fixture.componentInstance.lastAttendanceHeureArrivee).toBe('10:40');
+    pointageService.pointerFinCoursByScan.and.returnValue(of({
+      pointage: { heureArrivee: '10:31:00', heureDepart: '11:40:00' },
+      navigationCours: { siteActuel: 'Campus principal', prochainCours: null }
+    } as any));
+    fixture.componentInstance.confirmerDepart();
+
+    expect(fixture.componentInstance.departureResultPopup?.heureArrivee).toBe('10:40');
+    expect(fixture.componentInstance.departureResultPopup?.minutesTotales).toBe(60);
+  });
+
   it('announces when the next teacher course is on a different site', () => {
     pointageService.getToday.and.returnValue(of(null));
     const speak = spyOn(window.speechSynthesis, 'speak');

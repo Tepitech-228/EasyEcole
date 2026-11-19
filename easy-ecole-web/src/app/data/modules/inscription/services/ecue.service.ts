@@ -4,6 +4,26 @@ import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { Ecue } from '../models/Ecue.model';
 
+export interface EcueAffectation extends Ecue {
+  cours?: {
+    id?: string;
+    code?: string;
+    intitule?: string;
+    credit?: number;
+    creditEcts?: number;
+    semestre?: string;
+    parcoursId?: string;
+    parcours?: {
+      id?: string;
+      titre?: string;
+      type?: string;
+      niveauEtudeId?: string;
+      niveauEtude?: { id?: string; libelle?: string };
+    };
+    classe?: { id?: string; libelle?: string };
+  };
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -15,6 +35,10 @@ export class EcueService {
 
   getAll(): Observable<Ecue[]> {
     return this.httpClient.get<Ecue[]>(`${this.SERVICE_URL}`)
+  }
+
+  getForTeacherAssignments(): Observable<EcueAffectation[]> {
+    return this.httpClient.get<EcueAffectation[]>(`${this.SERVICE_URL}/affectations-enseignants`)
   }
 
   get(id: string): Observable<Ecue> {
@@ -31,6 +55,10 @@ export class EcueService {
 
   update(ecue: Ecue): Observable<Ecue> {
     return this.httpClient.put<Ecue>(`${this.SERVICE_URL}/${ecue.id!}`, ecue)
+  }
+
+  assignerEnseignant(ecueId: string, enseignantId: string | null): Observable<EcueAffectation> {
+    return this.httpClient.patch<EcueAffectation>(`${this.SERVICE_URL}/${ecueId}/enseignant`, { enseignantId })
   }
 
   delete(id: string): Observable<any> {

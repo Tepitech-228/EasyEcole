@@ -2,11 +2,14 @@ import { Router } from "express";
 import EcueController from "../controllers/EcueController";
 import Authenticate from "../../../core/middlewares/Authenticate";
 import { AuthInstitution } from "../../../core/middlewares/AuthInstitution";
+import { AuthPilotagePedagogique } from "../../../core/middlewares/AuthPilotagePedagogique";
 import CheckPermission from "../../../core/middlewares/CheckPermission";
 
 const router = Router();
 
 router.get('/', [Authenticate], EcueController.getAll.bind(EcueController));
+router.get('/affectations-enseignants', [AuthPilotagePedagogique], EcueController.getForTeacherAssignments.bind(EcueController));
+router.patch('/:id/enseignant', [AuthPilotagePedagogique, CheckPermission('action.inscription.ecue.modifier')], EcueController.assignerEnseignant.bind(EcueController));
 router.get('/:id', [Authenticate], EcueController.get.bind(EcueController));
 router.post('/', [AuthInstitution, CheckPermission('action.inscription.ecue.creer')], EcueController.create.bind(EcueController));
 router.put('/:id', [AuthInstitution, CheckPermission('action.inscription.ecue.modifier')], EcueController.update.bind(EcueController));

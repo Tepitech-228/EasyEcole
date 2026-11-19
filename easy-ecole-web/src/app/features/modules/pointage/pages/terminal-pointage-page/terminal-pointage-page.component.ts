@@ -504,6 +504,11 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     if (event.mode === 'depart') this.lastAttendanceHeureDepart = this.formatHeureCourte(event.time)
     if (event.heureArrivee) this.lastAttendanceHeureArrivee = this.formatHeureCourte(event.heureArrivee)
     if (event.heureDepart) this.lastAttendanceHeureDepart = this.formatHeureCourte(event.heureDepart)
+    if (event.seancePointage) {
+      this.lastAttendanceHeureArrivee = this.formatHeureCourte(
+        event.seancePointage.heureDebutEffective || event.seancePointage.heureDebutReelle
+      )
+    }
     if (event.seancePointage?.action === 'debut') this.lastAttendanceHeureDepart = ''
     this.scanError = ''
     this.scanWarning = event.avertissementPaiement || ''
@@ -848,6 +853,11 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
             this.lastAttendanceHeureArrivee = this.formatHeureCourte(pointage.heureArrivee)
             this.lastAttendanceHeureDepart = this.formatHeureCourte(pointage.heureDepart)
             this.scanWarning = result.avertissementPaiement || ''
+            if (result.seancePointage?.action === 'debut') {
+              this.lastAttendanceHeureArrivee = this.formatHeureCourte(
+                result.seancePointage.heureDebutEffective || result.seancePointage.heureDebutReelle
+              )
+            }
             this.announceAttendance(
               this.scannedUser,
               result.mode,
@@ -1499,6 +1509,11 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
         const avertissementPaiement = 'avertissementPaiement' in response ? response.avertissementPaiement : null
         this.scanWarning = avertissementPaiement || ''
         const seancePointage = 'seancePointage' in response ? response.seancePointage : undefined
+        if (seancePointage?.action === 'debut') {
+          this.lastAttendanceHeureArrivee = this.formatHeureCourte(
+            seancePointage.heureDebutEffective || seancePointage.heureDebutReelle
+          )
+        }
         this.announceAttendance(this.scannedUser, actualMode, heure || undefined, avertissementPaiement, pointage, seancePointage)
         this.playBeepSucces()
         this.scanSuccess = seancePointage?.action === 'debut'
@@ -1657,7 +1672,9 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
         this.lastAttendancePhotoUrl = pending.photoUrl
         this.lastAttendanceMode = 'depart'
         this.lastAttendanceEventTime = this.formatHeureCourte(heure)
-        this.lastAttendanceHeureArrivee = this.formatHeureCourte(pointage.heureArrivee)
+        this.lastAttendanceHeureArrivee = this.formatHeureCourte(
+          pending.seancePointage?.heureDebutEffective || pointage.heureArrivee
+        )
         this.lastAttendanceHeureDepart = this.formatHeureCourte(pointage.heureDepart || heure)
         const navigationCours = this.extraireNavigationCours(response)
         this.announceAttendance(personne, 'depart', heure, null, pointage, pending.seancePointage, false, navigationCours)
@@ -1873,7 +1890,7 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     personne: any,
     seancePointage?: NonNullable<TerminalAttendanceEvent['seancePointage']>
   ): void {
-    const heureArrivee = seancePointage?.heureDebutReelle || pointage.heureArrivee
+    const heureArrivee = seancePointage?.heureDebutEffective || seancePointage?.heureDebutReelle || pointage.heureArrivee
     const heureDepart = seancePointage?.heureReelle || pointage.heureDepart
     const durees = this.calculerDureesPointage({ heureArrivee, heureDepart })
     this.departureResultPopup = {

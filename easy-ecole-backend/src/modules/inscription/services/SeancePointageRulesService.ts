@@ -46,6 +46,13 @@ export function normaliserHeureFin(heurePointage: unknown, heureFinPrevue: unkno
   return formaterHeure(pointage > finPrevue ? heureFinPrevue : heurePointage);
 }
 
+export function normaliserHeureDebut(heurePointage: unknown, heureDebutPrevue: unknown): string | null {
+  const pointage = secondesDepuisHeure(heurePointage);
+  const debutPrevu = secondesDepuisHeure(heureDebutPrevue);
+  if (pointage === null || debutPrevu === null) return null;
+  return formaterHeure(pointage < debutPrevu ? heureDebutPrevue : heurePointage);
+}
+
 export interface DureeSeanceEffective {
   heureDebutEffective: string;
   heureFinEffective: string;
@@ -71,11 +78,12 @@ export function calculerDureeSeanceEffective(
     || finPrevue < debutPrevu
   ) return null;
 
-  const debutEffectif = Math.max(debutPointage, debutPrevu);
+  const heureDebutEffective = normaliserHeureDebut(heureDebutPointee, heureDebutPrevue);
   const finEffective = Math.min(finPointage, finPrevue);
   const dureeAssignee = (finPrevue - debutPrevu) / 60;
+  const debutEffectif = secondesDepuisHeure(heureDebutEffective);
+  if (debutEffectif === null) return null;
   const dureeMinutes = Math.max(0, Math.min(dureeAssignee, (finEffective - debutEffectif) / 60));
-  const heureDebutEffective = formaterHeure(debutEffectif === debutPrevu ? heureDebutPrevue : heureDebutPointee);
   const heureFinEffective = normaliserHeureFin(heureFinPointee, heureFinPrevue);
   if (!heureDebutEffective || !heureFinEffective) return null;
 

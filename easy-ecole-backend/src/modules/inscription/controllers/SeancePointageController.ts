@@ -9,6 +9,7 @@ import {
   depasseDelaiGraceDepart,
   depasseFenetreDebut,
   estDepartAnticipe,
+  normaliserHeureDebut,
   normaliserHeureFin,
   validerMotifDepart,
 } from "../services/SeancePointageRulesService";
@@ -112,6 +113,10 @@ export default class SeancePointageController {
       }
       const heureActuelle = minutes(heure);
       const debutPrevu = minutes(context.seance.heureDebut);
+      const heureDebutEffective = normaliserHeureDebut(heure, context.seance.heureDebut);
+      if (!heureDebutEffective) {
+        return res.status(409).json({ success: false, code: "INVALID_SCHEDULE", message: "L’horaire de début du cours est invalide." });
+      }
 
       const [pointage] = await SeancePointage.findOrCreate({
         where: { seanceId: context.seance.id, date: context.date },
@@ -137,6 +142,7 @@ export default class SeancePointageController {
         success: true,
         statut: "en_cours",
         heureDebutReelle: heure,
+        heureDebutEffective,
         retardMinutes: Math.max(0, heureActuelle - debutPrevu),
         message: "Début de séance enregistré.",
       });

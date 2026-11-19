@@ -1,0 +1,280 @@
+<div class="flex flex-col gap-6">
+    <!-- En-tête -->
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <app-header-title title="Affectations UE/ECUE"
+            subtitle="Associez les enseignants aux unités d'enseignement et à leurs ECUE"></app-header-title>
+        <div class="flex items-center gap-2">
+            <button type="button" (click)="charger()" [disabled]="chargement"
+                class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50">
+                <span class="material-symbols-outlined text-base" [class.animate-spin]="chargement">refresh</span>
+                Actualiser
+            </button>
+        </div>
+    </div>
+
+    <app-custom-alert *ngIf="erreur" [show]="true" [title]="erreur" type="danger" [inline]="true"></app-custom-alert>
+    <app-custom-alert *ngIf="messageSucces" [show]="true" [title]="messageSucces" type="success"
+        [inline]="true"></app-custom-alert>
+
+    <ng-container *ngIf="!chargement">
+        <!-- Indicateurs -->
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Unités d'enseignement</p>
+                        <p class="mt-2 text-2xl font-bold text-gray-900">{{ nombreUe }}</p>
+                    </div>
+                    <span
+                        class="material-symbols-outlined rounded-lg bg-primary-50 p-2 text-primary-800">library_books</span>
+                </div>
+            </div>
+
+            <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <p class="text-xs font-medium uppercase tracking-wide text-gray-500">ECUE</p>
+                        <p class="mt-2 text-2xl font-bold text-gray-900">{{ nombreEcue }}</p>
+                    </div>
+                    <span class="material-symbols-outlined rounded-lg bg-indigo-50 p-2 text-indigo-700">menu_book</span>
+                </div>
+            </div>
+
+            <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Affectations réalisées</p>
+                        <p class="mt-2 text-2xl font-bold text-gray-900">
+                            {{ nombreAffectes }}<span class="ml-1 text-sm font-medium text-gray-500">/ {{ nombreEcue
+                                }}</span>
+                        </p>
+                    </div>
+                    <span
+                        class="material-symbols-outlined rounded-lg bg-green-50 p-2 text-green-700">check_circle</span>
+                </div>
+                <div class="mt-4 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                    <div class="h-full rounded-full bg-green-500 transition-all duration-300"
+                        [style.width.%]="tauxAffectation"></div>
+                </div>
+                <p class="mt-2 text-xs text-gray-500">{{ tauxAffectation }}% des ECUE couverts</p>
+            </div>
+
+            <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Sans enseignant</p>
+                        <p class="mt-2 text-2xl font-bold" [class.text-amber-600]="nombreNonAffectes > 0"
+                            [class.text-gray-900]="nombreNonAffectes === 0">{{ nombreNonAffectes }}</p>
+                    </div>
+                    <span class="material-symbols-outlined rounded-lg bg-amber-50 p-2 text-amber-700">person_alert</span>
+                </div>
+                <p class="mt-4 text-xs text-gray-500" *ngIf="nombreNonAffectes > 0">Des ECUE restent à attribuer</p>
+                <p class="mt-4 text-xs text-green-600" *ngIf="nombreNonAffectes === 0">Toutes les ECUE sont couvertes</p>
+            </div>
+        </div>
+
+        <!-- Filtres -->
+        <section class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div class="xl:col-span-1">
+                    <label for="recherche-ue" class="mb-1 block text-xs font-medium text-gray-600">Recherche</label>
+                    <div class="relative">
+                        <span
+                            class="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg text-gray-400">search</span>
+                        <input id="recherche-ue" type="search" [(ngModel)]="recherche"
+                            placeholder="UE, ECUE, enseignant, classe…"
+                            class="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-sm text-gray-800 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200" />
+                    </div>
+                </div>
+
+                <div>
+                    <label for="filtre-parcours" class="mb-1 block text-xs font-medium text-gray-600">Parcours</label>
+                    <div class="relative">
+                        <select id="filtre-parcours" [ngModel]="parcoursSelectionne"
+                            (ngModelChange)="parcoursSelectionne = $event; changerParcours()"
+                            class="w-full appearance-none rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-9 text-sm text-gray-800 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200">
+                            <option value="">Tous les parcours</option>
+                            <option *ngFor="let parcours of parcoursDisponibles" [value]="parcours.id">{{ parcours.label
+                                }}</option>
+                        </select>
+                        <span
+                            class="material-symbols-outlined pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-lg text-gray-400">expand_more</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="filtre-niveau" class="mb-1 block text-xs font-medium text-gray-600">Niveau</label>
+                    <div class="relative">
+                        <select id="filtre-niveau" [ngModel]="niveauSelectionne"
+                            (ngModelChange)="niveauSelectionne = $event; changerNiveau()"
+                            [disabled]="parcoursDisponibles.length === 0"
+                            class="w-full appearance-none rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-9 text-sm text-gray-800 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200 disabled:bg-gray-50 disabled:text-gray-400">
+                            <option value="">Tous les niveaux</option>
+                            <option *ngFor="let niveau of niveauxDisponibles" [value]="niveau.id">{{ niveau.label }}
+                            </option>
+                        </select>
+                        <span
+                            class="material-symbols-outlined pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-lg text-gray-400">expand_more</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="filtre-classe" class="mb-1 block text-xs font-medium text-gray-600">Classe</label>
+                    <div class="relative">
+                        <select id="filtre-classe" [(ngModel)]="classeSelectionnee"
+                            class="w-full appearance-none rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-9 text-sm text-gray-800 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200">
+                            <option value="">Toutes les classes</option>
+                            <option *ngFor="let classe of classesDisponibles" [value]="classe.id">{{ classe.label }}
+                            </option>
+                        </select>
+                        <span
+                            class="material-symbols-outlined pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-lg text-gray-400">expand_more</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 flex flex-col gap-2 border-t border-gray-100 pt-3 sm:flex-row sm:items-center sm:justify-between">
+                <p class="text-xs text-gray-500">
+                    {{ groupesUe.length }} UE affichée(s) · {{ ecuesFiltres.length }} ECUE
+                    <span *ngIf="filtresActifs" class="ml-1 rounded-full bg-primary-50 px-2 py-0.5 font-medium text-primary-800">filtre
+                        actif</span>
+                </p>
+                <button type="button" *ngIf="filtresActifs" (click)="reinitialiserFiltres()"
+                    class="inline-flex items-center gap-1 text-xs font-medium text-primary-700 hover:text-primary-900">
+                    <span class="material-symbols-outlined text-base">filter_alt_off</span>
+                    Réinitialiser les filtres
+                </button>
+            </div>
+        </section>
+
+        <!-- État vide -->
+        <section *ngIf="groupesUe.length === 0"
+            class="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 bg-white px-6 py-14 text-center">
+            <span class="material-symbols-outlined mb-3 text-gray-300">inbox</span>
+            <h3 class="text-base font-semibold text-gray-800">Aucune UE à afficher</h3>
+            <p class="mt-1 max-w-md text-sm text-gray-500">
+                {{ filtresActifs ? 'Aucun résultat ne correspond aux filtres sélectionnés.' : 'Créez d’abord des UE et des ECUE pour pouvoir les affecter à des enseignants.' }}
+            </p>
+            <button type="button" *ngIf="filtresActifs" (click)="reinitialiserFiltres()"
+                class="mt-4 inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                <span class="material-symbols-outlined text-base">filter_alt_off</span>
+                Effacer les filtres
+            </button>
+        </section>
+
+        <!-- Groupes UE -->
+        <section *ngFor="let groupe of groupesUe; trackBy: trackByUe"
+            class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <header class="flex flex-col gap-4 border-b border-gray-100 bg-gray-50 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
+                <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="rounded-md bg-primary-800 px-2 py-0.5 text-xs font-semibold text-white">{{ groupe.code
+                            }}</span>
+                        <h2 class="truncate text-sm font-semibold text-gray-900">{{ groupe.intitule }}</h2>
+                        <span *ngIf="groupe.credits > 0"
+                            class="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-700">{{ groupe.credits
+                            }} crédits</span>
+                    </div>
+                    <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                        <span *ngIf="groupe.parcours" class="inline-flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">route</span>{{ groupe.parcours }}
+                        </span>
+                        <span *ngIf="groupe.niveau" class="inline-flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">stairs</span>{{ groupe.niveau }}
+                        </span>
+                        <span *ngIf="groupe.classe" class="inline-flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">groups</span>{{ groupe.classe }}
+                        </span>
+                        <span class="inline-flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">menu_book</span>{{ groupe.ecues.length }} ECUE
+                        </span>
+                    </div>
+                </div>
+
+                <div class="flex shrink-0 items-center gap-2">
+                    <div class="text-right">
+                        <p class="text-xs font-medium text-gray-500">Enseignant de l'UE</p>
+                        <p class="text-xs text-gray-400">Applique l'affectation à toutes les ECUE</p>
+                    </div>
+                    <div class="relative">
+                        <select [value]="enseignantCommunId(groupe)" (change)="affecterUe(groupe, $any($event.target).value)"
+                            [disabled]="!peutAffecter || uesEnCours.has(groupe.coursId)"
+                            class="w-56 appearance-none rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-9 text-sm text-gray-800 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200 disabled:bg-gray-100 disabled:text-gray-400">
+                            <option value="">Affecter toute l'UE à…</option>
+                            <option *ngFor="let enseignant of enseignantsTries" [value]="enseignant.id">{{
+                                nomEnseignant(enseignant) }}</option>
+                        </select>
+                        <span
+                            class="material-symbols-outlined pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-lg text-gray-400">expand_more</span>
+                        <span *ngIf="uesEnCours.has(groupe.coursId)"
+                            class="material-symbols-outlined absolute -left-6 top-1/2 -translate-y-1/2 animate-spin text-base text-primary-700">progress_activity</span>
+                    </div>
+                </div>
+            </header>
+
+            <ul>
+                <li *ngFor="let ecue of groupe.ecues; trackBy: trackByEcue"
+                    class="flex flex-col gap-3 border-b border-gray-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-semibold text-gray-700">{{
+                                ecue.code || 'ECUE' }}</span>
+                            <p class="truncate text-sm font-medium text-gray-800">{{ ecue.libelle || 'Élément constitutif' }}
+                            </p>
+                            <span *ngIf="ecue.type"
+                                class="rounded-full border border-gray-200 px-2 py-0.5 text-xs font-medium text-gray-500">{{
+                                ecue.type }}</span>
+                        </div>
+                        <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                            <span *ngIf="volumeHoraire(ecue) > 0" class="inline-flex items-center gap-1">
+                                <span class="material-symbols-outlined text-sm">schedule</span>{{ volumeHoraire(ecue) }} h
+                            </span>
+                            <span *ngIf="ecue.creditEcts" class="inline-flex items-center gap-1">
+                                <span class="material-symbols-outlined text-sm">workspace_premium</span>{{ ecue.creditEcts
+                                }} ECTS
+                            </span>
+                            <span *ngIf="!ecue.enseignantId"
+                                class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 font-medium text-amber-700">
+                                <span class="material-symbols-outlined text-sm">person_alert</span>Non affecté
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 sm:justify-end">
+                        <div class="hidden items-center gap-2 sm:flex" *ngIf="ecue.enseignantId">
+                            <span
+                                class="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-800">{{
+                                initialesEnseignant(ecue.enseignant) }}</span>
+                            <span class="max-w-40 truncate text-sm text-gray-700">{{ libelleEnseignantEcue(ecue) }}</span>
+                        </div>
+
+                        <div class="relative">
+                            <select [value]="ecue.enseignantId || ''"
+                                (change)="affecterEnseignant(ecue, $any($event.target).value)"
+                                [disabled]="!peutAffecter || !ecue.id || affectationsEnCours.has(ecue.id)"
+                                [title]="libelleEnseignantEcue(ecue)" [attr.aria-label]="'Enseignant de ' + (ecue.libelle || ecue.code || 'l’ECUE')"
+                                class="w-56 appearance-none rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-9 text-sm text-gray-800 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200 disabled:bg-gray-100 disabled:text-gray-400">
+                                <option value="">Non affecté</option>
+                                <option *ngFor="let enseignant of enseignantsTries" [value]="enseignant.id">{{
+                                    nomEnseignant(enseignant) }}</option>
+                            </select>
+                            <span
+                                class="material-symbols-outlined pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-lg text-gray-400">expand_more</span>
+                            <span *ngIf="ecue.id && affectationsEnCours.has(ecue.id)"
+                                class="material-symbols-outlined absolute -left-6 top-1/2 -translate-y-1/2 animate-spin text-base text-primary-700">progress_activity</span>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </section>
+    </ng-container>
+
+    <!-- Chargement -->
+    <div *ngIf="chargement" class="flex flex-col gap-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div *ngFor="let bloc of [1, 2, 3, 4]" class="h-28 animate-pulse rounded-xl bg-gray-100"></div>
+        </div>
+        <div class="h-20 animate-pulse rounded-xl bg-gray-100"></div>
+        <div *ngFor="let bloc of [1, 2]" class="h-40 animate-pulse rounded-xl bg-gray-100"></div>
+    </div>
+</div>

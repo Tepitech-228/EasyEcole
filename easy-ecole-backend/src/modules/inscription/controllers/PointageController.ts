@@ -28,6 +28,7 @@ import {
     depasseDelaiGraceDepart,
     depasseFenetreDebut,
     estDepartAnticipe,
+    normaliserHeureDebut,
     normaliserHeureFin,
     validerMotifDepart
 } from "../services/SeancePointageRulesService";
@@ -1336,6 +1337,7 @@ export default class PointageController {
                         heureDebutPrevue: heurePointage(seance.heureDebut),
                         heureFinPrevue: heurePointage(seance.heureFin),
                         heureDebutReelle,
+                        heureDebutEffective: normaliserHeureDebut(heureDebutReelle, seance.heureDebut),
                         heureFinReelle: null,
                         heureReelle: heure,
                         confirmationToken
@@ -1440,6 +1442,7 @@ export default class PointageController {
                     heureDebutPrevue: heurePointage(seance.heureDebut),
                     heureFinPrevue: heurePointage(seance.heureFin),
                     heureDebutReelle: heure,
+                    heureDebutEffective: normaliserHeureDebut(heure, seance.heureDebut),
                     heureFinReelle: null,
                     heureReelle: heure
                 }

@@ -14,13 +14,30 @@ jest.mock('../../../modules/inscription/models/Ecue', () => {
 
 jest.mock('../../../modules/auth/models/Enseignant', () => ({
   Enseignant: {
+    findByPk: jest.fn(),
     associations: {
       utilisateur: 'utilisateur'
     }
   }
 }))
 
+jest.mock('../../../modules/auth/models/SiteUtilisateur', () => ({
+  SiteUtilisateur: { findOne: jest.fn() }
+}))
+
+jest.mock('../../../modules/inscription/models/Cours', () => ({
+  Cours: {
+    associations: { parcours: 'parcours', classe: 'classe' }
+  }
+}))
+
+jest.mock('../../../modules/inscription/models/Parcours', () => ({
+  Parcours: { associations: { niveauEtude: 'niveauEtude' } }
+}))
+
 const { Ecue } = require('../../../modules/inscription/models/Ecue')
+const { Enseignant } = require('../../../modules/auth/models/Enseignant')
+const { SiteUtilisateur } = require('../../../modules/auth/models/SiteUtilisateur')
 import Ctrl from '../../../modules/inscription/controllers/EcueController'
 
 beforeEach(() => {
@@ -221,5 +238,77 @@ describe('delete', () => {
     await Ctrl.delete(req, res)
 
     expect(res.status).toHaveBeenCalledWith(403)
+  })
+})
+
+describe('teacher assignments', () => {
+  it('lists only ECUE belonging to the active site with their academic hierarchy', async () => {
+    const req = mockRequest({ utilisateurRole: 'institution', etablissementId: 3 } as any)
+    const res = mockResponse()
+    const rows = [{ id: 21, code: 'GC-ST' }]
+    ;(Ecue.findAll as jest.Mock).mockResolvedValue(rows)
+
+    await Ctrl.getForTeacherAssignments(req, res)
+
+    expect(Ecue.findAll).toHaveBeenCalledWith(expect.objectContaining({
+      include: expect.arrayContaining([
+        expect.objectContaining({
+          association: 'cours',
+          required: true,
+          where: { etablissementId: 3 },
+          include: expect.arrayContaining([
+            expect.objectContaining({
+              association: 'parcours',
+              include: ['niveauEtude'],
+            }),
+            'classe',
+          ]),
+        }),
+      ]),
+    }))
+    expect(res.send).toHaveBeenCalledWith(rows)
+  })
+
+  it('rejects assignments when the ECUE belongs to another site', async () => {
+    const ecue = { id: 21, cours: { etablissementId: 4 }, update: jest.fn() }
+    ;(Ecue.findByPk as jest.Mock).mockResolvedValue(ecue)
+    const req = mockRequest({
+      params: { id: '21' },
+      body: { enseignantId: 11 },
+      utilisateurRole: 'institution',
+      etablissementId: 3,
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.assignerEnseignant(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(ecue.update).not.toHaveBeenCalled()
+    expect(Enseignant.findByPk).not.toHaveBeenCalled()
+  })
+
+  it('accepts a teacher assigned to the active site and persists the ECUE assignment', async () => {
+    const ecue = { id: 21, cours: { etablissementId: 3 }, update: jest.fn().mockResolvedValue(undefined) }
+    const updated = { id: 21, enseignantId: 11 }
+    ;(Ecue.findByPk as jest.Mock)
+      .mockResolvedValueOnce(ecue)
+      .mockResolvedValueOnce(updated)
+    ;(Enseignant.findByPk as jest.Mock).mockResolvedValue({ id: 11, utilisateurId: 91 })
+    ;(SiteUtilisateur.findOne as jest.Mock).mockResolvedValue({ id: 5 })
+    const req = mockRequest({
+      params: { id: '21' },
+      body: { enseignantId: 11 },
+      utilisateurRole: 'institution',
+      etablissementId: 3,
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.assignerEnseignant(req, res)
+
+    expect(SiteUtilisateur.findOne).toHaveBeenCalledWith(expect.objectContaining({
+      where: { utilisateurId: 91, etablissementId: '3' },
+    }))
+    expect(ecue.update).toHaveBeenCalledWith({ enseignantId: 11 })
+    expect(res.send).toHaveBeenCalledWith(updated)
   })
 })

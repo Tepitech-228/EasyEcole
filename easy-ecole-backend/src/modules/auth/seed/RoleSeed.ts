@@ -41,7 +41,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
         'menu.inscription.paiements', 'menu.inscription.comptabilite',
         'menu.inscription.echeances', 'menu.inscription.validation-bordereaux',
         'menu.orientation', 'menu.orientation.parcours', 'menu.orientation.demandes',
-        'menu.cours', 'menu.cours.enseignants', 'menu.cours.liste',
+        'menu.cours', 'menu.cours.enseignants', 'menu.cours.affectations-ecue', 'menu.cours.liste',
         'menu.cours.presences', 'menu.cours.cahiers-de-texte',
         'menu.cours.emplois-du-temps', 'menu.cours.notes',
         'menu.evaluations', 'menu.evaluations.sessions', 'menu.evaluations.bulletins', 'menu.evaluations.deliberations',
@@ -212,7 +212,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'Superviseur Général': [
         'menu.tableau-de-bord',
         'menu.inscription', 'menu.inscription.salles',
-        'menu.cours', 'menu.cours.enseignants', 'menu.cours.liste',
+        'menu.cours', 'menu.cours.enseignants', 'menu.cours.affectations-ecue', 'menu.cours.liste',
         'menu.cours.presences', 'menu.cours.emplois-du-temps', 'menu.cours.notes',
         'menu.scolarite', 'menu.scolarite.calendrier', 'menu.scolarite.conseils',
         'menu.evaluations', 'menu.evaluations.bulletins', 'menu.evaluations.deliberations',
@@ -227,6 +227,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
         'menu.parametres', 'menu.parametres.mon-profil', 'menu.parametres.mon-compte',
         'action.cours.cours.creer', 'action.cours.cours.modifier',
         'action.cours.enseignant.creer', 'action.cours.enseignant.modifier',
+        'action.inscription.ecue.modifier',
         'action.inscription.salle.creer', 'action.inscription.salle.modifier',
         'action.inscription.salle.supprimer',
         'action.inscription.cursus.modifier',
@@ -250,15 +251,19 @@ export class RoleSeed {
                     : await RolePermission.count({ where: { roleId: role.id } });
                 const synchroniserPermissionsRecouvrement = roleData.nom === 'ESA Compta' && existingPermissionCount > 0;
                 const synchroniserPermissionReaffectation = roleData.nom === 'Superviseur Général' && existingPermissionCount > 0;
+                const synchroniserAffectationsEcue = (roleData.nom === 'Directeur' || roleData.nom === 'Superviseur Général') && existingPermissionCount > 0;
                 if (
                     existingPermissionCount > 0
                     && roleData.nom !== 'Surveillant'
                     && !synchroniserPermissionsRecouvrement
                     && !synchroniserPermissionReaffectation
+                    && !synchroniserAffectationsEcue
                 ) continue;
 
                 const permissionKeys = roleData.nom === 'Superviseur Général' && existingPermissionCount > 0
-                    ? ['action.inscription.cursus.modifier']
+                    ? ['action.inscription.cursus.modifier', 'menu.cours.affectations-ecue', 'action.inscription.ecue.modifier']
+                    : roleData.nom === 'Directeur' && existingPermissionCount > 0
+                    ? ['menu.cours.affectations-ecue', 'action.inscription.ecue.modifier']
                     : roleData.nom === 'Surveillant' && existingPermissionCount > 0
                     ? [
                         'menu.administration.utilisateurs',

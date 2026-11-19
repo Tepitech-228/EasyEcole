@@ -39,6 +39,17 @@ jest.mock('../../../core/helpers/NotificationHelper', () => ({
   NotificationHelper: { envoyerNotificationMultiples: jest.fn().mockResolvedValue(undefined) },
 }))
 
+jest.mock('../../../core/helpers/EmailSender', () => {
+  const mockSender = {
+    isConfigured: jest.fn().mockReturnValue(true),
+    sendMail: jest.fn().mockResolvedValue(undefined),
+  }
+  return {
+    mockSender,
+    EmailSender: { getInstance: () => mockSender },
+  }
+})
+
 jest.mock('../../../modules/auth/models/SiteUtilisateur', () => ({
   SiteUtilisateur: { findOne: jest.fn() },
 }))
@@ -77,6 +88,7 @@ const { Apprenant } = require('../../../modules/auth/models/Apprenant')
 const { CursusApprenant } = require('../../../modules/inscription/models/CursusApprenant')
 const { ParentEnfant } = require('../../../modules/parent/models/ParentEnfant')
 const { NotificationHelper } = require('../../../core/helpers/NotificationHelper')
+const { mockSender: mockEmailSender } = require('../../../core/helpers/EmailSender')
 const { SiteUtilisateur } = require('../../../modules/auth/models/SiteUtilisateur')
 const { getSurveillantSiteId } = require('../../../core/helpers/SurveillantSiteScope')
 const { Pointage } = require('../../../modules/inscription/models/Pointage')
@@ -489,12 +501,18 @@ describe('SeanceController.publierEmploiDuTemps', () => {
     expect(res.status).toHaveBeenCalledWith(200)
   })
 
-  it('notifies the teacher, learners, and parents from the selected class group for a global course', async () => {
+  it('notifies the teacher, learners, and parents and emails the teacher their published schedule', async () => {
     ;(Seance.findAll as jest.Mock).mockResolvedValue([{
       id: 20,
       classeGroupeId: 31,
+      jourSemaine: '1',
+      dateDebut: '2026-11-23',
+      dateFin: '2027-03-15',
+      heureDebut: '08:00:00',
+      heureFin: '10:00:00',
+      salle: 'A101',
       cours: { id: 7, intitule: 'Mathématiques', classeId: null },
-      enseignant: { utilisateur: { id: 8, nom: 'Prof', prenoms: 'Test' } },
+      enseignant: { utilisateur: { id: 8, nom: 'Prof', prenoms: 'Test', email: 'prof@example.com' } },
     }])
     ;(CursusApprenant.findAll as jest.Mock).mockResolvedValue([
       { utilisateur: { id: 101, nom: 'Eleve', prenoms: 'Un' } },
@@ -533,6 +551,11 @@ describe('SeanceController.publierEmploiDuTemps', () => {
       expect.any(String),
       false,
     )
+    expect(mockEmailSender.sendMail).toHaveBeenCalledWith(expect.objectContaining({
+      to: 'prof@example.com',
+      subject: 'Emploi du temps publié',
+      text: expect.stringContaining('Mathématiques | Lundi | 08:00-10:00 | salle A101 | du 23/11/2026 au 15/03/2027'),
+    }))
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
       enseignantsNotifies: 1,
       etudiantsNotifies: 2,

@@ -43,6 +43,7 @@ export interface PlanningEvent {
   etablissement?: { id: number, nom: string }
   pointage?: {
     heureDebutReelle?: string | null
+    heureDebutEffective?: string | null
     heureFinReelle?: string | null
     motifDepart?: string | null
   } | null

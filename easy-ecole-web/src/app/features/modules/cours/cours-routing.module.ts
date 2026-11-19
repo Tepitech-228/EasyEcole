@@ -23,6 +23,7 @@ import { MesPresencesPageComponent } from './pages/mes-presences-page/mes-presen
 import { MesNotesPageComponent } from './pages/mes-notes-page/mes-notes-page.component';
 import { TableauDeBordEnseignantPageComponent } from './pages/tableau-de-bord-enseignant-page/tableau-de-bord-enseignant-page.component';
 import { SupervisionGeneralePageComponent } from './pages/supervision-generale-page/supervision-generale-page.component';
+import { AffectationsEcuePageComponent } from './pages/affectations-ecue-page/affectations-ecue-page.component';
 
 const routes: Routes = [
   {
@@ -218,6 +219,13 @@ const routes: Routes = [
         pathMatch: 'full'
       },
     ]
+  },
+
+  // Affectations UE/ECUE
+  {
+    path: 'affectations-ecue',
+    component: AffectationsEcuePageComponent,
+    pathMatch: 'full'
   },
 ];
 

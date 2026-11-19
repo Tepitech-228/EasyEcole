@@ -32,6 +32,7 @@ import { MesNotesPageComponent } from './pages/mes-notes-page/mes-notes-page.com
 import { SignatureModalComponent } from './components/signature-modal/signature-modal.component';
 import { TableauDeBordEnseignantPageComponent } from './pages/tableau-de-bord-enseignant-page/tableau-de-bord-enseignant-page.component';
 import { SupervisionGeneralePageComponent } from './pages/supervision-generale-page/supervision-generale-page.component';
+import { AffectationsEcuePageComponent } from './pages/affectations-ecue-page/affectations-ecue-page.component';
 
 @NgModule({
   declarations: [
@@ -61,7 +62,8 @@ import { SupervisionGeneralePageComponent } from './pages/supervision-generale-p
     MesNotesPageComponent,
     SignatureModalComponent,
     TableauDeBordEnseignantPageComponent,
-    SupervisionGeneralePageComponent
+    SupervisionGeneralePageComponent,
+    AffectationsEcuePageComponent
   ],
   imports: [
     CommonModule,

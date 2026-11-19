@@ -1,6 +1,7 @@
 import {
   calculerDureeSeanceEffective,
   depasseFenetreDebut,
+  normaliserHeureDebut,
   normaliserHeureFin,
 } from "../../../modules/inscription/services/SeancePointageRulesService";
 
@@ -16,7 +17,19 @@ describe("SeancePointageRulesService", () => {
     expect(normaliserHeureFin("09:40:00", "10:00:00")).toBe("09:40:00");
   });
 
+  it("uses the scheduled start when a teacher clocks in early", () => {
+    expect(normaliserHeureDebut("10:31:00", "10:40:00")).toBe("10:40:00");
+    expect(normaliserHeureDebut("10:40:00", "10:40:00")).toBe("10:40:00");
+    expect(normaliserHeureDebut("10:45:00", "10:40:00")).toBe("10:45:00");
+  });
+
   it("calculates time from the effective start and end and caps it to the assigned duration", () => {
+    expect(calculerDureeSeanceEffective("10:31:00", "11:40:00", "10:40:00", "11:40:00")).toEqual({
+      heureDebutEffective: "10:40:00",
+      heureFinEffective: "11:40:00",
+      retardMinutes: 0,
+      dureeMinutes: 60,
+    });
     expect(calculerDureeSeanceEffective("08:55:00", "10:10:00", "09:00:00", "10:00:00")).toEqual({
       heureDebutEffective: "09:00:00",
       heureFinEffective: "10:00:00",

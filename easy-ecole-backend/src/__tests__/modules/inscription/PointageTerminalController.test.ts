@@ -269,6 +269,47 @@ describe("PointageTerminalController ADMS", () => {
     }));
   });
 
+  it("uses the scheduled start when a teacher scans 9 minutes early", async () => {
+    Utilisateur.findByPk.mockResolvedValue({ id: 42, role: "enseignant", etablissementId: 3 });
+    Enseignant.findOne.mockResolvedValue({ id: 9 });
+    Seance.findAll.mockResolvedValue([{
+      id: 81,
+      jourSemaine: "6",
+      dateDebut: "2026-10-17",
+      dateFin: "2026-10-17",
+      heureDebut: "10:40:00",
+      heureFin: "11:40:00",
+      titre: "Cours de mathématiques",
+      cours: { intitule: "Mathématiques" }
+    }]);
+
+    const recorded = await PointageTerminalController.processAttendanceEvent(
+      { id: 5, serialNumber: "ZK12345", etablissementId: 3 } as any,
+      {
+        pin: "42",
+        date: "2026-10-17",
+        time: "10:31:00",
+        statusCode: 5,
+        verifyType: 75,
+        utilisateurId: 42
+      }
+    );
+
+    expect(recorded).toMatchObject({
+      recorded: true,
+      mode: "arrivee",
+      seancePointage: {
+        action: "debut",
+        heureDebutReelle: "10:31:00",
+        heureDebutEffective: "10:40:00",
+        heureReelle: "10:31:00"
+      }
+    });
+    expect(SeancePointage.create).toHaveBeenCalledWith(expect.objectContaining({
+      heureDebutReelle: "10:31:00"
+    }), expect.objectContaining({ transaction }));
+  });
+
   it("requires confirmation before recording a teacher's active course end", async () => {
     Utilisateur.findByPk.mockResolvedValue({ id: 42, role: "enseignant", etablissementId: 3 });
     Enseignant.findOne.mockResolvedValue({ id: 9 });

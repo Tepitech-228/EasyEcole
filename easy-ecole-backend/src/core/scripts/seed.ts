@@ -425,7 +425,7 @@ export async function seed() {
 
     interface FiliereESA { titre: string; categorie: { id: number } }
 
-    // Liste officielle ESA — Licence Professionnelle & Master Professionnel (37 filières)
+    // Liste officielle ESA — Licence Professionnelle & Master Professionnel (38 filières)
     const filieresLicenceMaster: FiliereESA[] = [
         { titre: 'Administration générale', categorie: catOri7 },
         { titre: 'Administration des collectivités territoriales', categorie: catOri7 },
@@ -464,6 +464,7 @@ export async function seed() {
         { titre: 'Agro business', categorie: catOri10 },
         { titre: 'Modélisation économétrique et analyse des données', categorie: catOri5 },
         { titre: 'Diplomatie, protocole et relations publiques', categorie: catOri6 },
+        { titre: 'Communication des entreprises', categorie: catOri6 },
     ];
 
     // Master of Business Administration (MBA)

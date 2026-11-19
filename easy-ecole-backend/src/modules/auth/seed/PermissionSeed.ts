@@ -97,6 +97,7 @@ const ALL_PERMISSIONS: Array<{ key: string; libelle: string; module: string; typ
     // ============ COURS ============
     { key: 'menu.cours', libelle: 'Cours', module: 'Cours', type: 'menu' },
     { key: 'menu.cours.enseignants', libelle: 'Enseignants', module: 'Cours', type: 'menu', parentKey: 'menu.cours' },
+    { key: 'menu.cours.affectations-ecue', libelle: 'Affectations UE/ECUE', module: 'Cours', type: 'menu', parentKey: 'menu.cours' },
     { key: 'menu.cours.liste', libelle: 'Cours', module: 'Cours', type: 'menu', parentKey: 'menu.cours' },
     { key: 'menu.cours.presences', libelle: 'Présences', module: 'Cours', type: 'menu', parentKey: 'menu.cours' },
     { key: 'menu.cours.mes-presences', libelle: 'Mes présences', module: 'Cours', type: 'menu', parentKey: 'menu.cours' },

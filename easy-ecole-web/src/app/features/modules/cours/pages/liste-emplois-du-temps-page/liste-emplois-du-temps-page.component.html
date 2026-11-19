@@ -161,7 +161,10 @@
                                 </div>
                                 <div *ngIf="rolesValue.isEnseignant" class="flex flex-wrap gap-1">
                                     <span *ngIf="arg.event.extendedProps.pointage?.heureDebutReelle" class="text-xs">
-                                        Début : {{ arg.event.extendedProps.pointage.heureDebutReelle }}
+                                        Début retenu : {{ arg.event.extendedProps.pointage.heureDebutEffective || arg.event.extendedProps.pointage.heureDebutReelle }}
+                                        <ng-container *ngIf="arg.event.extendedProps.pointage.heureDebutEffective && arg.event.extendedProps.pointage.heureDebutEffective !== arg.event.extendedProps.pointage.heureDebutReelle">
+                                            (pointé à {{ arg.event.extendedProps.pointage.heureDebutReelle }})
+                                        </ng-container>
                                     </span>
                                     <button *ngIf="!arg.event.extendedProps.pointage?.heureDebutReelle"
                                         type="button" [disabled]="pointageEnCours[arg.event.id]"

@@ -135,6 +135,30 @@ describe('SeancePointageController.pointerDebut', () => {
     }))
   })
 
+  it('retient l heure prévue si le professeur pointe avant le début programmé', async () => {
+    jest.setSystemTime(new Date(`${TODAY}T10:31:00.000Z`))
+    ;(Seance.findByPk as jest.Mock).mockResolvedValue(seance({
+      heureDebut: '10:40:00',
+      heureFin: '11:40:00',
+    }))
+    ;(SeancePointage.findOrCreate as jest.Mock).mockResolvedValue([{ id: 11 }, true])
+    ;(SeancePointage.update as jest.Mock).mockResolvedValue([1])
+    const res = mockResponse()
+
+    await SeancePointageController.pointerDebut(request(), res)
+
+    expect(SeancePointage.update).toHaveBeenCalledWith(
+      { heureDebutReelle: '10:31:00' },
+      { where: { id: 11, heureDebutReelle: null } },
+    )
+    expect(res.status).toHaveBeenCalledWith(201)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      heureDebutReelle: '10:31:00',
+      heureDebutEffective: '10:40:00',
+      retardMinutes: 0,
+    }))
+  })
+
   it('autorise le debut meme longtemps apres la fin prevue', async () => {
     jest.setSystemTime(new Date(`${TODAY}T14:15:00.000Z`))
     ;(SeancePointage.findOrCreate as jest.Mock).mockResolvedValue([{ id: 11 }, true])
