@@ -17,8 +17,11 @@ import { EnseignantService } from 'src/app/data/modules/auth/services/enseignant
 import { AuthService, SiteUtilisateur } from 'src/app/data/modules/auth/services/auth.service';
 import { ClasseService } from 'src/app/data/modules/inscription/services/classe.service';
 import { Classe } from 'src/app/data/modules/inscription/models/Classe.model';
+import { SalleDeClasse } from 'src/app/data/modules/inscription/models/SalleDeClasse.model';
+import { SalleDeClasseService } from 'src/app/data/modules/inscription/services/salle-de-classe.service';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { NotificationService } from 'src/app/data/modules/elearning/services/notification.service';
+import { forkJoin } from 'rxjs';
 import { saveAs } from 'file-saver';
 
 const COULEURS_PALETTE = [
@@ -53,6 +56,9 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
   sitesError: string = ''
   classes: Classe[] = []
   classesLoading: boolean = false
+  sallesDisponibles: SalleDeClasse[] = []
+  sallesLoading: boolean = false
+  sallesError: string = ''
   seances: Seance[] = []
   selectedSeance?: Seance
   planningEvents: PlanningEvent[] = []
@@ -98,6 +104,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
     titre: new FormControl(null, [Validators.required]),
     jourSemaine: new FormControl(null, [Validators.required]),
     salle: new FormControl(null, [Validators.required]),
+    salleDeClasseId: new FormControl(null),
     dateDebut: new FormControl(null, [Validators.required]),
     dateFin: new FormControl(null, [Validators.required]),
     heureDebut: new FormControl(null, [Validators.required]),
@@ -112,6 +119,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
     titre: new FormControl(null, [Validators.required]),
     jourSemaine: new FormControl(null, [Validators.required]),
     salle: new FormControl(null, [Validators.required]),
+    salleDeClasseId: new FormControl(null),
     dateDebut: new FormControl(null, [Validators.required]),
     dateFin: new FormControl(null, [Validators.required]),
     heureDebut: new FormControl(null, [Validators.required]),
@@ -128,6 +136,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
     private enseignantService: EnseignantService,
     private authService: AuthService,
     private classeService: ClasseService,
+    private salleDeClasseService: SalleDeClasseService,
     private notificationService: NotificationService,
   ) {
     super()
@@ -198,6 +207,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
       next: (sites) => {
         this.sitesDisponibles = sites
         this.sitesLoading = false
+        this.getSalles()
       },
       error: () => {
         this.sitesError = 'Les sites autorisés n’ont pas pu être chargés.'
@@ -286,6 +296,12 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
     if (this.currentWeekStart && this.currentWeekEnd) {
       this.loadPlanning(this.currentWeekStart, this.currentWeekEnd)
     }
+  }
+
+  onPlanningSiteChange(siteId: string): void {
+    this.filterSiteId = siteId
+    this.onFilterChange()
+    this.getSalles()
   }
 
   planningEvent(eventId: string): PlanningEvent | undefined {
@@ -508,6 +524,49 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
       })
   }
 
+  getSalles(): void {
+    this.sallesLoading = true
+    this.sallesError = ''
+    this.sallesDisponibles = []
+    const sites = this.filterSiteId
+      ? this.sitesDisponibles.filter(site => String(site.id) === this.filterSiteId)
+      : this.sitesDisponibles
+    if (sites.length === 0) {
+      this.sallesDisponibles = []
+      this.sallesLoading = false
+      if (this.filterSiteId) {
+        this.sallesError = 'Aucun site autorisé ne correspond au site sélectionné.'
+      }
+      this.synchroniserSalleModification()
+      return
+    }
+
+    forkJoin(sites.map(site => this.salleDeClasseService.getAll(
+      undefined,
+      undefined,
+      String(site.id),
+      undefined,
+      undefined,
+      'DISPONIBLE',
+    ))).subscribe({
+      next: (resultats) => {
+        const sallesParId = new Map<string, SalleDeClasse>()
+        for (const salles of resultats) {
+          for (const salle of salles) {
+            sallesParId.set(String(salle.id), salle)
+          }
+        }
+        this.sallesDisponibles = Array.from(sallesParId.values())
+        this.sallesLoading = false
+        this.synchroniserSalleModification()
+      },
+      error: (err) => {
+        this.sallesError = err?.error?.message || 'Impossible de charger les salles disponibles.'
+        this.sallesLoading = false
+      }
+    })
+  }
+
   getSeances(): void {
     this.seanceService.getAll()
       .subscribe({
@@ -530,6 +589,24 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
     return item.utilisateur!.nom!.toLowerCase().indexOf(term) > -1 || item.utilisateur!.prenoms!.toLowerCase().indexOf(term) > -1;
   }
 
+  onSalleChange(salleId: string | null, modification: boolean = false): void {
+    const form = modification ? this.modificationSeanceForm : this.nouvelleSeanceForm
+    const salle = this.sallesDisponibles.find(item => String(item.id) === String(salleId))
+    form.get('salle')!.setValue(salle?.libelle || '')
+  }
+
+  private synchroniserSalleModification(): void {
+    if (!this.showModificationSeanceModal || !this.selectedSeance) return
+    const salle = this.sallesDisponibles.find(item =>
+      String(item.id) === String(this.selectedSeance!.salleDeClasseId)
+      || (!this.selectedSeance!.salleDeClasseId && item.libelle === this.selectedSeance!.salle)
+    )
+    if (salle) {
+      this.modificationSeanceForm.get('salleDeClasseId')!.setValue(salle.id)
+      this.modificationSeanceForm.get('salle')!.setValue(salle.libelle)
+    }
+  }
+
   onCoursChange(event: Cours, modification: boolean = false): void {
     if (event) {
       if (!modification) {
@@ -550,6 +627,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
       titre: form.get('titre')!.value,
       jourSemaine: form.get('jourSemaine')!.value,
       salle: form.get('salle')!.value,
+      salleDeClasseId: form.get('salleDeClasseId')!.value || null,
       dateDebut: form.get('dateDebut')!.value,
       dateFin: form.get('dateFin')!.value,
       heureDebut: form.get('heureDebut')!.value,
@@ -624,6 +702,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
     seance.titre = this.nouvelleSeanceForm.get('titre')!.value
     seance.jourSemaine = this.nouvelleSeanceForm.get('jourSemaine')!.value
     seance.salle = this.nouvelleSeanceForm.get('salle')!.value
+    seance.salleDeClasseId = this.nouvelleSeanceForm.get('salleDeClasseId')!.value || null
     seance.dateDebut = this.nouvelleSeanceForm.get('dateDebut')!.value
     seance.dateFin = this.nouvelleSeanceForm.get('dateFin')!.value
     seance.heureDebut = this.nouvelleSeanceForm.get('heureDebut')!.value
@@ -666,6 +745,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
       seance.titre = this.modificationSeanceForm.get('titre')!.value
       seance.jourSemaine = this.modificationSeanceForm.get('jourSemaine')!.value
       seance.salle = this.modificationSeanceForm.get('salle')!.value
+      seance.salleDeClasseId = this.modificationSeanceForm.get('salleDeClasseId')!.value || null
       seance.dateDebut = this.modificationSeanceForm.get('dateDebut')!.value
       seance.dateFin = this.modificationSeanceForm.get('dateFin')!.value
       seance.heureDebut = this.modificationSeanceForm.get('heureDebut')!.value
@@ -1220,6 +1300,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
           this.modificationSeanceForm.get('titre')!.setValue(seance.titre)
           this.modificationSeanceForm.get('jourSemaine')!.setValue(seance.jourSemaine)
           this.modificationSeanceForm.get('salle')!.setValue(seance.salle)
+          this.modificationSeanceForm.get('salleDeClasseId')!.setValue(seance.salleDeClasseId || null)
           this.modificationSeanceForm.get('dateDebut')!.setValue(seance.dateDebut)
           this.modificationSeanceForm.get('dateFin')!.setValue(seance.dateFin)
           this.modificationSeanceForm.get('heureDebut')!.setValue(seance.heureDebut)
@@ -1231,6 +1312,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
           this.showConflits = false
           this.conflits = []
           this.showModificationSeanceModal = true
+          this.synchroniserSalleModification()
         },
         error: (err) => {
           console.log(err)

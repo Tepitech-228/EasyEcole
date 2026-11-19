@@ -1,0 +1,10 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.flex > div {
+  min-width: 0;
+  overflow-wrap: normal;
+  word-break: normal;
+}

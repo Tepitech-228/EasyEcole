@@ -14,6 +14,7 @@ export interface TerminalAttendanceUpdate {
   etablissementId: number;
   motifRefus?: string | null;
   avertissementPaiement?: string | null;
+  avertissementRetard?: string | null;
   situationFinanciere?: SituationFinanciere | null;
   enseignantNonProgramme?: boolean;
   heureArrivee?: string | null;

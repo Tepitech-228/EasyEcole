@@ -803,8 +803,9 @@ img, video { height: auto; }
     grid-template-columns: minmax(0, 1fr) !important;
   }
 
-  .grid.grid-cols-6 > .col-span-3 {
-    grid-column: span 1 / span 1 !important;
+  .grid.grid-cols-6 > [class*="col-span-"] {
+    grid-column: 1 / -1 !important;
+    min-width: 0;
   }
 }
 

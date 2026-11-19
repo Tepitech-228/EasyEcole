@@ -38,6 +38,7 @@ import { BlocCahierDeTexte } from "./BlocCahierDeTexte";
 import { TypeNoteEvaluation } from "./TypeNoteEvaluation";
 import { Pointage } from "./Pointage";
 import { PointageScan } from "./PointageScan";
+import { SeancePointage } from "./SeancePointage";
 import "./Shift";
 import { ListeNoteEvaluation } from "./ListeNoteEvaluation";
 import { NoteEvaluation } from "./NoteEvaluation";
@@ -426,6 +427,10 @@ Utilisateur.hasMany(Pointage, { foreignKey: 'utilisateurId', as: 'pointages' })
 Pointage.belongsTo(Utilisateur, { as: 'utilisateur', foreignKey: 'utilisateurId' })
 Pointage.hasMany(PointageScan, { as: 'scans', foreignKey: 'pointageId' })
 PointageScan.belongsTo(Pointage, { as: 'pointage', foreignKey: 'pointageId' })
+
+SeancePointage.belongsTo(Seance, { as: 'seance', foreignKey: 'seanceId' })
+SeancePointage.belongsTo(Utilisateur, { as: 'utilisateur', foreignKey: 'utilisateurId' })
+SeancePointage.belongsTo(Etablissement, { as: 'etablissement', foreignKey: 'etablissementId' })
 
 // Quitus - PaiementInscription
 Quitus.belongsTo(PaiementInscription, { foreignKey: 'paiementInscriptionId', as: 'paiementInscription' })

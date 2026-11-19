@@ -9,6 +9,22 @@ import { Role } from "../models/Role";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 
+const ROLE_NAME_BY_USER_ROLE: Partial<Record<RolesUtilisateur, string>> = {
+    [RolesUtilisateur.INSTITUTION]: 'Directeur',
+    [RolesUtilisateur.ENSEIGNANT]: 'Enseignant',
+    [RolesUtilisateur.APPRENANT]: 'Apprenant',
+    [RolesUtilisateur.CAISSIER_BANQUE]: 'Comptable',
+    [RolesUtilisateur.CABINET_COMPTABLE]: 'Comptable',
+    [RolesUtilisateur.COMITE_ORIENTATION]: 'Comité',
+    [RolesUtilisateur.ESA_COMPTA]: 'ESA Compta',
+    [RolesUtilisateur.PERSONNEL_ADMINISTRATIF]: 'Personnel administratif',
+    [RolesUtilisateur.RESSOURCES_HUMAINES]: 'Ressources Humaines',
+    [RolesUtilisateur.SECRETAIRE]: 'Secrétaire',
+    [RolesUtilisateur.SURVEILLANT]: 'Surveillant',
+    [RolesUtilisateur.SUPERVISEUR_GENERAL]: 'Superviseur Général',
+    [RolesUtilisateur.PARENT]: 'Parent',
+};
+
 export default class PermissionController {
 
     static async getAllPermissions(req: Request, res: Response): Promise<Response> {
@@ -60,7 +76,80 @@ export default class PermissionController {
                 include: [{ model: Permission, as: 'permission' }]
             });
 
-            return res.status(200).send(userPermissions);
+            const effectivePermissions = new Map<number, any>();
+            for (const userPermission of userPermissions) {
+                const row = userPermission.toJSON() as any;
+                row.estDirect = true;
+                row.inheritedBy = [];
+                effectivePermissions.set(Number(row.permissionId), row);
+            }
+
+            const userRoles = await UserRole.findAll({
+                where: { utilisateurId },
+                attributes: ['roleId']
+            });
+            const roleIds = new Set(userRoles.map(userRole => Number(userRole.roleId)));
+            const legacyRoleName = ROLE_NAME_BY_USER_ROLE[utilisateur.role as RolesUtilisateur];
+            if (legacyRoleName) {
+                const legacyRole = await Role.findOne({
+                    where: { nom: legacyRoleName },
+                    attributes: ['id', 'nom']
+                });
+                if (legacyRole) roleIds.add(Number(legacyRole.id));
+            }
+
+            if (roleIds.size > 0) {
+                const roleIdList = Array.from(roleIds);
+                const roles = await Role.findAll({
+                    where: { id: { [Op.in]: roleIdList } },
+                    attributes: ['id', 'nom']
+                });
+                const roleNames = new Map(roles.map(role => [Number(role.id), role.nom]));
+                const rolePermissions = await RolePermission.findAll({
+                    where: { roleId: { [Op.in]: roleIdList } },
+                    include: [{ model: Permission, as: 'permission' }]
+                });
+
+                const addInheritedPermission = (permission: any, roleId: number): void => {
+                    if (!permission) return;
+                    const permissionId = Number(permission.id);
+                    const current = effectivePermissions.get(permissionId) || {
+                        permissionId,
+                        estActif: true,
+                        permission: permission.toJSON ? permission.toJSON() : permission,
+                        estDirect: false,
+                        inheritedBy: []
+                    };
+                    const roleName = roleNames.get(roleId);
+                    if (roleName && !current.inheritedBy.includes(roleName)) {
+                        current.inheritedBy.push(roleName);
+                    }
+                    effectivePermissions.set(permissionId, current);
+                };
+
+                for (const rolePermission of rolePermissions) {
+                    addInheritedPermission((rolePermission as any).permission, Number(rolePermission.roleId));
+                }
+
+                const menuGrants = await RoleMenuGrant.findAll({
+                    where: { roleId: { [Op.in]: roleIdList } },
+                    attributes: ['roleId', 'permissionKey']
+                });
+                if (menuGrants.length > 0) {
+                    const permissionsByKey = await Permission.findAll({
+                        where: { key: { [Op.in]: menuGrants.map(grant => grant.permissionKey) } }
+                    });
+                    const permissionsByKeyMap = new Map(permissionsByKey.map(permission => [permission.key, permission]));
+                    for (const grant of menuGrants) {
+                        addInheritedPermission(
+                            permissionsByKeyMap.get(grant.permissionKey),
+                            Number(grant.roleId)
+                        );
+                    }
+                }
+            }
+
+            return res.status(200).send(Array.from(effectivePermissions.values()));
         } catch (error) {
             console.error(error);
             return res.status(500).json({ success: false, message: 'Erreur interne serveur' });
@@ -163,16 +252,21 @@ export default class PermissionController {
             }
 
             const userRoles = await UserRole.findAll({ where: { utilisateurId }, attributes: ['roleId'] });
-            const roleIds = userRoles.map(ur => Number(ur.roleId));
-            if (roleIds.length > 0) {
+            const roleIds = new Set(userRoles.map(ur => Number(ur.roleId)));
+            const legacyRoleName = ROLE_NAME_BY_USER_ROLE[(req as any).utilisateurRole as RolesUtilisateur];
+            if (legacyRoleName) {
+                const legacyRole = await Role.findOne({ where: { nom: legacyRoleName }, attributes: ['id'] });
+                if (legacyRole) roleIds.add(Number(legacyRole.id));
+            }
+            if (roleIds.size > 0) {
                 const rolePermission = await RolePermission.findOne({
-                    where: { roleId: { [Op.in]: roleIds }, permissionId: permission.id }
+                    where: { roleId: { [Op.in]: Array.from(roleIds) }, permissionId: permission.id }
                 });
                 if (rolePermission) {
                     return res.status(200).json({ granted: true });
                 }
                 const menuGrant = await RoleMenuGrant.findOne({
-                    where: { roleId: { [Op.in]: roleIds }, permissionKey: key }
+                    where: { roleId: { [Op.in]: Array.from(roleIds) }, permissionKey: key }
                 });
                 if (menuGrant) {
                     return res.status(200).json({ granted: true });
@@ -200,12 +294,18 @@ export default class PermissionController {
             const userPermissionKeys = new Set<string>();
             let configured = false;
 
-            const userRoles = await UserRole.findAll({ where: { utilisateurId } });
-            if (userRoles.length > 0) {
+            const userRoles = await UserRole.findAll({ where: { utilisateurId }, attributes: ['roleId'] });
+            const roleIds = new Set(userRoles.map(ur => Number(ur.roleId)));
+            const legacyRoleName = ROLE_NAME_BY_USER_ROLE[role];
+            if (legacyRoleName) {
                 configured = true;
-                const roleIds = userRoles.map(ur => Number(ur.roleId));
+                const legacyRole = await Role.findOne({ where: { nom: legacyRoleName }, attributes: ['id'] });
+                if (legacyRole) roleIds.add(Number(legacyRole.id));
+            }
+            if (roleIds.size > 0) {
+                configured = true;
                 const roles = await Role.findAll({
-                    where: { id: roleIds },
+                    where: { id: { [Op.in]: Array.from(roleIds) } },
                     include: [{ model: Permission, as: 'permissions', attributes: ['key'] }]
                 });
                 for (const r of roles) {
@@ -215,48 +315,11 @@ export default class PermissionController {
                     }
                 }
                 const grants = await RoleMenuGrant.findAll({
-                    where: { roleId: { [Op.in]: roleIds } },
+                    where: { roleId: { [Op.in]: Array.from(roleIds) } },
                     attributes: ['permissionKey']
                 });
                 for (const grant of grants) {
                     userPermissionKeys.add(grant.permissionKey);
-                }
-            } else {
-                const roleNameMap: Record<string, string> = {
-                    [RolesUtilisateur.INSTITUTION]: 'Directeur',
-                    [RolesUtilisateur.ENSEIGNANT]: 'Enseignant',
-                    [RolesUtilisateur.APPRENANT]: 'Apprenant',
-                    [RolesUtilisateur.CAISSIER_BANQUE]: 'Comptable',
-                    [RolesUtilisateur.CABINET_COMPTABLE]: 'Comptable',
-                    [RolesUtilisateur.COMITE_ORIENTATION]: 'Comité',
-                    [RolesUtilisateur.ESA_COMPTA]: 'ESA Compta',
-                    [RolesUtilisateur.PERSONNEL_ADMINISTRATIF]: 'Personnel administratif',
-                    [RolesUtilisateur.RESSOURCES_HUMAINES]: 'Ressources Humaines',
-                    [RolesUtilisateur.SECRETAIRE]: 'Secrétaire',
-                    [RolesUtilisateur.SURVEILLANT]: 'Surveillant',
-                    [RolesUtilisateur.SUPERVISEUR_GENERAL]: 'Superviseur Général',
-                    [RolesUtilisateur.PARENT]: 'Parent',
-                };
-                const roleName = roleNameMap[role];
-                if (roleName) {
-                    configured = true;
-                    const fallbackRole = await Role.findOne({
-                        where: { nom: roleName },
-                        include: [{ model: Permission, as: 'permissions', attributes: ['key'] }]
-                    });
-                    if (fallbackRole) {
-                        const perms = (fallbackRole as any).permissions || [];
-                        for (const p of perms) {
-                            userPermissionKeys.add(p.key);
-                        }
-                        const grants = await RoleMenuGrant.findAll({
-                            where: { roleId: fallbackRole.id },
-                            attributes: ['permissionKey']
-                        });
-                        for (const grant of grants) {
-                            userPermissionKeys.add(grant.permissionKey);
-                        }
-                    }
                 }
             }
 

@@ -107,6 +107,17 @@
           {{ nbTotal }} pointage(s)
         </p>
       </div>
+
+      <fieldset class="export-profiles">
+        <legend>Profils à inclure dans les exports Excel et Word</legend>
+        <label *ngFor="let profil of tableauxProfils" class="export-profile">
+          <input
+            type="checkbox"
+            [checked]="profilsExport.includes(profil.key)"
+            (change)="changerProfilExport(profil.key, $any($event.target).checked)">
+          <span>{{ profil.label }}</span>
+        </label>
+      </fieldset>
     </section>
 
     <!-- ============================================================ Statistiques -->
@@ -218,43 +229,52 @@
       </button>
     </section>
 
-    <!-- ================================================================= Tableau -->
-    <section class="table-card">
+    <!-- ================================================================ Tableaux -->
+    <div class="tables-toolbar">
+      <p>{{ nbTotal }} pointage(s) au total sur {{ pointages.length }}</p>
+      <label class="page-size">
+        <span>Lignes par tableau</span>
+        <select [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()" aria-label="Nombre de lignes par tableau">
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="15">15</option>
+          <option [ngValue]="25">25</option>
+          <option [ngValue]="50">50</option>
+        </select>
+      </label>
+    </div>
 
+    <div *ngIf="nbTotal === 0" class="empty-state">
+      <span class="empty-state__icon material-symbols-outlined" aria-hidden="true">event_busy</span>
+      <h3 class="empty-state__title">Aucun pointage sur cette période</h3>
+      <p class="empty-state__text">
+        Ajustez les dates ou les filtres pour retrouver des pointages.
+        Vous pouvez aussi revenir aux 30 derniers jours.
+      </p>
+      <button type="button" class="btn btn--primary" (click)="resetFiltres()">
+        <span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>
+        Réinitialiser les filtres
+      </button>
+    </div>
+
+    <ng-container *ngIf="nbTotal > 0">
+    <section *ngFor="let profil of tableauxProfils" class="table-card">
       <header class="table-card__head">
         <div>
-          <h2 class="table-card__title">Journal des pointages</h2>
+          <h2 class="table-card__title">
+            <span class="material-symbols-outlined" aria-hidden="true">{{ profil.icon }}</span>
+            {{ profil.label }}
+          </h2>
           <p class="table-card__subtitle">
-            {{ nbTotal }} résultat(s) affiché(s) sur {{ pointages.length }} pointage(s) au total
+            {{ getPointagesProfil(profil.key).length }} pointage(s) correspondant(s) aux filtres
           </p>
         </div>
-        <label class="page-size">
-          <span>Lignes</span>
-          <select [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()" aria-label="Nombre de lignes par page">
-            <option [ngValue]="10">10</option>
-            <option [ngValue]="15">15</option>
-            <option [ngValue]="25">25</option>
-            <option [ngValue]="50">50</option>
-          </select>
-        </label>
       </header>
 
-      <!-- État vide -->
-      <div *ngIf="nbTotal === 0" class="empty-state">
-        <span class="empty-state__icon material-symbols-outlined" aria-hidden="true">event_busy</span>
-        <h3 class="empty-state__title">Aucun pointage sur cette période</h3>
-        <p class="empty-state__text">
-          Ajustez les dates ou les filtres pour retrouver des pointages.
-          Vous pouvez aussi revenir aux 30 derniers jours.
-        </p>
-        <button type="button" class="btn btn--primary" (click)="resetFiltres()">
-          <span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>
-          Réinitialiser les filtres
-        </button>
+      <div *ngIf="getPointagesProfil(profil.key).length === 0" class="empty-state empty-state--compact">
+        Aucun pointage pour ce profil avec les filtres sélectionnés.
       </div>
 
-      <!-- Tableau -->
-      <div *ngIf="nbTotal > 0" class="table-wrap">
+      <div *ngIf="getPointagesProfil(profil.key).length > 0" class="table-wrap">
         <table class="pointage-table">
           <thead>
             <tr>
@@ -269,7 +289,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let pointage of pagedPointages; trackBy: trackByPointage">
+            <tr *ngFor="let pointage of pointagesPageProfil(profil.key); trackBy: trackByPointage">
               <td>
                 <div class="person">
                   <span class="person__avatar" [ngClass]="'person__avatar--' + roleTone(pointage.utilisateur?.role)">
@@ -327,34 +347,33 @@
         </table>
       </div>
 
-      <!-- Pagination -->
-      <footer class="table-card__foot" *ngIf="nbTotal > 0">
+      <footer class="table-card__foot" *ngIf="getPointagesProfil(profil.key).length > 0">
         <p class="table-card__count">
-          Affichage de <strong>{{ debutAffichage }}–{{ finAffichage }}</strong> sur
-          <strong>{{ sortedPointages.length }}</strong>
+          Affichage de <strong>{{ debutAffichageProfil(profil.key) }}–{{ finAffichageProfil(profil.key) }}</strong> sur
+          <strong>{{ getPointagesProfil(profil.key).length }}</strong>
         </p>
         <div class="pager">
           <button
             type="button"
             class="pager__btn"
-            (click)="changerPage(pageCourante - 1)"
-            [disabled]="pageCourante <= 1"
+            (click)="changerPageProfil(profil.key, pageCouranteProfil(profil.key) - 1)"
+            [disabled]="pageCouranteProfil(profil.key) <= 1"
             aria-label="Page précédente">
             <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
           </button>
-          <span class="pager__label">Page {{ pageCourante }} / {{ totalPages }}</span>
+          <span class="pager__label">Page {{ pageCouranteProfil(profil.key) }} / {{ totalPagesProfil(profil.key) }}</span>
           <button
             type="button"
             class="pager__btn"
-            (click)="changerPage(pageCourante + 1)"
-            [disabled]="pageCourante >= totalPages"
+            (click)="changerPageProfil(profil.key, pageCouranteProfil(profil.key) + 1)"
+            [disabled]="pageCouranteProfil(profil.key) >= totalPagesProfil(profil.key)"
             aria-label="Page suivante">
             <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
           </button>
         </div>
       </footer>
-
     </section>
+    </ng-container>
 
   </ng-container>
 </div>

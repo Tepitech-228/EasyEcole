@@ -8,6 +8,7 @@ import { PointageService } from 'src/app/data/modules/inscription/services/point
 
 type PeriodeRaccourci = 'today' | '7j' | '30j' | 'mois' | 'tout' | 'custom';
 type TriPointage = 'date_desc' | 'date_asc' | 'nom_asc' | 'duree_desc';
+type ProfilPointage = 'etudiants' | 'enseignants' | 'personnel';
 
 @Component({
   selector: 'app-historique-pointage-page',
@@ -29,8 +30,18 @@ export class HistoriquePointagePageComponent extends BaseComponentClass {
   dateFin: string = ''
   periode: PeriodeRaccourci = '30j'
 
-  page: number = 1
   pageSize: number = 15
+  private readonly pagesParProfil: Record<ProfilPointage, number> = {
+    etudiants: 1,
+    enseignants: 1,
+    personnel: 1,
+  }
+  profilsExport: ProfilPointage[] = ['etudiants', 'enseignants', 'personnel']
+  readonly tableauxProfils: { key: ProfilPointage; label: string; icon: string }[] = [
+    { key: 'etudiants', label: 'Étudiants', icon: 'school' },
+    { key: 'enseignants', label: 'Enseignants', icon: 'co_present' },
+    { key: 'personnel', label: 'Personnel', icon: 'badge' },
+  ]
 
   readonly roleLabels: { [key: string]: string } = {
     [RolesUtilisateur.ADMIN]: 'Administrateur',
@@ -123,12 +134,12 @@ export class HistoriquePointagePageComponent extends BaseComponentClass {
       this.dateFin = ''
     }
 
-    this.page = 1
+    this.reinitialiserPages()
   }
 
   onDateChange(): void {
     this.periode = 'custom'
-    this.page = 1
+    this.reinitialiserPages()
   }
 
   get periodeLabel(): string {
@@ -183,7 +194,11 @@ export class HistoriquePointagePageComponent extends BaseComponentClass {
   }
 
   get sortedPointages(): Pointage[] {
-    const copie = [...this.filteredPointages]
+    return this.trierPointages(this.filteredPointages)
+  }
+
+  private trierPointages(pointages: Pointage[]): Pointage[] {
+    const copie = [...pointages]
     switch (this.sortBy) {
       case 'date_asc':
         return copie.sort((a, b) => this.comparerDate(a, b))
@@ -207,7 +222,7 @@ export class HistoriquePointagePageComponent extends BaseComponentClass {
   }
 
   onFilterChange(): void {
-    this.page = 1
+    this.reinitialiserPages()
   }
 
   resetFiltres(): void {
@@ -258,34 +273,52 @@ export class HistoriquePointagePageComponent extends BaseComponentClass {
 
   // -------------------------------------------------------------- Pagination
 
-  get totalPages(): number {
-    return Math.max(1, Math.ceil(this.sortedPointages.length / this.pageSize))
+  private reinitialiserPages(): void {
+    this.pagesParProfil.etudiants = 1
+    this.pagesParProfil.enseignants = 1
+    this.pagesParProfil.personnel = 1
   }
 
-  get pageCourante(): number {
-    return Math.min(Math.max(1, this.page), this.totalPages)
+  getPointagesProfil(profil: ProfilPointage): Pointage[] {
+    return this.trierPointages(this.filteredPointages.filter(pointage => {
+      const role = pointage.utilisateur?.role
+      if (profil === 'etudiants') return role === RolesUtilisateur.APPRENANT
+      if (profil === 'enseignants') return role === RolesUtilisateur.ENSEIGNANT
+      return role !== RolesUtilisateur.APPRENANT && role !== RolesUtilisateur.ENSEIGNANT
+    }))
   }
 
-  get pagedPointages(): Pointage[] {
-    const debut = (this.pageCourante - 1) * this.pageSize
-    return this.sortedPointages.slice(debut, debut + this.pageSize)
+  totalPagesProfil(profil: ProfilPointage): number {
+    return Math.max(1, Math.ceil(this.getPointagesProfil(profil).length / this.pageSize))
   }
 
-  get debutAffichage(): number {
-    if (this.sortedPointages.length === 0) return 0
-    return (this.pageCourante - 1) * this.pageSize + 1
+  pageCouranteProfil(profil: ProfilPointage): number {
+    return Math.min(Math.max(1, this.pagesParProfil[profil]), this.totalPagesProfil(profil))
   }
 
-  get finAffichage(): number {
-    return Math.min(this.pageCourante * this.pageSize, this.sortedPointages.length)
+  pointagesPageProfil(profil: ProfilPointage): Pointage[] {
+    const debut = (this.pageCouranteProfil(profil) - 1) * this.pageSize
+    return this.getPointagesProfil(profil).slice(debut, debut + this.pageSize)
   }
 
-  changerPage(page: number): void {
-    this.page = Math.min(Math.max(1, page), this.totalPages)
+  debutAffichageProfil(profil: ProfilPointage): number {
+    if (this.getPointagesProfil(profil).length === 0) return 0
+    return (this.pageCouranteProfil(profil) - 1) * this.pageSize + 1
+  }
+
+  finAffichageProfil(profil: ProfilPointage): number {
+    return Math.min(
+      this.pageCouranteProfil(profil) * this.pageSize,
+      this.getPointagesProfil(profil).length
+    )
+  }
+
+  changerPageProfil(profil: ProfilPointage, page: number): void {
+    this.pagesParProfil[profil] = Math.min(Math.max(1, page), this.totalPagesProfil(profil))
   }
 
   onPageSizeChange(): void {
-    this.page = 1
+    this.reinitialiserPages()
   }
 
   // -------------------------------------------------------------- Affichage
@@ -384,7 +417,22 @@ export class HistoriquePointagePageComponent extends BaseComponentClass {
   // ----------------------------------------------------------------- Export
 
   get exportDisponible(): boolean {
-    return this.filteredPointages.length > 0
+    return this.profilsExport.length > 0 && this.filteredPointages.some(pointage =>
+      this.profilsExport.includes(this.profilPourPointage(pointage))
+    )
+  }
+
+  private profilPourPointage(pointage: Pointage): ProfilPointage {
+    const role = pointage.utilisateur?.role
+    if (role === RolesUtilisateur.APPRENANT) return 'etudiants'
+    if (role === RolesUtilisateur.ENSEIGNANT) return 'enseignants'
+    return 'personnel'
+  }
+
+  changerProfilExport(profil: ProfilPointage, checked: boolean): void {
+    this.profilsExport = checked
+      ? [...new Set([...this.profilsExport, profil])]
+      : this.profilsExport.filter(profilActuel => profilActuel !== profil)
   }
 
   exporter(format: 'xlsx' | 'docx'): void {
@@ -395,6 +443,7 @@ export class HistoriquePointagePageComponent extends BaseComponentClass {
       debut: this.dateDebut || undefined,
       fin: this.dateFin || undefined,
       role: this.roleFilter || undefined,
+      profils: [...this.profilsExport],
       search: this.searchTerm.trim() || undefined,
       statut: this.statutFilter || undefined,
     }).subscribe({

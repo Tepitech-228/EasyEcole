@@ -321,6 +321,7 @@ async function traiterEvenement(terminal: PointageTerminal, eventId: number): Pr
       mode: recorded.mode,
       etablissementId: Number(terminal.etablissementId),
       avertissementPaiement: recorded.avertissementPaiement,
+      avertissementRetard: recorded.avertissementRetard,
       situationFinanciere: recorded.situationFinanciere,
       heureArrivee: recorded.heureArrivee,
       heureDepart: recorded.heureDepart,

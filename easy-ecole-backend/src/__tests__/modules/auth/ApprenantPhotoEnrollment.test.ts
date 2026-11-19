@@ -29,6 +29,10 @@ jest.mock('../../../modules/auth/models/Utilisateur', () => ({
   },
 }))
 
+jest.mock('../../../modules/inscription/models/DossierEtudiant', () => ({
+  DossierEtudiant: { update: jest.fn().mockResolvedValue([1]) },
+}))
+
 jest.mock('../../../modules/inscription/services/EtudiantUploadStorageService', () => ({
   EtudiantUploadStorageService: {
     renameUploadedStudentPhoto: jest.fn((file: Express.Multer.File) => ({
@@ -38,6 +42,7 @@ jest.mock('../../../modules/inscription/services/EtudiantUploadStorageService', 
     })),
     resolveTreeFolders: jest.fn().mockResolvedValue(['2026-2027', 'Site']),
     copyLegacyStudentPhoto: jest.fn().mockReturnValue('uploads/student-photo.jpg'),
+    replaceCurrentStudentPhoto: jest.fn().mockReturnValue('uploads/student-photo.jpg'),
   },
 }))
 
@@ -49,6 +54,7 @@ jest.mock('../../../modules/auth/models/PersonnePrevenirApprenant', () => ({ Per
 
 const { Apprenant } = require('../../../modules/auth/models/Apprenant')
 const { Utilisateur } = require('../../../modules/auth/models/Utilisateur')
+const { DossierEtudiant } = require('../../../modules/inscription/models/DossierEtudiant')
 
 describe('Apprenant enrollment photo upload', () => {
   beforeEach(() => {
@@ -70,7 +76,49 @@ describe('Apprenant enrollment photo upload', () => {
 
     expect(update).toHaveBeenCalledWith({ photoDeProfil: 'student-photo.jpg' })
     expect(res.status).toHaveBeenCalledWith(200)
-    expect(res.json).toHaveBeenCalledWith({ success: true })
+    expect(res.json).toHaveBeenCalledWith({ success: true, photo: 'student-photo.jpg' })
+  })
+
+  it('replaces the photo on the student, user account, active dossier, and personal folder', async () => {
+    const updateApprenant = jest.fn().mockResolvedValue(undefined)
+    const updateUtilisateur = jest.fn().mockResolvedValue(undefined)
+    Apprenant.findOne.mockResolvedValue({
+      id: 23,
+      utilisateurId: 17,
+      matriculeEtudiant: 'ESA-123',
+      update: updateApprenant,
+    })
+    Utilisateur.findByPk.mockResolvedValue({
+      id: 17,
+      nom: 'Test',
+      prenoms: 'Étudiant',
+      identifiant: 'ESA-123',
+      etablissementId: 3,
+      update: updateUtilisateur,
+    })
+    const photo = {
+      filename: 'student-photo.jpg',
+      path: 'public/auth/apprenants/photos/student-photo.jpg',
+    }
+    const req = mockRequest({
+      utilisateurId: 17,
+      utilisateurRole: 'apprenant',
+      files: { photo: [photo] },
+    } as any)
+    const res = mockResponse()
+
+    await ApprenantController.updatePhoto(req, res)
+
+    expect(updateApprenant).toHaveBeenCalledWith({ photo: 'student-photo.jpg' })
+    expect(updateUtilisateur).toHaveBeenCalledWith({ photoDeProfil: 'student-photo.jpg' })
+    expect(DossierEtudiant.update).toHaveBeenCalledWith(
+      { photo: 'student-photo.jpg' },
+      { where: { utilisateurId: 17, statut: 'actif' } }
+    )
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      success: true,
+      photo: 'student-photo.jpg',
+    }))
   })
 
   it('returns the pending photo when the learner profile is not created yet', async () => {

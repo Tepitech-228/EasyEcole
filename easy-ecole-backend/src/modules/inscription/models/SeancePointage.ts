@@ -1,4 +1,4 @@
-import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from "sequelize";
+import { Association, CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model, NonAttribute } from "sequelize";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { MODULE_MODEL_PREFIX, MODULE_TABLE_PREFIX } from "../InscriptionModule";
 import { Seance } from "./Seance";
@@ -18,6 +18,15 @@ export class SeancePointage extends Model<InferAttributes<SeancePointage>, Infer
   declare motifDepart: CreationOptional<string | null>
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
+  declare seance?: NonAttribute<Seance>
+  declare utilisateur?: NonAttribute<Utilisateur>
+  declare etablissement?: NonAttribute<Etablissement>
+
+  declare static associations: {
+    seance: Association<SeancePointage, Seance>
+    utilisateur: Association<SeancePointage, Utilisateur>
+    etablissement: Association<SeancePointage, Etablissement>
+  }
 }
 
 SeancePointage.init({

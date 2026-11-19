@@ -63,6 +63,7 @@ export type PointageScanResponse =
     pointage: Pointage;
     heureEvenement?: string;
     avertissementPaiement?: string;
+    avertissementRetard?: string;
     situationFinanciere?: PointageSituationFinanciere;
     seancePointage?: SeancePointageScan;
   }
@@ -73,6 +74,7 @@ export interface PointageExportParams {
   debut?: string;
   fin?: string;
   role?: string;
+  profils?: ('etudiants' | 'enseignants' | 'personnel')[];
   search?: string;
   statut?: string;
 }
@@ -228,6 +230,7 @@ export class PointageService {
     if (params.debut) httpParams = httpParams.set('debut', params.debut)
     if (params.fin) httpParams = httpParams.set('fin', params.fin)
     if (params.role) httpParams = httpParams.set('role', params.role)
+    if (params.profils) httpParams = httpParams.set('profils', params.profils.join(','))
     if (params.search) httpParams = httpParams.set('search', params.search)
     if (params.statut) httpParams = httpParams.set('statut', params.statut)
     return this.httpClient.get(`${this.SERVICE_URL}/export`, {

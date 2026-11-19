@@ -8,7 +8,9 @@ import { Echeance } from "../models/Echeance";
 import { DossierEtudiant } from "../models/DossierEtudiant";
 import { DemandeInscription } from "../models/DemandeInscription";
 import { Utilisateur } from "../../auth/models/Utilisateur";
+import { SiteUtilisateur } from "../../auth/models/SiteUtilisateur";
 import { Apprenant } from "../../auth/models/Apprenant";
+import { Etablissement } from "../../etablissement/models/Etablissement";
 import { TypeOperationBordereau } from "../models/TypeOperationBordereau";
 import { PaiementInscription } from "../models/PaiementInscription";
 import { TypesPaiement } from "../../../core/enums/TypesPaiement";
@@ -178,6 +180,11 @@ router.get('/suivi-recouvrements', [AuthSuperviseurGeneralOuAdmin], async (req: 
  *           type: string
  *           enum: [en_attente, valide, en_saisie_comptable, traite, rejete]
  *       - in: query
+ *         name: etablissementId
+ *         description: Filtrer par site autorisé
+ *         schema:
+ *           type: integer
+ *       - in: query
  *         name: anneeAcademiqueId
  *         schema:
  *           type: integer
@@ -210,7 +217,39 @@ router.get('/suivi-recouvrements', [AuthSuperviseurGeneralOuAdmin], async (req: 
 router.get('/bordereaux-a-traiter', [AuthEsacompta, CheckPermission('action.finance.bordereau.voir')], async (req: Request, res: Response) => {
   try {
     const sequelize = DatabaseConnection.getInstance().sequelize;
-    const siteScopeId = getFinanceSiteScopeId(req);
+    let siteScopeId = getFinanceSiteScopeId(req);
+    const etablissementIdQuery = req.query.etablissementId;
+    if (etablissementIdQuery !== undefined) {
+      const requestedSiteId = Number(etablissementIdQuery);
+      if (
+        typeof etablissementIdQuery !== 'string'
+        || !/^\d+$/.test(etablissementIdQuery)
+        || !Number.isSafeInteger(requestedSiteId)
+        || requestedSiteId <= 0
+      ) {
+        return res.status(400).json({ success: false, message: "Identifiant du site invalide" });
+      }
+
+      const siteActif = await Etablissement.findOne({
+        where: { id: requestedSiteId, actif: true },
+        attributes: ['id'],
+      });
+      if (!siteActif) {
+        return res.status(404).json({ success: false, message: "Site inexistant ou inactif" });
+      }
+
+      if ((req as any).utilisateurRole === RolesUtilisateur.ESA_COMPTA) {
+        const utilisateurId = Number((req as any).utilisateurId);
+        const affectation = await SiteUtilisateur.findOne({
+          where: { utilisateurId, etablissementId: requestedSiteId },
+          attributes: ['id'],
+        });
+        if (Number((req as any).etablissementId) !== requestedSiteId && !affectation) {
+          return res.status(403).json({ success: false, message: "Vous n’êtes pas affecté à ce site" });
+        }
+      }
+      siteScopeId = requestedSiteId;
+    }
     if (!siteScopeId && !canAccessFinanceWithoutSite(req)) {
       return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
     }

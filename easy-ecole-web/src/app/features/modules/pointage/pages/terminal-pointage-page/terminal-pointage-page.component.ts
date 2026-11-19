@@ -554,7 +554,17 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       this.scanSuccess = `Arrivée enregistrée à ${event.time}`
     }
     this.playBeepSucces()
-    this.announceAttendance(event, event.mode, event.time, event.avertissementPaiement)
+    this.announceAttendance(
+      event,
+      event.mode,
+      event.time,
+      event.avertissementPaiement,
+      null,
+      undefined,
+      false,
+      undefined,
+      event.avertissementRetard
+    )
   }
 
   private isPersonnelRole(role: string | undefined): boolean {
@@ -864,7 +874,10 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
               heure || undefined,
               result.avertissementPaiement,
               pointage,
-              result.seancePointage
+              result.seancePointage,
+              false,
+              undefined,
+              result.avertissementRetard
             )
             this.playBeepSucces()
             this.scanSuccess = result.seancePointage?.action === 'debut'
@@ -1509,12 +1522,23 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
         const avertissementPaiement = 'avertissementPaiement' in response ? response.avertissementPaiement : null
         this.scanWarning = avertissementPaiement || ''
         const seancePointage = 'seancePointage' in response ? response.seancePointage : undefined
+        const avertissementRetard = 'avertissementRetard' in response ? response.avertissementRetard : null
         if (seancePointage?.action === 'debut') {
           this.lastAttendanceHeureArrivee = this.formatHeureCourte(
             seancePointage.heureDebutEffective || seancePointage.heureDebutReelle
           )
         }
-        this.announceAttendance(this.scannedUser, actualMode, heure || undefined, avertissementPaiement, pointage, seancePointage)
+        this.announceAttendance(
+          this.scannedUser,
+          actualMode,
+          heure || undefined,
+          avertissementPaiement,
+          pointage,
+          seancePointage,
+          false,
+          undefined,
+          avertissementRetard
+        )
         this.playBeepSucces()
         this.scanSuccess = seancePointage?.action === 'debut'
           ? `Début du cours « ${seancePointage.cours} » enregistré à ${this.formatHeureCourte(seancePointage.heureReelle)}.`
@@ -1760,7 +1784,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     pointage?: Pick<Pointage, 'heureArrivee' | 'heureDepart'> | null,
     seancePointage?: TerminalAttendanceEvent['seancePointage'],
     enseignantNonProgramme = false,
-    navigationCours?: NavigationProchainCours
+    navigationCours?: NavigationProchainCours,
+    avertissementRetard?: string | null
   ): void {
     if (!this.voiceAnnouncementsEnabled) return
     const prenom = (user?.prenoms || '').trim() || this.formatPersonName(user)
@@ -1791,7 +1816,8 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
 
     if (estApprenant) {
       const annonce = `${nomComplet}. Passage enregistré${heure ? ' à ' + heure : ''}.`
-      this.speak(avertissementPaiement ? `${annonce} Attention. ${avertissementPaiement}` : annonce)
+      const avertissements = [avertissementPaiement, avertissementRetard].filter(Boolean).join(' ')
+      this.speak(avertissements ? `${annonce} Attention. ${avertissements}` : annonce)
       return
     }
 

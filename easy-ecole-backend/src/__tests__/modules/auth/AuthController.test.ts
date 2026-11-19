@@ -259,6 +259,7 @@ describe('AuthController.registerEnseignant', () => {
       utilisateurRole: RolesUtilisateur.ADMIN,
       body: {
         utilisateur: { identifiant: 'teacher1', email: 'teacher@test.com', nom: 'Jean', prenoms: 'Dupont', contact: '123456' },
+        numeroCompteBancaire: '001234567890',
       },
     })
     const res = mockResponse()
@@ -272,7 +273,11 @@ describe('AuthController.registerEnseignant', () => {
     await AuthController.registerEnseignant(req, res)
 
     expect(mockUtilSave).toHaveBeenCalled()
-    expect(Enseignant.create).toHaveBeenCalledWith(expect.objectContaining({ utilisateurId: 1, matricule: 'ESA-GEN-SIE-0001' }))
+    expect(Enseignant.create).toHaveBeenCalledWith(expect.objectContaining({
+      utilisateurId: 1,
+      matricule: 'ESA-GEN-SIE-0001',
+      numeroCompteBancaire: '001234567890',
+    }))
     expect(SiteUtilisateur.findOrCreate).toHaveBeenCalledWith(expect.objectContaining({
       where: { utilisateurId: 1, etablissementId: 4 },
     }))

@@ -3,6 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+import { AuthService, SiteUtilisateur } from 'src/app/data/modules/auth/services/auth.service';
 import { Bordereau } from 'src/app/data/modules/inscription/models/Bordereau.model';
 import { TypeOperationBordereau } from 'src/app/data/modules/inscription/models/TypeOperationBordereau.model';
 import { BordereauService } from 'src/app/data/modules/inscription/services/bordereau.service';
@@ -42,6 +43,9 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   niveaux: NiveauEtude[] = []
   parcoursList: Parcours[] = []
   sessions: any[] = []
+  sitesDisponibles: SiteUtilisateur[] = []
+  sitesLoading = false
+  sitesErrorMessage = ''
 
   loading = true
   dataLoaded = false
@@ -61,6 +65,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   selectedAnneeId = ''
   selectedNiveauId = ''
   selectedParcoursId = ''
+  selectedEtablissementId = ''
   selectedTypeOperationId = ''
   selectedRecouvreurId = ''
   selectedAuditeurId = ''
@@ -188,7 +193,8 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     private fb: FormBuilder,
     private localStorage: LocalStorageService,
     private sanitizer: DomSanitizer,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private authService: AuthService
   ) {
     super()
     this.saisieForm = this.fb.group({
@@ -277,6 +283,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     if (this.selectedAnneeId) params.anneeAcademiqueId = this.selectedAnneeId
     if (this.selectedNiveauId) params.niveauEtudeId = this.selectedNiveauId
     if (this.selectedParcoursId) params.parcoursId = this.selectedParcoursId
+    if (this.selectedEtablissementId) params.etablissementId = this.selectedEtablissementId
     if (this.selectedTypeOperationId) params.typeOperationId = this.selectedTypeOperationId
     if (this.activeStatut === 'traite' && this.selectedRecouvreurId) {
       params.saisiParId = this.selectedRecouvreurId
@@ -317,6 +324,18 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     this.niveauService.getAll().subscribe(data => this.niveaux = data)
     this.parcoursService.getAll().subscribe(data => this.parcoursList = data)
     this.sessionService.getAll().subscribe(data => this.sessions = data)
+    this.sitesLoading = true
+    this.sitesErrorMessage = ''
+    this.authService.getSitesMoi().subscribe({
+      next: sites => {
+        this.sitesDisponibles = sites || []
+        this.sitesLoading = false
+      },
+      error: err => {
+        this.sitesLoading = false
+        this.sitesErrorMessage = err?.error?.message || 'Impossible de charger la liste des sites.'
+      }
+    })
   }
 
   onAnneeChange(): void {
@@ -349,6 +368,12 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   }
 
   onParcoursChange(): void {
+    this.loadData()
+  }
+
+  onSiteChange(): void {
+    this.selectedRecouvreurId = ''
+    this.selectedAuditeurId = ''
     this.loadData()
   }
 

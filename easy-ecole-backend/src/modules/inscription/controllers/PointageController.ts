@@ -33,6 +33,7 @@ import {
     validerMotifDepart
 } from "../services/SeancePointageRulesService";
 import SeancePointagePlanningService from "../services/SeancePointagePlanningService";
+import { calculerAlerteRetardEtudiant } from "../services/PointageRetardService";
 import { AlignmentType, Document, PageOrientation, Packer, Paragraph, Table, TableCell, TableLayoutType, TableRow, TextRun, WidthType } from "docx";
 
 const ROLES_POINTAGE = [
@@ -405,6 +406,18 @@ export default class PointageController {
         const recherche = typeof req.query.search === 'string' ? PointageController.normaliserTexte(req.query.search) : '';
         const roleFiltre = typeof req.query.role === 'string' ? req.query.role : '';
         const statutFiltre = typeof req.query.statut === 'string' ? req.query.statut : '';
+        const profilsDisponibles = new Set(['etudiants', 'enseignants', 'personnel']);
+        let profilsFiltres: Set<string> | null = null;
+        if (req.query.profils !== undefined) {
+            if (typeof req.query.profils !== 'string') {
+                return res.status(400).json({ success: false, message: 'Profils invalides pour l’export' });
+            }
+            const profils = req.query.profils.split(',').filter(Boolean);
+            if (profils.length === 0 || profils.some(profil => !profilsDisponibles.has(profil))) {
+                return res.status(400).json({ success: false, message: 'Profils invalides pour l’export' });
+            }
+            profilsFiltres = new Set(profils);
+        }
 
         const where: any = {};
         if (debut || fin) {
@@ -428,7 +441,20 @@ export default class PointageController {
             const pointages = await Pointage.findAll({
                 where,
                 include: [
-                    { association: Pointage.associations.utilisateur, attributes: ['id', 'nom', 'prenoms', 'identifiant', 'role'] },
+                    {
+                        association: Pointage.associations.utilisateur,
+                        attributes: ['id', 'nom', 'prenoms', 'identifiant', 'email', 'contact', 'role'],
+                        include: [
+                            {
+                                association: Utilisateur.associations.enseignant,
+                                include: [Enseignant.associations.adresse],
+                            },
+                            {
+                                association: Utilisateur.associations.apprenant,
+                                attributes: ['periode'],
+                            },
+                        ],
+                    },
                     Pointage.associations.scans,
                 ],
                 order: [
@@ -442,6 +468,14 @@ export default class PointageController {
             const pointagesFiltres = (pointages as any[]).filter(pointage => {
                 const utilisateur = pointage.utilisateur || {};
                 if (roleFiltre && utilisateur.role !== roleFiltre) return false;
+                if (profilsFiltres) {
+                    const profil = utilisateur.role === RolesUtilisateur.APPRENANT
+                        ? 'etudiants'
+                        : utilisateur.role === RolesUtilisateur.ENSEIGNANT
+                            ? 'enseignants'
+                            : 'personnel';
+                    if (!profilsFiltres.has(profil)) return false;
+                }
                 if (recherche) {
                     const contenu = PointageController.normaliserTexte(
                         `${utilisateur.nom || ''} ${utilisateur.prenoms || ''} ${utilisateur.identifiant || ''}`
@@ -471,7 +505,40 @@ export default class PointageController {
                 return {
                     numero: index + 1,
                     utilisateurId: Number(pointage.utilisateurId),
+                    dateIso: String(pointage.date).slice(0, 10),
                     estPersonnel,
+                    roleValue: pointage.utilisateur?.role || '',
+                    periodeApprenant: pointage.utilisateur?.apprenant?.periode || null,
+                    nombrePassages: passages.length,
+                    enseignantProfil: pointage.utilisateur?.enseignant
+                        ? {
+                            nom: pointage.utilisateur.nom,
+                            prenoms: pointage.utilisateur.prenoms,
+                            identifiant: pointage.utilisateur.identifiant,
+                            email: pointage.utilisateur.email,
+                            contact: pointage.utilisateur.contact,
+                            photo: pointage.utilisateur.enseignant.photo,
+                            matricule: pointage.utilisateur.enseignant.matricule,
+                            gradeAcademique: pointage.utilisateur.enseignant.gradeAcademique,
+                            specialite: pointage.utilisateur.enseignant.specialite,
+                            statut: pointage.utilisateur.enseignant.statut,
+                            fonctionAdministrative: pointage.utilisateur.enseignant.fonctionAdministrative,
+                            anneeExperience: pointage.utilisateur.enseignant.anneeExperience,
+                            heureTheoriqueAnnuelle: pointage.utilisateur.enseignant.heureTheoriqueAnnuelle,
+                            heureReelleAnnuelle: pointage.utilisateur.enseignant.heureReelleAnnuelle,
+                            cni: pointage.utilisateur.enseignant.cni,
+                            nifOtr: pointage.utilisateur.enseignant.nifOtr,
+                            dateNaissance: pointage.utilisateur.enseignant.dateNaissance,
+                            lieuNaissance: pointage.utilisateur.enseignant.lieuNaissance,
+                            sexe: pointage.utilisateur.enseignant.sexe,
+                            nationalite: pointage.utilisateur.enseignant.nationalite,
+                            plusHautDiplome: pointage.utilisateur.enseignant.plusHautDiplome,
+                            statutHandicap: pointage.utilisateur.enseignant.statutHandicap,
+                            natureHandicap: pointage.utilisateur.enseignant.natureHandicap,
+                            numeroCompteBancaire: pointage.utilisateur.enseignant.numeroCompteBancaire,
+                            adresse: pointage.utilisateur.enseignant.adresse || {},
+                        }
+                        : null,
                     date: PointageController.formatDateFr(pointage.date),
                     jour: PointageController.formatJourFr(pointage.date),
                     nom: pointage.utilisateur?.nom || '',
@@ -510,9 +577,43 @@ export default class PointageController {
             const nomFichier = `pointages_${debut || 'debut'}_${fin || 'fin'}`;
 
             const meta = { periodeLabel, resumeLabel, nomFichier };
-            return format === 'xlsx'
-                ? PointageController.envoyerExportExcel(res, lignes, meta)
-                : PointageController.envoyerExportWord(res, lignes, meta);
+            if (format === 'docx') {
+                return PointageController.envoyerExportWord(res, lignes, meta);
+            }
+
+            const enseignantIds = Array.from(new Set(
+                lignes.filter(ligne => ligne.roleValue === RolesUtilisateur.ENSEIGNANT)
+                    .map(ligne => ligne.utilisateurId)
+            ));
+            const seancesReelles = enseignantIds.length > 0
+                ? await SeancePointage.findAll({
+                    where: {
+                        utilisateurId: { [Op.in]: enseignantIds },
+                        ...(debut || fin ? {
+                            date: {
+                                ...(debut ? { [Op.gte]: debut } : {}),
+                                ...(fin ? { [Op.lte]: fin } : {}),
+                            },
+                        } : {}),
+                    },
+                    attributes: ['utilisateurId', 'date', 'heureDebutReelle', 'heureFinReelle'],
+                    include: [
+                        {
+                            association: SeancePointage.associations.seance,
+                            attributes: ['id'],
+                            include: [{
+                                association: Seance.associations.niveauEtude,
+                                attributes: ['libelle'],
+                            }],
+                        },
+                        {
+                            association: SeancePointage.associations.etablissement,
+                            attributes: ['nom'],
+                        },
+                    ],
+                })
+                : [];
+            return PointageController.envoyerExportExcel(res, lignes, meta, seancesReelles as any[]);
         } catch (error) {
             console.error('Erreur export pointages', error);
             return res.status(500).json({ success: false, message: "Erreur lors de la génération de l'export" });
@@ -522,7 +623,8 @@ export default class PointageController {
     private static async envoyerExportExcel(
         res: Response,
         lignes: any[],
-        meta: { periodeLabel: string; resumeLabel: string; nomFichier: string }
+        meta: { periodeLabel: string; resumeLabel: string; nomFichier: string },
+        seancesEnseignants: any[]
     ): Promise<Response> {
         const workbook = new ExcelJS.Workbook();
         workbook.creator = 'EasyEcole';
@@ -601,8 +703,10 @@ export default class PointageController {
                 cellule.font = {
                     name: 'Calibri',
                     size: 9,
-                    bold: indexColonne === 9 || indexColonne === 11,
-                    color: { argb: indexColonne === 13 && ligne.statut === 'En cours' ? 'FFB45309' : 'FF334155' },
+                    bold: indexColonne === 9 || indexColonne === 10 || indexColonne === 11,
+                    color: indexColonne === 10 || indexColonne === 11
+                        ? { argb: 'FF1D4ED8' }
+                        : { argb: indexColonne === 13 && ligne.statut === 'En cours' ? 'FFB45309' : 'FF334155' },
                 };
                 cellule.alignment = {
                     vertical: 'middle',
@@ -612,6 +716,9 @@ export default class PointageController {
                 cellule.border = bordure;
                 if (indexLigne % 2 === 1) {
                     cellule.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+                }
+                if (indexColonne === 10 || indexColonne === 11) {
+                    cellule.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } };
                 }
             });
             feuille.getRow(numeroLigne).height = 18;
@@ -632,28 +739,28 @@ export default class PointageController {
             to: { row: ligneEntete + lignes.length, column: 14 },
         };
 
-        const recapitulatif = workbook.addWorksheet('Par personne', {
+        const recapitulatif = workbook.addWorksheet('Personnel', {
             views: [{ state: 'frozen', ySplit: 5 }],
         });
         recapitulatif.columns = [
             { width: 6 }, { width: 24 }, { width: 24 }, { width: 18 }, { width: 28 },
-            { width: 16 }, { width: 18 }, { width: 24 }, { width: 18 },
+            { width: 16 }, { width: 18 }, { width: 24 }, { width: 20 }, { width: 18 },
         ];
-        recapitulatif.mergeCells('A1:I1');
-        recapitulatif.getCell('A1').value = 'Récapitulatif des heures par personne';
+        recapitulatif.mergeCells('A1:J1');
+        recapitulatif.getCell('A1').value = 'Récapitulatif des heures du personnel';
         recapitulatif.getCell('A1').font = { name: 'Calibri', size: 16, bold: true, color: { argb: 'FF1F3C75' } };
         recapitulatif.getCell('A1').alignment = { vertical: 'middle', horizontal: 'left' };
         recapitulatif.getRow(1).height = 30;
-        recapitulatif.mergeCells('A2:I2');
+        recapitulatif.mergeCells('A2:J2');
         recapitulatif.getCell('A2').value = meta.periodeLabel;
         recapitulatif.getCell('A2').font = { name: 'Calibri', size: 10, color: { argb: 'FF64748B' } };
-        recapitulatif.mergeCells('A3:I3');
+        recapitulatif.mergeCells('A3:J3');
         recapitulatif.getCell('A3').value = 'Les journées sans départ sont comptées comme « En cours » et exclues des totaux définitifs.';
         recapitulatif.getCell('A3').font = { name: 'Calibri', size: 9, italic: true, color: { argb: 'FF64748B' } };
 
         const entetesRecapitulatif = [
             'N°', 'Nom', 'Prénoms', 'Identifiant', 'Rôle', 'Jours complets',
-            'Heures normales', 'Heures supplémentaires', 'Départs manquants',
+            'Heures normales', 'Heures supplémentaires', 'Total heures effectuées', 'Départs manquants',
         ];
         entetesRecapitulatif.forEach((entete, indexColonne) => {
             const cellule = recapitulatif.getCell(5, indexColonne + 1);
@@ -675,7 +782,10 @@ export default class PointageController {
             minutesSupplementaires: number;
             departsManquants: number;
         }>();
-        lignes.filter(ligne => ligne.estPersonnel).forEach(ligne => {
+        lignes.filter(ligne =>
+            ligne.roleValue !== RolesUtilisateur.APPRENANT &&
+            ligne.roleValue !== RolesUtilisateur.ENSEIGNANT
+        ).forEach(ligne => {
             let total = totauxParPersonne.get(ligne.utilisateurId);
             if (!total) {
                 total = {
@@ -707,7 +817,9 @@ export default class PointageController {
             const valeurs = [
                 indexLigne + 1, personne.nom, personne.prenoms, personne.identifiant, personne.role,
                 personne.joursComplets, personne.minutesNormales / 1440,
-                personne.minutesSupplementaires / 1440, personne.departsManquants,
+                personne.minutesSupplementaires / 1440,
+                (personne.minutesNormales + personne.minutesSupplementaires) / 1440,
+                personne.departsManquants,
             ];
             valeurs.forEach((valeur, indexColonne) => {
                 const cellule = ligne.getCell(indexColonne + 1);
@@ -715,8 +827,12 @@ export default class PointageController {
                 cellule.font = { name: 'Calibri', size: 9, color: { argb: 'FF334155' } };
                 cellule.alignment = { vertical: 'middle', horizontal: [1, 2, 3, 4].includes(indexColonne) ? 'left' : 'center' };
                 cellule.border = bordure;
-                if (indexColonne === 6 || indexColonne === 7) cellule.numFmt = '[h]:mm';
-                if (indexLigne % 2 === 1) {
+                if (indexColonne === 6 || indexColonne === 7 || indexColonne === 8) {
+                    cellule.numFmt = '[h]:mm';
+                    cellule.font = { name: 'Calibri', size: 9, bold: true, color: { argb: 'FF1D4ED8' } };
+                    cellule.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } };
+                }
+                if (indexLigne % 2 === 1 && ![6, 7, 8].includes(indexColonne)) {
                     cellule.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
                 }
             });
@@ -731,20 +847,236 @@ export default class PointageController {
         recapitulatif.getCell(`F${ligneTotalRecap}`).value = personnesTriees.reduce((somme, personne) => somme + personne.joursComplets, 0);
         recapitulatif.getCell(`G${ligneTotalRecap}`).value = totalNormal / 1440;
         recapitulatif.getCell(`H${ligneTotalRecap}`).value = totalSupplementaire / 1440;
-        recapitulatif.getCell(`I${ligneTotalRecap}`).value = totalDepartManquant;
+        recapitulatif.getCell(`I${ligneTotalRecap}`).value = (totalNormal + totalSupplementaire) / 1440;
+        recapitulatif.getCell(`J${ligneTotalRecap}`).value = totalDepartManquant;
         recapitulatif.getCell(`G${ligneTotalRecap}`).numFmt = '[h]:mm';
         recapitulatif.getCell(`H${ligneTotalRecap}`).numFmt = '[h]:mm';
-        for (let indexColonne = 1; indexColonne <= 9; indexColonne++) {
+        recapitulatif.getCell(`I${ligneTotalRecap}`).numFmt = '[h]:mm';
+        for (let indexColonne = 1; indexColonne <= 10; indexColonne++) {
             const cellule = recapitulatif.getCell(ligneTotalRecap, indexColonne);
             cellule.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF1F3C75' } };
             cellule.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEEF2FF' } };
             cellule.border = bordure;
         }
+        for (const colonneHeures of ['G', 'H', 'I']) {
+            const cellule = recapitulatif.getCell(`${colonneHeures}${ligneTotalRecap}`);
+            cellule.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF1D4ED8' } };
+            cellule.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } };
+        }
 
         recapitulatif.autoFilter = {
             from: { row: 5, column: 1 },
-            to: { row: 5 + personnesTriees.length, column: 9 },
+            to: { row: 5 + personnesTriees.length, column: 10 },
         };
+
+        const resumeEtudiants = new Map<number, {
+            nom: string;
+            prenoms: string;
+            identifiant: string;
+            dates: Set<string>;
+            passagesApresArrivee: number;
+            retards: number;
+        }>();
+        lignes.filter(ligne => ligne.roleValue === RolesUtilisateur.APPRENANT).forEach(ligne => {
+            let resume = resumeEtudiants.get(ligne.utilisateurId);
+            if (!resume) {
+                resume = {
+                    nom: ligne.nom,
+                    prenoms: ligne.prenoms,
+                    identifiant: ligne.identifiant,
+                    dates: new Set<string>(),
+                    passagesApresArrivee: 0,
+                    retards: 0,
+                };
+                resumeEtudiants.set(ligne.utilisateurId, resume);
+            }
+            resume.dates.add(ligne.dateIso);
+            resume.passagesApresArrivee += Math.max(0, ligne.nombrePassages - 1);
+            const heure = PointageController.heureCourte(ligne.arrivee);
+            const seuil = ligne.periodeApprenant === 'matin' ? '08:00'
+                : ligne.periodeApprenant === 'soir' ? '18:30' : null;
+            if (seuil && heure && heure > seuil) resume.retards += 1;
+        });
+
+        const feuilleEtudiants = workbook.addWorksheet('Étudiants', {
+            views: [{ state: 'frozen', ySplit: 4 }],
+        });
+        feuilleEtudiants.columns = [
+            { width: 6 }, { width: 24 }, { width: 24 }, { width: 18 },
+            { width: 18 }, { width: 24 }, { width: 18 },
+        ];
+        feuilleEtudiants.mergeCells('A1:G1');
+        feuilleEtudiants.getCell('A1').value = 'Synthèse des présences étudiantes';
+        feuilleEtudiants.getCell('A1').font = { name: 'Calibri', size: 16, bold: true, color: { argb: 'FF1F3C75' } };
+        feuilleEtudiants.mergeCells('A2:G2');
+        feuilleEtudiants.getCell('A2').value = meta.periodeLabel;
+        feuilleEtudiants.getCell('A2').font = { name: 'Calibri', size: 10, color: { argb: 'FF64748B' } };
+        feuilleEtudiants.mergeCells('A3:G3');
+        feuilleEtudiants.getCell('A3').value = 'Les passages après le premier scan sont comptés comme sorties/passages supplémentaires ; le sens entrée/sortie n’est pas distingué par les données.';
+        feuilleEtudiants.getCell('A3').font = { name: 'Calibri', size: 9, italic: true, color: { argb: 'FF64748B' } };
+        const entetesEtudiants = [
+            'N°', 'Nom', 'Prénoms', 'Identifiant', 'Jours de présence',
+            'Passages après arrivée', 'Retards',
+        ];
+        entetesEtudiants.forEach((entete, index) => {
+            const cellule = feuilleEtudiants.getCell(4, index + 1);
+            cellule.value = entete;
+            cellule.font = { name: 'Calibri', size: 9, bold: true, color: { argb: 'FFFFFFFF' } };
+            cellule.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F3C75' } };
+            cellule.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+            cellule.border = bordure;
+        });
+        Array.from(resumeEtudiants.values())
+            .sort((a, b) => `${a.nom} ${a.prenoms}`.localeCompare(`${b.nom} ${b.prenoms}`, 'fr'))
+            .forEach((etudiant, index) => {
+                const ligne = feuilleEtudiants.getRow(5 + index);
+                [
+                    index + 1,
+                    etudiant.nom,
+                    etudiant.prenoms,
+                    etudiant.identifiant,
+                    etudiant.dates.size,
+                    etudiant.passagesApresArrivee,
+                    etudiant.retards,
+                ].forEach((valeur, indexColonne) => {
+                    const cellule = ligne.getCell(indexColonne + 1);
+                    cellule.value = valeur;
+                    cellule.font = { name: 'Calibri', size: 9, color: { argb: 'FF334155' } };
+                    cellule.alignment = { vertical: 'middle', horizontal: indexColonne < 4 ? 'left' : 'center' };
+                    cellule.border = bordure;
+                });
+            });
+
+        const profilsEnseignants = new Map<number, any>();
+        lignes.filter(ligne => ligne.roleValue === RolesUtilisateur.ENSEIGNANT).forEach(ligne => {
+            if (!profilsEnseignants.has(ligne.utilisateurId)) {
+                profilsEnseignants.set(ligne.utilisateurId, {
+                    ...ligne.enseignantProfil,
+                    nom: ligne.nom,
+                    prenoms: ligne.prenoms,
+                    identifiant: ligne.identifiant,
+                    email: ligne.enseignantProfil?.email || '',
+                    contact: ligne.enseignantProfil?.contact || '',
+                    adresse: ligne.enseignantProfil?.adresse || {},
+                });
+            }
+        });
+        const champsEnseignant: { cle: string; label: string }[] = [
+            { cle: 'nom', label: 'Nom' }, { cle: 'prenoms', label: 'Prénoms' },
+            { cle: 'identifiant', label: 'Identifiant' }, { cle: 'email', label: 'E-mail' },
+            { cle: 'contact', label: 'Contact' }, { cle: 'photo', label: 'Photo' },
+            { cle: 'matricule', label: 'Matricule' },
+            { cle: 'gradeAcademique', label: 'Grade académique' }, { cle: 'specialite', label: 'Spécialité' },
+            { cle: 'statut', label: 'Statut' }, { cle: 'fonctionAdministrative', label: 'Fonction administrative' },
+            { cle: 'anneeExperience', label: 'Années d’expérience' },
+            { cle: 'heureTheoriqueAnnuelle', label: 'Heures théoriques annuelles' },
+            { cle: 'heureReelleAnnuelle', label: 'Heures réelles annuelles' },
+            { cle: 'cni', label: 'CNI' }, { cle: 'nifOtr', label: 'NIF/OTR' },
+            { cle: 'dateNaissance', label: 'Date de naissance' }, { cle: 'lieuNaissance', label: 'Lieu de naissance' },
+            { cle: 'sexe', label: 'Sexe' }, { cle: 'nationalite', label: 'Nationalité' },
+            { cle: 'plusHautDiplome', label: 'Plus haut diplôme' },
+            { cle: 'statutHandicap', label: 'Situation de handicap' }, { cle: 'natureHandicap', label: 'Nature du handicap' },
+            { cle: 'numeroCompteBancaire', label: 'Compte bancaire' },
+            { cle: 'adresse.boitePostale', label: 'Boîte postale' },
+            { cle: 'adresse.prorietaireBoitePostale', label: 'Titulaire boîte postale' },
+            { cle: 'adresse.telMobile', label: 'Téléphone mobile' },
+            { cle: 'adresse.telDomicile', label: 'Téléphone domicile' },
+            { cle: 'adresse.quartier', label: 'Quartier' }, { cle: 'adresse.ville', label: 'Ville' },
+            { cle: 'adresse.pays', label: 'Pays' },
+        ];
+        const valeurEnseignant = (profil: any, cle: string): unknown =>
+            cle.split('.').reduce((valeur, partie) => valeur?.[partie], profil) ?? '';
+        const feuilleEnseignants = workbook.addWorksheet('Enseignants');
+        feuilleEnseignants.views = [{ state: 'frozen', ySplit: 4 }];
+        feuilleEnseignants.columns = champsEnseignant.map(() => ({ width: 22 }));
+        const derniereColonneEnseignant = feuilleEnseignants.getColumn(champsEnseignant.length).letter;
+        feuilleEnseignants.mergeCells(`A1:${derniereColonneEnseignant}1`);
+        feuilleEnseignants.getCell('A1').value = 'Fiches enseignants';
+        feuilleEnseignants.getCell('A1').font = { name: 'Calibri', size: 16, bold: true, color: { argb: 'FF1F3C75' } };
+        feuilleEnseignants.mergeCells(`A2:${derniereColonneEnseignant}2`);
+        feuilleEnseignants.getCell('A2').value = meta.periodeLabel;
+        feuilleEnseignants.getCell('A2').font = { name: 'Calibri', size: 10, color: { argb: 'FF64748B' } };
+        champsEnseignant.forEach((champ, index) => {
+            const cellule = feuilleEnseignants.getCell(4, index + 1);
+            cellule.value = champ.label;
+            cellule.font = { name: 'Calibri', size: 9, bold: true, color: { argb: 'FFFFFFFF' } };
+            cellule.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F3C75' } };
+            cellule.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+            cellule.border = bordure;
+        });
+        Array.from(profilsEnseignants.values()).forEach((profil, index) => {
+            const ligne = feuilleEnseignants.getRow(5 + index);
+            champsEnseignant.forEach((champ, indexColonne) => {
+                const cellule = ligne.getCell(indexColonne + 1);
+                cellule.value = valeurEnseignant(profil, champ.cle) as any;
+                cellule.font = { name: 'Calibri', size: 9, color: { argb: 'FF334155' } };
+                cellule.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+                cellule.border = bordure;
+            });
+        });
+
+        const heuresParSiteNiveau = new Map<string, {
+            utilisateurId: number;
+            enseignant: string;
+            site: string;
+            niveau: string;
+            minutes: number;
+        }>();
+        seancesEnseignants.forEach(pointage => {
+            const minutes = PointageController.dureeMinutes(pointage.heureDebutReelle, pointage.heureFinReelle);
+            if (minutes === null || minutes <= 0) return;
+            const utilisateurId = Number(pointage.utilisateurId);
+            const profil = profilsEnseignants.get(utilisateurId);
+            const site = pointage.etablissement?.nom || 'Site non renseigné';
+            const niveau = pointage.seance?.niveauEtude?.libelle || 'Niveau non renseigné';
+            const key = `${utilisateurId}|${site}|${niveau}`;
+            const total = heuresParSiteNiveau.get(key) || {
+                utilisateurId,
+                enseignant: `${profil?.nom || ''} ${profil?.prenoms || ''}`.trim(),
+                site,
+                niveau,
+                minutes: 0,
+            };
+            total.minutes += minutes;
+            heuresParSiteNiveau.set(key, total);
+        });
+        const feuilleHeuresEnseignants = workbook.addWorksheet('Heures enseignants');
+        feuilleHeuresEnseignants.views = [{ state: 'frozen', ySplit: 4 }];
+        feuilleHeuresEnseignants.columns = [
+            { width: 30 }, { width: 28 }, { width: 28 }, { width: 20 },
+        ];
+        feuilleHeuresEnseignants.mergeCells('A1:D1');
+        feuilleHeuresEnseignants.getCell('A1').value = 'Heures de cours effectuées par site et niveau d’étude';
+        feuilleHeuresEnseignants.getCell('A1').font = { name: 'Calibri', size: 16, bold: true, color: { argb: 'FF1F3C75' } };
+        feuilleHeuresEnseignants.mergeCells('A2:D2');
+        feuilleHeuresEnseignants.getCell('A2').value = meta.periodeLabel;
+        feuilleHeuresEnseignants.getCell('A2').font = { name: 'Calibri', size: 10, color: { argb: 'FF64748B' } };
+        ['Enseignant', 'Site', 'Niveau d’étude', 'Heures effectuées'].forEach((entete, index) => {
+            const cellule = feuilleHeuresEnseignants.getCell(4, index + 1);
+            cellule.value = entete;
+            cellule.font = { name: 'Calibri', size: 9, bold: true, color: { argb: 'FFFFFFFF' } };
+            cellule.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F3C75' } };
+            cellule.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+            cellule.border = bordure;
+        });
+        Array.from(heuresParSiteNiveau.values())
+            .sort((a, b) => `${a.enseignant} ${a.site} ${a.niveau}`.localeCompare(`${b.enseignant} ${b.site} ${b.niveau}`, 'fr'))
+            .forEach((total, index) => {
+                const ligne = feuilleHeuresEnseignants.getRow(5 + index);
+                [total.enseignant, total.site, total.niveau, total.minutes / 1440].forEach((valeur, indexColonne) => {
+                    const cellule = ligne.getCell(indexColonne + 1);
+                    cellule.value = valeur;
+                    cellule.font = indexColonne === 3
+                        ? { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF1D4ED8' } }
+                        : { name: 'Calibri', size: 9, color: { argb: 'FF334155' } };
+                    cellule.alignment = { vertical: 'middle', horizontal: indexColonne === 3 ? 'center' : 'left' };
+                    cellule.border = bordure;
+                    if (indexColonne === 3) {
+                        cellule.numFmt = '[h]:mm';
+                        cellule.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } };
+                    }
+                });
+            });
 
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', `attachment; filename="${meta.nomFichier}.xlsx"`);
@@ -1513,10 +1845,17 @@ export default class PointageController {
             const today = new Date().toISOString().split('T')[0];
             const now = new Date();
             const time = now.toISOString().slice(11, 19);
+            const periodeApprenant = isStudent
+                ? (await Apprenant.findOne({
+                    where: { utilisateurId: utilisateur.id },
+                    attributes: ['periode']
+                }))?.periode
+                : null;
             if (utilisateur.role === RolesUtilisateur.ENSEIGNANT) {
                 return await PointageController.pointerEnseignantParQR(req, res, utilisateur, today, time);
             }
             const maxAttempts = isStudent ? 2 : 1;
+            let avertissementRetard: string | null = null;
 
             for (let attempt = 0; attempt < maxAttempts; attempt++) {
                 const transaction = await Pointage.sequelize!.transaction();
@@ -1531,6 +1870,27 @@ export default class PointageController {
                     let updated: Pointage;
 
                     if (!pointage) {
+                        if (isStudent) {
+                            const debutMois = `${today.slice(0, 7)}-01`;
+                            const historiqueMois = await Pointage.findAll({
+                                where: {
+                                    utilisateurId: utilisateur.id,
+                                    date: { [Op.gte]: debutMois, [Op.lt]: today }
+                                },
+                                attributes: ['date', 'heureArrivee'],
+                                order: [['date', 'DESC']],
+                                transaction
+                            });
+                            avertissementRetard = calculerAlerteRetardEtudiant(
+                                today,
+                                time,
+                                periodeApprenant,
+                                historiqueMois.map(item => ({
+                                    date: String(item.date),
+                                    heureArrivee: item.heureArrivee
+                                }))
+                            ).messageVocal;
+                        }
                         updated = await Pointage.create({
                             date: today,
                             heureArrivee: time,
@@ -1584,6 +1944,7 @@ export default class PointageController {
                         pointage: updated,
                         heureEvenement: time,
                         ...(avertissementPaiement ? { avertissementPaiement } : {}),
+                        ...(avertissementRetard ? { avertissementRetard } : {}),
                         ...(situationFinanciere ? { situationFinanciere } : {})
                     });
                 } catch (error) {

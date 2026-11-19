@@ -407,6 +407,7 @@ await utilisateur.save()
                 natureHandicap: req.body.natureHandicap,
                 anneeExperience: req.body.anneeExperience,
                 nifOtr: req.body.nifOtr,
+                numeroCompteBancaire: req.body.numeroCompteBancaire,
                 contact: req.body.utilisateur.contact
               })
               break

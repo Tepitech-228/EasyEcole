@@ -52,6 +52,7 @@ export class ListeEnseignantsPageComponent extends BaseComponentClass implements
     natureHandicap: new FormControl(null),
     anneeExperience: new FormControl(null),
     nifOtr: new FormControl(null),
+    numeroCompteBancaire: new FormControl(null),
   })
 
   constructor(
@@ -152,6 +153,7 @@ export class ListeEnseignantsPageComponent extends BaseComponentClass implements
       enseignant.natureHandicap = this.enseignantForm.get('natureHandicap')!.value ?? null
       enseignant.anneeExperience = this.enseignantForm.get('anneeExperience')!.value !== '' && this.enseignantForm.get('anneeExperience')!.value != null ? Number(this.enseignantForm.get('anneeExperience')!.value) : undefined
       enseignant.nifOtr = this.enseignantForm.get('nifOtr')!.value ?? null
+      enseignant.numeroCompteBancaire = this.enseignantForm.get('numeroCompteBancaire')!.value?.trim() || null
 
       this.authService.registerEnseignant(enseignant).subscribe({
         next: (res: { matricule?: string; qrCode?: string; enseignantId?: string }) => {

@@ -26,6 +26,7 @@ export class Enseignant {
   declare heureReelleAnnuelle?: number
   declare statutHandicap?: boolean
   declare natureHandicap?: string
+  declare numeroCompteBancaire?: string
   declare adresseId?: string
   declare adresse?: AdresseEnseignant
   declare utilisateurId?: string

@@ -94,7 +94,7 @@
             <app-custom-button (click)="nextDate()" text="Suivant"></app-custom-button>
         </div>
         <div *ngIf="peutGererPlanning || rolesValue.isSurveillant || rolesValue.isEnseignant" class="block col-span-4 flex justify-center items-center gap-4">
-            <select [(ngModel)]="filterSiteId" (change)="onFilterChange()"
+            <select [ngModel]="filterSiteId" (ngModelChange)="onPlanningSiteChange($event)"
                 class="block w-full max-w-[200px] rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
                 <option value="">Tous les sites</option>
                 <option *ngIf="sitesLoading" disabled>Chargement des sites…</option>
@@ -282,12 +282,20 @@
                 </div>
             </div>
             <div class="col-span-2">
-                <label for="salle" class="mb-2 block text-sm leading-6 text-gray-600">Salle</label>
-                <input type="text" id="salle" formControlName="salle" placeholder="Saisir la salle..."
-                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-                <div *ngIf="nouvelleSeanceForm.get('salle')!.invalid && (nouvelleSeanceForm.get('salle')!.dirty || nouvelleSeanceForm.get('salle')!.touched)">
+                <label for="salleNouvelle" class="mb-2 block text-sm leading-6 text-gray-600">Salle</label>
+                <select id="salleNouvelle" formControlName="salleDeClasseId"
+                    (change)="onSalleChange($any($event.target).value)"
+                    [disabled]="sallesLoading || sallesDisponibles.length === 0"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 disabled:bg-gray-100">
+                    <option value="">{{ sallesLoading ? 'Chargement des salles…' : (sallesDisponibles.length ? 'Choisir une salle' : 'Aucune salle disponible') }}</option>
+                    <option *ngFor="let salle of sallesDisponibles" [value]="salle.id">
+                        {{ salle.libelle }}{{ salle.code ? ' (' + salle.code + ')' : '' }}
+                    </option>
+                </select>
+                <p *ngIf="sallesError" class="mt-1 text-xs text-red-600">{{ sallesError }}</p>
+                <div *ngIf="nouvelleSeanceForm.get('salle')!.invalid && (nouvelleSeanceForm.get('salleDeClasseId')!.dirty || nouvelleSeanceForm.get('salleDeClasseId')!.touched)">
                     <app-form-message *ngIf="nouvelleSeanceForm.get('salle')!.errors?.['required']"
-                        text="Veuillez saisir la salle"></app-form-message>
+                        text="Veuillez choisir une salle"></app-form-message>
                 </div>
             </div>
             <div class="col-span-2">
@@ -409,12 +417,20 @@
                 </div>
             </div>
             <div class="col-span-2">
-                <label for="salle" class="mb-2 block text-sm leading-6 text-gray-600">Salle</label>
-                <input type="text" id="salle" formControlName="salle" placeholder="Saisir la salle..."
-                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-                <div *ngIf="modificationSeanceForm.get('salle')!.invalid && (modificationSeanceForm.get('salle')!.dirty || modificationSeanceForm.get('salle')!.touched)">
+                <label for="salleModification" class="mb-2 block text-sm leading-6 text-gray-600">Salle</label>
+                <select id="salleModification" formControlName="salleDeClasseId"
+                    (change)="onSalleChange($any($event.target).value, true)"
+                    [disabled]="sallesLoading || sallesDisponibles.length === 0"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 disabled:bg-gray-100">
+                    <option value="">{{ sallesLoading ? 'Chargement des salles…' : (sallesDisponibles.length ? 'Choisir une salle' : 'Aucune salle disponible') }}</option>
+                    <option *ngFor="let salle of sallesDisponibles" [value]="salle.id">
+                        {{ salle.libelle }}{{ salle.code ? ' (' + salle.code + ')' : '' }}
+                    </option>
+                </select>
+                <p *ngIf="sallesError" class="mt-1 text-xs text-red-600">{{ sallesError }}</p>
+                <div *ngIf="modificationSeanceForm.get('salle')!.invalid && (modificationSeanceForm.get('salleDeClasseId')!.dirty || modificationSeanceForm.get('salleDeClasseId')!.touched)">
                     <app-form-message *ngIf="modificationSeanceForm.get('salle')!.errors?.['required']"
-                        text="Veuillez saisir la salle"></app-form-message>
+                        text="Veuillez choisir une salle"></app-form-message>
                 </div>
             </div>
             <div class="col-span-2">

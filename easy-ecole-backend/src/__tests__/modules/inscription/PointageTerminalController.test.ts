@@ -19,11 +19,14 @@ jest.mock("../../../modules/auth/models/SiteUtilisateur", () => ({
 jest.mock("../../../modules/auth/models/Enseignant", () => ({
   Enseignant: { findOne: jest.fn() }
 }));
+jest.mock("../../../modules/auth/models/Apprenant", () => ({
+  Apprenant: { findOne: jest.fn() }
+}));
 jest.mock("../../../modules/etablissement/models/Etablissement", () => ({
   Etablissement: { findOne: jest.fn() }
 }));
 jest.mock("../../../modules/inscription/models/Pointage", () => ({
-  Pointage: { findOne: jest.fn(), create: jest.fn() }
+  Pointage: { findOne: jest.fn(), findAll: jest.fn(), create: jest.fn() }
 }));
 jest.mock("../../../modules/inscription/models/PointageScan", () => ({
   PointageScan: { create: jest.fn() }
@@ -40,6 +43,10 @@ jest.mock("../../../modules/inscription/models/DossierEtudiant", () => ({
 jest.mock("../../../modules/inscription/services/VerificationPaiementService", () => ({
   VerificationPaiementService: { verifierDossier: jest.fn() }
 }));
+jest.mock("../../../modules/inscription/services/PointageRealtimeService", () => ({
+  __esModule: true,
+  default: { emitTerminalAttendance: jest.fn() }
+}));
 
 import PointageTerminalController from "../../../modules/inscription/controllers/PointageTerminalController";
 import PointageTerminalTokenService from "../../../modules/inscription/services/PointageTerminalTokenService";
@@ -51,6 +58,7 @@ const { PointageTerminalEvent } = require("../../../modules/inscription/models/P
 const { Utilisateur } = require("../../../modules/auth/models/Utilisateur");
 const { SiteUtilisateur } = require("../../../modules/auth/models/SiteUtilisateur");
 const { Enseignant } = require("../../../modules/auth/models/Enseignant");
+const { Apprenant } = require("../../../modules/auth/models/Apprenant");
 const { Etablissement } = require("../../../modules/etablissement/models/Etablissement");
 const { Pointage } = require("../../../modules/inscription/models/Pointage");
 const { PointageScan } = require("../../../modules/inscription/models/PointageScan");
@@ -58,6 +66,7 @@ const { Seance } = require("../../../modules/inscription/models/Seance");
 const { SeancePointage } = require("../../../modules/inscription/models/SeancePointage");
 const { DossierEtudiant } = require("../../../modules/inscription/models/DossierEtudiant");
 const { VerificationPaiementService } = require("../../../modules/inscription/services/VerificationPaiementService");
+const PointageRealtimeService = require("../../../modules/inscription/services/PointageRealtimeService").default;
 
 const sequelize = DatabaseConnection.getInstance().sequelize;
 const transaction = {
@@ -93,9 +102,11 @@ beforeEach(() => {
   Utilisateur.findByPk.mockResolvedValue({ id: 42, role: "personnel_administratif", etablissementId: 3 });
   SiteUtilisateur.findOne.mockResolvedValue({ utilisateurId: 42, etablissementId: 3 });
   Pointage.findOne.mockResolvedValue(null);
+  Pointage.findAll.mockResolvedValue([]);
   Pointage.create.mockResolvedValue({ id: 77 });
   PointageScan.create.mockResolvedValue({ id: 1 });
   Enseignant.findOne.mockResolvedValue(null);
+  Apprenant.findOne.mockResolvedValue({ periode: "matin" });
   Seance.findOne.mockResolvedValue(null);
   Seance.findAll.mockResolvedValue([]);
   SeancePointage.findOne.mockResolvedValue(null);
@@ -166,6 +177,39 @@ describe("PointageTerminalController ADMS", () => {
     expect(update).not.toHaveBeenCalled();
     expect(PointageScan.create).toHaveBeenCalledWith({ pointageId: 77, heure: "17:02:15" }, { transaction });
     expect(res.send).toHaveBeenCalledWith("OK");
+  });
+
+  it("announces the sixth consecutive student lateness through the ZKTeco socket event", async () => {
+    Utilisateur.findByPk.mockResolvedValue({
+      id: 42,
+      nom: "Test",
+      prenoms: "Etudiant",
+      role: "apprenant",
+      etablissementId: 3
+    });
+    Pointage.findAll.mockResolvedValue([
+      { date: "2026-10-18", heureArrivee: "08:05:00" },
+      { date: "2026-10-17", heureArrivee: "08:05:00" },
+      { date: "2026-10-16", heureArrivee: "08:05:00" },
+      { date: "2026-10-15", heureArrivee: "08:05:00" },
+      { date: "2026-10-14", heureArrivee: "08:05:00" }
+    ]);
+
+    const result = await PointageTerminalController.processAttendanceEvent(
+      { id: 5, serialNumber: "ZK12345", protocol: "zkteco_adms", etablissementId: 3 } as any,
+      {
+        pin: "42",
+        date: "2026-10-19",
+        time: "08:05:00",
+        statusCode: 0,
+        verifyType: 15
+      }
+    );
+
+    expect(result.avertissementRetard).toContain("sixième retard d'affilée");
+    expect(PointageRealtimeService.emitTerminalAttendance).toHaveBeenCalledWith(
+      expect.objectContaining({ avertissementRetard: result.avertissementRetard })
+    );
   });
 
   it("does not count a staff member's second biometric scan as a departure", async () => {

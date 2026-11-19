@@ -15,7 +15,11 @@ export default class EnseignantController {
 
     static async getAllEnseignants(req: Request, res: Response): Promise<Response> {
         let options: FindOptions<InferAttributes<Enseignant>> = {
-            include: [Enseignant.associations.utilisateur]
+            include: [{
+                association: Enseignant.associations.utilisateur,
+                where: { role: RolesUtilisateur.ENSEIGNANT },
+                required: true,
+            }]
         }
 
         try {
@@ -113,6 +117,7 @@ export default class EnseignantController {
                 plusHautDiplome: req.body.plusHautDiplome,
                 statutHandicap: req.body.statutHandicap,
                 natureHandicap: req.body.natureHandicap,
+                numeroCompteBancaire: req.body.numeroCompteBancaire,
             })
                 .then(async (enseignant) => {
                     await AdresseEnseignant.update(req.body.adresse, { where: { enseignantId: enseignant.id } })

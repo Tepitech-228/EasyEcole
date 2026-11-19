@@ -6,6 +6,7 @@ import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { JoursSemaine } from "../../../core/enums/JoursSemaine";
 import { Enseignant } from "../../auth/models/Enseignant";
+import { Apprenant } from "../../auth/models/Apprenant";
 import { SiteUtilisateur } from "../../auth/models/SiteUtilisateur";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { Etablissement } from "../../etablissement/models/Etablissement";
@@ -25,6 +26,8 @@ import {
 } from "../services/SeancePointageRulesService";
 import { VerificationPaiementService } from "../services/VerificationPaiementService";
 import SituationFinanciereService, { SituationFinanciere } from "../services/SituationFinanciereService";
+import { calculerAlerteRetardEtudiant } from "../services/PointageRetardService";
+import PointageRealtimeService from "../services/PointageRealtimeService";
 
 interface AttendanceLog {
     pin: string;
@@ -42,6 +45,7 @@ export interface AttendanceProcessingResult {
     role: string | null;
     motifRefus: string | null;
     avertissementPaiement: string | null;
+    avertissementRetard?: string | null;
     situationFinanciere: SituationFinanciere | null;
     enseignantNonProgramme?: boolean;
     heureArrivee?: string | null;
@@ -499,6 +503,7 @@ export default class PointageTerminalController {
             : null;
         let motifRefus: string | null = null;
         let avertissementPaiement: string | null = null;
+        let avertissementRetard: string | null = null;
         let situationFinanciere: SituationFinanciere | null = null;
 
         if (log.verifyType === 6 || log.verifyType === 76) {
@@ -627,6 +632,32 @@ export default class PointageTerminalController {
                     }
                 } else if (!pointage) {
                     // Première détection de la journée : ligne conteneur (arrivée).
+                    if (estApprenant) {
+                        const apprenant = await Apprenant.findOne({
+                            where: { utilisateurId: utilisateur.id },
+                            attributes: ["periode"],
+                            transaction
+                        });
+                        const debutMois = `${log.date.slice(0, 7)}-01`;
+                        const historiqueMois = await Pointage.findAll({
+                            where: {
+                                utilisateurId: utilisateur.id,
+                                date: { [Op.gte]: debutMois, [Op.lt]: log.date }
+                            },
+                            attributes: ["date", "heureArrivee"],
+                            order: [["date", "DESC"]],
+                            transaction
+                        });
+                        avertissementRetard = calculerAlerteRetardEtudiant(
+                            log.date,
+                            log.time,
+                            apprenant?.periode,
+                            historiqueMois.map(item => ({
+                                date: String(item.date),
+                                heureArrivee: item.heureArrivee
+                            }))
+                        ).messageVocal;
+                    }
                     pointage = await Pointage.create({
                         utilisateurId: Number(utilisateur.id),
                         date: log.date,
@@ -653,12 +684,31 @@ export default class PointageTerminalController {
                     motifRefus: null
                 }, { transaction });
                 await transaction.commit();
+                if (terminal.protocol === "zkteco_adms") {
+                    PointageRealtimeService.emitTerminalAttendance({
+                        utilisateurId: Number(utilisateur.id),
+                        nom: utilisateur.nom,
+                        prenoms: utilisateur.prenoms,
+                        role: utilisateur.role,
+                        employeeNoString: log.pin,
+                        date: log.date,
+                        time: log.time,
+                        mode,
+                        etablissementId: Number(terminal.etablissementId),
+                        avertissementPaiement,
+                        avertissementRetard,
+                        situationFinanciere,
+                        heureArrivee: heurePointage(pointage.heureArrivee) || null,
+                        heureDepart: heurePointage(pointage.heureDepart) || null
+                    });
+                }
                 return {
                     recorded: true,
                     mode,
                     role: utilisateur.role,
                     motifRefus: null,
                     avertissementPaiement,
+                    avertissementRetard,
                     situationFinanciere,
                     heureArrivee: heurePointage(pointage.heureArrivee) || null,
                     heureDepart: heurePointage(pointage.heureDepart) || null,

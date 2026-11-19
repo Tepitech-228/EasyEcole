@@ -169,10 +169,34 @@ router    /**
         let grantedKeys = new Set<string>();
 
         const userRoles = await UserRole.findAll({ where: { utilisateurId } });
-        if (userRoles.length > 0) {
-            const roleIds = userRoles.map(ur => Number(ur.roleId));
+        const roleIds = new Set(userRoles.map(userRole => Number(userRole.roleId)));
+        const roleNameMap: Record<string, string> = {
+            [RolesUtilisateur.INSTITUTION]: 'Directeur',
+            [RolesUtilisateur.ENSEIGNANT]: 'Enseignant',
+            [RolesUtilisateur.APPRENANT]: 'Apprenant',
+            [RolesUtilisateur.CAISSIER_BANQUE]: 'Comptable',
+            [RolesUtilisateur.CABINET_COMPTABLE]: 'Comptable',
+            [RolesUtilisateur.COMITE_ORIENTATION]: 'Comité',
+            [RolesUtilisateur.ESA_COMPTA]: 'ESA Compta',
+            [RolesUtilisateur.PERSONNEL_ADMINISTRATIF]: 'Personnel administratif',
+            [RolesUtilisateur.RESSOURCES_HUMAINES]: 'Ressources Humaines',
+            [RolesUtilisateur.SECRETAIRE]: 'Secrétaire',
+            [RolesUtilisateur.SURVEILLANT]: 'Surveillant',
+            [RolesUtilisateur.SUPERVISEUR_GENERAL]: 'Superviseur Général',
+            [RolesUtilisateur.PARENT]: 'Parent',
+        };
+        const roleName = roleNameMap[userRole];
+        if (roleName) {
+            const primaryRole = await Role.findOne({ where: { nom: roleName } });
+            if (primaryRole) {
+                roleIds.add(Number(primaryRole.id));
+            }
+        }
+
+        const effectiveRoleIds = [...roleIds];
+        if (effectiveRoleIds.length > 0) {
             const roles = await Role.findAll({
-                where: { id: roleIds },
+                where: { id: effectiveRoleIds },
                 include: [{ model: Permission, as: 'permissions', attributes: ['key'] }]
             });
             for (const role of roles) {
@@ -181,46 +205,9 @@ router    /**
                     userPermissionKeys.add(p.key);
                 }
             }
-            grantedKeys = await chargerGrantsDeRole(roleIds);
+            grantedKeys = await chargerGrantsDeRole(effectiveRoleIds);
             for (const key of grantedKeys) {
                 userPermissionKeys.add(key);
-            }
-        } else {
-            const roleNameMap: Record<string, string> = {
-                [RolesUtilisateur.INSTITUTION]: 'Directeur',
-                [RolesUtilisateur.ENSEIGNANT]: 'Enseignant',
-                [RolesUtilisateur.APPRENANT]: 'Apprenant',
-                [RolesUtilisateur.CAISSIER_BANQUE]: 'Comptable',
-                [RolesUtilisateur.CABINET_COMPTABLE]: 'Comptable',
-                // ⚠️ Répli utilisé quand l'utilisateur n'a AUCUN lien
-                // aut_user_roles. Le comité retombait ici sur 'Parent' (copier-
-                // coller), ce qui lui donnait le menu des parents au lieu du
-                // sien. Corrigé : chaque rôle métier pointe sur son RBAC.
-                [RolesUtilisateur.COMITE_ORIENTATION]: 'Comité',
-                [RolesUtilisateur.ESA_COMPTA]: 'ESA Compta',
-                [RolesUtilisateur.PERSONNEL_ADMINISTRATIF]: 'Personnel administratif',
-                [RolesUtilisateur.RESSOURCES_HUMAINES]: 'Ressources Humaines',
-                [RolesUtilisateur.SECRETAIRE]: 'Secrétaire',
-                [RolesUtilisateur.SURVEILLANT]: 'Surveillant',
-                [RolesUtilisateur.SUPERVISEUR_GENERAL]: 'Superviseur Général',
-                [RolesUtilisateur.PARENT]: 'Parent',
-            };
-            const roleName = roleNameMap[userRole];
-            if (roleName) {
-                const fallbackRole = await Role.findOne({
-                    where: { nom: roleName },
-                    include: [{ model: Permission, as: 'permissions', attributes: ['key'] }]
-                });
-                if (fallbackRole) {
-                    const perms = (fallbackRole as any).permissions || [];
-                    for (const p of perms) {
-                        userPermissionKeys.add(p.key);
-                    }
-                    grantedKeys = await chargerGrantsDeRole([Number(fallbackRole.id)]);
-                    for (const key of grantedKeys) {
-                        userPermissionKeys.add(key);
-                    }
-                }
             }
         }
 

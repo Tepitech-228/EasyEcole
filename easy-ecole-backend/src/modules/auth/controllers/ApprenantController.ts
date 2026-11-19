@@ -8,6 +8,7 @@ import { IdentiteApprenant } from "../models/IdentiteApprenant";
 import { InformationsSalarieApprenant } from "../models/InformationsSalarieApprenant";
 import { PersonnePrevenirApprenant } from "../models/PersonnePrevenirApprenant";
 import { Utilisateur } from "../models/Utilisateur";
+import { DossierEtudiant } from "../../inscription/models/DossierEtudiant";
 import * as path from "path";
 import * as fs from "fs";
 import QRCode from "qrcode";
@@ -352,12 +353,19 @@ export default class ApprenantController {
                     matricule: apprenant.matriculeEtudiant || utilisateur?.identifiant,
                 })
                 await apprenant.update({ photo: photo.filename })
+                if (utilisateur) {
+                    await utilisateur.update({ photoDeProfil: photo.filename })
+                    await DossierEtudiant.update(
+                        { photo: photo.filename },
+                        { where: { utilisateurId: utilisateur.id, statut: 'actif' } }
+                    )
+                }
                 try {
                     const treeFolders = await EtudiantUploadStorageService.resolveTreeFolders({
                         utilisateurId: apprenant.utilisateurId,
                         etablissementId: utilisateur?.etablissementId,
                     })
-                    const storedPath = EtudiantUploadStorageService.copyLegacyStudentPhoto(
+                    const storedPath = EtudiantUploadStorageService.replaceCurrentStudentPhoto(
                         photo.path,
                         {
                             id: Number(utilisateur?.id || apprenant.utilisateurId),
@@ -390,12 +398,16 @@ export default class ApprenantController {
                     matricule: utilisateur.identifiant,
                 })
                 await utilisateur.update({ photoDeProfil: photo.filename })
+                await DossierEtudiant.update(
+                    { photo: photo.filename },
+                    { where: { utilisateurId: utilisateur.id, statut: 'actif' } }
+                )
                 try {
                     const treeFolders = await EtudiantUploadStorageService.resolveTreeFolders({
                         utilisateurId: utilisateur.id,
                         etablissementId: utilisateur.etablissementId,
                     })
-                    const storedPath = EtudiantUploadStorageService.copyLegacyStudentPhoto(
+                    const storedPath = EtudiantUploadStorageService.replaceCurrentStudentPhoto(
                         photo.path,
                         {
                             id: Number(utilisateur.id),
@@ -419,6 +431,7 @@ export default class ApprenantController {
 
             return res.status(200).json({
                 success: true,
+                photo: photo.filename,
                 ...(photoCopyWarning ? { photoCopyWarning } : {}),
             })
         } catch (error) {

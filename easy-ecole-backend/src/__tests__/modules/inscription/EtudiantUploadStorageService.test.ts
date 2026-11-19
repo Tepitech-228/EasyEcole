@@ -186,6 +186,38 @@ describe("EtudiantUploadStorageService", () => {
         expect(fs.existsSync(sourcePath)).toBe(true);
     });
 
+    it("replaces the existing portrait in the student personal folder", () => {
+        const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "easyecole-student-photo-"));
+        temporaryDirectories.push(temporaryDirectory);
+        const identity = {
+            id: 21,
+            nom: "Diallo",
+            prenoms: "Aminata",
+            matricule: "ESA-123",
+        };
+        const folders = ["2026-2027", "Site", "LICENCE", "L1", "Informatique"];
+        const sourcePath = path.join(temporaryDirectory, "replacement.png");
+        fs.writeFileSync(sourcePath, "new portrait");
+        const destination = EtudiantUploadStorageService.getStudentPhotoDestination(
+            sourcePath,
+            identity,
+            folders,
+        );
+        fs.mkdirSync(path.dirname(destination), { recursive: true });
+        const previousDestination = destination.replace(/\.png$/i, ".jpg");
+        fs.writeFileSync(previousDestination, "old portrait");
+
+        const storedPath = EtudiantUploadStorageService.replaceCurrentStudentPhoto(
+            sourcePath,
+            identity,
+            folders,
+        );
+
+        expect(path.resolve(process.cwd(), storedPath)).toBe(destination);
+        expect(fs.readFileSync(destination, "utf8")).toBe("new portrait");
+        expect(fs.existsSync(previousDestination)).toBe(false);
+    });
+
     it("removes a stored student document from the shared uploads root", () => {
         const storedPath = path.join(studentRoot, "Dossiers", "document.pdf");
         fs.mkdirSync(path.dirname(storedPath), { recursive: true });

@@ -388,11 +388,7 @@ export default class RoleController {
         }
     }
 
-    /**
-     * Applique (et synchronise) les permissions d'un rôle à un utilisateur.
-     * - Crée les permissions manquantes
-     * - Révoque celles qui ne sont plus dans le rôle
-     */
+    /** Ajoute les permissions d'un rôle sans retirer les droits déjà accordés à l'utilisateur. */
     static async appliquerRolePermissions(req: Request, res: Response): Promise<Response> {
         try {
             const { id, utilisateurId } = req.params;
@@ -408,7 +404,7 @@ export default class RoleController {
                 existingMap.set(Number(up.permissionId), up);
             }
 
-            let created = 0, revoked = 0, unchanged = 0;
+            let created = 0, unchanged = 0;
 
             // 3. Créer les permissions manquantes + activer celles du rôle
             for (const permissionId of rolePermissionIds) {
@@ -430,19 +426,11 @@ export default class RoleController {
                 }
             }
 
-            // 4. Révoquer les permissions de l'utilisateur qui ne sont plus dans le rôle
-            for (const [permissionId, existing] of existingMap) {
-                if (!rolePermissionIds.has(Number(permissionId)) && existing.estActif) {
-                    await existing.update({ estActif: false });
-                    revoked++;
-                }
-            }
-
             return res.status(200).json({
                 success: true,
-                message: `Permissions synchronisées : ${created} ajoutée(s), ${revoked} révoquée(s), ${unchanged} inchangée(s)`,
+                message: `Permissions ajoutées : ${created} ajoutée(s), ${unchanged} inchangée(s)`,
                 created,
-                revoked,
+                revoked: 0,
                 unchanged
             });
         } catch (error) {

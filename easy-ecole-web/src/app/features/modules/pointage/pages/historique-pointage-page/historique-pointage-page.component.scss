@@ -374,6 +374,38 @@
   color: #cbd5e1;
 }
 
+.export-profiles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin: 0.9rem 0 0;
+  padding: 0.65rem 0 0;
+  border: 0;
+  border-top: 1px dashed var(--ee-line);
+
+  legend {
+    padding: 0;
+    color: var(--ee-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+}
+
+.export-profile {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--ee-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  input {
+    accent-color: var(--ee-indigo);
+  }
+}
+
 /* -------------------------------------------------------------- Statistiques */
 
 .stats {
@@ -605,7 +637,23 @@
 
 /* ------------------------------------------------------------------ Tableau */
 
+.tables-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 0 0.75rem;
+
+  p {
+    margin: 0;
+    color: var(--ee-muted);
+    font-size: 0.78rem;
+  }
+}
+
 .table-card {
+  margin-bottom: 1rem;
   border: 1px solid var(--ee-line);
   border-radius: var(--ee-radius);
   background: #ffffff;
@@ -624,11 +672,19 @@
 }
 
 .table-card__title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
   margin: 0;
   color: var(--ee-ink);
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: -0.01em;
+
+  .material-symbols-outlined {
+    color: var(--ee-indigo);
+    font-size: 20px;
+  }
 }
 
 .table-card__subtitle {
@@ -1004,6 +1060,11 @@
   align-items: center;
   padding: 3rem 1.5rem;
   text-align: center;
+}
+
+.empty-state--compact {
+  padding: 1.25rem;
+  font-size: 0.8rem;
 }
 
 .empty-state__icon {

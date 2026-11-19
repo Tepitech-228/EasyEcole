@@ -17,6 +17,7 @@ export interface TerminalAttendanceEvent {
   etablissementId: number;
   motifRefus?: string | null;
   avertissementPaiement?: string | null;
+  avertissementRetard?: string | null;
   enseignantNonProgramme?: boolean;
   situationFinanciere?: PointageSituationFinanciere | null;
   heureArrivee?: string | null;

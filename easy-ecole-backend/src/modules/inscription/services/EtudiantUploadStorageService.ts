@@ -271,6 +271,28 @@ export class EtudiantUploadStorageService {
         return path.relative(process.cwd(), candidate).replace(/\\/g, "/");
     }
 
+    static replaceCurrentStudentPhoto(
+        sourcePath: string,
+        identity: EtudiantUploadIdentity,
+        treeFolders: string[],
+    ): string {
+        const destination = this.getStudentPhotoDestination(sourcePath, identity, treeFolders);
+        const destinationDirectory = path.dirname(destination);
+        fs.mkdirSync(destinationDirectory, { recursive: true });
+        fs.copyFileSync(sourcePath, destination);
+        const destinationBase = path.basename(destination, path.extname(destination));
+        for (const entry of fs.readdirSync(destinationDirectory, { withFileTypes: true })) {
+            if (
+                entry.isFile()
+                && entry.name !== path.basename(destination)
+                && entry.name.startsWith(`${destinationBase}.`)
+            ) {
+                fs.unlinkSync(path.join(destinationDirectory, entry.name));
+            }
+        }
+        return path.relative(process.cwd(), destination).replace(/\\/g, "/");
+    }
+
     private static detectPhotoExtension(filePath: string): string {
         const fileDescriptor = fs.openSync(filePath, "r");
         const header = Buffer.alloc(32);

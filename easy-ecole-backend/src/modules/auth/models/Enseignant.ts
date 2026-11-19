@@ -27,6 +27,7 @@ export class Enseignant extends Model<InferAttributes<Enseignant>, InferCreation
   declare plusHautDiplome: CreationOptional<string>
   declare statutHandicap: CreationOptional<boolean>
   declare natureHandicap: CreationOptional<string>
+  declare numeroCompteBancaire: CreationOptional<string>
   declare adresseId: ForeignKey<AdresseEnseignant['id']>
   declare adresse?: AdresseEnseignant
   declare utilisateurId: ForeignKey<Utilisateur['id']>
@@ -131,6 +132,10 @@ Enseignant.init({
     defaultValue: false
   },
   natureHandicap: {
+    type: new DataTypes.STRING,
+    allowNull: true
+  },
+  numeroCompteBancaire: {
     type: new DataTypes.STRING,
     allowNull: true
   },
