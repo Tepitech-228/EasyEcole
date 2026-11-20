@@ -31,6 +31,7 @@
         "db:seed-superviseur-general": "ts-node src/core/scripts/seed-superviseur-general.ts",
         "db:seed-documents-requis-niveau": "ts-node src/core/scripts/seed-documents-requis-niveau.ts",
         "db:seed-salles-esa": "ts-node src/core/scripts/seed-repartition-salles-esa.ts",
+        "db:seed-salles-esa:apply": "ts-node src/core/scripts/seed-repartition-salles-esa.ts --apply",
         "db:seed-docgen": "ts-node src/modules/docgen/seed/seed.ts",
         "db:seed-complet": "ts-node src/core/scripts/seed-complet.ts",
         "db:list-tables": "ts-node src/core/scripts/list-tables.ts",

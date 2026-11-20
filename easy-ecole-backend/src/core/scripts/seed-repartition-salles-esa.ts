@@ -150,7 +150,20 @@ async function trouverOuCreerParcours(
   });
   const matches = candidats.filter(parcours => normaliser(parcours.titre) === normaliser(titre));
   if (matches.length > 1) {
-    throw new Error(`Plusieurs filières ${type} correspondent à « ${titre} ».`);
+    const linkedClasses = await Promise.all(matches.map(async parcours => ({
+      parcours,
+      count: await Classe.count({
+        where: { parcoursId: parcours.id, etablissementId },
+        transaction,
+      }),
+    })));
+    linkedClasses.sort((a, b) => b.count - a.count || Number(a.parcours.id) - Number(b.parcours.id));
+    console.warn(
+      `Plusieurs filières ${type} correspondent à « ${titre} » ` +
+      `(IDs ${matches.map(parcours => parcours.id).join(', ')}); ` +
+      `utilisation de l'enregistrement #${linkedClasses[0].parcours.id}.`
+    );
+    return linkedClasses[0].parcours;
   }
   if (matches.length === 1) return matches[0];
 
@@ -259,7 +272,7 @@ async function affecterSalle(
   }, { transaction });
 }
 
-export async function seedRepartitionSallesEsa(dryRun = false): Promise<void> {
+export async function seedRepartitionSallesEsa(apply = false): Promise<void> {
   require('../../modules/inscription/models/_associations');
   const sequelize = DatabaseConnection.getInstance().sequelize;
   const dates = lireDates();
@@ -300,13 +313,12 @@ export async function seedRepartitionSallesEsa(dryRun = false): Promise<void> {
       }
     }
 
-    const allLicenceParcours = await Parcours.findAll({
-      where: {
-        type: 'LICENCE',
-        [Op.or]: [{ etablissementId: etablissement.id }, { etablissementId: null }],
-      },
-      transaction,
-    });
+    const allLicenceParcours = Array.from(new Map(
+      Array.from(parcoursByCodeAndType.entries())
+        .filter(([key]) => key.endsWith(':LICENCE'))
+        .flatMap(([, parcours]) => parcours)
+        .map(parcours => [parcours.id, parcours])
+    ).values());
 
     const salleCache = new Map<string, SalleDeClasse>();
     const sallePour = async (etage: number, numero: number): Promise<SalleDeClasse> => {
@@ -358,11 +370,12 @@ export async function seedRepartitionSallesEsa(dryRun = false): Promise<void> {
       }
     }
 
-    if (dryRun) {
+    if (!apply) {
       await transaction.rollback();
       console.log(`[DRY-RUN] Établissement : ${etablissement.nom} (#${etablissement.id})`);
       console.log(`[DRY-RUN] ${sallesCount} salles, ${classesCount} classes et ${affectationsCount} affectations simulées.`);
       console.log(`[DRY-RUN] Période : ${dates.dateDebut} → ${dates.dateFin}`);
+      console.log('[DRY-RUN] Aucune donnée enregistrée. Utilisez l’option --apply pour appliquer la répartition.');
       return;
     }
 
@@ -376,8 +389,8 @@ export async function seedRepartitionSallesEsa(dryRun = false): Promise<void> {
 }
 
 if (require.main === module) {
-  const dryRun = process.argv.includes('--dry-run');
-  seedRepartitionSallesEsa(dryRun)
+  const apply = process.argv.includes('--apply');
+  seedRepartitionSallesEsa(apply)
     .then(() => process.exit(0))
     .catch(error => {
       console.error('Erreur de répartition des salles ESA :', error);
