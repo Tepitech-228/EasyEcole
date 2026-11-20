@@ -52,6 +52,18 @@ describe('ClasseController.getAllClasses', () => {
     expect(res.status).toHaveBeenCalledWith(200)
   })
 
+  it('filtre les classes par établissement', async () => {
+    const req = mockRequest({ query: { etablissementId: '3' } })
+    const res = mockResponse()
+    ;(Classe.findAll as jest.Mock).mockResolvedValue([])
+
+    await ClasseController.getAllClasses(req, res)
+
+    expect(Classe.findAll).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { etablissementId: '3' } })
+    )
+  })
+
   it('retourne 500 en cas d\'erreur', async () => {
     const req = mockRequest()
     const res = mockResponse()

@@ -27,6 +27,9 @@ export default class ClasseController {
         if (req.query.option) {
             options.where = { ...(options.where ?? {}), option: req.query.option as string }
         }
+        if (req.query.etablissementId) {
+            options.where = { ...(options.where ?? {}), etablissementId: req.query.etablissementId as string }
+        }
 
         try {
             let classes: Classe[];

@@ -18,6 +18,7 @@ export class Seance {
   declare enseignant?: Enseignant
   declare salleDeClasseId?: string
   declare salleDeClasse?: SalleDeClasse
+  declare classeGroupeId?: string | null
   declare description?: string
   declare readonly createdAt?: Date
   declare readonly updatedAt?: Date
@@ -34,6 +35,7 @@ export interface PlanningEvent {
   salle: string
   salleDeClasseId?: string
   salleDeClasse?: SalleDeClasse
+  classeGroupeId?: string | null
   description?: string
   coursId?: string
   cours?: Cours

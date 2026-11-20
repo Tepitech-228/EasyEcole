@@ -94,7 +94,7 @@
             <app-custom-button (click)="nextDate()" text="Suivant"></app-custom-button>
         </div>
         <div *ngIf="peutGererPlanning || rolesValue.isSurveillant || rolesValue.isEnseignant" class="block col-span-4 flex justify-center items-center gap-4">
-            <select [ngModel]="filterSiteId" (ngModelChange)="onPlanningSiteChange($event)"
+            <select [(ngModel)]="filterSiteId" (ngModelChange)="onPlanningSiteChange($event)"
                 class="block w-full max-w-[200px] rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
                 <option value="">Tous les sites</option>
                 <option *ngIf="sitesLoading" disabled>Chargement des sites…</option>
@@ -234,6 +234,9 @@
 <app-custom-modal title="Nouvelle seance" subtitle="Ajouter une nouvelle séance hebdomadaire" (onCloseModal)="closeNouvelleSeanceModal()" [center]="true" [showModal]="showNouvelleSeanceModal">
     <form [formGroup]="nouvelleSeanceForm">
         <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="col-span-full rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-800">
+                Site actif : {{ siteActifPlanning?.nom || 'aucun site sélectionné' }}
+            </div>
             <div class="col-span-full">
                 <div class="flex justify-between items-center">
                     <label for="titre" class="mb-2 block text-sm leading-6 text-gray-600">Titre</label>
@@ -297,6 +300,18 @@
                     <app-form-message *ngIf="nouvelleSeanceForm.get('salle')!.errors?.['required']"
                         text="Veuillez choisir une salle"></app-form-message>
                 </div>
+            </div>
+            <div class="col-span-2">
+                <label for="classeNouvelle" class="mb-2 block text-sm leading-6 text-gray-600">Classe / groupe (filière — niveau)</label>
+                <select id="classeNouvelle" formControlName="classeGroupeId"
+                    [disabled]="classesLoading || classes.length === 0"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 disabled:bg-gray-100">
+                    <option [ngValue]="null">{{ classesLoading ? 'Chargement des classes…' : (classes.length ? 'Aucune classe (optionnel)' : 'Aucune classe disponible') }}</option>
+                    <option *ngFor="let classe of classes" [ngValue]="classe.id">
+                        {{ classe.libelle }}{{ classe.parcours?.titre ? ' — ' + classe.parcours?.titre : '' }}{{ classe.niveauEtude?.libelle ? ' — ' + classe.niveauEtude?.libelle : '' }}
+                    </option>
+                </select>
+                <p *ngIf="classesError" class="mt-1 text-xs text-red-600">{{ classesError }}</p>
             </div>
             <div class="col-span-2">
                 <label for="dateDebut" class="mb-2 block text-sm leading-6 text-gray-600">Date début</label>
@@ -369,6 +384,9 @@
 <app-custom-modal title="Modifier la séance" subtitle="Editer les informations de cette séance hebdomadaire" (onCloseModal)="closeModificationSeanceModal()" [center]="true" [showModal]="showModificationSeanceModal">
     <form [formGroup]="modificationSeanceForm">
         <div class="grid grid-cols-6 md:gap-x-24 gap-x-0 gap-y-10 mb-8">
+            <div class="col-span-full rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-800">
+                Site actif : {{ siteActifPlanning?.nom || 'aucun site sélectionné' }}
+            </div>
             <div class="col-span-full">
                 <div class="flex justify-between items-center">
                     <label for="titre" class="mb-2 block text-sm leading-6 text-gray-600">Titre</label>
@@ -432,6 +450,18 @@
                     <app-form-message *ngIf="modificationSeanceForm.get('salle')!.errors?.['required']"
                         text="Veuillez choisir une salle"></app-form-message>
                 </div>
+            </div>
+            <div class="col-span-2">
+                <label for="classeModification" class="mb-2 block text-sm leading-6 text-gray-600">Classe / groupe (filière — niveau)</label>
+                <select id="classeModification" formControlName="classeGroupeId"
+                    [disabled]="classesLoading || classes.length === 0"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 disabled:bg-gray-100">
+                    <option [ngValue]="null">{{ classesLoading ? 'Chargement des classes…' : (classes.length ? 'Aucune classe (optionnel)' : 'Aucune classe disponible') }}</option>
+                    <option *ngFor="let classe of classes" [ngValue]="classe.id">
+                        {{ classe.libelle }}{{ classe.parcours?.titre ? ' — ' + classe.parcours?.titre : '' }}{{ classe.niveauEtude?.libelle ? ' — ' + classe.niveauEtude?.libelle : '' }}
+                    </option>
+                </select>
+                <p *ngIf="classesError" class="mt-1 text-xs text-red-600">{{ classesError }}</p>
             </div>
             <div class="col-span-2">
                 <label for="dateDebut" class="mb-2 block text-sm leading-6 text-gray-600">Date début</label>

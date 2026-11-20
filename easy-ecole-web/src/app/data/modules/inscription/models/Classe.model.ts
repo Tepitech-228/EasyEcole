@@ -10,6 +10,7 @@ export class Classe {
   declare niveauEtude?: NiveauEtude
   declare parcoursId?: string
   declare parcours?: Parcours
+  declare etablissementId?: string | number | null
 
   declare readonly createdAt?: Date
   declare readonly updatedAt?: Date

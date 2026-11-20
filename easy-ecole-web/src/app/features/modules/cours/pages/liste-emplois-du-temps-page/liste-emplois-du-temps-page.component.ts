@@ -21,7 +21,6 @@ import { SalleDeClasse } from 'src/app/data/modules/inscription/models/SalleDeCl
 import { SalleDeClasseService } from 'src/app/data/modules/inscription/services/salle-de-classe.service';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { NotificationService } from 'src/app/data/modules/elearning/services/notification.service';
-import { forkJoin } from 'rxjs';
 import { saveAs } from 'file-saver';
 
 const COULEURS_PALETTE = [
@@ -56,6 +55,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
   sitesError: string = ''
   classes: Classe[] = []
   classesLoading: boolean = false
+  classesError: string = ''
   sallesDisponibles: SalleDeClasse[] = []
   sallesLoading: boolean = false
   sallesError: string = ''
@@ -105,6 +105,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
     jourSemaine: new FormControl(null, [Validators.required]),
     salle: new FormControl(null, [Validators.required]),
     salleDeClasseId: new FormControl(null),
+    classeGroupeId: new FormControl(null),
     dateDebut: new FormControl(null, [Validators.required]),
     dateFin: new FormControl(null, [Validators.required]),
     heureDebut: new FormControl(null, [Validators.required]),
@@ -120,6 +121,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
     jourSemaine: new FormControl(null, [Validators.required]),
     salle: new FormControl(null, [Validators.required]),
     salleDeClasseId: new FormControl(null),
+    classeGroupeId: new FormControl(null),
     dateDebut: new FormControl(null, [Validators.required]),
     dateFin: new FormControl(null, [Validators.required]),
     heureDebut: new FormControl(null, [Validators.required]),
@@ -173,7 +175,6 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
   ngOnInit(): void {
     this.getCours()
     this.getEnseignants()
-    this.getClasses()
     this.getSitesPlanning()
     this.loadPlanningForCurrentWeek()
   }
@@ -200,6 +201,12 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
     return Array.from(sites, ([id, nom]) => ({ id, nom }))
   }
 
+  get siteActifPlanning(): SiteUtilisateur | undefined {
+    const etablissementId = Number(BaseComponentClass.utilisateur.etablissementId)
+    if (!Number.isSafeInteger(etablissementId) || etablissementId <= 0) return undefined
+    return this.sitesDisponibles.find(site => Number(site.id) === etablissementId)
+  }
+
   private getSitesPlanning(): void {
     this.sitesLoading = true
     this.sitesError = ''
@@ -207,6 +214,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
       next: (sites) => {
         this.sitesDisponibles = sites
         this.sitesLoading = false
+        this.getClasses()
         this.getSalles()
       },
       error: () => {
@@ -301,7 +309,6 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
   onPlanningSiteChange(siteId: string): void {
     this.filterSiteId = siteId
     this.onFilterChange()
-    this.getSalles()
   }
 
   planningEvent(eventId: string): PlanningEvent | undefined {
@@ -509,16 +516,23 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
 
   getClasses(): void {
     this.classesLoading = true
+    this.classesError = ''
+    const site = this.siteActifPlanning
+    if (!site) {
+      this.classes = []
+      this.classesLoading = false
+      this.classesError = 'Sélectionnez un site actif dans le menu pour afficher ses classes.'
+      return
+    }
 
-    this.classeService.getAll()
+    this.classeService.getAll(undefined, String(site.id))
       .subscribe({
         next: (res) => {
           this.classes = res
+          this.classesLoading = false
         },
         error: (err) => {
-          console.log(err)
-        },
-        complete: () => {
+          this.classesError = err?.error?.message || 'Impossible de charger les classes du site.'
           this.classesLoading = false
         }
       })
@@ -528,35 +542,25 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
     this.sallesLoading = true
     this.sallesError = ''
     this.sallesDisponibles = []
-    const sites = this.filterSiteId
-      ? this.sitesDisponibles.filter(site => String(site.id) === this.filterSiteId)
-      : this.sitesDisponibles
-    if (sites.length === 0) {
+    const site = this.siteActifPlanning
+    if (!site) {
       this.sallesDisponibles = []
       this.sallesLoading = false
-      if (this.filterSiteId) {
-        this.sallesError = 'Aucun site autorisé ne correspond au site sélectionné.'
-      }
+      this.sallesError = 'Sélectionnez un site actif dans le menu pour afficher ses salles.'
       this.synchroniserSalleModification()
       return
     }
 
-    forkJoin(sites.map(site => this.salleDeClasseService.getAll(
+    this.salleDeClasseService.getAll(
       undefined,
       undefined,
       String(site.id),
       undefined,
       undefined,
       'DISPONIBLE',
-    ))).subscribe({
-      next: (resultats) => {
-        const sallesParId = new Map<string, SalleDeClasse>()
-        for (const salles of resultats) {
-          for (const salle of salles) {
-            sallesParId.set(String(salle.id), salle)
-          }
-        }
-        this.sallesDisponibles = Array.from(sallesParId.values())
+    ).subscribe({
+      next: (salles) => {
+        this.sallesDisponibles = salles
         this.sallesLoading = false
         this.synchroniserSalleModification()
       },
@@ -628,6 +632,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
       jourSemaine: form.get('jourSemaine')!.value,
       salle: form.get('salle')!.value,
       salleDeClasseId: form.get('salleDeClasseId')!.value || null,
+      classeGroupeId: form.get('classeGroupeId')!.value || null,
       dateDebut: form.get('dateDebut')!.value,
       dateFin: form.get('dateFin')!.value,
       heureDebut: form.get('heureDebut')!.value,
@@ -703,6 +708,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
     seance.jourSemaine = this.nouvelleSeanceForm.get('jourSemaine')!.value
     seance.salle = this.nouvelleSeanceForm.get('salle')!.value
     seance.salleDeClasseId = this.nouvelleSeanceForm.get('salleDeClasseId')!.value || null
+    seance.classeGroupeId = this.nouvelleSeanceForm.get('classeGroupeId')!.value || null
     seance.dateDebut = this.nouvelleSeanceForm.get('dateDebut')!.value
     seance.dateFin = this.nouvelleSeanceForm.get('dateFin')!.value
     seance.heureDebut = this.nouvelleSeanceForm.get('heureDebut')!.value
@@ -746,6 +752,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
       seance.jourSemaine = this.modificationSeanceForm.get('jourSemaine')!.value
       seance.salle = this.modificationSeanceForm.get('salle')!.value
       seance.salleDeClasseId = this.modificationSeanceForm.get('salleDeClasseId')!.value || null
+      seance.classeGroupeId = this.modificationSeanceForm.get('classeGroupeId')!.value || null
       seance.dateDebut = this.modificationSeanceForm.get('dateDebut')!.value
       seance.dateFin = this.modificationSeanceForm.get('dateFin')!.value
       seance.heureDebut = this.modificationSeanceForm.get('heureDebut')!.value
@@ -1301,6 +1308,7 @@ export class ListeEmploisDuTempsPageComponent extends BaseComponentClass impleme
           this.modificationSeanceForm.get('jourSemaine')!.setValue(seance.jourSemaine)
           this.modificationSeanceForm.get('salle')!.setValue(seance.salle)
           this.modificationSeanceForm.get('salleDeClasseId')!.setValue(seance.salleDeClasseId || null)
+          this.modificationSeanceForm.get('classeGroupeId')!.setValue(seance.classeGroupeId || null)
           this.modificationSeanceForm.get('dateDebut')!.setValue(seance.dateDebut)
           this.modificationSeanceForm.get('dateFin')!.setValue(seance.dateFin)
           this.modificationSeanceForm.get('heureDebut')!.setValue(seance.heureDebut)
