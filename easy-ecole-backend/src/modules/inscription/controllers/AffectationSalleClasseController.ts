@@ -20,9 +20,9 @@ export default class AffectationSalleClasseController {
     }
 
     /**
-     * Détecte les affectations en conflit :
-     *  - une même salle affectée à DEUX classes différentes sur une période qui se chevauche
-     *  - une même classe affectée à DEUX salles différentes sur une période qui se chevauche
+     * Une salle peut desservir plusieurs classes sur une année scolaire.
+     * Les conflits d'occupation de la salle sont contrôlés par les horaires des séances.
+     * Cette vérification empêche une classe d'être affectée à plusieurs salles simultanément.
      */
     private static async verifierChevauchement(data: any, excludeId?: string): Promise<any[]> {
         const conflits: any[] = [];
@@ -36,20 +36,6 @@ export default class AffectationSalleClasseController {
         if (excludeId) whereOverlap.id = { [Op.ne]: excludeId };
         if (regime && regime !== 'JOUR_ET_SOIR') {
             whereOverlap.regime = { [Op.in]: [regime, 'JOUR_ET_SOIR'] };
-        }
-
-        // Même salle affectée à une AUTRE classe (salleId identique, classeId différent)
-        const salleConflits = await AffectationSalleClasse.findAll({
-            where: { ...whereOverlap, salleId, classeId: { [Op.ne]: classeId } },
-            include: AffectationSalleClasseController.baseIncludes()
-        });
-        for (const aff of salleConflits) {
-            const s = aff as any;
-            conflits.push({
-                type: 'salle',
-                message: `La salle "${s.salle?.libelle ?? s.salleId}" est déjà affectée à une autre classe sur cette période (${s.dateDebut} → ${s.dateFin})`,
-                affectation: aff
-            });
         }
 
         // Même classe affectée sur une AUTRE salle (classeId identique, salleId différent)
