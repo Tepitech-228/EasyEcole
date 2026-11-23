@@ -100,12 +100,16 @@ describe("HikvisionEnrollmentService", () => {
   it("backfills validated learners and submitted applications to a student terminal", async () => {
     const terminal = { id: 8, etablissementId: 3, population: "etudiant" as const };
     DossierEtudiant.findAll.mockResolvedValue([
-      { utilisateurId: 42, matricule: "ESA042" },
-      { utilisateurId: 43, matricule: "ESA043" }
+      { utilisateurId: 42, matricule: "ESA042", utilisateur: { role: "apprenant" } },
+      { utilisateurId: 43, matricule: "ESA043", utilisateur: { role: "personnel_administratif" } }
     ]);
     DemandeInscription.findAll
-      .mockResolvedValueOnce([{ utilisateurId: 42 }])
-      .mockResolvedValueOnce([{ utilisateurId: 44, matriculeEtudiant: "ESA044" }]);
+      .mockResolvedValueOnce([{ utilisateurId: 42 }, { utilisateurId: 43 }])
+      .mockResolvedValueOnce([
+        { utilisateurId: 44, matriculeEtudiant: "ESA044" },
+        { utilisateurId: 45, matriculeEtudiant: "STAFF045" }
+      ]);
+    Utilisateur.findAll.mockResolvedValue([{ id: 44 }]);
     HikvisionEnrollment.findOrCreate.mockResolvedValue([{}, true]);
 
     await HikvisionEnrollmentService.enqueueEligibleProfilesForTerminal(terminal);
@@ -119,6 +123,19 @@ describe("HikvisionEnrollmentService", () => {
       where: { terminalId: 8, utilisateurId: 44 },
       defaults: expect.objectContaining({ employeeNo: "ESA044" })
     }));
+    expect(HikvisionEnrollment.findOrCreate).not.toHaveBeenCalledWith(
+      expect.objectContaining({ where: { terminalId: 8, utilisateurId: 43 } })
+    );
+    expect(HikvisionEnrollment.findOrCreate).not.toHaveBeenCalledWith(
+      expect.objectContaining({ where: { terminalId: 8, utilisateurId: 45 } })
+    );
+    expect(Utilisateur.findAll).toHaveBeenCalledWith({
+      where: {
+        id: { [require("sequelize").Op.in]: [44, 45] },
+        role: "apprenant"
+      },
+      attributes: ["id"]
+    });
     expect(DemandeInscription.findAll).toHaveBeenLastCalledWith({
       where: {
         etablissementId: 3,
@@ -141,8 +158,20 @@ describe("HikvisionEnrollmentService", () => {
     const updateExistingPhoto = jest.fn();
     const terminal = { id: 8, etablissementId: 3, population: "etudiant" as const };
     DossierEtudiant.findAll.mockResolvedValue([
-      { utilisateurId: 42, matricule: "ESA042", photo: null, update: updateMissingPhoto },
-      { utilisateurId: 43, matricule: "ESA043", photo: "already-linked.jpg", update: updateExistingPhoto }
+      {
+        utilisateurId: 42,
+        matricule: "ESA042",
+        photo: null,
+        utilisateur: { role: "apprenant" },
+        update: updateMissingPhoto
+      },
+      {
+        utilisateurId: 43,
+        matricule: "ESA043",
+        photo: "already-linked.jpg",
+        utilisateur: { role: "apprenant" },
+        update: updateExistingPhoto
+      }
     ]);
     Apprenant.findAll.mockResolvedValue([
       { utilisateurId: 42, photo: "student-42.jpg" },
@@ -283,6 +312,7 @@ describe("HikvisionEnrollmentService", () => {
     DemandeInscription.findAll
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([{ utilisateurId: 42, matriculeEtudiant: "ESA042" }]);
+    Utilisateur.findAll.mockResolvedValue([{ id: 42 }]);
     HikvisionEnrollment.findOrCreate.mockResolvedValue([{ statut: "en_attente" }, true]);
     const infoSpy = jest.spyOn(console, "info").mockImplementation(() => undefined);
 
@@ -337,6 +367,7 @@ describe("HikvisionEnrollmentService", () => {
     DemandeInscription.findAll
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([{ utilisateurId: 42, matriculeEtudiant: "ESA042" }]);
+    Utilisateur.findAll.mockResolvedValue([{ id: 42 }]);
     const update = jest.fn();
     HikvisionEnrollment.findOrCreate.mockResolvedValue([{
       statut: "termine",
@@ -418,6 +449,46 @@ describe("HikvisionEnrollmentService", () => {
         photosEnvoyees: 1,
         enrolementsEnErreur: 0
       })
+    ]));
+  });
+
+  it("removes queued non-learners from student terminals without retrying them", async () => {
+    const enrollment = {
+      id: 33,
+      terminalId: 8,
+      utilisateurId: 77,
+      etablissementId: 3,
+      employeeNo: "ADMIN077",
+      tentatives: 0,
+      update: jest.fn().mockResolvedValue(undefined)
+    };
+    HikvisionEnrollment.count.mockResolvedValue(1);
+    HikvisionEnrollment.findAll.mockResolvedValue([enrollment]);
+    HikvisionEnrollment.update
+      .mockResolvedValueOnce([0])
+      .mockResolvedValueOnce([1]);
+    HikvisionEnrollment.destroy.mockResolvedValue(1);
+    PointageTerminal.findOne.mockResolvedValue({
+      id: 8,
+      etablissementId: 3,
+      population: "etudiant"
+    });
+    Utilisateur.findByPk.mockResolvedValue({ id: 77, role: "admin" });
+    const infoSpy = jest.spyOn(console, "info").mockImplementation(() => undefined);
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    await HikvisionEnrollmentService.processPending();
+
+    expect(HikvisionEnrollment.destroy).toHaveBeenCalledWith({ where: { id: 33 } });
+    expect(enrollment.update).not.toHaveBeenCalled();
+    expect(HikvisionIsapiService.enrollPerson).not.toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalledWith("[HIKVISION_ENROLLMENT_STATUS]", expect.any(String));
+    const progressEvents = infoSpy.mock.calls
+      .filter(([event]) => event === "[HIKVISION_ENROLLMENT_PROGRESS]")
+      .map(([, payload]) => JSON.parse(payload));
+    expect(progressEvents).toEqual(expect.arrayContaining([
+      expect.objectContaining({ resultat: "enrolement_ignore" }),
+      expect.objectContaining({ resultat: "lot_termine", entreesIgnorees: 1, enrolementsEnErreur: 0 })
     ]));
   });
 

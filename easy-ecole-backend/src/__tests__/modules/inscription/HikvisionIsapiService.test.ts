@@ -1,3 +1,7 @@
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
+
 jest.mock("../../../modules/inscription/models/PointageTerminal", () => ({ PointageTerminal: {} }));
 jest.mock("../../../modules/inscription/controllers/PointageTerminalController", () => ({
   __esModule: true,
@@ -12,7 +16,8 @@ import HikvisionIsapiService, {
   buildTerminalUrl,
   getCurlExecutable,
   getTunnelAccessHeaders,
-  parseHikvisionAccessEvents
+  parseHikvisionAccessEvents,
+  readEnrollmentPhoto
 } from "../../../modules/inscription/services/HikvisionIsapiService";
 import type { PointageTerminal } from "../../../modules/inscription/models/PointageTerminal";
 
@@ -64,6 +69,29 @@ describe("HikvisionIsapiService", () => {
       "-F", "FaceDataRecord=</tmp/person.json;type=application/json",
       "-F", "FaceImage=@/tmp/face.jpg;type=image/jpeg"
     ]);
+  });
+
+  it("reads a learner photo from legacy document storage when the public copy is missing", async () => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "hikvision-photo-"));
+    const primaryDirectory = path.join(directory, "public");
+    const legacyDirectory = path.join(directory, "legacy");
+    fs.mkdirSync(primaryDirectory);
+    fs.mkdirSync(legacyDirectory);
+    const photo = Buffer.from("legacy photo");
+    fs.writeFileSync(path.join(legacyDirectory, "student.jpg"), photo);
+
+    try {
+      await expect(readEnrollmentPhoto(
+        "student.jpg",
+        primaryDirectory,
+        legacyDirectory
+      )).resolves.toEqual({
+        photo,
+        photoPath: path.join(legacyDirectory, "student.jpg")
+      });
+    } finally {
+      fs.rmSync(directory, { recursive: true, force: true });
+    }
   });
 
   it("encrypts terminal credentials instead of retaining clear text", () => {

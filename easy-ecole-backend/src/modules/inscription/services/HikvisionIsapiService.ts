@@ -7,6 +7,7 @@ import { ChildProcess, spawn } from "child_process";
 import { PointageTerminal } from "../models/PointageTerminal";
 import { getPersistedMasterKey } from "../../../core/services/EncryptionService";
 import { HikvisionAlertStreamParser } from "./HikvisionAlertStreamParser";
+import LegacyStudentPhotoService from "./LegacyStudentPhotoService";
 
 export interface HikvisionAccessEvent {
     pin: string;
@@ -248,6 +249,44 @@ export function parseHikvisionAccessEvents(xml: string): HikvisionAccessEvent[] 
     return events;
 }
 
+export async function readEnrollmentPhoto(
+    photoFilename: string,
+    photoRoot: string,
+    legacyStudentPhotoDirectory?: string
+): Promise<{ photo: Buffer; photoPath: string }> {
+    const resolvedPhotoRoot = path.resolve(photoRoot);
+    const photoPath = path.resolve(resolvedPhotoRoot, photoFilename);
+    if (
+        path.dirname(photoPath) !== resolvedPhotoRoot
+        || path.basename(photoFilename) !== photoFilename
+    ) {
+        throw new Error("Profile photo path is invalid for Hikvision enrollment.");
+    }
+
+    try {
+        return { photo: await fs.readFile(photoPath), photoPath };
+    } catch (error) {
+        if (
+            (error as NodeJS.ErrnoException).code !== "ENOENT"
+            || !legacyStudentPhotoDirectory
+        ) {
+            throw error;
+        }
+    }
+
+    const legacyFilename = await LegacyStudentPhotoService.resolvePhotoReference(
+        photoFilename,
+        legacyStudentPhotoDirectory
+    );
+    if (!legacyFilename) {
+        throw new Error(
+            `Profile photo is missing from the primary and legacy storage locations: ${photoPath}`
+        );
+    }
+    const legacyPhotoPath = path.join(legacyStudentPhotoDirectory, legacyFilename);
+    return { photo: await fs.readFile(legacyPhotoPath), photoPath: legacyPhotoPath };
+}
+
 export default class HikvisionIsapiService {
     static encryptCredential(password: string): string {
         return encryptPassword(password);
@@ -398,11 +437,13 @@ export default class HikvisionIsapiService {
                 ? ["enseignants", "photos"]
                 : ["profiles"];
         const photoRoot = path.resolve(process.cwd(), "public", "auth", ...photoDirectory);
-        const photoPath = path.resolve(photoRoot, student.photoFilename);
-        if (path.dirname(photoPath) !== photoRoot || path.basename(student.photoFilename) !== student.photoFilename) {
-            throw new Error("Profile photo path is invalid for Hikvision enrollment.");
-        }
-        const photo = await fs.readFile(photoPath);
+        const { photo, photoPath } = await readEnrollmentPhoto(
+            student.photoFilename,
+            photoRoot,
+            student.photoCategory === "apprenant"
+                ? LegacyStudentPhotoService.getLegacyPhotoDirectory()
+                : undefined
+        );
         if (photo.length === 0 || photo.length > 5 * 1024 * 1024) {
             throw new Error("Profile photo is empty or exceeds the Hikvision upload limit.");
         }

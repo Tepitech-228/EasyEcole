@@ -126,7 +126,9 @@ export default class HikvisionEnrollmentService {
       });
       const utilisateursValides = new Set(demandes.map(demande => Number(demande.utilisateurId)));
       const dossiersEligibles = dossiers.filter(dossier =>
-        utilisateursValides.has(Number(dossier.utilisateurId)) && Boolean(dossier.matricule)
+        utilisateursValides.has(Number(dossier.utilisateurId))
+        && dossier.utilisateur?.role === RolesUtilisateur.APPRENANT
+        && Boolean(dossier.matricule)
       );
       const resultatsFile = {
         created: 0,
@@ -163,7 +165,23 @@ export default class HikvisionEnrollmentService {
         attributes: ["utilisateurId", "matriculeEtudiant"],
         order: [["updatedAt", "DESC"]]
       });
-      for (const demande of submittedDemands) {
+      const submittedUtilisateurIds = [...new Set(
+        submittedDemands.map(demande => Number(demande.utilisateurId))
+      )];
+      const apprenantAccounts = submittedUtilisateurIds.length > 0
+        ? await Utilisateur.findAll({
+            where: {
+              id: { [Op.in]: submittedUtilisateurIds },
+              role: RolesUtilisateur.APPRENANT
+            },
+            attributes: ["id"]
+          })
+        : [];
+      const apprenantIds = new Set(apprenantAccounts.map(utilisateur => Number(utilisateur.id)));
+      const submittedStudentDemands = submittedDemands.filter(demande =>
+        apprenantIds.has(Number(demande.utilisateurId))
+      );
+      for (const demande of submittedStudentDemands) {
         if (!demande.matriculeEtudiant) continue;
         await ajouterALaFile(
           Number(demande.utilisateurId),
@@ -178,7 +196,8 @@ export default class HikvisionEnrollmentService {
         dossiersTrouves: dossiers.length,
         dossiersEligibles: dossiersEligibles.length,
         demandesAvecMatricule: submittedDemands.length,
-        candidatsAnalyses: dossiersEligibles.length + submittedDemands.length,
+        demandesHorsProfilApprenant: submittedDemands.length - submittedStudentDemands.length,
+        candidatsAnalyses: dossiersEligibles.length + submittedStudentDemands.length,
         ...resultatsFile
       }));
       return;
@@ -500,6 +519,15 @@ export default class HikvisionEnrollmentService {
           terminalId: Number(enrollment.terminalId)
         }));
         const photoEnvoyee = await HikvisionEnrollmentService.processOne(enrollment);
+        if (photoEnvoyee === null) {
+          entreesIgnorees++;
+          console.info("[HIKVISION_ENROLLMENT_PROGRESS]", JSON.stringify({
+            resultat: "enrolement_ignore",
+            positionDansLeLot: index + 1,
+            totalDansLeLot: pending.length
+          }));
+          continue;
+        }
         enrolementsTraites++;
         if (photoEnvoyee) photosEnvoyees++;
         else enrolementsEnErreur++;
@@ -525,7 +553,7 @@ export default class HikvisionEnrollmentService {
     }
   }
 
-  private static async processOne(enrollment: HikvisionEnrollment): Promise<boolean> {
+  private static async processOne(enrollment: HikvisionEnrollment): Promise<boolean | null> {
     try {
       let terminal = await PointageTerminal.findOne({
         where: {
@@ -622,6 +650,18 @@ export default class HikvisionEnrollmentService {
         { include: [Utilisateur.associations.apprenant] }
       );
       if (!utilisateur) throw new Error("Le compte associé à l'enrôlement n'est plus disponible.");
+      if (terminal.population === "etudiant" && utilisateur.role !== RolesUtilisateur.APPRENANT) {
+        await HikvisionEnrollmentService.withDatabaseRetry(
+          () => HikvisionEnrollment.destroy({ where: { id: enrollment.id } })
+        );
+        console.warn("[HIKVISION_ENROLLMENT_STATUS]", JSON.stringify({
+          statut: "ignore",
+          resultat: "profil_non_apprenant_retire_de_la_file_etudiant",
+          utilisateurId: Number(utilisateur.id),
+          terminalId: Number(terminal.id)
+        }));
+        return null;
+      }
 
       let photoFilename: string | null = null;
       let photoCategory: "apprenant" | "enseignant" | "personnel" = "apprenant";
