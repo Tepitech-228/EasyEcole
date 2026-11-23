@@ -4,6 +4,10 @@
       <p class="dashboard-kicker"><span class="material-symbols-outlined">account_balance</span> RÉFÉRENCES BANCAIRES</p>
       <app-header-title title="Références bancaires saisies" subtitle="Historique des comptes bancaires sélectionnés pour les bordereaux"></app-header-title>
     </div>
+    <a routerLink="/comptabilite/analyse-bancaire" class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700">
+      <span class="material-symbols-outlined text-lg">query_stats</span>
+      Analyse des encaissements
+    </a>
   </div>
   <div class="dashboard-surface-card p-4 mb-6">
     <input type="text" [(ngModel)]="searchTerm" placeholder="Rechercher par étudiant ou référence..." class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm">

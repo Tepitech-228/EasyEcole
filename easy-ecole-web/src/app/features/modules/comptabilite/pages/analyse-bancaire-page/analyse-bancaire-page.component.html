@@ -1,0 +1,107 @@
+<div class="dashboard-surface compta-workspace min-h-screen p-4 sm:p-6 lg:p-8">
+  <div class="compta-workspace-hero">
+    <div>
+      <p class="dashboard-kicker"><span class="material-symbols-outlined">query_stats</span> ANALYSE DES ENCAISSEMENTS</p>
+      <app-header-title
+        title="Paiements par banque"
+        subtitle="Comparaison des paiements traités selon la date de paiement">
+      </app-header-title>
+    </div>
+    <a routerLink="/comptabilite/references-bancaires" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+      <span class="material-symbols-outlined text-lg">receipt_long</span>
+      Voir les références
+    </a>
+  </div>
+
+  <div class="dashboard-surface-card mb-6 p-4 sm:p-5">
+    <form class="grid grid-cols-1 items-end gap-4 sm:grid-cols-2 lg:grid-cols-4" (ngSubmit)="appliquerFiltres()">
+      <label class="block text-sm font-medium text-gray-700">
+        Date de début
+        <input type="date" name="dateDebut" [(ngModel)]="dateDebut" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2.5">
+      </label>
+      <label class="block text-sm font-medium text-gray-700">
+        Date de fin
+        <input type="date" name="dateFin" [(ngModel)]="dateFin" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2.5">
+      </label>
+      <label class="block text-sm font-medium text-gray-700">
+        Regrouper les résultats
+        <select name="granularite" [(ngModel)]="granularite" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2.5">
+          <option *ngFor="let option of granularites" [value]="option.value">{{ option.label }}</option>
+        </select>
+      </label>
+      <button type="submit" [disabled]="loading" class="inline-flex items-center justify-center gap-2 rounded-md bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60">
+        <span class="material-symbols-outlined text-lg">filter_alt</span>
+        Appliquer
+      </button>
+    </form>
+  </div>
+
+  <div *ngIf="errorMessage" class="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+    {{ errorMessage }}
+  </div>
+
+  <div *ngIf="loading" class="flex items-center justify-center py-12">
+    <span class="material-symbols-outlined animate-spin text-3xl text-indigo-500">progress_activity</span>
+    <span class="ml-2 text-gray-500">Chargement des encaissements...</span>
+  </div>
+
+  <ng-container *ngIf="!loading && statistiques">
+    <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div class="dashboard-surface-card p-5">
+        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Étudiants payeurs</p>
+        <p class="mt-2 text-3xl font-bold text-gray-900">{{ statistiques.totalEtudiants | number }}</p>
+        <p class="mt-1 text-sm text-gray-500">Étudiants distincts sur la période</p>
+      </div>
+      <div class="dashboard-surface-card p-5">
+        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Montant recouvré</p>
+        <p class="mt-2 text-2xl font-bold text-emerald-700">{{ formatCurrency(statistiques.montantTotal) }}</p>
+        <p class="mt-1 text-sm text-gray-500">Total des bordereaux traités</p>
+      </div>
+      <div class="dashboard-surface-card p-5">
+        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Paiements traités</p>
+        <p class="mt-2 text-3xl font-bold text-indigo-700">{{ statistiques.nombrePaiements | number }}</p>
+        <p class="mt-1 text-sm text-gray-500">Bordereaux bancaires</p>
+      </div>
+    </div>
+
+    <div *ngIf="chartLabels.length" class="mb-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
+      <app-chart-panel
+        title="Étudiants payeurs par banque"
+        [subtitle]="'Évolution ' + nomGranularite"
+        [payload]="etudiantsPayload">
+      </app-chart-panel>
+      <app-chart-panel
+        title="Montants recouvrés par banque"
+        [subtitle]="'Évolution ' + nomGranularite + ' — FCFA'"
+        [payload]="montantsPayload">
+      </app-chart-panel>
+    </div>
+
+    <div class="dashboard-surface-card overflow-hidden">
+      <div class="border-b border-gray-200 px-5 py-4">
+        <h2 class="text-base font-semibold text-gray-900">Comparaison des banques</h2>
+        <p class="mt-1 text-sm text-gray-500">Résultats cumulés du {{ dateDebut | date:'dd/MM/yyyy' }} au {{ dateFin | date:'dd/MM/yyyy' }}</p>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-gray-500">Banque</th>
+              <th class="px-5 py-3 text-right text-xs font-semibold uppercase text-gray-500">Étudiants</th>
+              <th class="px-5 py-3 text-right text-xs font-semibold uppercase text-gray-500">Paiements</th>
+              <th class="px-5 py-3 text-right text-xs font-semibold uppercase text-gray-500">Montant recouvré</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 bg-white">
+            <tr *ngFor="let banque of statistiques.parBanque">
+              <td class="whitespace-nowrap px-5 py-4 text-sm font-semibold text-gray-800">{{ banque.referenceBancaire }}</td>
+              <td class="px-5 py-4 text-right text-sm text-gray-700">{{ banque.nombreEtudiants | number }}</td>
+              <td class="px-5 py-4 text-right text-sm text-gray-700">{{ banque.nombrePaiements | number }}</td>
+              <td class="whitespace-nowrap px-5 py-4 text-right text-sm font-semibold text-gray-800">{{ formatCurrency(banque.montantTotal) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-container>
+</div>

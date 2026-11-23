@@ -20,6 +20,7 @@ import { CompteResultatPageComponent } from './pages/compte-resultat-page/compte
 import { DashboardCabinetPageComponent } from './pages/dashboard-cabinet-page/dashboard-cabinet-page.component';
 import { ReferencesBancairesPageComponent } from './pages/references-bancaires-page/references-bancaires-page.component';
 import { HistoriqueTraitementsPageComponent } from './pages/historique-traitements-page/historique-traitements-page.component';
+import { AnalyseBancairePageComponent } from './pages/analyse-bancaire-page/analyse-bancaire-page.component';
 
 @NgModule({
   declarations: [
@@ -37,6 +38,7 @@ import { HistoriqueTraitementsPageComponent } from './pages/historique-traitemen
     ParametresFraisPageComponent,
     DashboardCabinetPageComponent,
     ReferencesBancairesPageComponent,
+    AnalyseBancairePageComponent,
     HistoriqueTraitementsPageComponent,
   ],
   imports: [

@@ -15,6 +15,7 @@ import { ParametresFraisPageComponent } from './pages/parametres-frais-page/para
 import { DashboardCabinetPageComponent } from './pages/dashboard-cabinet-page/dashboard-cabinet-page.component';
 import { ReferencesBancairesPageComponent } from './pages/references-bancaires-page/references-bancaires-page.component';
 import { HistoriqueTraitementsPageComponent } from './pages/historique-traitements-page/historique-traitements-page.component';
+import { AnalyseBancairePageComponent } from './pages/analyse-bancaire-page/analyse-bancaire-page.component';
 
 const routes: Routes = [
   {
@@ -90,6 +91,11 @@ const routes: Routes = [
   {
     path: 'references-bancaires',
     component: ReferencesBancairesPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'analyse-bancaire',
+    component: AnalyseBancairePageComponent,
     pathMatch: 'full'
   },
   {
