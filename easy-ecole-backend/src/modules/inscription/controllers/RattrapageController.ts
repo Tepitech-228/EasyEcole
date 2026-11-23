@@ -821,7 +821,7 @@ export default class RattrapageController {
       }
 
       const existingBordereau = await Bordereau.findOne({
-        where: { referenceBancaire: `rattrapage-${rattrapage.id}` }
+        where: { fichier: `rattrapage-${rattrapage.id}.pdf` }
       });
 
       if (existingBordereau) {
@@ -867,7 +867,7 @@ export default class RattrapageController {
 
       if (paiementId == null) {
         const bordereau = await Bordereau.findOne({
-          where: { referenceBancaire: `rattrapage-${rattrapage.id}` }
+          where: { fichier: `rattrapage-${rattrapage.id}.pdf` }
         });
         paiementId = bordereau ? bordereau.id : null;
       }
@@ -914,7 +914,7 @@ export default class RattrapageController {
       }
 
       let bordereau = await Bordereau.findOne({
-        where: { referenceBancaire: `rattrapage-${rattrapage.id}` }
+        where: { fichier: `rattrapage-${rattrapage.id}.pdf` }
       });
 
       if (!bordereau) {

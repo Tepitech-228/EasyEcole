@@ -89,12 +89,9 @@ router
       * /inscription/bordereaux/verifier-unicite:
       *   get:
       *     tags: [Bordereaux]
-      *     summary: Vérifie qu'une référence bancaire / un numéro de bordereau n'est pas déjà utilisé par un autre bordereau (Cabinet)
+      *     summary: Vérifie qu'un numéro de bordereau n'est pas déjà utilisé par un autre bordereau (Cabinet)
       *     security: [{ bearerAuth: [] }]
       *     parameters:
-      *       - in: query
-      *         name: referenceBancaire
-      *         schema: { type: string }
       *       - in: query
       *         name: numeroBordereau
       *         schema: { type: string }
@@ -109,33 +106,26 @@ router
       */
      .get('/verifier-unicite', [AuthCabinetComptable, CheckPermission('action.inscription.bordereau.valider')], async (req: Request, res: Response) => {
        try {
-         const referenceBancaire = typeof req.query.referenceBancaire === 'string' ? req.query.referenceBancaire.trim() : '';
          const numeroBordereau = typeof req.query.numeroBordereau === 'string' ? req.query.numeroBordereau.trim() : '';
          const excludeId = req.query.excludeId ? Number(req.query.excludeId) : null;
 
-         if (!referenceBancaire && !numeroBordereau) {
-           return res.status(400).json({ success: false, message: 'Renseignez une référence bancaire ou un numéro de bordereau.' });
+         if (!numeroBordereau) {
+           return res.status(400).json({ success: false, message: 'Renseignez un numéro de bordereau.' });
          }
 
          const whereClause: any = { deletedAt: null };
          if ((req as any).utilisateurRole === RolesUtilisateur.CABINET_COMPTABLE) {
            whereClause.etablissementId = Number((req as any).etablissementId);
          }
-         const orConditions: any[] = [];
-         if (referenceBancaire) orConditions.push({ referenceBancaire });
-         if (numeroBordereau) orConditions.push({ numeroBordereau });
          if (excludeId && !isNaN(excludeId)) whereClause.id = { [Op.ne]: excludeId };
-         whereClause[Op.or] = orConditions;
+         whereClause.numeroBordereau = numeroBordereau;
 
-         const existant = await Bordereau.findOne({ where: whereClause, attributes: ['id', 'referenceBancaire', 'numeroBordereau'] });
+         const existant = await Bordereau.findOne({ where: whereClause, attributes: ['id', 'numeroBordereau'] });
          if (!existant) {
            return res.json({ success: true, unique: true });
          }
 
-         const conflit = referenceBancaire && existant.referenceBancaire === referenceBancaire
-           ? { champ: 'referenceBancaire', valeur: existant.referenceBancaire }
-           : { champ: 'numeroBordereau', valeur: existant.numeroBordereau };
-         return res.json({ success: true, unique: false, conflit });
+         return res.json({ success: true, unique: false, conflit: { champ: 'numeroBordereau', valeur: existant.numeroBordereau } });
        } catch (error: any) {
          console.error('[Bordereau] verifier-unicite ERREUR:', error?.message);
          return res.status(500).json({ success: false, message: "Erreur de vérification d'unicité." });
@@ -184,8 +174,6 @@ router
      *                 format: binary
      *               montant:
      *                 type: number
-     *               referenceBancaire:
-     *                 type: string
      *     responses:
      *       201:
      *         description: Bordereau créé
@@ -220,6 +208,7 @@ router
       *             properties:
       *               referenceBancaire:
       *                 type: string
+      *                 enum: [ORABANK-TG116, "IB BANK -TG024", "ECOBANK TG055"]
       *                 description: Référence bancaire obligatoire
       *               numeroBordereau:
       *                 type: string
@@ -297,6 +286,7 @@ router
       *                 type: number
       *               referenceBancaire:
       *                 type: string
+      *                 enum: [ORABANK-TG116, "IB BANK -TG024", "ECOBANK TG055"]
       *               numeroBordereau:
       *                 type: string
       *               datePaiement:

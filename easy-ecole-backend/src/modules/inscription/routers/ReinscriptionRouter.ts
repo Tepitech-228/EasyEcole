@@ -120,7 +120,6 @@ router.get('/eligibilite', ReinscriptionController.getEligibilite)
  *               classeId: { type: string }
  *               niveauEtudeId: { type: string }
  *               montant: { type: number }
- *               referenceBancaire: { type: string }
  *               modalite: { type: string }
  *               demande_dg: { type: string, format: binary }
  *               autorisation_provisoire: { type: string, format: binary }

@@ -5,7 +5,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { ToastService } from 'src/app/core/services/toast.service';
 import { AnneeAcademique } from 'src/app/data/modules/inscription/models/AnneeAcademique.model';
-import { Bordereau } from 'src/app/data/modules/inscription/models/Bordereau.model';
+import { BORDEREAU_BANK_REFERENCES, Bordereau } from 'src/app/data/modules/inscription/models/Bordereau.model';
 import { NiveauEtude } from 'src/app/data/modules/inscription/models/NiveauEtude.model';
 import { Parcours } from 'src/app/data/modules/inscription/models/Parcours.model';
 import { Session } from 'src/app/data/modules/inscription/models/Session.model';
@@ -83,6 +83,7 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   itemColumns = [
     { key: 'type', label: 'Type' },
     { key: 'montant', label: 'Montant' },
+    { key: 'referenceBancaire', label: 'Référence bancaire' },
     { key: 'dateSoumission', label: 'Date' }
   ];
   /**
@@ -104,10 +105,11 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   ];
 
   /**
-   * Le cabinet se limite à authentifier le bordereau : la saisie comptable
-   * (type, montant, référence) est réalisée par ESA-COMPTA en aval.
+   * Le cabinet authentifie le bordereau et choisit le compte bancaire ;
+   * le type et le montant sont saisis par ESA-COMPTA en aval.
    */
   canShowItemAction = (item: any, action: string): boolean => true;
+  readonly referencesBancaires = BORDEREAU_BANK_REFERENCES
 
   constructor(
     private bordereauService: BordereauService,
@@ -121,6 +123,7 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   ) {
     super()
     this.validationForm = this.fb.group({
+      referenceBancaire: ['', [Validators.required]],
       numeroBordereau: ['', [Validators.required], [this.verificateurUnicite('numeroBordereau')]],
       datePaiement: ['', [Validators.required]],
       commentaire: ['']
@@ -300,6 +303,7 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
 
       const raw = this.validationForm.value
       const payload = {
+        referenceBancaire: raw.referenceBancaire,
         numeroBordereau: raw.numeroBordereau.trim(),
         datePaiement: raw.datePaiement,
         commentaire: raw.commentaire?.trim() || undefined
@@ -492,6 +496,7 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
         this.error = false
         this.apiErrorMessage = ''
         this.validationForm.reset({
+          referenceBancaire: this.referencesBancaires.find(reference => reference === bordereau.referenceBancaire) || '',
           numeroBordereau: bordereau.numeroBordereau || '',
           datePaiement: bordereau.datePaiement ? new Date(bordereau.datePaiement).toISOString().split('T')[0] : '',
           commentaire: bordereau.commentaire || ''

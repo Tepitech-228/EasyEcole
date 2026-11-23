@@ -7,6 +7,12 @@ import { Quitus } from "./Quitus";
 import { TypeOperationBordereau } from "./TypeOperationBordereau";
 import { Etablissement } from "../../etablissement/models/Etablissement";
 
+export const BORDEREAU_BANK_REFERENCES = [
+  "ORABANK-TG116",
+  "IB BANK -TG024",
+  "ECOBANK TG055",
+] as const;
+
 export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAttributes<Bordereau>> {
   declare id: CreationOptional<number>
   /**

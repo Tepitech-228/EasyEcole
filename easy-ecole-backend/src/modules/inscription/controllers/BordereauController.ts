@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { TypesPaiement } from "../../../core/enums/TypesPaiement";
-import { Bordereau } from "../models/Bordereau";
+import { BORDEREAU_BANK_REFERENCES, Bordereau } from "../models/Bordereau";
 import { Echeance } from "../models/Echeance";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { Apprenant } from "../../auth/models/Apprenant";
@@ -42,6 +42,7 @@ import { DocGenGeneratorService } from "../../docgen/services/DocGenGeneratorSer
 import { BordereauDossierService } from "../services/BordereauDossierService";
 import { EtudiantUploadStorageService } from "../services/EtudiantUploadStorageService";
 import { BordereauAffectationService } from "../services/BordereauAffectationService";
+const bordereauBankReferenceSet = new Set<string>(BORDEREAU_BANK_REFERENCES);
 
 export const isChoixFinalValue = (value: unknown): boolean => {
     if (typeof value === 'boolean') return value;
@@ -399,7 +400,6 @@ export default class BordereauController {
             bordereau.etablissementId = etablissementId
             bordereau.fichier = fichier
             bordereau.montant = req.body.montant ? Number(req.body.montant) : null
-            bordereau.referenceBancaire = req.body.referenceBancaire ?? null
             bordereau.statut = 'en_attente'
             bordereau.dateSoumission = new Date()
             bordereau.modalite = req.body.modalite ?? '1x'
@@ -556,6 +556,10 @@ export default class BordereauController {
             const numBordereau = typeof req.body.numeroBordereau === 'string' ? req.body.numeroBordereau.trim() : '';
             const datePaiementStr = typeof req.body.datePaiement === 'string' ? req.body.datePaiement : '';
 
+            if (!bordereauBankReferenceSet.has(refBancaire)) {
+                await transaction.rollback();
+                return res.status(400).json({ success: false, message: "Choisissez une référence bancaire valide." });
+            }
             if (!numBordereau) {
                 await transaction.rollback();
                 return res.status(400).json({ success: false, message: "numeroBordereau requis" });
@@ -570,21 +574,18 @@ export default class BordereauController {
                 return res.status(400).json({ success: false, message: "datePaiement invalide" });
             }
 
-            // ── Contrôle d'unicité : la référence est vérifiée uniquement si elle est fournie. ──
+            // Une référence bancaire peut être réutilisée ; seul le numéro est unique.
             const whereClause: any = {
                 id: { [Op.ne]: bordereau.id },
                 deletedAt: null,
                 ...cabinetSiteWhere,
             };
-            const orConditions: any[] = [];
-            if (refBancaire) orConditions.push({ referenceBancaire: refBancaire });
-            if (numBordereau) orConditions.push({ numeroBordereau: numBordereau });
-            if (orConditions.length > 0) {
-                whereClause[Op.or] = orConditions;
+            if (numBordereau) {
+                whereClause.numeroBordereau = numBordereau;
                 const doublon = await Bordereau.findOne({ where: whereClause, transaction });
                 if (doublon) {
                     await transaction.rollback();
-                    return res.status(400).json({ success: false, message: "Ce bordereau est déjà traité", details: { referenceBancaire: refBancaire, numeroBordereau: numBordereau } });
+                    return res.status(400).json({ success: false, message: "Ce numéro de bordereau est déjà utilisé", details: { numeroBordereau: numBordereau } });
                 }
             }
 
@@ -594,10 +595,7 @@ export default class BordereauController {
             bordereau.commentaire = req.body.commentaire ?? null
             BordereauAffectationService.effacerAffectation(bordereau, 'audit')
 
-            // Conserver une référence existante si l'écran ne la transmet plus.
-            if (typeof req.body.referenceBancaire === 'string') {
-                bordereau.referenceBancaire = refBancaire
-            }
+            bordereau.referenceBancaire = refBancaire
             bordereau.numeroBordereau = numBordereau
             bordereau.datePaiement = datePaiement
 
@@ -982,6 +980,10 @@ export default class BordereauController {
             const numBordereau = typeof req.body.numeroBordereau === 'string' ? req.body.numeroBordereau.trim() : '';
             const datePaiementStr = typeof req.body.datePaiement === 'string' ? req.body.datePaiement : '';
 
+            if (!bordereauBankReferenceSet.has(refBancaire)) {
+                await transaction.rollback();
+                return res.status(400).json({ success: false, message: "Choisissez une référence bancaire valide." });
+            }
             if (!numBordereau) {
                 await transaction.rollback();
                 return res.status(400).json({ success: false, message: "numeroBordereau requis" });
@@ -996,27 +998,22 @@ export default class BordereauController {
                 return res.status(400).json({ success: false, message: "datePaiement invalide" });
             }
 
-            // ── Contrôle d'unicité (identique à FinanceRouter) : éviter un doublon sur référence/numéro ──
+            // Une référence bancaire peut être réutilisée ; seul le numéro est unique.
             const whereClause: any = {
                 id: { [Op.ne]: bordereau.id },
                 deletedAt: null,
                 ...cabinetSiteWhere,
             };
-            const orConditions: any[] = [];
-            if (refBancaire) orConditions.push({ referenceBancaire: refBancaire });
-            if (numBordereau) orConditions.push({ numeroBordereau: numBordereau });
-            if (orConditions.length > 0) {
-                whereClause[Op.or] = orConditions;
+            if (numBordereau) {
+                whereClause.numeroBordereau = numBordereau;
                 const doublon = await Bordereau.findOne({ where: whereClause, transaction });
                 if (doublon) {
                     await transaction.rollback();
-                    return res.status(400).json({ success: false, message: "Ce bordereau est déjà traité", details: { referenceBancaire: refBancaire, numeroBordereau: numBordereau } });
+                    return res.status(400).json({ success: false, message: "Ce numéro de bordereau est déjà utilisé", details: { numeroBordereau: numBordereau } });
                 }
             }
 
-            if (typeof req.body.referenceBancaire === 'string') {
-                bordereau.referenceBancaire = refBancaire;
-            }
+            bordereau.referenceBancaire = refBancaire;
             bordereau.numeroBordereau = numBordereau;
             bordereau.datePaiement = datePaiement;
             bordereau.statut = 'valide'

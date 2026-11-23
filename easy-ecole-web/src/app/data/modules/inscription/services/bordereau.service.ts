@@ -111,7 +111,7 @@ export class BordereauService {
     return this.httpClient.post<Bordereau>(`${this.SERVICE_URL}`, formData)
   }
 
-  valider(id: string, payload: { numeroBordereau: string; datePaiement: string; commentaire?: string }): Observable<Bordereau> {
+  valider(id: string, payload: { referenceBancaire: string; numeroBordereau: string; datePaiement: string; commentaire?: string }): Observable<Bordereau> {
     return this.httpClient.put<Bordereau>(`${this.SERVICE_URL}/${id}/valider`, payload)
   }
 

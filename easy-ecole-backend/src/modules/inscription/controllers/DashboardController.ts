@@ -683,17 +683,17 @@ class DashboardController {
 
     /**
      * Dashboard ESA-COMPTA : suivi financier des bordereaux (validation, montants,
-     * doublons de références bancaires). Spécifique au pôle ESA-COMPTA (finance).
+     * doublons de numéros de bordereau). Spécifique au pôle ESA-COMPTA (finance).
      */
     private static async getEsacomptaDashboard() {
-        const [totalBordereaux, enAttente, valides, rejetes, lus, montantTotal, doublons, parBanque, parMois, moyPaiement, echeances] = await Promise.all([
+        const [totalBordereaux, enAttente, valides, rejetes, lus, montantTotal, doublonsNumeros, parBanque, parMois, moyPaiement, echeances] = await Promise.all([
             Bordereau.count(),
             Bordereau.count({ where: { statut: 'en_attente' } }),
             Bordereau.count({ where: { statut: 'valide' } }),
             Bordereau.count({ where: { statut: 'rejete' } }),
             Bordereau.count({ where: { statut: 'en_saisie_comptable' } }),
             Bordereau.sum('montant'),
-            DashboardController.getDoublonsReferences(),
+            DashboardController.getDoublonsNumerosBordereau(),
             DashboardController.getBordereauxParBanque(),
             DashboardController.getBordereauxParMois(),
             DashboardController.getMontantsParMoyenPaiement(),
@@ -722,7 +722,7 @@ class DashboardController {
                 montantValide,
                 montantEnAttente: montantAttente,
                 montantRejete,
-                doublonsReferences: doublons,
+                doublonsNumerosBordereau: doublonsNumeros,
                 echeancesImpayees: echeances,
                 tauxTraitement: totalBordereaux > 0 ? Math.round(((valides + enAttente + rejetes + lus) / totalBordereaux) * 100) : 0,
                 charts: {
@@ -739,24 +739,22 @@ class DashboardController {
         };
     }
 
-    /** Compte les références bancaires dupliquées (>= 2 bordereaux sur la même référence). */
-    private static async getDoublonsReferences(): Promise<number> {
+    /** Compte les numéros de bordereau dupliqués (>= 2 bordereaux avec le même numéro). */
+    private static async getDoublonsNumerosBordereau(): Promise<number> {
         try {
-            // Agrégation sur la volumétrie des références (faible) : on compte en JS
-            // à partir d'une sélection déjà réduite — pas de findAll massif.
-            const refs = await Bordereau.findAll({
-                attributes: ['referenceBancaire'],
+            const bordereaux = await Bordereau.findAll({
+                attributes: ['numeroBordereau'],
                 raw: true,
             });
             const countMap = new Map<string, number>();
-            for (const r of refs as any[]) {
-                const v = r.referenceBancaire;
-                if (!v) continue;
-                countMap.set(v, (countMap.get(v) || 0) + 1);
+            for (const bordereau of bordereaux as any[]) {
+                const numero = bordereau.numeroBordereau;
+                if (!numero) continue;
+                countMap.set(numero, (countMap.get(numero) || 0) + 1);
             }
             return Array.from(countMap.values()).filter((c) => c > 1).length;
         } catch (error) {
-            console.error('[getDoublonsReferences]', error);
+            console.error('[getDoublonsNumerosBordereau]', error);
             return 0;
         }
     }

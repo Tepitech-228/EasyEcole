@@ -2,7 +2,7 @@ import express from "express"
 import { Request, Response } from "express";
 import path from "path";
 import { FindOptions, InferAttributes, Op } from "sequelize";
-import { Bordereau } from "../models/Bordereau";
+import { BORDEREAU_BANK_REFERENCES, Bordereau } from "../models/Bordereau";
 import { MODULE_MODEL_PREFIX } from "../InscriptionModule";
 import { Echeance } from "../models/Echeance";
 import { DossierEtudiant } from "../models/DossierEtudiant";
@@ -49,6 +49,7 @@ import SituationFinanciereController from "../controllers/SituationFinanciereCon
  * Monté sous /inscription/finance dans InscriptionRoutes.ts.
  */
 const router = express.Router();
+const bordereauBankReferenceSet = new Set<string>(BORDEREAU_BANK_REFERENCES);
 
 const getFinanceSiteScopeId = (
   req: Request,
@@ -494,13 +495,10 @@ router.get('/bordereaux-a-traiter', [AuthEsacompta, CheckPermission('action.fina
  * @openapi
  * /inscription/finance/bordereaux/verifier-unicite:
  *   get:
- *     summary: Vérifie qu'une référence bancaire / un numéro de bordereau n'est pas déjà utilisé par un autre bordereau
+ *     summary: Vérifie qu'un numéro de bordereau n'est pas déjà utilisé par un autre bordereau
  *     tags: [Finance]
  *     security: [{ bearerAuth: [] }]
  *     parameters:
- *       - in: query
- *         name: referenceBancaire
- *         schema: { type: string }
  *       - in: query
  *         name: numeroBordereau
  *         schema: { type: string }
@@ -515,30 +513,23 @@ router.get('/bordereaux-a-traiter', [AuthEsacompta, CheckPermission('action.fina
  */
 router.get('/bordereaux/verifier-unicite', [AuthEsacompta, CheckPermission('action.finance.bordereau.saisir')], async (req: Request, res: Response) => {
   try {
-    const referenceBancaire = typeof req.query.referenceBancaire === 'string' ? req.query.referenceBancaire.trim() : ''
     const numeroBordereau = typeof req.query.numeroBordereau === 'string' ? req.query.numeroBordereau.trim() : ''
     const excludeId = req.query.excludeId ? Number(req.query.excludeId) : null
 
-    if (!referenceBancaire && !numeroBordereau) {
-      return res.status(400).json({ success: false, message: 'Renseignez une référence bancaire ou un numéro de bordereau.' })
+    if (!numeroBordereau) {
+      return res.status(400).json({ success: false, message: 'Renseignez un numéro de bordereau.' })
     }
 
     const whereClause: any = { deletedAt: null }
-    const orConditions: any[] = []
-    if (referenceBancaire) orConditions.push({ referenceBancaire })
-    if (numeroBordereau) orConditions.push({ numeroBordereau })
     if (excludeId && !isNaN(excludeId)) whereClause.id = { [Op.ne]: excludeId }
-    whereClause[Op.or] = orConditions
+    whereClause.numeroBordereau = numeroBordereau
 
-    const existant = await Bordereau.findOne({ where: whereClause, attributes: ['id', 'referenceBancaire', 'numeroBordereau'] })
+    const existant = await Bordereau.findOne({ where: whereClause, attributes: ['id', 'numeroBordereau'] })
     if (!existant) {
       return res.json({ success: true, unique: true })
     }
 
-    const conflit = referenceBancaire && existant.referenceBancaire === referenceBancaire
-      ? { champ: 'referenceBancaire', valeur: existant.referenceBancaire }
-      : { champ: 'numeroBordereau', valeur: existant.numeroBordereau }
-    return res.json({ success: true, unique: false, conflit })
+    return res.json({ success: true, unique: false, conflit: { champ: 'numeroBordereau', valeur: existant.numeroBordereau } })
   } catch (error: any) {
     console.error('[Finance] verifier-unicite ERREUR:', error?.message)
     return res.status(500).json({ success: false, message: "Erreur de vérification d'unicité." })
@@ -746,11 +737,13 @@ router.post(
  *             type: object
  *             required:
  *               - montantPaiement
+ *               - referenceBancaire
  *             properties:
  *               montantPaiement:
  *                 type: number
  *               referenceBancaire:
  *                 type: string
+ *                 enum: [ORABANK-TG116, "IB BANK -TG024", "ECOBANK TG055"]
  *               numeroBordereau:
  *                 type: string
  *               moyenPaiement:
@@ -1109,27 +1102,33 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       demandePipeline.matriculeEtudiant = dossierExistant.matricule
     }
 
-    const refBancaire = (req.body.referenceBancaire || '').trim() || bordereau.referenceBancaire || null;
+    const referenceBancaireSaisie = typeof req.body.referenceBancaire === 'string'
+      ? req.body.referenceBancaire.trim()
+      : '';
+    const refBancaire = referenceBancaireSaisie || bordereau.referenceBancaire || null;
     const numBordereau = (req.body.numeroBordereau || '').trim() || bordereau.numeroBordereau || null;
     const moyPaiement = (req.body.moyenPaiement || '').trim() || null;
     const datePaiement = req.body.datePaiement ? new Date(req.body.datePaiement) : bordereau.datePaiement
 
     console.log(_rid, 'Sanitization:', { refBancaire, numBordereau, moyPaiement, datePaiement, typeOperationIdEffectif, typeEffectif })
 
-    // Contrôle anti-doublon : vérifier qu'une référence/numéro n'est pas déjà utilisée par un autre bordereau
-    if (refBancaire !== null || numBordereau !== null) {
+    if (!refBancaire || !bordereauBankReferenceSet.has(refBancaire)) {
+      await transaction.rollback()
+      return res.status(400).json({
+        success: false,
+        message: 'Choisissez une référence bancaire valide parmi les comptes proposés.',
+      })
+    }
+
+    // Les références bancaires sont réutilisables ; seul le numéro de bordereau reste unique.
+    if (numBordereau !== null) {
       const whereClause: any = { id: { [Op.ne]: bordereau.id }, deletedAt: null };
-      const orConditions: any[] = [];
-      if (refBancaire !== null) orConditions.push({ referenceBancaire: refBancaire });
-      if (numBordereau !== null) orConditions.push({ numeroBordereau: numBordereau });
-      if (orConditions.length > 0) {
-        whereClause[Op.or] = orConditions;
-        const doublon = await Bordereau.findOne({ where: whereClause, transaction });
-        if (doublon) {
-          await transaction.rollback();
-          console.log(_rid, 'ERREUR 400: Double saisie — référence/numéro déjà utilisé');
-          return res.status(400).json({ success: false, message: "Ce bordereau est déjà traité", details: { referenceBancaire: refBancaire, numeroBordereau: numBordereau } });
-        }
+      whereClause.numeroBordereau = numBordereau;
+      const doublon = await Bordereau.findOne({ where: whereClause, transaction });
+      if (doublon) {
+        await transaction.rollback();
+        console.log(_rid, 'ERREUR 400: Numéro de bordereau déjà utilisé');
+        return res.status(400).json({ success: false, message: "Ce numéro de bordereau est déjà utilisé", details: { numeroBordereau: numBordereau } });
       }
     }
 

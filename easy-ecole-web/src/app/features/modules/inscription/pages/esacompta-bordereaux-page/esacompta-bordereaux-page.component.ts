@@ -4,7 +4,7 @@ import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, Validators }
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { AuthService, SiteUtilisateur } from 'src/app/data/modules/auth/services/auth.service';
-import { Bordereau } from 'src/app/data/modules/inscription/models/Bordereau.model';
+import { BORDEREAU_BANK_REFERENCES, Bordereau } from 'src/app/data/modules/inscription/models/Bordereau.model';
 import { TypeOperationBordereau } from 'src/app/data/modules/inscription/models/TypeOperationBordereau.model';
 import { BordereauService } from 'src/app/data/modules/inscription/services/bordereau.service';
 import { TypeOperationBordereauService } from 'src/app/data/modules/inscription/services/type-operation-bordereau.service';
@@ -149,6 +149,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
       { key: 'etudiant', label: 'Étudiant' },
       { key: 'matricule', label: 'Matricule', width: '130px' },
       { key: 'typeOperation', label: 'Type' },
+      { key: 'referenceBancaire', label: 'Référence bancaire' },
       { key: 'montantBordereau', label: 'Montant', width: '150px' },
       { key: 'date', label: 'Date dépôt', width: '150px' },
     ]
@@ -200,6 +201,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     this.saisieForm = this.fb.group({
       montantPaiement: [null, [Validators.required, Validators.min(1), montantPaiementValide]],
       matriculeEtudiant: [''],
+      referenceBancaire: ['', Validators.required],
       numeroBordereau: ['', Validators.required, this.verificateurUnicite('numeroBordereau')],
       moyenPaiement: [''],
       banque: [''],
@@ -242,6 +244,8 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     { value: 'autre', label: 'Autres' },
     { value: 'depot_banque', label: 'Dépôt en banque' }
   ]
+
+  readonly referencesBancaires = BORDEREAU_BANK_REFERENCES
 
   readonly banquesOptions: { value: string; label: string }[] = [
     { value: 'ib_bank', label: 'IB BANK' },
@@ -485,6 +489,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
       etudiant: b.utilisateur ? `${b.utilisateur.nom} ${b.utilisateur.prenoms}` : 'Étudiant inconnu',
       matricule: b.echeance?.dossierEtudiant?.matricule || '—',
       typeOperation: this.getTypeOperationLibelle(b.typeOperationId ?? null),
+      referenceBancaire: b.referenceBancaire || '—',
       montantBordereau: this.formatCurrency(b.montant),
       date: b.dateSoumission ? new Date(b.dateSoumission) : null,
       traiteur: b.saisiPar ? `${b.saisiPar.prenoms || ''} ${b.saisiPar.nom || ''}`.trim() || '—' : '—',
@@ -532,6 +537,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     this.saisieForm.reset({
       montantPaiement: bordereau.montant || null,
       matriculeEtudiant: matriculeExistant,
+      referenceBancaire: this.referencesBancaires.find(reference => reference === bordereau.referenceBancaire) || '',
       numeroBordereau: bordereau.numeroBordereau || '',
       moyenPaiement: bordereau.moyenPaiement || '',
       banque: '',
@@ -696,6 +702,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
       ...(this.matriculeEtudiantRequis
         ? { matriculeEtudiant: String(raw.matriculeEtudiant || '').trim() }
         : {}),
+      referenceBancaire: raw.referenceBancaire,
       numeroBordereau: (raw.numeroBordereau || '').trim() || null,
       moyenPaiement: (raw.moyenPaiement || '').trim() || null,
       banque: (raw.banque || '').trim() || null,

@@ -436,7 +436,7 @@ export default class ReinscriptionController {
      *     releves_notes, cni, quitus_bordereaux_annee, bordereau_nouvelle_annee
      *   - champ 'bordereau' : fichier du bordereau de paiement réinscription
      *   - body : sessionId (obligatoire), classeId?, niveauEtudeId?, montant?,
-     *     referenceBancaire?, modalite?, anneeEcoulee?
+     *     modalite?, anneeEcoulee?
      */
     static async soumettre(req: Request, res: Response): Promise<Response> {
         const role = (req as any).utilisateurRole
@@ -585,7 +585,6 @@ export default class ReinscriptionController {
                     utilisateurId: userId,
                     fichier: bordereauFile.filename,
                     montant: req.body.montant ? Number(req.body.montant) : null,
-                    referenceBancaire: req.body.referenceBancaire ?? null,
                     modalite: req.body.modalite ?? '1x',
                     statut: 'en_attente',
                     statutPaiement: 'pending',

@@ -11,7 +11,10 @@ jest.mock('../../../modules/inscription/models/Bordereau', () => {
     validePar: {},
     quitus: {},
   }
-  return { Bordereau }
+  return {
+    Bordereau,
+    BORDEREAU_BANK_REFERENCES: ['ORABANK-TG116', 'IB BANK -TG024', 'ECOBANK TG055'],
+  }
 })
 
 jest.mock('../../../modules/inscription/models/DemandeInscription', () => {
@@ -209,14 +212,14 @@ describe('BordereauController.getBordereau', () => {
 })
 
 describe('BordereauController.validerBordereau', () => {
-  it('accepts validation without a bank reference and preserves an existing one', async () => {
+  it('allows a reused bank reference and saves the cabinet selection', async () => {
     jest.clearAllMocks()
     const bordereau: any = {
       id: 33,
       statut: 'en_attente',
       type: 'inscription',
       utilisateurId: 7,
-      referenceBancaire: 'REF-EXISTANTE',
+      referenceBancaire: 'ORABANK-TG116',
       save: jest.fn().mockResolvedValue(undefined),
     }
     ;(Bordereau.findOne as jest.Mock)
@@ -230,6 +233,7 @@ describe('BordereauController.validerBordereau', () => {
       etablissementId: 42,
       params: { id: '33' },
       body: {
+        referenceBancaire: 'ORABANK-TG116',
         numeroBordereau: 'B-2026-001',
         datePaiement: '2026-11-23',
       },
@@ -239,8 +243,11 @@ describe('BordereauController.validerBordereau', () => {
     await Ctrl.validerBordereau(req, res)
 
     expect(res.status).toHaveBeenCalledWith(200)
-    expect(bordereau.referenceBancaire).toBe('REF-EXISTANTE')
+    expect(bordereau.referenceBancaire).toBe('ORABANK-TG116')
     expect(bordereau.save).toHaveBeenCalled()
+    const duplicateCheckWhere = (Bordereau.findOne as jest.Mock).mock.calls[1][0].where
+    expect(duplicateCheckWhere.numeroBordereau).toBe('B-2026-001')
+    expect(duplicateCheckWhere).not.toHaveProperty('referenceBancaire')
   })
 })
 

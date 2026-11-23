@@ -30,6 +30,7 @@ export class WidgetBordereauxKpiComponent implements OnInit {
   validesCount = 0;
   rejetesCount = 0;
   anomaliesCount = 0;
+  referencesCount = 0;
 
   // Moyens de paiement (graphique)
   paymentStats: PaymentStat[] = [];
@@ -62,6 +63,7 @@ export class WidgetBordereauxKpiComponent implements OnInit {
     this.validesCount = b.filter(x => x.statut === 'valide').length;
     this.rejetesCount = b.filter(x => x.statut === 'rejete').length;
     this.anomaliesCount = b.filter(x => x.statut === 'en_saisie_comptable').length;
+    this.referencesCount = b.filter(x => x.referenceBancaire).length;
 
     const virement = b.filter(x => x.moyenPaiement === 'virement').length;
     const especes = b.filter(x => x.moyenPaiement === 'especes').length;

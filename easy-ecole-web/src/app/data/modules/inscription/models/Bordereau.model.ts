@@ -4,6 +4,12 @@ import { Echeance } from "./Echeance.model"
 import { Quitus } from "./Quitus.model"
 import { TypeOperationBordereau } from "./TypeOperationBordereau.model"
 
+export const BORDEREAU_BANK_REFERENCES = [
+  'ORABANK-TG116',
+  'IB BANK -TG024',
+  'ECOBANK TG055',
+] as const
+
 export class Bordereau {
   declare id?: string
   declare type?: 'inscription' | 'scolarite' | 'rattrapage'

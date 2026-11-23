@@ -2587,10 +2587,7 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
                 bordereau = await Bordereau.findOne({
                   where: {
                     utilisateurId: utilisateur.id,
-                    [Op.or]: [
-                      { numeroBordereau: bordereauReference },
-                      { referenceBancaire: bordereauReference },
-                    ],
+                    numeroBordereau: bordereauReference,
                   }
                 });
               }
@@ -2607,7 +2604,6 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
                   echeanceId: echeance.id,
                   fichier: fichierBordereau || '',
                   numeroBordereau: bordereauReference || null,
-                  referenceBancaire: bordereauReference || undefined,
                   montant: montantBordereau !== null && Number.isFinite(montantBordereau) ? montantBordereau : null,
                   dateSoumission: dateDepot || undefined,
                   statut: bordereauStatut === 'en_attente' || bordereauStatut === 'valide' || bordereauStatut === 'rejete' ||
@@ -2620,7 +2616,6 @@ static async downloadEnseignantTemplate(req: Request, res: Response): Promise<Re
             if (bordereau) {
               // Update existing bordereau
               if (bordereauReference && bordereauReference !== '') bordereau.numeroBordereau = bordereauReference;
-              if (bordereauReference) bordereau.referenceBancaire = bordereauReference;
               if (bordereauMontantStr && bordereauMontantStr !== '') bordereau.montant = Number(bordereauMontantStr);
               const dateDepot = parseExcelDate(bordereauDateDepotStr);
               if (dateDepot) bordereau.dateSoumission = dateDepot;

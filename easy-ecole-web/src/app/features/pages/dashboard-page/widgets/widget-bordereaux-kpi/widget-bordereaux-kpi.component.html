@@ -16,7 +16,7 @@
   </div>
 
   <!-- KPI Cards -->
-  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
     <div class="esa-kpi-card esa-kpi-card--blue">
       <div class="esa-kpi-icon">
         <span class="material-symbols-outlined">receipt_long</span>
@@ -60,6 +60,15 @@
       <div class="esa-kpi-content">
         <p class="esa-kpi-value">{{ loading ? '—' : anomaliesCount }}</p>
         <p class="esa-kpi-label">Anomalies</p>
+      </div>
+    </div>
+    <div class="esa-kpi-card esa-kpi-card--purple">
+      <div class="esa-kpi-icon">
+        <span class="material-symbols-outlined">account_balance</span>
+      </div>
+      <div class="esa-kpi-content">
+        <p class="esa-kpi-value">{{ loading ? '—' : referencesCount }}</p>
+        <p class="esa-kpi-label">Réf. saisies</p>
       </div>
     </div>
   </div>

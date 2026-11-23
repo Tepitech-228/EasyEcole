@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { BordereauService } from 'src/app/data/modules/inscription/services/bordereau.service';
-import { Bordereau } from 'src/app/data/modules/inscription/models/Bordereau.model';
+import { BORDEREAU_BANK_REFERENCES, Bordereau } from 'src/app/data/modules/inscription/models/Bordereau.model';
 import { environment } from 'src/environments/environment';
 
 @Component({
@@ -17,6 +17,8 @@ export class BordereauxATraiterPageComponent extends BaseComponentClass implemen
   searchTerm = '';
 
   selectedBordereau?: Bordereau;
+  selectedReferenceBancaire = '';
+  readonly referencesBancaires = BORDEREAU_BANK_REFERENCES;
   showVerificationModal = false;
 
   constructor(private bordereauService: BordereauService) {
@@ -48,24 +50,32 @@ export class BordereauxATraiterPageComponent extends BaseComponentClass implemen
     return this.bordereaux.filter(b => {
       const etudiant = `${b.utilisateur?.nom ?? ''} ${b.utilisateur?.prenoms ?? ''}`.toLowerCase();
       const matricule = (b.echeance?.dossierEtudiant?.matricule || '').toLowerCase();
-      return etudiant.includes(q) || matricule.includes(q);
+      return etudiant.includes(q) || matricule.includes(q) || (b.referenceBancaire || '').toLowerCase().includes(q);
     });
   }
 
   openVerification(bordereau: Bordereau): void {
     this.selectedBordereau = bordereau;
+    this.selectedReferenceBancaire = this.referencesBancaires.find(reference => reference === bordereau.referenceBancaire) || '';
     this.showVerificationModal = true;
   }
 
   closeVerification(): void {
     this.showVerificationModal = false;
     this.selectedBordereau = undefined;
+    this.selectedReferenceBancaire = '';
   }
 
   onValider(): void {
     if (!this.selectedBordereau) return;
+    if (!this.referencesBancaires.some(reference => reference === this.selectedReferenceBancaire)) {
+      this.error = true;
+      this.apiErrorMessage = 'Choisissez une référence bancaire valide.';
+      return;
+    }
     const b = this.selectedBordereau;
     this.bordereauService.valider(b.id!, {
+      referenceBancaire: this.selectedReferenceBancaire,
       numeroBordereau: b.numeroBordereau || '',
       datePaiement: b.datePaiement ? new Date(b.datePaiement).toISOString().split('T')[0] : '',
     }).subscribe({

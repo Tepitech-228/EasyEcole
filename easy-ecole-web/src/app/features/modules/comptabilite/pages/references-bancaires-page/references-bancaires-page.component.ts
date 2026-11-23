@@ -37,8 +37,9 @@ export class ReferencesBancairesPageComponent extends BaseComponentClass impleme
     const q = this.searchTerm.toLowerCase().trim();
     if (!q) return this.references;
     return this.references.filter(r => {
-      const etudiant = `${r.utilisateur?.nom ?? ''}`.toLowerCase();
-      return etudiant.includes(q);
+      const etudiant = `${r.utilisateur?.nom ?? ''} ${r.utilisateur?.prenoms ?? ''}`.toLowerCase();
+      const reference = (r.referenceBancaire || '').toLowerCase();
+      return etudiant.includes(q) || reference.includes(q);
     });
   }
 
