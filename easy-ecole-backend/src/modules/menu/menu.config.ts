@@ -174,6 +174,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                      { label: 'Bordereaux rejetés', route: '/inscription/finance/bordereaux/rejetes', icon: 'receipt_long', permissionKey: 'menu.finances.bordereaux-a-traiter', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.ADMIN] },
                     { label: 'Types de bordereau', route: '/inscription/finance/types-bordereaux', icon: 'category', permissionKey: 'menu.finances.types-bordereaux', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.ADMIN] },
                     { label: 'Suivi recouvrements', route: '/inscription/finance/suivi-recouvrements', icon: 'monitoring', allowedRoles: [RolesUtilisateur.SUPERVISEUR_GENERAL, RolesUtilisateur.ADMIN], roleRestricted: true },
+                    { label: 'Analyse des paiements par banque', route: '/comptabilite/analyse-bancaire', icon: 'query_stats', allowedRoles: [RolesUtilisateur.SUPERVISEUR_GENERAL, RolesUtilisateur.ADMIN], roleRestricted: true },
                 ]
             },
             {

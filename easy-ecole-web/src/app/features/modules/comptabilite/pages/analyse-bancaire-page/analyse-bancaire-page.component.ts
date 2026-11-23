@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { BORDEREAU_BANK_REFERENCES } from 'src/app/data/modules/inscription/models/Bordereau.model';
-import { CabinetComptableService } from 'src/app/data/modules/comptabilite/services/cabinet-comptable.service';
+import { SuiviRecouvrementService } from 'src/app/data/modules/inscription/services/suivi-recouvrement.service';
 import { ChartPanelPayload } from 'src/app/shared/modern-ui/components/chart-panel/chart-panel.component';
 
 type Granularite = 'jour' | 'mois' | 'annee';
@@ -57,7 +57,7 @@ export class AnalyseBancairePageComponent extends BaseComponentClass implements 
   etudiantsPayload?: ChartPanelPayload;
   montantsPayload?: ChartPanelPayload;
 
-  constructor(private cabinetService: CabinetComptableService) {
+  constructor(private suiviRecouvrementService: SuiviRecouvrementService) {
     super();
   }
 
@@ -87,7 +87,7 @@ export class AnalyseBancairePageComponent extends BaseComponentClass implements 
   private loadStatistiques(): void {
     this.loading = true;
     this.errorMessage = '';
-    this.cabinetService.getStatistiquesBancaires(this.dateDebut, this.dateFin, this.granularite).subscribe({
+    this.suiviRecouvrementService.getStatistiquesBancaires(this.dateDebut, this.dateFin, this.granularite).subscribe({
       next: (response: any) => {
         if (!response?.success || !response.data) {
           this.errorMessage = response?.message || 'Les statistiques bancaires sont indisponibles.';

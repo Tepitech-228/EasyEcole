@@ -21,12 +21,6 @@ export class CabinetComptableService {
     });
   }
 
-  getStatistiquesBancaires(dateDebut: string, dateFin: string, granularite: 'jour' | 'mois' | 'annee'): Observable<any> {
-    return this.http.get(`${this.baseUrl}/statistiques-bancaires`, {
-      params: { dateDebut, dateFin, granularite }
-    });
-  }
-
   getHistorique(page: number = 1, limit: number = 20): Observable<any> {
     return this.http.get(`${this.baseUrl}/historique`, {
       params: { page: page.toString(), limit: limit.toString() }

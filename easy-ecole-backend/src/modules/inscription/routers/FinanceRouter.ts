@@ -43,6 +43,7 @@ import { creerEcritureComptable } from "../../comptabilite/helpers/ComptabiliteH
 import { nanoid } from "nanoid";
 import FinanceEcheanceController from "../controllers/FinanceEcheanceController";
 import SituationFinanciereController from "../controllers/SituationFinanciereController";
+import { AnalyseBancaireController } from "../controllers/AnalyseBancaireController";
 
 /**
  * Router dédié aux opérations financières ESA-COMPTA.
@@ -80,6 +81,8 @@ const parseDateOnlyUtc = (value: string): Date | null => {
   const date = new Date(`${value}T00:00:00.000Z`);
   return Number.isNaN(date.getTime()) || dateOnlyUtc(date) !== value ? null : date;
 };
+
+router.get('/analyse-bancaire', [AuthSuperviseurGeneralOuAdmin], AnalyseBancaireController.getStatistiquesBancaires);
 
 router.get('/suivi-recouvrements', [AuthSuperviseurGeneralOuAdmin], async (req: Request, res: Response) => {
   try {

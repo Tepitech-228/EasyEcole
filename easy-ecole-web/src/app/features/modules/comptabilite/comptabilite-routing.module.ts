@@ -16,6 +16,7 @@ import { DashboardCabinetPageComponent } from './pages/dashboard-cabinet-page/da
 import { ReferencesBancairesPageComponent } from './pages/references-bancaires-page/references-bancaires-page.component';
 import { HistoriqueTraitementsPageComponent } from './pages/historique-traitements-page/historique-traitements-page.component';
 import { AnalyseBancairePageComponent } from './pages/analyse-bancaire-page/analyse-bancaire-page.component';
+import { SuiviRecouvrementGuard } from 'src/app/core/guards/suivi-recouvrement.guard';
 
 const routes: Routes = [
   {
@@ -96,6 +97,7 @@ const routes: Routes = [
   {
     path: 'analyse-bancaire',
     component: AnalyseBancairePageComponent,
+    canActivate: [SuiviRecouvrementGuard],
     pathMatch: 'full'
   },
   {

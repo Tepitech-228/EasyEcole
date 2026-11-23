@@ -8,7 +8,6 @@ const router = express.Router();
 router
     .get('/dashboard', [AuthCabinetComptable], CabinetComptableDashboardController.getDashboard)
     .get('/references', [AuthCabinetComptable, CheckPermission('action.inscription.bordereau.consulter')], CabinetComptableDashboardController.getReferences)
-    .get('/statistiques-bancaires', [AuthCabinetComptable, CheckPermission('action.inscription.bordereau.consulter')], CabinetComptableDashboardController.getStatistiquesBancaires)
     .get('/historique', [AuthCabinetComptable], CabinetComptableDashboardController.getHistorique)
 
 export default router;
