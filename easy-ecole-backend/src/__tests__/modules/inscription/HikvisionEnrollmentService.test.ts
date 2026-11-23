@@ -7,6 +7,7 @@ jest.mock("../../../modules/inscription/models/HikvisionEnrollment", () => ({
     findOne: jest.fn(),
     update: jest.fn(),
     findAll: jest.fn(),
+    count: jest.fn(),
     destroy: jest.fn()
   }
 }));
@@ -52,8 +53,13 @@ const HikvisionIsapiService = require("../../../modules/inscription/services/Hik
 describe("HikvisionEnrollmentService", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    HikvisionEnrollment.count.mockResolvedValue(0);
     Utilisateur.findAll.mockResolvedValue([]);
     Apprenant.findAll.mockResolvedValue([]);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it("queues biometric enrollment on every active terminal even without explicit consent", async () => {
@@ -316,6 +322,7 @@ describe("HikvisionEnrollmentService", () => {
   });
 
   it("uses the student dossier photo to enroll legacy applicants", async () => {
+    HikvisionEnrollment.count.mockResolvedValue(1);
     const enrollment = {
       id: 21,
       terminalId: 8,
@@ -341,6 +348,7 @@ describe("HikvisionEnrollmentService", () => {
     });
     DossierEtudiant.findOne.mockResolvedValue({ photo: "legacy-student.jpg" });
     HikvisionIsapiService.enrollPerson.mockResolvedValue(undefined);
+    const infoSpy = jest.spyOn(console, "info").mockImplementation(() => undefined);
 
     await HikvisionEnrollmentService.processPending();
 
@@ -354,6 +362,32 @@ describe("HikvisionEnrollmentService", () => {
       statut: "termine",
       derniereErreur: null
     });
+    const progressEvents = infoSpy.mock.calls
+      .filter(([event]) => event === "[HIKVISION_ENROLLMENT_PROGRESS]")
+      .map(([, payload]) => JSON.parse(payload));
+    expect(progressEvents).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        resultat: "lot_demarre",
+        enrolementsEnAttente: 1,
+        enrolementsDansCeLot: 1
+      }),
+      expect.objectContaining({
+        resultat: "enrolement_en_cours",
+        positionDansLeLot: 1,
+        totalDansLeLot: 1
+      }),
+      expect.objectContaining({
+        resultat: "enrolement_traite",
+        photoEnvoyee: true,
+        photosEnvoyees: 1
+      }),
+      expect.objectContaining({
+        resultat: "lot_termine",
+        enrolementsTraites: 1,
+        photosEnvoyees: 1,
+        enrolementsEnErreur: 0
+      })
+    ]));
   });
 
   it("uses the staff profile photo and site assignment to queue biometric enrollment", async () => {

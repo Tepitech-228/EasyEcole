@@ -416,28 +416,75 @@ export default class HikvisionEnrollmentService {
           }
         }
       ));
+      const pendingWhere = {
+        statut: "en_attente",
+        prochaineTentativeAt: { [Op.lte]: new Date() }
+      };
+      const enrolementsEnAttente = await HikvisionEnrollmentService.withDatabaseRetry(
+        () => HikvisionEnrollment.count({ where: pendingWhere })
+      );
       const pending = await HikvisionEnrollmentService.withDatabaseRetry(() => HikvisionEnrollment.findAll({
-        where: {
-          statut: "en_attente",
-          prochaineTentativeAt: { [Op.lte]: new Date() }
-        },
+        where: pendingWhere,
         order: [["id", "ASC"]],
         limit: 20
       }));
-      for (const enrollment of pending) {
+      if (pending.length === 0) return;
+
+      let enrolementsTraites = 0;
+      let photosEnvoyees = 0;
+      let enrolementsEnErreur = 0;
+      let entreesIgnorees = 0;
+      console.info("[HIKVISION_ENROLLMENT_PROGRESS]", JSON.stringify({
+        resultat: "lot_demarre",
+        enrolementsEnAttente,
+        enrolementsDansCeLot: pending.length,
+        limiteLot: 20
+      }));
+
+      for (let index = 0; index < pending.length; index++) {
+        const enrollment = pending[index];
         const claimed = await HikvisionEnrollmentService.withDatabaseRetry(() => HikvisionEnrollment.update(
           { statut: "en_cours" },
           { where: { id: enrollment.id, statut: "en_attente" } }
         ));
-        if (claimed[0] === 0) continue;
-        await HikvisionEnrollmentService.processOne(enrollment);
+        if (claimed[0] === 0) {
+          entreesIgnorees++;
+          continue;
+        }
+
+        console.info("[HIKVISION_ENROLLMENT_PROGRESS]", JSON.stringify({
+          resultat: "enrolement_en_cours",
+          positionDansLeLot: index + 1,
+          totalDansLeLot: pending.length,
+          terminalId: Number(enrollment.terminalId)
+        }));
+        const photoEnvoyee = await HikvisionEnrollmentService.processOne(enrollment);
+        enrolementsTraites++;
+        if (photoEnvoyee) photosEnvoyees++;
+        else enrolementsEnErreur++;
+        console.info("[HIKVISION_ENROLLMENT_PROGRESS]", JSON.stringify({
+          resultat: "enrolement_traite",
+          positionDansLeLot: index + 1,
+          totalDansLeLot: pending.length,
+          photoEnvoyee,
+          photosEnvoyees,
+          enrolementsEnErreur
+        }));
       }
+      console.info("[HIKVISION_ENROLLMENT_PROGRESS]", JSON.stringify({
+        resultat: "lot_termine",
+        enrolementsTraites,
+        photosEnvoyees,
+        enrolementsEnErreur,
+        entreesIgnorees,
+        enrolementsEnAttenteAuDemarrage: enrolementsEnAttente
+      }));
     } finally {
       HikvisionEnrollmentService.running = false;
     }
   }
 
-  private static async processOne(enrollment: HikvisionEnrollment): Promise<void> {
+  private static async processOne(enrollment: HikvisionEnrollment): Promise<boolean> {
     try {
       let terminal = await PointageTerminal.findOne({
         where: {
@@ -526,7 +573,7 @@ export default class HikvisionEnrollmentService {
           }));
           console.warn(`[Hikvision] ${unavailableMessage} Nouvel essai dans une heure.`);
         }
-        return;
+        return false;
       }
 
       const utilisateur = await Utilisateur.findByPk(
@@ -607,6 +654,7 @@ export default class HikvisionEnrollmentService {
         terminalId: Number(terminal.id),
         etablissementId: Number(enrollment.etablissementId)
       }));
+      return true;
     } catch (error) {
       const tentatives = Number(enrollment.tentatives) + 1;
       const delayMinutes = Math.min(6 * 60, Math.pow(2, Math.min(tentatives, 9)));
@@ -629,6 +677,7 @@ export default class HikvisionEnrollmentService {
         prochainEssaiDansMinutes: delayMinutes,
         erreur: message.slice(0, 500)
       }));
+      return false;
     }
   }
 }

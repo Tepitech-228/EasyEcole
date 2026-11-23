@@ -418,7 +418,7 @@ server.on("listening", async () => {
     };
     void Promise.all([
         HikvisionEnrollmentService.enqueueAdministratorsForActiveTerminals(),
-        HikvisionEnrollmentService.enqueueStudentsForActiveTerminals()
+        HikvisionEnrollmentService.enqueueStudentsForActiveTerminals(true)
     ])
         .then(runHikvisionEnrollments)
         .catch(error => {
@@ -432,7 +432,7 @@ server.on("listening", async () => {
                 console.error('[Hikvision] Vérification périodique des enrôlements étudiants impossible:', error);
             });
     };
-    setInterval(reconcileStudentEnrollments, 5 * 60 * 1000);
+    setInterval(reconcileStudentEnrollments, 60_000);
     setInterval(runHikvisionEnrollments, 60_000);
     // Seed permissions
     await PermissionSeed.init();
