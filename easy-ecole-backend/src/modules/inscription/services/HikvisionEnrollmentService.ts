@@ -11,6 +11,8 @@ import { PointageTerminal } from "../models/PointageTerminal";
 import { HikvisionEnrollment } from "../models/HikvisionEnrollment";
 import HikvisionIsapiService from "./HikvisionIsapiService";
 
+type EnrollmentQueueOutcome = "created" | "requeued" | "already_pending" | "already_completed";
+
 export default class HikvisionEnrollmentService {
   private static running = false;
   private static studentReconciliationRunning = false;
@@ -123,14 +125,26 @@ export default class HikvisionEnrollmentService {
         }
       });
       const utilisateursValides = new Set(demandes.map(demande => Number(demande.utilisateurId)));
-      for (const dossier of dossiers) {
-        if (!utilisateursValides.has(Number(dossier.utilisateurId)) || !dossier.matricule) continue;
-        await HikvisionEnrollmentService.enqueueForTerminal(
+      const dossiersEligibles = dossiers.filter(dossier =>
+        utilisateursValides.has(Number(dossier.utilisateurId)) && Boolean(dossier.matricule)
+      );
+      const resultatsFile = {
+        created: 0,
+        requeued: 0,
+        already_pending: 0,
+        already_completed: 0
+      };
+      const ajouterALaFile = async (utilisateurId: number, employeeNo: string): Promise<void> => {
+        const resultat = await HikvisionEnrollmentService.enqueueForTerminal(
           terminal,
-          Number(dossier.utilisateurId),
-          dossier.matricule,
+          utilisateurId,
+          employeeNo,
           onlyMissing
         );
+        resultatsFile[resultat]++;
+      };
+      for (const dossier of dossiersEligibles) {
+        await ajouterALaFile(Number(dossier.utilisateurId), dossier.matricule);
       }
 
       const submittedDemands = await DemandeInscription.findAll({
@@ -151,13 +165,22 @@ export default class HikvisionEnrollmentService {
       });
       for (const demande of submittedDemands) {
         if (!demande.matriculeEtudiant) continue;
-        await HikvisionEnrollmentService.enqueueForTerminal(
-          terminal,
+        await ajouterALaFile(
           Number(demande.utilisateurId),
-          demande.matriculeEtudiant,
-          onlyMissing
+          demande.matriculeEtudiant
         );
       }
+      console.info("[HIKVISION_STUDENT_RECONCILIATION]", JSON.stringify({
+        resultat: "terminal_scane",
+        terminalId: Number(terminal.id),
+        etablissementId: Number(terminal.etablissementId),
+        onlyMissing,
+        dossiersTrouves: dossiers.length,
+        dossiersEligibles: dossiersEligibles.length,
+        demandesAvecMatricule: submittedDemands.length,
+        candidatsAnalyses: dossiersEligibles.length + submittedDemands.length,
+        ...resultatsFile
+      }));
       return;
     }
 
@@ -248,16 +271,31 @@ export default class HikvisionEnrollmentService {
   }
 
   static async enqueueStudentsForActiveTerminals(onlyMissing = false): Promise<void> {
-    if (HikvisionEnrollmentService.studentReconciliationRunning) return;
+    if (HikvisionEnrollmentService.studentReconciliationRunning) {
+      console.info("[HIKVISION_STUDENT_RECONCILIATION]", JSON.stringify({
+        resultat: "scan_ignore_deja_en_cours"
+      }));
+      return;
+    }
     HikvisionEnrollmentService.studentReconciliationRunning = true;
     try {
       const terminals = await PointageTerminal.findAll({
         where: { protocol: "hikvision_isapi", population: "etudiant", actif: true },
         attributes: ["id", "etablissementId", "population"]
       });
+      console.info("[HIKVISION_STUDENT_RECONCILIATION]", JSON.stringify({
+        resultat: terminals.length === 0 ? "aucun_terminal_etudiant_actif" : "scan_demarre",
+        onlyMissing,
+        terminauxEtudiantsActifs: terminals.length
+      }));
       for (const terminal of terminals) {
         await HikvisionEnrollmentService.enqueueEligibleProfilesForTerminal(terminal, onlyMissing);
       }
+      console.info("[HIKVISION_STUDENT_RECONCILIATION]", JSON.stringify({
+        resultat: "scan_termine",
+        onlyMissing,
+        terminauxScannes: terminals.length
+      }));
     } finally {
       HikvisionEnrollmentService.studentReconciliationRunning = false;
     }
@@ -346,7 +384,7 @@ export default class HikvisionEnrollmentService {
     utilisateurId: number,
     employeeNo: string,
     onlyMissing = false
-  ): Promise<void> {
+  ): Promise<EnrollmentQueueOutcome> {
     const [enrollment, created] = await HikvisionEnrollment.findOrCreate({
       where: { terminalId: terminal.id, utilisateurId },
       defaults: {
@@ -360,10 +398,11 @@ export default class HikvisionEnrollmentService {
         derniereErreur: null
       }
     });
-    if (!created && (
+    if (created) return "created";
+    if (
       enrollment.employeeNo !== employeeNo ||
       (!onlyMissing && enrollment.statut === "termine")
-    )) {
+    ) {
       await enrollment.update({
         employeeNo,
         statut: "en_attente",
@@ -371,7 +410,9 @@ export default class HikvisionEnrollmentService {
         prochaineTentativeAt: new Date(),
         derniereErreur: null
       });
+      return "requeued";
     }
+    return enrollment.statut === "termine" ? "already_completed" : "already_pending";
   }
 
   private static async enqueueForTerminalIfMissing(

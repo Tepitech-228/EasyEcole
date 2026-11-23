@@ -284,6 +284,7 @@ describe("HikvisionEnrollmentService", () => {
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([{ utilisateurId: 42, matriculeEtudiant: "ESA042" }]);
     HikvisionEnrollment.findOrCreate.mockResolvedValue([{ statut: "en_attente" }, true]);
+    const infoSpy = jest.spyOn(console, "info").mockImplementation(() => undefined);
 
     await HikvisionEnrollmentService.enqueueStudentsForActiveTerminals();
 
@@ -297,6 +298,36 @@ describe("HikvisionEnrollmentService", () => {
     }));
     const demandeQuery = DemandeInscription.findAll.mock.calls[1][0];
     expect(demandeQuery.where[require("sequelize").Op.or]).toContainEqual({ statutPipeline: null });
+    const reconciliationEvents = infoSpy.mock.calls
+      .filter(([event]) => event === "[HIKVISION_STUDENT_RECONCILIATION]")
+      .map(([, payload]) => JSON.parse(payload));
+    expect(reconciliationEvents).toEqual(expect.arrayContaining([
+      expect.objectContaining({ resultat: "scan_demarre", terminauxEtudiantsActifs: 1 }),
+      expect.objectContaining({
+        resultat: "terminal_scane",
+        terminalId: 8,
+        demandesAvecMatricule: 1,
+        created: 1
+      }),
+      expect.objectContaining({ resultat: "scan_termine", terminauxScannes: 1 })
+    ]));
+  });
+
+  it("logs when no active student terminal is configured", async () => {
+    PointageTerminal.findAll.mockResolvedValue([]);
+    const infoSpy = jest.spyOn(console, "info").mockImplementation(() => undefined);
+
+    await HikvisionEnrollmentService.enqueueStudentsForActiveTerminals(true);
+
+    const reconciliationEvents = infoSpy.mock.calls
+      .filter(([event]) => event === "[HIKVISION_STUDENT_RECONCILIATION]")
+      .map(([, payload]) => JSON.parse(payload));
+    expect(reconciliationEvents).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        resultat: "aucun_terminal_etudiant_actif",
+        terminauxEtudiantsActifs: 0
+      })
+    ]));
   });
 
   it("periodically rechecks submitted students without restarting completed enrollments", async () => {
