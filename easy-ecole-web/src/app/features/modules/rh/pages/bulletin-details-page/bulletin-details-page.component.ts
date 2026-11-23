@@ -18,6 +18,8 @@ export class BulletinDetailsPageComponent extends BaseComponentClass implements 
   totalPrimes = 0;
   totalRetenues = 0;
   totalCotisations = 0;
+  totauxParSite: Array<{ nom: string; montant: number }> = [];
+  totalCumulSites = 0;
 
   constructor(
     private route: ActivatedRoute,
@@ -41,6 +43,13 @@ export class BulletinDetailsPageComponent extends BaseComponentClass implements 
           this.totalPrimes = this.gains.reduce((s, l) => s + Number(l.montant || 0), 0);
           this.totalRetenues = this.retenues.reduce((s, l) => s + Number(l.montant || 0), 0);
           this.totalCotisations = this.cotisations.reduce((s, l) => s + Number(l.montant || 0), 0);
+          const totaux = new Map<string, number>();
+          this.gains.filter(l => l.siteNom).forEach(ligne => {
+            const nom = String(ligne.siteNom);
+            totaux.set(nom, (totaux.get(nom) || 0) + Number(ligne.montant || 0));
+          });
+          this.totauxParSite = Array.from(totaux, ([nom, montant]) => ({ nom, montant }));
+          this.totalCumulSites = this.totauxParSite.reduce((s, site) => s + site.montant, 0);
         }
         this.loading = false;
       },
@@ -62,5 +71,9 @@ export class BulletinDetailsPageComponent extends BaseComponentClass implements 
 
   formatMontant(v: any): string {
     return Number(v || 0).toLocaleString('fr-FR') + ' XAF';
+  }
+
+  imprimer(): void {
+    window.print();
   }
 }

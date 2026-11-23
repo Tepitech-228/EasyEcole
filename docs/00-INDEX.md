@@ -7,6 +7,8 @@
 > **[LOGIQUE-METIER-POLES.md](LOGIQUE-METIER-POLES.md)** — Logique métier détaillée par pôle (processus, règles de gestion, cycles de vie, statuts, calculs) et relations entre les pôles (flux, données échangées, impacts).
 >
 > **[PROCESSUS-APPLICATION.md](PROCESSUS-APPLICATION.md)** — Guide opérationnel transversal des processus : acteurs, étapes, contrôles, résultats et limites connues.
+>
+> **[LIAISONS-TABLES-BDD.md](LIAISONS-TABLES-BDD.md)** — Inventaire des tables Sequelize du backend et des relations entre elles.
 
 ## Structure par Pôles
 

@@ -9,6 +9,8 @@ export class LigneBulletin {
     declare base?: number
     declare taux?: number
     declare montant?: number
+    declare siteId?: number | null
+    declare siteNom?: string | null
     declare readonly createdAt?: Date
     declare readonly updatedAt?: Date
 }

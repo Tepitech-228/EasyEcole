@@ -64,14 +64,23 @@ export default class RhPeriodePaieController {
       if (periode.statut === 'verrouillée') return res.status(400).json({ success: false, message: "Période verrouillée" });
 
       // Génération idempotente et transactionnelle via RhPaieService.
-      const count = await RhPaieService.genererBulletinsPourPeriode(periode);
+      const population = req.query.population;
+      if (population !== undefined && population !== "personnel" && population !== "enseignants") {
+        return res.status(400).json({ success: false, message: "La population doit être 'personnel' ou 'enseignants'." });
+      }
+      const count = await RhPaieService.genererBulletinsPourPeriode(periode, population as "personnel" | "enseignants" | undefined);
 
       return res.status(200).json({ success: true, message: `${count} bulletins générés`, count });
-    } catch (error: any) {
-      if (error?.message?.includes('régénération refusée')) {
-        return res.status(409).json({ success: false, message: error.message });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Erreur inattendue pendant la génération des bulletins.";
+      if (message.includes('régénération refusée')) {
+        return res.status(409).json({ success: false, message });
       }
-      return res.status(500).json({ success: false, error });
+      if (message.startsWith("Aucun taux") || message.startsWith("Le taux") || message.startsWith("L’employé") || message.startsWith("Le pointage")) {
+        return res.status(400).json({ success: false, message });
+      }
+      console.error("Erreur de génération des bulletins:", error);
+      return res.status(500).json({ success: false, message });
     }
   }
 }

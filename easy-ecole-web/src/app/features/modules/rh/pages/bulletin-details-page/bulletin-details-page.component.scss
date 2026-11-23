@@ -1,0 +1,33 @@
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  #bulletin-imprimable,
+  #bulletin-imprimable * {
+    visibility: visible !important;
+  }
+
+  #bulletin-imprimable {
+    position: absolute;
+    inset: 0;
+    display: block !important;
+    width: 100%;
+    color: #111827;
+    background: #fff;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th, td {
+    border-bottom: 1px solid #d1d5db;
+    padding: 8px;
+  }
+}

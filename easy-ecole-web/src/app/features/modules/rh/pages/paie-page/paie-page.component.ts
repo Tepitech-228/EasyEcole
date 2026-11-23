@@ -4,6 +4,7 @@ import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { RhPeriodePaieService } from 'src/app/data/modules/rh/services/rh-periode-paie.service';
 import { RhBulletinPaieService } from 'src/app/data/modules/rh/services/rh-bulletin-paie.service';
 import { PeriodePaie } from 'src/app/data/modules/rh/models/PeriodePaie.model';
+import { ActivatedRoute } from '@angular/router';
 
 const MOIS_NOMS = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 const MOIS_MAP: any = { 'Janvier': 1, 'Février': 2, 'Mars': 3, 'Avril': 4, 'Mai': 5, 'Juin': 6, 'Juillet': 7, 'Août': 8, 'Septembre': 9, 'Octobre': 10, 'Novembre': 11, 'Décembre': 12 };
@@ -14,6 +15,7 @@ const MOIS_MAP: any = { 'Janvier': 1, 'Février': 2, 'Mars': 3, 'Avril': 4, 'Mai
   styleUrls: ['./paie-page.component.scss']
 })
 export class PaiePageComponent extends BaseComponentClass implements OnInit {
+  population: 'personnel' | 'enseignants' = 'personnel';
   loading = false;
   periodes: any[] = [];
   showModal = false;
@@ -23,10 +25,12 @@ export class PaiePageComponent extends BaseComponentClass implements OnInit {
   constructor(
     private fb: FormBuilder,
     private periodeService: RhPeriodePaieService,
-    private bulletinService: RhBulletinPaieService
+    private bulletinService: RhBulletinPaieService,
+    private route: ActivatedRoute
   ) { super() }
 
   ngOnInit(): void {
+    this.population = this.route.snapshot.data['population'] === 'enseignants' ? 'enseignants' : 'personnel';
     this.form = this.fb.group({
       id: [null],
       mois: ['', Validators.required],
@@ -107,7 +111,7 @@ export class PaiePageComponent extends BaseComponentClass implements OnInit {
   }
 
   genererBulletins(id: number) {
-    this.periodeService.genererBulletins(String(id)).subscribe({
+    this.periodeService.genererBulletins(String(id), this.population).subscribe({
       next: (res: any) => { alert(res.message || 'Bulletins générés'); this.loadPeriodes(); },
       error: (err) => { alert(err.error?.message || 'Erreur de génération'); }
     });

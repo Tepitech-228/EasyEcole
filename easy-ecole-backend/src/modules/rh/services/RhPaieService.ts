@@ -8,6 +8,32 @@ import { RhLigneBulletin } from "../models/RhLigneBulletin";
 import { RhHeureSupplementaire } from "../models/RhHeureSupplementaire";
 import { RhPrestationEnseignant } from "../models/RhPrestationEnseignant";
 import { RhPret } from "../models/RhPret";
+import { RhTauxHoraireEnseignant } from "../models/RhTauxHoraireEnseignant";
+import { Pointage } from "../../inscription/models/Pointage";
+import { SeancePointage } from "../../inscription/models/SeancePointage";
+import { Seance } from "../../inscription/models/Seance";
+import { Enseignant } from "../../auth/models/Enseignant";
+
+export type PopulationPaie = "personnel" | "enseignants";
+
+function minutesDepuisHeurePaie(value: unknown): number | null {
+  const text = value instanceof Date ? value.toISOString().slice(11, 19) : String(value ?? "");
+  const match = text.match(/^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/);
+  if (!match) return null;
+  const [hours, minutes] = text.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function minutesPointageNormales(arriveeValue: unknown, departValue: unknown): number {
+  const arrivee = minutesDepuisHeurePaie(arriveeValue);
+  const depart = minutesDepuisHeurePaie(departValue);
+  if (arrivee === null || depart === null || depart < arrivee) return 0;
+  return Math.max(0, Math.min(depart, 18 * 60) - arrivee);
+}
+
+function arrondirMontant(value: number): number {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
 
 /**
  * Source / traçabilité d'une ligne de bulletin.
@@ -31,6 +57,8 @@ export interface LigneBulletinInput {
   montant: number;
   /** type de la rubrique : 'gain' | 'retenue' | 'cotisation' */
   type: string;
+  siteId?: number;
+  siteNom?: string;
 }
 
 export interface ResultatBulletin {
@@ -75,9 +103,9 @@ export class RhPaieService {
     employe: RhEmploye,
     rubriques: RhRubriquePaie[],
     rubriqueBase: RhRubriquePaie | null,
-    options?: { transaction?: Transaction }
+    options?: { transaction?: Transaction; population?: PopulationPaie }
   ): Promise<RhBulletinPaie> {
-    const result = await this.calculerBulletin(periode, employe, rubriques, rubriqueBase);
+    const result = await this.calculerBulletin(periode, employe, rubriques, rubriqueBase, options?.population);
 
     const bulletin = await RhBulletinPaie.create({
       employeId: employe.id,
@@ -98,6 +126,8 @@ export class RhPaieService {
         montant: ligne.montant,
         source: ligne.source,
         sourceId: ligne.sourceId !== undefined ? String(ligne.sourceId) : null,
+        siteId: ligne.siteId ?? null,
+        siteNom: ligne.siteNom ?? null,
       }, { transaction: options?.transaction });
     }
 
@@ -107,20 +137,233 @@ export class RhPaieService {
   /**
    * Calcule le bulletin en mémoire (aucune écriture) : purement calculatoire et testable.
    */
+  private static async calculerBulletinHoraire(
+    periode: RhPeriodePaie,
+    employe: RhEmploye,
+    rubriques: RhRubriquePaie[],
+    population: PopulationPaie
+  ): Promise<ResultatBulletin> {
+    const lignes: LigneBulletinInput[] = [];
+    const enseignant = population === "enseignants"
+      ? await Enseignant.findOne({ where: { utilisateurId: Number(employe.utilisateurId) } })
+      : null;
+    if (population === "enseignants" && !enseignant) {
+      throw new Error(`L’employé ${employe.id} n’est pas relié à un profil enseignant.`);
+    }
+
+    if (population === "personnel") {
+      const pointages = await Pointage.findAll({
+        where: {
+          utilisateurId: Number(employe.utilisateurId),
+          date: { [Op.between]: [periode.dateDebut, periode.dateFin] },
+        },
+      });
+      const minutesNormales = pointages.reduce(
+        (total, pointage) => total + minutesPointageNormales(pointage.heureArrivee, pointage.heureDepart),
+        0
+      );
+      const heuresNormales = minutesNormales / 60;
+      const tauxNormal = Number(employe.tauxHoraireNormal) || 0;
+      if (heuresNormales > 0 && tauxNormal <= 0) {
+        throw new Error(`Le taux horaire normal de ${employe.prenoms || ""} ${employe.nom || employe.id} doit être renseigné.`);
+      }
+      if (heuresNormales > 0) {
+        lignes.push({
+          source: "base",
+          rubrique: await this.trouverOuCreerRubrique("HEURES_NORMALES", "Heures normales", "gain"),
+          libelle: `Heures normales pointées (${heuresNormales.toFixed(2)} h)`,
+          base: heuresNormales,
+          taux: tauxNormal,
+          montant: arrondirMontant(heuresNormales * tauxNormal),
+          type: "gain",
+        });
+      }
+
+      const heuresSupplementaires = await RhHeureSupplementaire.findAll({
+        where: {
+          employeId: employe.id,
+          statut: { [Op.in]: ["validee", "payee"] },
+          date: { [Op.between]: [periode.dateDebut, periode.dateFin] },
+        },
+      });
+      const tauxSupplementaire = Number(employe.tauxHoraireSupplementaire) || 0;
+      if (heuresSupplementaires.some(heure => Number(heure.nombreHeures) > 0) && tauxSupplementaire <= 0) {
+        throw new Error(`Le taux horaire supplémentaire de ${employe.prenoms || ""} ${employe.nom || employe.id} doit être renseigné.`);
+      }
+      const rubriqueHs = await this.trouverOuCreerRubrique("HEURES_SUPPLEMENTAIRES", "Heures supplémentaires", "gain");
+      for (const heure of heuresSupplementaires) {
+        const nombreHeures = Number(heure.nombreHeures) || 0;
+        if (nombreHeures <= 0) continue;
+        lignes.push({
+          source: "hs",
+          sourceId: heure.id,
+          rubrique: rubriqueHs,
+          libelle: `Heures supplémentaires validées (${nombreHeures.toFixed(2)} h)`,
+          base: nombreHeures,
+          taux: tauxSupplementaire,
+          montant: arrondirMontant(nombreHeures * tauxSupplementaire),
+          type: "gain",
+        });
+      }
+    } else if (enseignant) {
+      const pointages = await SeancePointage.findAll({
+        where: {
+          enseignantId: Number(enseignant.id),
+          date: { [Op.between]: [periode.dateDebut, periode.dateFin] },
+        },
+        include: [{
+          association: SeancePointage.associations.seance,
+          include: [
+            { association: Seance.associations.cours, required: false },
+            { association: Seance.associations.niveauEtude, required: false },
+          ],
+        }, {
+          association: SeancePointage.associations.etablissement,
+          attributes: ["id", "nom"],
+          required: true,
+        }],
+      });
+      const rubriquePrestation = await this.trouverOuCreerRubrique(
+        "PRESTATION_ENSEIGNANT",
+        "Heures de cours effectuées",
+        "gain"
+      );
+      for (const pointage of pointages) {
+        const debut = minutesDepuisHeurePaie(pointage.heureDebutReelle);
+        const fin = minutesDepuisHeurePaie(pointage.heureFinReelle);
+        if (debut === null || fin === null || fin <= debut) {
+          throw new Error(`Le pointage de séance #${pointage.id} de la période ne contient pas des heures réelles complètes et valides.`);
+        }
+        const seance = pointage.seance;
+        const niveauEtudeId = Number(seance?.niveauEtudeId);
+        const coursId = Number(seance?.coursId);
+        if (!seance || !pointage.etablissement || niveauEtudeId <= 0 || coursId <= 0) {
+          throw new Error(`Le pointage de séance #${pointage.id} n’est pas associé à un site, un cours et un niveau d’étude.`);
+        }
+        const taux = await RhTauxHoraireEnseignant.findAll({
+          where: {
+            niveauEtudeId,
+            coursId,
+            [Op.or]: [{ enseignantId: Number(enseignant.id) }, { enseignantId: null }],
+          },
+        });
+        const tauxEffectif = taux.find(item => Number(item.enseignantId) === Number(enseignant.id))
+          || taux.find(item => item.enseignantId === null);
+        if (!tauxEffectif) {
+          throw new Error(`Aucun taux horaire n’est défini pour le cours ${seance.cours?.intitule || coursId}, niveau ${seance.niveauEtude?.libelle || niveauEtudeId}.`);
+        }
+        const heures = (fin - debut) / 60;
+        const tauxHoraire = Number(tauxEffectif.tauxHoraire);
+        lignes.push({
+          source: "prestation",
+          sourceId: pointage.id,
+          rubrique: rubriquePrestation,
+          libelle: `${seance.cours?.intitule || `Cours #${coursId}`} - ${seance.niveauEtude?.libelle || `Niveau #${niveauEtudeId}`} (${heures.toFixed(2)} h)`,
+          base: heures,
+          taux: tauxHoraire,
+          montant: arrondirMontant(heures * tauxHoraire),
+          type: "gain",
+          siteId: Number(pointage.etablissement.id),
+          siteNom: pointage.etablissement.nom,
+        });
+      }
+    }
+
+    for (const rubrique of rubriques) {
+      if (rubrique.modeCalcul !== "fixe" && rubrique.modeCalcul !== "pourcentage") continue;
+      if (["SALAIRE_BASE", "SAL"].includes(rubrique.code)) continue;
+      const valeur = Number(rubrique.valeur) || 0;
+      const base = rubrique.modeCalcul === "pourcentage"
+        ? lignes.filter(ligne => ligne.type === "gain").reduce((total, ligne) => total + ligne.montant, 0)
+        : 0;
+      const taux = rubrique.modeCalcul === "pourcentage" ? valeur : 0;
+      const montant = rubrique.modeCalcul === "pourcentage" ? arrondirMontant(base * taux / 100) : valeur;
+      if (montant > 0) {
+        lignes.push({
+          source: "base",
+          sourceId: rubrique.id,
+          rubrique,
+          libelle: rubrique.libelle,
+          base,
+          taux,
+          montant,
+          type: rubrique.type,
+        });
+      }
+    }
+
+    const totalBrut = arrondirMontant(lignes
+      .filter(ligne => ligne.type === "gain")
+      .reduce((sum, ligne) => sum + ligne.montant, 0));
+    const tauxFiscal = Number(employe.tauxFiscal) || 0;
+    if (tauxFiscal < 0 || tauxFiscal > 1) {
+      throw new Error(`Le taux fiscal de ${employe.prenoms || ""} ${employe.nom || employe.id} doit être entre 0 et 1 (ex. 0,05 pour 5 %).`);
+    }
+    const montantFiscal = arrondirMontant(totalBrut * tauxFiscal);
+    if (montantFiscal > 0) {
+      lignes.push({
+        source: "retrait",
+        rubrique: await this.trouverOuCreerRubrique("RETENUE_FISCALE", "Retenue fiscale", "retenue"),
+        libelle: `Retenue fiscale (${(tauxFiscal * 100).toFixed(2)} %)`,
+        base: totalBrut,
+        taux: tauxFiscal * 100,
+        montant: montantFiscal,
+        type: "retenue",
+      });
+    }
+
+    const rubriquePret = await this.trouverOuCreerRubrique("RETENUE_PRET", "Remboursement prêt", "retenue");
+    const prets = await RhPret.findAll({
+      where: { employeId: employe.id, statut: { [Op.in]: ["actif", "impaye"] } },
+    });
+    for (const pret of prets) {
+      const mensualite = Number(pret.mensualite) > 0
+        ? Number(pret.mensualite)
+        : (Number(pret.montant) || 0) / (Number(pret.nombreMois) || 1);
+      if (mensualite <= 0) continue;
+      lignes.push({
+        source: "retrait",
+        sourceId: pret.id,
+        rubrique: rubriquePret,
+        libelle: `Remboursement prêt (#${pret.id})`,
+        base: mensualite,
+        taux: 0,
+        montant: arrondirMontant(mensualite),
+        type: "retenue",
+      });
+    }
+
+    const totalGains = arrondirMontant(lignes
+      .filter(ligne => ligne.type === "gain")
+      .reduce((sum, ligne) => sum + ligne.montant, 0));
+    const totalRetenues = arrondirMontant(lignes
+      .filter(ligne => ligne.type !== "gain")
+      .reduce((sum, ligne) => sum + ligne.montant, 0));
+    return {
+      employeId: Number(employe.id),
+      totalGains,
+      totalRetenues,
+      netAPayer: arrondirMontant(totalGains - totalRetenues),
+      lignes,
+    };
+  }
+
   static async calculerBulletin(
     periode: RhPeriodePaie,
     employe: RhEmploye,
     rubriques: RhRubriquePaie[],
-    rubriqueBase: RhRubriquePaie | null
+    rubriqueBase: RhRubriquePaie | null,
+    population?: PopulationPaie
   ): Promise<ResultatBulletin> {
+    if (population) {
+      return this.calculerBulletinHoraire(periode, employe, rubriques, population);
+    }
+
     const lignes: LigneBulletinInput[] = [];
     const salaireBase = Number(employe.salaireBase) || 0;
-
-    // ---- 1. Rubriques de base ----
-    // SALAIRE_BASE => montant = salaireBase de l'employé.
     if (rubriqueBase) {
       lignes.push({
-        source: 'base',
+        source: "base",
         sourceId: rubriqueBase.id,
         rubrique: rubriqueBase,
         libelle: rubriqueBase.libelle,
@@ -268,12 +511,26 @@ export class RhPaieService {
    *
    * @returns le nombre de bulletins générés
    */
-  static async genererBulletinsPourPeriode(periode: RhPeriodePaie): Promise<number> {
-    const employes = await RhEmploye.findAll({ where: { statut: 'actif' } });
+  static async genererBulletinsPourPeriode(periode: RhPeriodePaie, population?: PopulationPaie): Promise<number> {
+    let employes = await RhEmploye.findAll({ where: { statut: 'actif' } });
+    if (population) {
+      const utilisateurIds = employes.map(employe => Number(employe.utilisateurId));
+      const enseignants = utilisateurIds.length
+        ? await Enseignant.findAll({ where: { utilisateurId: { [Op.in]: utilisateurIds } }, attributes: ["id", "utilisateurId"] })
+        : [];
+      const utilisateurEnseignantIds = new Set(enseignants.map(enseignant => Number(enseignant.utilisateurId)));
+      employes = employes.filter(employe => population === "enseignants"
+        ? utilisateurEnseignantIds.has(Number(employe.utilisateurId))
+        : !utilisateurEnseignantIds.has(Number(employe.utilisateurId)));
+    }
+    if (employes.length === 0) return 0;
     const rubriques = await RhRubriquePaie.findAll();
     const rubriqueBase = await this.trouverRubriqueSalaireBase();
 
-    const bulletinsExistants = await RhBulletinPaie.findAll({ where: { periodeId: periode.id } });
+    const whereBulletins = population
+      ? { periodeId: periode.id, employeId: { [Op.in]: employes.map(employe => employe.id) } }
+      : { periodeId: periode.id };
+    const bulletinsExistants = await RhBulletinPaie.findAll({ where: whereBulletins });
 
     // Vérification d'idempotence / protection.
     const aUnBulletinFinalise = bulletinsExistants.some(b => b.statut === 'validé' || b.statut === 'versé');
@@ -293,7 +550,7 @@ export class RhPaieService {
     const transaction = await sequelize.transaction();
     try {
       for (const employe of employes) {
-        await this.genererBulletinPourEmploye(periode, employe, rubriques, rubriqueBase, { transaction });
+        await this.genererBulletinPourEmploye(periode, employe, rubriques, rubriqueBase, { transaction, population });
       }
       await transaction.commit();
       return employes.length;

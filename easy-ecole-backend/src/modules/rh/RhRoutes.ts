@@ -27,6 +27,7 @@ import RhRemboursementPretRouter from "./routers/RhRemboursementPretRouter"
 import RhReportingRouter from "./routers/RhReportingRouter"
 import RhPrestataireRouter from "./routers/RhPrestataireRouter"
 import RhIndemnitePrestataireRouter from "./routers/RhIndemnitePrestataireRouter"
+import RhTauxHoraireEnseignantRouter from "./routers/RhTauxHoraireEnseignantRouter"
 import RhDemandeCongeRouter from "./routers/RhDemandeCongeRouter"
 import Authenticate from "../../core/middlewares/Authenticate";
 import { cache } from "../../core/middlewares/CacheMiddleware";
@@ -51,6 +52,7 @@ router
     .use('/evaluations-criteres', [Authenticate], RhEvaluationCritereRouter)
     .use('/rubriques-paie', [Authenticate], RhRubriquePaieRouter)
     .use('/periodes-paie', [Authenticate], RhPeriodePaieRouter)
+    .use('/taux-horaires-enseignants', [Authenticate], RhTauxHoraireEnseignantRouter)
     .use('/bulletins-paie', [Authenticate], RhBulletinPaieRouter)
     .use('/lignes-bulletin', [Authenticate], RhLigneBulletinRouter)
     .use('/prestations-enseignant', [Authenticate], RhPrestationEnseignantRouter)

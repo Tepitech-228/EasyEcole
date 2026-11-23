@@ -1,1442 +1,1037 @@
-# Liaisons des tables — Base de données EasyEcole
+# Tables et relations de la base EasyEcole
 
-> Document de référence des relations entre toutes les tables du schéma `easyecole` (MySQL).
-> Source : définitions des modèles Sequelize et fichiers `_associations.ts` de chaque module (`easy-ecole-backend/src/modules/<module>/models/`).
-> Vérifié le 10/08/2026 contre `information_schema` (MySQL local).
+> Inventaire extrait des modeles Sequelize presents dans `easy-ecole-backend/src/modules/`.
+> Il decrit le schema declare dans le code, pas necessairement la base deployee en production. Les migrations peuvent ajouter des tables ou modifier des colonnes et contraintes. Ce document ne liste pas les enregistrements ni le nombre de lignes de la base.
 
-## Convention de nommage
+## Perimetre
 
-Chaque module préfixe ses tables :
+- **328 modeles Sequelize** inventories dans **328 noms de tables distincts**.
+- **472 relations par cle etrangere** et **6 relations plusieurs-a-plusieurs** dedupliquees depuis les associations declarees.
+- Les associations Sequelize indiquent les liens utilises par l'application; elles ne prouvent pas a elles seules la presence d'une contrainte `FOREIGN KEY` physique dans MySQL/MariaDB.
+- Les tables creees uniquement par migrations, bibliotheques ou composants externes sans modele Sequelize ne figurent pas dans cet inventaire.
 
-| Module | Préfixe | Module | Préfixe |
+## Inventaire des tables
+
+### Module achats - prefixe `ach_` (15)
+
+| Table | Modele Sequelize | Fichier source |
+|---|---|---|
+| `ach_budgets` | `Budget` | [Budget.ts](../easy-ecole-backend/src/modules/achats/models/Budget.ts) |
+| `ach_categories` | `CategorieAchat` | [CategorieAchat.ts](../easy-ecole-backend/src/modules/achats/models/CategorieAchat.ts) |
+| `ach_commandes` | `Commande` | [Commande.ts](../easy-ecole-backend/src/modules/achats/models/Commande.ts) |
+| `ach_demandes` | `Demande` | [Demande.ts](../easy-ecole-backend/src/modules/achats/models/Demande.ts) |
+| `ach_engagements` | `Engagement` | [Engagement.ts](../easy-ecole-backend/src/modules/achats/models/Engagement.ts) |
+| `ach_factures_proforma` | `FactureProforma` | [FactureProforma.ts](../easy-ecole-backend/src/modules/achats/models/FactureProforma.ts) |
+| `ach_fournisseurs` | `Fournisseur` | [Fournisseur.ts](../easy-ecole-backend/src/modules/achats/models/Fournisseur.ts) |
+| `ach_lignes_budget` | `LigneBudget` | [LigneBudget.ts](../easy-ecole-backend/src/modules/achats/models/LigneBudget.ts) |
+| `ach_lignes_commande` | `LigneCommande` | [LigneCommande.ts](../easy-ecole-backend/src/modules/achats/models/LigneCommande.ts) |
+| `ach_lignes_demande` | `LigneDemande` | [LigneDemande.ts](../easy-ecole-backend/src/modules/achats/models/LigneDemande.ts) |
+| `ach_lignes_facture` | `LigneFacture` | [LigneFacture.ts](../easy-ecole-backend/src/modules/achats/models/LigneFacture.ts) |
+| `ach_lignes_reception` | `LigneReception` | [LigneReception.ts](../easy-ecole-backend/src/modules/achats/models/LigneReception.ts) |
+| `ach_receptions` | `Reception` | [Reception.ts](../easy-ecole-backend/src/modules/achats/models/Reception.ts) |
+| `ach_validateurs` | `Validateur` | [Validateur.ts](../easy-ecole-backend/src/modules/achats/models/Validateur.ts) |
+| `ach_validations` | `Validation` | [Validation.ts](../easy-ecole-backend/src/modules/achats/models/Validation.ts) |
+
+### Module auth - prefixe `aut_` (23)
+
+| Table | Modele Sequelize | Fichier source |
+|---|---|---|
+| `aut_adresses_apprenants` | `AdresseApprenant` | [AdresseApprenant.ts](../easy-ecole-backend/src/modules/auth/models/AdresseApprenant.ts) |
+| `aut_adresses_caissiers_banque` | `AdresseCaissierBanque` | [AdresseCaissierBanque.ts](../easy-ecole-backend/src/modules/auth/models/AdresseCaissierBanque.ts) |
+| `aut_adresses_enseignants` | `AdresseEnseignant` | [AdresseEnseignant.ts](../easy-ecole-backend/src/modules/auth/models/AdresseEnseignant.ts) |
+| `aut_adresses_institutions` | `AdresseInstitution` | [AdresseInstitution.ts](../easy-ecole-backend/src/modules/auth/models/AdresseInstitution.ts) |
+| `aut_apprenants` | `Apprenant` | [Apprenant.ts](../easy-ecole-backend/src/modules/auth/models/Apprenant.ts) |
+| `aut_banques` | `Banque` | [Banque.ts](../easy-ecole-backend/src/modules/auth/models/Banque.ts) |
+| `aut_caissiers_banque` | `CaissierBanque` | [CaissierBanque.ts](../easy-ecole-backend/src/modules/auth/models/CaissierBanque.ts) |
+| `aut_comite_orientations` | `ComiteOrientation` | [ComiteOrientation.ts](../easy-ecole-backend/src/modules/auth/models/ComiteOrientation.ts) |
+| `aut_enseignants` | `Enseignant` | [Enseignant.ts](../easy-ecole-backend/src/modules/auth/models/Enseignant.ts) |
+| `aut_identites_apprenants` | `IdentiteApprenant` | [IdentiteApprenant.ts](../easy-ecole-backend/src/modules/auth/models/IdentiteApprenant.ts) |
+| `aut_informations_parents_apprenants` | `InformationsParentsApprenant` | [InformationsParentsApprenant.ts](../easy-ecole-backend/src/modules/auth/models/InformationsParentsApprenant.ts) |
+| `aut_informations_salarie_apprenants` | `InformationsSalarieApprenant` | [InformationsSalarieApprenant.ts](../easy-ecole-backend/src/modules/auth/models/InformationsSalarieApprenant.ts) |
+| `aut_institutions` | `Institution` | [Institution.ts](../easy-ecole-backend/src/modules/auth/models/Institution.ts) |
+| `aut_permissions` | `Permission` | [Permission.ts](../easy-ecole-backend/src/modules/auth/models/Permission.ts) |
+| `aut_personnel_administratif` | `PersonnelAdministratif` | [PersonnelAdministratif.ts](../easy-ecole-backend/src/modules/auth/models/PersonnelAdministratif.ts) |
+| `aut_personnes_prevenir_apprenants` | `PersonnePrevenirApprenant` | [PersonnePrevenirApprenant.ts](../easy-ecole-backend/src/modules/auth/models/PersonnePrevenirApprenant.ts) |
+| `aut_role_menu_grants` | `RoleMenuGrant` | [RoleMenuGrant.ts](../easy-ecole-backend/src/modules/auth/models/RoleMenuGrant.ts) |
+| `aut_role_permissions` | `RolePermission` | [RolePermission.ts](../easy-ecole-backend/src/modules/auth/models/RolePermission.ts) |
+| `aut_roles` | `Role` | [Role.ts](../easy-ecole-backend/src/modules/auth/models/Role.ts) |
+| `aut_user_permissions` | `UserPermission` | [UserPermission.ts](../easy-ecole-backend/src/modules/auth/models/UserPermission.ts) |
+| `aut_user_roles` | `UserRole` | [UserRole.ts](../easy-ecole-backend/src/modules/auth/models/UserRole.ts) |
+| `aut_utilisateur_etablissements` | `SiteUtilisateur` | [SiteUtilisateur.ts](../easy-ecole-backend/src/modules/auth/models/SiteUtilisateur.ts) |
+| `aut_utilisateurs` | `Utilisateur` | [Utilisateur.ts](../easy-ecole-backend/src/modules/auth/models/Utilisateur.ts) |
+
+### Module bourse - prefixe `brs_` (2)
+
+| Table | Modele Sequelize | Fichier source |
+|---|---|---|
+| `brs_attributions` | `BourseAttribution` | [BourseAttribution.ts](../easy-ecole-backend/src/modules/bourse/models/BourseAttribution.ts) |
+| `brs_configurations` | `BourseConfiguration` | [BourseConfiguration.ts](../easy-ecole-backend/src/modules/bourse/models/BourseConfiguration.ts) |
+
+### Module bulletins - prefixe `ins_` (10)
+
+| Table | Modele Sequelize | Fichier source |
+|---|---|---|
+| `ins_audit_evaluations` | `AuditEvaluation` | [AuditEvaluation.ts](../easy-ecole-backend/src/modules/bulletins/models/AuditEvaluation.ts) |
+| `ins_audit_notes` | `AuditNote` | [AuditNote.ts](../easy-ecole-backend/src/modules/bulletins/models/AuditNote.ts) |
+| `ins_bulletins` | `Bulletin` | [Bulletin.ts](../easy-ecole-backend/src/modules/bulletins/models/Bulletin.ts) |
+| `ins_deliberations` | `Deliberation` | [Deliberation.ts](../easy-ecole-backend/src/modules/bulletins/models/Deliberation.ts) |
+| `ins_dettes_academiques` | `DetteAcademique` | [DetteAcademique.ts](../easy-ecole-backend/src/modules/bulletins/models/DetteAcademique.ts) |
+| `ins_echelles_notes` | `EchelleNote` | [EchelleNote.ts](../easy-ecole-backend/src/modules/bulletins/models/EchelleNote.ts) |
+| `ins_historique_decisions` | `HistoriqueDecision` | [HistoriqueDecision.ts](../easy-ecole-backend/src/modules/bulletins/models/HistoriqueDecision.ts) |
+| `ins_jury_membres` | `JuryMembre` | [JuryMembre.ts](../easy-ecole-backend/src/modules/bulletins/models/JuryMembre.ts) |
+| `ins_lignes_bulletins` | `LigneBulletin` | [LigneBulletin.ts](../easy-ecole-backend/src/modules/bulletins/models/LigneBulletin.ts) |
+| `ins_resultats_deliberation` | `ResultatDeliberation` | [ResultatDeliberation.ts](../easy-ecole-backend/src/modules/bulletins/models/ResultatDeliberation.ts) |
+
+### Module communication - prefixe `com_` (4)
+
+| Table | Modele Sequelize | Fichier source |
+|---|---|---|
+| `com_actualites` | `Actualite` | [Actualite.ts](../easy-ecole-backend/src/modules/communication/models/Actualite.ts) |
+| `com_communications` | `Communication` | [Communication.ts](../easy-ecole-backend/src/modules/communication/models/Communication.ts) |
+| `com_reponses_suggestion` | `ReponseSuggestion` | [ReponseSuggestion.ts](../easy-ecole-backend/src/modules/communication/models/ReponseSuggestion.ts) |
+| `com_suggestions` | `Suggestion` | [Suggestion.ts](../easy-ecole-backend/src/modules/communication/models/Suggestion.ts) |
+
+### Module comptabilite - prefixe `cpt_` (14)
+
+| Table | Modele Sequelize | Fichier source |
+|---|---|---|
+| `cpt_bordereau_echeance` | `BordereauEcheance` | [BordereauEcheance.ts](../easy-ecole-backend/src/modules/comptabilite/models/BordereauEcheance.ts) |
+| `cpt_comptes` | `Compte` | [Compte.ts](../easy-ecole-backend/src/modules/comptabilite/models/Compte.ts) |
+| `cpt_comptes_bancaires` | `CompteBancaire` | [CompteBancaire.ts](../easy-ecole-backend/src/modules/comptabilite/models/CompteBancaire.ts) |
+| `cpt_ecritures_comptables` | `EcritureComptable` | [EcritureComptable.ts](../easy-ecole-backend/src/modules/comptabilite/models/EcritureComptable.ts) |
+| `cpt_exercices` | `ExerciceComptable` | [ExerciceComptable.ts](../easy-ecole-backend/src/modules/comptabilite/models/ExerciceComptable.ts) |
+| `cpt_frais_parcours` | `FraisParcours` | [FraisParcours.ts](../easy-ecole-backend/src/modules/comptabilite/models/FraisParcours.ts) |
+| `cpt_journaux_comptables` | `JournalComptable` | [JournalComptable.ts](../easy-ecole-backend/src/modules/comptabilite/models/JournalComptable.ts) |
+| `cpt_lignes_frais_etudiant` | `LigneFraisEtudiant` | [LigneFraisEtudiant.ts](../easy-ecole-backend/src/modules/comptabilite/models/LigneFraisEtudiant.ts) |
+| `cpt_lignes_releves_bancaires` | `LigneReleveBancaire` | [LigneReleveBancaire.ts](../easy-ecole-backend/src/modules/comptabilite/models/LigneReleveBancaire.ts) |
+| `cpt_parametres_frais` | `ParametreFrais` | [ParametreFrais.ts](../easy-ecole-backend/src/modules/comptabilite/models/ParametreFrais.ts) |
+| `cpt_penalites_retard` | `PenaliteRetard` | [PenaliteRetard.ts](../easy-ecole-backend/src/modules/comptabilite/models/PenaliteRetard.ts) |
+| `cpt_portefeuille_credit` | `PortefeuilleCredit` | [PortefeuilleCredit.ts](../easy-ecole-backend/src/modules/comptabilite/models/PortefeuilleCredit.ts) |
+| `cpt_reductions_frais` | `ReductionFrais` | [ReductionFrais.ts](../easy-ecole-backend/src/modules/comptabilite/models/ReductionFrais.ts) |
+| `cpt_releves_bancaires` | `ReleveBancaire` | [ReleveBancaire.ts](../easy-ecole-backend/src/modules/comptabilite/models/ReleveBancaire.ts) |
+
+### Module core - prefixe non specifie (1)
+
+| Table | Modele Sequelize | Fichier source |
+|---|---|---|
+| `documents` | `Document` | [Document.ts](../easy-ecole-backend/src/modules/core/models/Document.ts) |
+
+### Module docgen - prefixe `docgen_` (7)
+
+| Table | Modele Sequelize | Fichier source |
+|---|---|---|
+| `docgen_cachets` | `DocGenCachet` | [DocGenCachet.ts](../easy-ecole-backend/src/modules/docgen/models/DocGenCachet.ts) |
+| `docgen_documents` | `DocGenDocument` | [DocGenDocument.ts](../easy-ecole-backend/src/modules/docgen/models/DocGenDocument.ts) |
+| `docgen_references` | `DocGenReference` | [DocGenReference.ts](../easy-ecole-backend/src/modules/docgen/models/DocGenReference.ts) |
+| `docgen_signatures` | `DocGenSignature` | [DocGenSignature.ts](../easy-ecole-backend/src/modules/docgen/models/DocGenSignature.ts) |
+| `docgen_templates` | `DocGenTemplate` | [DocGenTemplate.ts](../easy-ecole-backend/src/modules/docgen/models/DocGenTemplate.ts) |
+| `docgen_types` | `DocGenType` | [DocGenType.ts](../easy-ecole-backend/src/modules/docgen/models/DocGenType.ts) |
+| `docgen_workflows` | `DocGenWorkflow` | [DocGenWorkflow.ts](../easy-ecole-backend/src/modules/docgen/models/DocGenWorkflow.ts) |
+
+### Module elearning - prefixe `elearning_` (27)
+
+| Table | Modele Sequelize | Fichier source |
+|---|---|---|
+| `elearning_annees` | `AnneeElearning` | [AnneeElearning.ts](../easy-ecole-backend/src/modules/elearning/models/AnneeElearning.ts) |
+| `elearning_audit` | `Audit` | [Audit.ts](../easy-ecole-backend/src/modules/elearning/models/Audit.ts) |
+| `elearning_centres_examens` | `CentreExamen` | [CentreExamen.ts](../easy-ecole-backend/src/modules/elearning/models/CentreExamen.ts) |
+| `elearning_certificats` | `Certificat` | [Certificat.ts](../easy-ecole-backend/src/modules/elearning/models/Certificat.ts) |
+| `elearning_commentaires` | `Commentaire` | [Commentaire.ts](../easy-ecole-backend/src/modules/elearning/models/Commentaire.ts) |
+| `elearning_couplages_mail` | `CouplageMail` | [CouplageMail.ts](../easy-ecole-backend/src/modules/elearning/models/CouplageMail.ts) |
+| `elearning_cours` | `CoursEnLigne` | [CoursEnLigne.ts](../easy-ecole-backend/src/modules/elearning/models/CoursEnLigne.ts) |
+| `elearning_devoirs` | `Devoir` | [Devoir.ts](../easy-ecole-backend/src/modules/elearning/models/Devoir.ts) |
+| `elearning_encaissements` | `Encaissement` | [Encaissement.ts](../easy-ecole-backend/src/modules/elearning/models/Encaissement.ts) |
+| `elearning_enveloppes` | `Enveloppe` | [Enveloppe.ts](../easy-ecole-backend/src/modules/elearning/models/Enveloppe.ts) |
+| `elearning_examens` | `Examen` | [Examen.ts](../easy-ecole-backend/src/modules/elearning/models/Examen.ts) |
+| `elearning_messages` | `Message` | [Message.ts](../easy-ecole-backend/src/modules/elearning/models/Message.ts) |
+| `elearning_modules` | `ModuleElearning` | [ModuleElearning.ts](../easy-ecole-backend/src/modules/elearning/models/ModuleElearning.ts) |
+| `elearning_mouvements` | `Mouvement` | [Mouvement.ts](../easy-ecole-backend/src/modules/elearning/models/Mouvement.ts) |
+| `elearning_notes_examens` | `NoteExamen` | [NoteExamen.ts](../easy-ecole-backend/src/modules/elearning/models/NoteExamen.ts) |
+| `elearning_notifications` | `Notification` | [Notification.ts](../easy-ecole-backend/src/modules/elearning/models/Notification.ts) |
+| `elearning_participants_salon` | `ParticipantSalon` | [ParticipantSalon.ts](../easy-ecole-backend/src/modules/elearning/models/ParticipantSalon.ts) |
+| `elearning_progression_apprenant` | `ProgressionApprenant` | [ProgressionApprenant.ts](../easy-ecole-backend/src/modules/elearning/models/ProgressionApprenant.ts) |
+| `elearning_quiz` | `Quiz` | [Quiz.ts](../easy-ecole-backend/src/modules/elearning/models/Quiz.ts) |
+| `elearning_reponses_quiz` | `ReponseQuiz` | [ReponseQuiz.ts](../easy-ecole-backend/src/modules/elearning/models/ReponseQuiz.ts) |
+| `elearning_reservations_examens` | `ReservationExamen` | [ReservationExamen.ts](../easy-ecole-backend/src/modules/elearning/models/ReservationExamen.ts) |
+| `elearning_salons` | `Salon` | [Salon.ts](../easy-ecole-backend/src/modules/elearning/models/Salon.ts) |
+| `elearning_selections_cours` | `SelectionCours` | [SelectionCours.ts](../easy-ecole-backend/src/modules/elearning/models/SelectionCours.ts) |
+| `elearning_sessions_examens` | `SessionExamen` | [SessionExamen.ts](../easy-ecole-backend/src/modules/elearning/models/SessionExamen.ts) |
+| `elearning_soumissions_devoirs` | `SoumissionDevoir` | [SoumissionDevoir.ts](../easy-ecole-backend/src/modules/elearning/models/SoumissionDevoir.ts) |
+| `elearning_supports` | `Support` | [Support.ts](../easy-ecole-backend/src/modules/elearning/models/Support.ts) |
+| `elearning_tarifs_credit` | `TarifCredit` | [TarifCredit.ts](../easy-ecole-backend/src/modules/elearning/models/TarifCredit.ts) |
+
+### Module etablissement - prefixe `eta_` (1)
+
+| Table | Modele Sequelize | Fichier source |
+|---|---|---|
+| `eta_etablissements` | `Etablissement` | [Etablissement.ts](../easy-ecole-backend/src/modules/etablissement/models/Etablissement.ts) |
+
+### Module ged - prefixe `ged_` (18)
+
+| Table | Modele Sequelize | Fichier source |
+|---|---|---|
+| `ged_audit_logs` | `DocumentAuditLog` | [DocumentAuditLog.ts](../easy-ecole-backend/src/modules/ged/models/DocumentAuditLog.ts) |
+| `ged_backups` | `BackupRecord` | [BackupRecord.ts](../easy-ecole-backend/src/modules/ged/models/BackupRecord.ts) |
+| `ged_disposal_records` | `DisposalRecord` | [DisposalRecord.ts](../easy-ecole-backend/src/modules/ged/models/DisposalRecord.ts) |
+| `ged_document_access_grants` | `DocumentAccessGrant` | [DocumentAccessGrant.ts](../easy-ecole-backend/src/modules/ged/models/DocumentAccessGrant.ts) |
+| `ged_document_tags` | `DocumentTag` | [DocumentTag.ts](../easy-ecole-backend/src/modules/ged/models/DocumentTag.ts) |
+| `ged_document_types` | `DocumentType` | [DocumentType.ts](../easy-ecole-backend/src/modules/ged/models/DocumentType.ts) |
+| `ged_documents` | `DocumentGed` | [DocumentGed.ts](../easy-ecole-backend/src/modules/ged/models/DocumentGed.ts) |
+| `ged_domains` | `Domain` | [Domain.ts](../easy-ecole-backend/src/modules/ged/models/Domain.ts) |
+| `ged_fichiers_stockes` | `StoredFile` | [StoredFile.ts](../easy-ecole-backend/src/modules/ged/models/StoredFile.ts) |
+| `ged_folders` | `Folder` | [Folder.ts](../easy-ecole-backend/src/modules/ged/models/Folder.ts) |
+| `ged_notifications` | `GedNotification` | [GedNotification.ts](../easy-ecole-backend/src/modules/ged/models/GedNotification.ts) |
+| `ged_processus` | `ProcessusGenerateur` | [ProcessusGenerateur.ts](../easy-ecole-backend/src/modules/ged/models/ProcessusGenerateur.ts) |
+| `ged_reference_counters` | `ReferenceCounter` | [ReferenceCounter.ts](../easy-ecole-backend/src/modules/ged/models/ReferenceCounter.ts) |
+| `ged_registre_courrier` | `RegistreCourrier` | [RegistreCourrier.ts](../easy-ecole-backend/src/modules/ged/models/RegistreCourrier.ts) |
+| `ged_role_permissions` | `RolePermission` | [RolePermission.ts](../easy-ecole-backend/src/modules/ged/models/RolePermission.ts) |
+| `ged_sessions` | `SessionGed` | [SessionGed.ts](../easy-ecole-backend/src/modules/ged/models/SessionGed.ts) |
+| `ged_signatures` | `GedSignature` | [GedSignature.ts](../easy-ecole-backend/src/modules/ged/models/GedSignature.ts) |
+| `ged_tags` | `Tag` | [Tag.ts](../easy-ecole-backend/src/modules/ged/models/Tag.ts) |
+
+### Module immobilisation - prefixe `imm_` (17)
+
+| Table | Modele Sequelize | Fichier source |
+|---|---|---|
+| `imm_acquisition` | `Acquisition` | [Acquisition.ts](../easy-ecole-backend/src/modules/immobilisation/models/Acquisition.ts) |
+| `imm_affectation` | `Affectation` | [Affectation.ts](../easy-ecole-backend/src/modules/immobilisation/models/Affectation.ts) |
+| `imm_amortissement` | `Amortissement` | [Amortissement.ts](../easy-ecole-backend/src/modules/immobilisation/models/Amortissement.ts) |
+| `imm_assurance` | `Assurance` | [Assurance.ts](../easy-ecole-backend/src/modules/immobilisation/models/Assurance.ts) |
+| `imm_batiment` | `Batiment` | [Batiment.ts](../easy-ecole-backend/src/modules/immobilisation/models/Batiment.ts) |
+| `imm_categorie_immobilisation` | `CategorieImmobilisation` | [CategorieImmobilisation.ts](../easy-ecole-backend/src/modules/immobilisation/models/CategorieImmobilisation.ts) |
+| `imm_cession` | `Cession` | [Cession.ts](../easy-ecole-backend/src/modules/immobilisation/models/Cession.ts) |
+| `imm_departement` | `Departement` | [Departement.ts](../easy-ecole-backend/src/modules/immobilisation/models/Departement.ts) |
+| `imm_immobilisation` | `Immobilisation` | [Immobilisation.ts](../easy-ecole-backend/src/modules/immobilisation/models/Immobilisation.ts) |
+| `imm_inventaire` | `Inventaire` | [Inventaire.ts](../easy-ecole-backend/src/modules/immobilisation/models/Inventaire.ts) |
+| `imm_ligne_inventaire` | `LigneInventaire` | [LigneInventaire.ts](../easy-ecole-backend/src/modules/immobilisation/models/LigneInventaire.ts) |
+| `imm_localisation` | `Localisation` | [Localisation.ts](../easy-ecole-backend/src/modules/immobilisation/models/Localisation.ts) |
+| `imm_maintenance` | `Maintenance` | [Maintenance.ts](../easy-ecole-backend/src/modules/immobilisation/models/Maintenance.ts) |
+| `imm_maintenance_programmee` | `MaintenanceProgrammee` | [MaintenanceProgrammee.ts](../easy-ecole-backend/src/modules/immobilisation/models/MaintenanceProgrammee.ts) |
+| `imm_rebuts_immobilisation` | `RebutImmobilisation` | [RebutImmobilisation.ts](../easy-ecole-backend/src/modules/immobilisation/models/RebutImmobilisation.ts) |
+| `imm_site` | `Site` | [Site.ts](../easy-ecole-backend/src/modules/immobilisation/models/Site.ts) |
+| `imm_sortie_provisoire` | `SortieProvisoire` | [SortieProvisoire.ts](../easy-ecole-backend/src/modules/immobilisation/models/SortieProvisoire.ts) |
+
+### Module inscription - prefixe `ins_` (75)
+
+| Table | Modele Sequelize | Fichier source |
+|---|---|---|
+| `ins_absences` | `Absence` | [Absence.ts](../easy-ecole-backend/src/modules/inscription/models/Absence.ts) |
+| `ins_affectations_salles_classes` | `AffectationSalleClasse` | [AffectationSalleClasse.ts](../easy-ecole-backend/src/modules/inscription/models/AffectationSalleClasse.ts) |
+| `ins_annees_academiques` | `AnneeAcademique` | [AnneeAcademique.ts](../easy-ecole-backend/src/modules/inscription/models/AnneeAcademique.ts) |
+| `ins_blocs_cahier_de_texte` | `BlocCahierDeTexte` | [BlocCahierDeTexte.ts](../easy-ecole-backend/src/modules/inscription/models/BlocCahierDeTexte.ts) |
+| `ins_bordereaux` | `Bordereau` | [Bordereau.ts](../easy-ecole-backend/src/modules/inscription/models/Bordereau.ts) |
+| `ins_cahiers_de_texte` | `CahierDeTexte` | [CahierDeTexte.ts](../easy-ecole-backend/src/modules/inscription/models/CahierDeTexte.ts) |
+| `ins_chapitres_cours` | `ChapitreCours` | [ChapitreCours.ts](../easy-ecole-backend/src/modules/inscription/models/ChapitreCours.ts) |
+| `ins_classes` | `Classe` | [Classe.ts](../easy-ecole-backend/src/modules/inscription/models/Classe.ts) |
+| `ins_comite_votes` | `ComiteVote` | [ComiteVote.ts](../easy-ecole-backend/src/modules/inscription/models/ComiteVote.ts) |
+| `ins_cours` | `Cours` | [Cours.ts](../easy-ecole-backend/src/modules/inscription/models/Cours.ts) |
+| `ins_cours_choisis` | `DemandeInscriptionCours` | [DemandeInscriptionCours.ts](../easy-ecole-backend/src/modules/inscription/models/DemandeInscriptionCours.ts) |
+| `ins_cours_participants` | `CoursParticipant` | [CoursParticipant.ts](../easy-ecole-backend/src/modules/inscription/models/CoursParticipant.ts) |
+| `ins_creneaux` | `Creneau` | [Creneau.ts](../easy-ecole-backend/src/modules/inscription/models/Creneau.ts) |
+| `ins_cursus_apprenants` | `CursusApprenant` | [CursusApprenant.ts](../easy-ecole-backend/src/modules/inscription/models/CursusApprenant.ts) |
+| `ins_demandes_inscription` | `DemandeInscription` | [DemandeInscription.ts](../easy-ecole-backend/src/modules/inscription/models/DemandeInscription.ts) |
+| `ins_designation_memoires` | `DesignationMemoire` | [DesignationMemoire.ts](../easy-ecole-backend/src/modules/inscription/models/DesignationMemoire.ts) |
+| `ins_dispenses` | `Dispense` | [Dispense.ts](../easy-ecole-backend/src/modules/inscription/models/Dispense.ts) |
+| `ins_document_requis_niveau` | `DocumentRequisNiveau` | [DocumentRequisNiveau.ts](../easy-ecole-backend/src/modules/inscription/models/DocumentRequisNiveau.ts) |
+| `ins_dossiers_demandes` | `DemandeInscriptionDossier` | [DemandeInscriptionDossier.ts](../easy-ecole-backend/src/modules/inscription/models/DemandeInscriptionDossier.ts) |
+| `ins_dossiers_etudiants` | `DossierEtudiant` | [DossierEtudiant.ts](../easy-ecole-backend/src/modules/inscription/models/DossierEtudiant.ts) |
+| `ins_dossiers_inscription` | `DossierInscription` | [DossierInscription.ts](../easy-ecole-backend/src/modules/inscription/models/DossierInscription.ts) |
+| `ins_echeances` | `Echeance` | [Echeance.ts](../easy-ecole-backend/src/modules/inscription/models/Echeance.ts) |
+| `ins_ecue` | `Ecue` | [Ecue.ts](../easy-ecole-backend/src/modules/inscription/models/Ecue.ts) |
+| `ins_equivalences` | `Equivalence` | [Equivalence.ts](../easy-ecole-backend/src/modules/inscription/models/Equivalence.ts) |
+| `ins_etapes_inscription` | `EtapeInscription` | [EtapeInscription.ts](../easy-ecole-backend/src/modules/inscription/models/EtapeInscription.ts) |
+| `ins_fichiers_ressources` | `FichierRessource` | [FichierRessource.ts](../easy-ecole-backend/src/modules/inscription/models/FichierRessource.ts) |
+| `ins_frais_inscription` | `FraisInscription` | [FraisInscription.ts](../easy-ecole-backend/src/modules/inscription/models/FraisInscription.ts) |
+| `ins_frais_parcours` | `FraisParcours` | [FraisParcours.ts](../easy-ecole-backend/src/modules/inscription/models/FraisParcours.ts) |
+| `ins_frais_scolarites` | `FraisScolarite` | [FraisScolarite.ts](../easy-ecole-backend/src/modules/inscription/models/FraisScolarite.ts) |
+| `ins_hikvision_enrollments` | `HikvisionEnrollment` | [HikvisionEnrollment.ts](../easy-ecole-backend/src/modules/inscription/models/HikvisionEnrollment.ts) |
+| `ins_listes_notes_evaluation` | `ListeNoteEvaluation` | [ListeNoteEvaluation.ts](../easy-ecole-backend/src/modules/inscription/models/ListeNoteEvaluation.ts) |
+| `ins_listes_presences` | `ListePresence` | [ListePresence.ts](../easy-ecole-backend/src/modules/inscription/models/ListePresence.ts) |
+| `ins_matieres_prerequis` | `MatierePrerequis` | [MatierePrerequis.ts](../easy-ecole-backend/src/modules/inscription/models/MatierePrerequis.ts) |
+| `ins_mcc` | `Mcc` | [Mcc.ts](../easy-ecole-backend/src/modules/inscription/models/Mcc.ts) |
+| `ins_niveaux_etudes` | `NiveauEtude` | [NiveauEtude.ts](../easy-ecole-backend/src/modules/inscription/models/NiveauEtude.ts) |
+| `ins_notes_evaluation` | `NoteEvaluation` | [NoteEvaluation.ts](../easy-ecole-backend/src/modules/inscription/models/NoteEvaluation.ts) |
+| `ins_paiements_inscription` | `PaiementInscription` | [PaiementInscription.ts](../easy-ecole-backend/src/modules/inscription/models/PaiementInscription.ts) |
+| `ins_parcours` | `Parcours` | [Parcours.ts](../easy-ecole-backend/src/modules/inscription/models/Parcours.ts) |
+| `ins_parcours_choisis` | `ParcoursChoisi` | [ParcoursChoisi.ts](../easy-ecole-backend/src/modules/inscription/models/ParcoursChoisi.ts) |
+| `ins_penalite_retard` | `PenaliteRetard` | [PenaliteRetard.ts](../easy-ecole-backend/src/modules/inscription/models/PenaliteRetard.ts) |
+| `ins_pointage_scans` | `PointageScan` | [PointageScan.ts](../easy-ecole-backend/src/modules/inscription/models/PointageScan.ts) |
+| `ins_pointage_terminal_events` | `PointageTerminalEvent` | [PointageTerminalEvent.ts](../easy-ecole-backend/src/modules/inscription/models/PointageTerminalEvent.ts) |
+| `ins_pointage_terminaux` | `PointageTerminal` | [PointageTerminal.ts](../easy-ecole-backend/src/modules/inscription/models/PointageTerminal.ts) |
+| `ins_pointages` | `Pointage` | [Pointage.ts](../easy-ecole-backend/src/modules/inscription/models/Pointage.ts) |
+| `ins_pre_inscriptions` | `PreInscription` | [PreInscription.ts](../easy-ecole-backend/src/modules/inscription/models/PreInscription.ts) |
+| `ins_prerequis_parcours` | `PrerequisParcours` | [PrerequisParcours.ts](../easy-ecole-backend/src/modules/inscription/models/PrerequisParcours.ts) |
+| `ins_prerequis_parcours_choisis` | `PrerequisParcoursChoisi` | [PrerequisParcoursChoisi.ts](../easy-ecole-backend/src/modules/inscription/models/PrerequisParcoursChoisi.ts) |
+| `ins_presences` | `Presence` | [Presence.ts](../easy-ecole-backend/src/modules/inscription/models/Presence.ts) |
+| `ins_presences_cours_participants` | `PresenceCoursParticipant` | [PresenceCoursParticipant.ts](../easy-ecole-backend/src/modules/inscription/models/PresenceCoursParticipant.ts) |
+| `ins_publications_notes` | `PublicationNote` | [PublicationNote.ts](../easy-ecole-backend/src/modules/inscription/models/PublicationNote.ts) |
+| `ins_quitus` | `Quitus` | [Quitus.ts](../easy-ecole-backend/src/modules/inscription/models/Quitus.ts) |
+| `ins_rattrapage_comite_votes` | `RattrapageComiteVote` | [RattrapageComiteVote.ts](../easy-ecole-backend/src/modules/inscription/models/RattrapageComiteVote.ts) |
+| `ins_rattrapage_documents_deposes` | `RattrapageDocumentDepose` | [RattrapageDocumentDepose.ts](../easy-ecole-backend/src/modules/inscription/models/RattrapageDocumentDepose.ts) |
+| `ins_rattrapage_documents_requis` | `RattrapageDocumentRequis` | [RattrapageDocumentRequis.ts](../easy-ecole-backend/src/modules/inscription/models/RattrapageDocumentRequis.ts) |
+| `ins_rattrapage_enseignants` | `RattrapageEnseignant` | [RattrapageEnseignant.ts](../easy-ecole-backend/src/modules/inscription/models/RattrapageEnseignant.ts) |
+| `ins_rattrapage_notes` | `RattrapageNote` | [RattrapageNote.ts](../easy-ecole-backend/src/modules/inscription/models/RattrapageNote.ts) |
+| `ins_rattrapage_planning` | `RattrapagePlanning` | [RattrapagePlanning.ts](../easy-ecole-backend/src/modules/inscription/models/RattrapagePlanning.ts) |
+| `ins_rattrapages_inscriptions` | `RattrapageInscription` | [RattrapageInscription.ts](../easy-ecole-backend/src/modules/inscription/models/RattrapageInscription.ts) |
+| `ins_reduction_frais` | `ReductionFrais` | [ReductionFrais.ts](../easy-ecole-backend/src/modules/inscription/models/ReductionFrais.ts) |
+| `ins_regles_evaluation` | `RegleEvaluation` | [RegleEvaluation.ts](../easy-ecole-backend/src/modules/inscription/models/RegleEvaluation.ts) |
+| `ins_reponses_inscription` | `ReponseInscription` | [ReponseInscription.ts](../easy-ecole-backend/src/modules/inscription/models/ReponseInscription.ts) |
+| `ins_ressources` | `Ressource` | [Ressource.ts](../easy-ecole-backend/src/modules/inscription/models/Ressource.ts) |
+| `ins_salles_de_classes` | `SalleDeClasse` | [SalleDeClasse.ts](../easy-ecole-backend/src/modules/inscription/models/SalleDeClasse.ts) |
+| `ins_seance_pointages` | `SeancePointage` | [SeancePointage.ts](../easy-ecole-backend/src/modules/inscription/models/SeancePointage.ts) |
+| `ins_seances` | `Seance` | [Seance.ts](../easy-ecole-backend/src/modules/inscription/models/Seance.ts) |
+| `ins_semestres_academiques` | `SemestreAcademique` | [SemestreAcademique.ts](../easy-ecole-backend/src/modules/inscription/models/SemestreAcademique.ts) |
+| `ins_session_correcteurs` | `SessionCorrecteur` | [SessionCorrecteur.ts](../easy-ecole-backend/src/modules/inscription/models/SessionCorrecteur.ts) |
+| `ins_session_examen_classes` | `SessionExamenClasse` | [SessionExamenClasse.ts](../easy-ecole-backend/src/modules/inscription/models/SessionExamenClasse.ts) |
+| `ins_sessions` | `Session` | [Session.ts](../easy-ecole-backend/src/modules/inscription/models/Session.ts) |
+| `ins_sessions_examens` | `SessionExamen` | [SessionExamen.ts](../easy-ecole-backend/src/modules/inscription/models/SessionExamen.ts) |
+| `ins_sessions_rattrapage` | `RattrapageSession` | [RattrapageSession.ts](../easy-ecole-backend/src/modules/inscription/models/RattrapageSession.ts) |
+| `ins_sessions_rattrapage_classes` | `RattrapageSessionClasse` | [RattrapageSessionClasse.ts](../easy-ecole-backend/src/modules/inscription/models/RattrapageSessionClasse.ts) |
+| `ins_shifts` | `Shift` | [Shift.ts](../easy-ecole-backend/src/modules/inscription/models/Shift.ts) |
+| `ins_types_note_evaluation` | `TypeNoteEvaluation` | [TypeNoteEvaluation.ts](../easy-ecole-backend/src/modules/inscription/models/TypeNoteEvaluation.ts) |
+| `ins_types_operations_bordereau` | `TypeOperationBordereau` | [TypeOperationBordereau.ts](../easy-ecole-backend/src/modules/inscription/models/TypeOperationBordereau.ts) |
+
+### Module marche - prefixe `mar_` (5)
+
+| Table | Modele Sequelize | Fichier source |
+|---|---|---|
+| `mar_appels_offre` | `AppelOffre` | [AppelOffre.ts](../easy-ecole-backend/src/modules/marche/models/AppelOffre.ts) |
+| `mar_avenants` | `AvenantMarche` | [AvenantMarche.ts](../easy-ecole-backend/src/modules/marche/models/AvenantMarche.ts) |
+| `mar_contrats` | `ContratMarche` | [ContratMarche.ts](../easy-ecole-backend/src/modules/marche/models/ContratMarche.ts) |
+| `mar_manifestations_interet` | `ManifestationInteret` | [ManifestationInteret.ts](../easy-ecole-backend/src/modules/marche/models/ManifestationInteret.ts) |
+| `mar_planifications` | `PlanificationMarche` | [PlanificationMarche.ts](../easy-ecole-backend/src/modules/marche/models/PlanificationMarche.ts) |
+
+### Module orientation - prefixe `ori_` (11)
+
+| Table | Modele Sequelize | Fichier source |
+|---|---|---|
+| `ori_categories` | `Categorie` | [Categorie.ts](../easy-ecole-backend/src/modules/orientation/models/Categorie.ts) |
+| `ori_debouches_parcours` | `DeboucheParcours` | [DeboucheParcours.ts](../easy-ecole-backend/src/modules/orientation/models/DeboucheParcours.ts) |
+| `ori_demandes_orientation` | `DemandeOrientation` | [DemandeOrientation.ts](../easy-ecole-backend/src/modules/orientation/models/DemandeOrientation.ts) |
+| `ori_matieres_prerequis` | `MatierePrerequis` | [MatierePrerequis.ts](../easy-ecole-backend/src/modules/orientation/models/MatierePrerequis.ts) |
+| `ori_niveaux_etudes` | `NiveauEtude` | [NiveauEtude.ts](../easy-ecole-backend/src/modules/orientation/models/NiveauEtude.ts) |
+| `ori_panier_parcours_choisis` | `PanierParcoursChoisi` | [PanierParcoursChoisi.ts](../easy-ecole-backend/src/modules/orientation/models/PanierParcoursChoisi.ts) |
+| `ori_parcours` | `Parcours` | [Parcours.ts](../easy-ecole-backend/src/modules/orientation/models/Parcours.ts) |
+| `ori_parcours_choisis` | `ParcoursChoisi` | [ParcoursChoisi.ts](../easy-ecole-backend/src/modules/orientation/models/ParcoursChoisi.ts) |
+| `ori_prerequis_parcours` | `PrerequisParcours` | [PrerequisParcours.ts](../easy-ecole-backend/src/modules/orientation/models/PrerequisParcours.ts) |
+| `ori_prerequis_parcours_choisis` | `PrerequisParcoursChoisi` | [PrerequisParcoursChoisi.ts](../easy-ecole-backend/src/modules/orientation/models/PrerequisParcoursChoisi.ts) |
+| `ori_reponses_orientation` | `ReponseOrientation` | [ReponseOrientation.ts](../easy-ecole-backend/src/modules/orientation/models/ReponseOrientation.ts) |
+
+### Module parent - prefixe `par_` (1)
+
+| Table | Modele Sequelize | Fichier source |
+|---|---|---|
+| `par_parents_enfants` | `ParentEnfant` | [ParentEnfant.ts](../easy-ecole-backend/src/modules/parent/models/ParentEnfant.ts) |
+
+### Module qualite - prefixe `qua_` (8)
+
+| Table | Modele Sequelize | Fichier source |
+|---|---|---|
+| `qua_actions_correctives` | `QuaActionCorrective` | [QuaActionCorrective.ts](../easy-ecole-backend/src/modules/qualite/models/QuaActionCorrective.ts) |
+| `qua_audit_pistes` | `QuaAuditPiste` | [QuaAuditPiste.ts](../easy-ecole-backend/src/modules/qualite/models/QuaAuditPiste.ts) |
+| `qua_audits` | `QuaAudit` | [QuaAudit.ts](../easy-ecole-backend/src/modules/qualite/models/QuaAudit.ts) |
+| `qua_decisions_revue` | `QuaDecisionRevue` | [QuaDecisionRevue.ts](../easy-ecole-backend/src/modules/qualite/models/QuaDecisionRevue.ts) |
+| `qua_enquetes_satisfaction` | `QuaEnqueteSatisfaction` | [QuaEnqueteSatisfaction.ts](../easy-ecole-backend/src/modules/qualite/models/QuaEnqueteSatisfaction.ts) |
+| `qua_non_conformites` | `QuaNonConformite` | [QuaNonConformite.ts](../easy-ecole-backend/src/modules/qualite/models/QuaNonConformite.ts) |
+| `qua_reponses_satisfaction` | `QuaReponseSatisfaction` | [QuaReponseSatisfaction.ts](../easy-ecole-backend/src/modules/qualite/models/QuaReponseSatisfaction.ts) |
+| `qua_revues_direction` | `QuaRevueDirection` | [QuaRevueDirection.ts](../easy-ecole-backend/src/modules/qualite/models/QuaRevueDirection.ts) |
+
+### Module reporting - prefixe `rpt_` (16)
+
+| Table | Modele Sequelize | Fichier source |
+|---|---|---|
+| `rpt_achats` | `RptAchat` | [RptAchat.ts](../easy-ecole-backend/src/modules/reporting/models/RptAchat.ts) |
+| `rpt_budget_vs_reel` | `RptBudgetVsReel` | [RptBudgetVsReel.ts](../easy-ecole-backend/src/modules/reporting/models/RptBudgetVsReel.ts) |
+| `rpt_documents_academiques` | `RptDocumentAcademique` | [RptDocumentAcademique.ts](../easy-ecole-backend/src/modules/reporting/models/RptDocumentAcademique.ts) |
+| `rpt_effectifs` | `RptEffectif` | [RptEffectif.ts](../easy-ecole-backend/src/modules/reporting/models/RptEffectif.ts) |
+| `rpt_effectifs_rh` | `RptEffectifRh` | [RptEffectifRh.ts](../easy-ecole-backend/src/modules/reporting/models/RptEffectifRh.ts) |
+| `rpt_evaluations` | `RptEvaluation` | [RptEvaluation.ts](../easy-ecole-backend/src/modules/reporting/models/RptEvaluation.ts) |
+| `rpt_factures` | `RptFacture` | [RptFacture.ts](../easy-ecole-backend/src/modules/reporting/models/RptFacture.ts) |
+| `rpt_formations_rh` | `RptFormationRh` | [RptFormationRh.ts](../easy-ecole-backend/src/modules/reporting/models/RptFormationRh.ts) |
+| `rpt_immobilisations` | `RptImmobilisation` | [RptImmobilisation.ts](../easy-ecole-backend/src/modules/reporting/models/RptImmobilisation.ts) |
+| `rpt_inscriptions` | `RptInscription` | [RptInscription.ts](../easy-ecole-backend/src/modules/reporting/models/RptInscription.ts) |
+| `rpt_notes_moyennes` | `RptNoteMoyenne` | [RptNoteMoyenne.ts](../easy-ecole-backend/src/modules/reporting/models/RptNoteMoyenne.ts) |
+| `rpt_paie` | `RptPaie` | [RptPaie.ts](../easy-ecole-backend/src/modules/reporting/models/RptPaie.ts) |
+| `rpt_paiements` | `RptPaiement` | [RptPaiement.ts](../easy-ecole-backend/src/modules/reporting/models/RptPaiement.ts) |
+| `rpt_presences` | `RptPresence` | [RptPresence.ts](../easy-ecole-backend/src/modules/reporting/models/RptPresence.ts) |
+| `rpt_reussite` | `RptReussite` | [RptReussite.ts](../easy-ecole-backend/src/modules/reporting/models/RptReussite.ts) |
+| `rpt_stocks` | `RptStock` | [RptStock.ts](../easy-ecole-backend/src/modules/reporting/models/RptStock.ts) |
+
+### Module rh - prefixe `rh_` (29)
+
+| Table | Modele Sequelize | Fichier source |
+|---|---|---|
+| `rh_bulletins_paie` | `RhBulletinPaie` | [RhBulletinPaie.ts](../easy-ecole-backend/src/modules/rh/models/RhBulletinPaie.ts) |
+| `rh_candidatures` | `RhCandidature` | [RhCandidature.ts](../easy-ecole-backend/src/modules/rh/models/RhCandidature.ts) |
+| `rh_categories_professionnelles` | `RhCategorieProfessionnelle` | [RhCategorieProfessionnelle.ts](../easy-ecole-backend/src/modules/rh/models/RhCategorieProfessionnelle.ts) |
+| `rh_contrats_enseignant` | `RhContratEnseignant` | [RhContratEnseignant.ts](../easy-ecole-backend/src/modules/rh/models/RhContratEnseignant.ts) |
+| `rh_criteres_evaluation` | `RhCritereEvaluation` | [RhCritereEvaluation.ts](../easy-ecole-backend/src/modules/rh/models/RhCritereEvaluation.ts) |
+| `rh_demandes_conge` | `RhDemandeConge` | [RhDemandeConge.ts](../easy-ecole-backend/src/modules/rh/models/RhDemandeConge.ts) |
+| `rh_departements` | `RhDepartement` | [RhDepartement.ts](../easy-ecole-backend/src/modules/rh/models/RhDepartement.ts) |
+| `rh_employes` | `RhEmploye` | [RhEmploye.ts](../easy-ecole-backend/src/modules/rh/models/RhEmploye.ts) |
+| `rh_entretiens` | `RhEntretien` | [RhEntretien.ts](../easy-ecole-backend/src/modules/rh/models/RhEntretien.ts) |
+| `rh_evaluations_criteres` | `RhEvaluationCritere` | [RhEvaluationCritere.ts](../easy-ecole-backend/src/modules/rh/models/RhEvaluationCritere.ts) |
+| `rh_fiches_evaluation` | `RhFicheEvaluation` | [RhFicheEvaluation.ts](../easy-ecole-backend/src/modules/rh/models/RhFicheEvaluation.ts) |
+| `rh_formations` | `RhFormation` | [RhFormation.ts](../easy-ecole-backend/src/modules/rh/models/RhFormation.ts) |
+| `rh_grille_salariale` | `RhGrilleSalariale` | [RhGrilleSalariale.ts](../easy-ecole-backend/src/modules/rh/models/RhGrilleSalariale.ts) |
+| `rh_heures_supplementaires` | `RhHeureSupplementaire` | [RhHeureSupplementaire.ts](../easy-ecole-backend/src/modules/rh/models/RhHeureSupplementaire.ts) |
+| `rh_indemnites_prestataires` | `RhIndemnitePrestataire` | [RhIndemnitePrestataire.ts](../easy-ecole-backend/src/modules/rh/models/RhIndemnitePrestataire.ts) |
+| `rh_lignes_bulletin` | `RhLigneBulletin` | [RhLigneBulletin.ts](../easy-ecole-backend/src/modules/rh/models/RhLigneBulletin.ts) |
+| `rh_offres_emploi` | `RhOffreEmploi` | [RhOffreEmploi.ts](../easy-ecole-backend/src/modules/rh/models/RhOffreEmploi.ts) |
+| `rh_participations_formation` | `RhParticipationFormation` | [RhParticipationFormation.ts](../easy-ecole-backend/src/modules/rh/models/RhParticipationFormation.ts) |
+| `rh_periodes_paie` | `RhPeriodePaie` | [RhPeriodePaie.ts](../easy-ecole-backend/src/modules/rh/models/RhPeriodePaie.ts) |
+| `rh_planning_personnel` | `RhPlanningPersonnel` | [RhPlanningPersonnel.ts](../easy-ecole-backend/src/modules/rh/models/RhPlanningPersonnel.ts) |
+| `rh_postes` | `RhPoste` | [RhPoste.ts](../easy-ecole-backend/src/modules/rh/models/RhPoste.ts) |
+| `rh_prestataires` | `RhPrestataire` | [RhPrestataire.ts](../easy-ecole-backend/src/modules/rh/models/RhPrestataire.ts) |
+| `rh_prestations_enseignant` | `RhPrestationEnseignant` | [RhPrestationEnseignant.ts](../easy-ecole-backend/src/modules/rh/models/RhPrestationEnseignant.ts) |
+| `rh_prets` | `RhPret` | [RhPret.ts](../easy-ecole-backend/src/modules/rh/models/RhPret.ts) |
+| `rh_remboursements_pret` | `RhRemboursementPret` | [RhRemboursementPret.ts](../easy-ecole-backend/src/modules/rh/models/RhRemboursementPret.ts) |
+| `rh_rubriques_paie` | `RhRubriquePaie` | [RhRubriquePaie.ts](../easy-ecole-backend/src/modules/rh/models/RhRubriquePaie.ts) |
+| `rh_soldes_conge` | `RhSoldeConge` | [RhSoldeConge.ts](../easy-ecole-backend/src/modules/rh/models/RhSoldeConge.ts) |
+| `rh_taux_horaires_enseignants` | `RhTauxHoraireEnseignant` | [RhTauxHoraireEnseignant.ts](../easy-ecole-backend/src/modules/rh/models/RhTauxHoraireEnseignant.ts) |
+| `rh_types_contrat` | `RhTypeContrat` | [RhTypeContrat.ts](../easy-ecole-backend/src/modules/rh/models/RhTypeContrat.ts) |
+
+### Module scolarite - prefixe `scol_` (23)
+
+| Table | Modele Sequelize | Fichier source |
+|---|---|---|
+| `scol_clotures_caisse` | `ClotureCaisse` | [ClotureCaisse.ts](../easy-ecole-backend/src/modules/scolarite/models/ClotureCaisse.ts) |
+| `scol_conseils_classe` | `ConseilClasse` | [ConseilClasse.ts](../easy-ecole-backend/src/modules/scolarite/models/ConseilClasse.ts) |
+| `scol_decisions_conseil` | `DecisionConseil` | [DecisionConseil.ts](../easy-ecole-backend/src/modules/scolarite/models/DecisionConseil.ts) |
+| `scol_decisions_passage` | `DecisionPassage` | [DecisionPassage.ts](../easy-ecole-backend/src/modules/scolarite/models/DecisionPassage.ts) |
+| `scol_demandes_document` | `DemandeDocument` | [DemandeDocument.ts](../easy-ecole-backend/src/modules/scolarite/models/DemandeDocument.ts) |
+| `scol_demandes_document_pieces` | `DemandeDocumentPiece` | [DemandeDocumentPiece.ts](../easy-ecole-backend/src/modules/scolarite/models/DemandeDocumentPiece.ts) |
+| `scol_demandes_document_votes` | `DemandeDocumentVote` | [DemandeDocumentVote.ts](../easy-ecole-backend/src/modules/scolarite/models/DemandeDocumentVote.ts) |
+| `scol_demandes_reorientation` | `DemandeReorientation` | [DemandeReorientation.ts](../easy-ecole-backend/src/modules/scolarite/models/DemandeReorientation.ts) |
+| `scol_demandes_vae` | `DemandeVAE` | [DemandeVAE.ts](../easy-ecole-backend/src/modules/scolarite/models/DemandeVAE.ts) |
+| `scol_diplomes` | `Diplome` | [Diplome.ts](../easy-ecole-backend/src/modules/scolarite/models/Diplome.ts) |
+| `scol_documents_delivres` | `DocumentDelivre` | [DocumentDelivre.ts](../easy-ecole-backend/src/modules/scolarite/models/DocumentDelivre.ts) |
+| `scol_evenements_calendrier` | `EvenementCalendrier` | [EvenementCalendrier.ts](../easy-ecole-backend/src/modules/scolarite/models/EvenementCalendrier.ts) |
+| `scol_journal_caisse` | `JournalCaisse` | [JournalCaisse.ts](../easy-ecole-backend/src/modules/scolarite/models/JournalCaisse.ts) |
+| `scol_journal_secretariat` | `JournalSecretariat` | [JournalSecretariat.ts](../easy-ecole-backend/src/modules/scolarite/models/JournalSecretariat.ts) |
+| `scol_livres` | `Livre` | [Livre.ts](../easy-ecole-backend/src/modules/scolarite/models/Livre.ts) |
+| `scol_progression_pedagogique` | `ProgressionPedagogique` | [ProgressionPedagogique.ts](../easy-ecole-backend/src/modules/scolarite/models/ProgressionPedagogique.ts) |
+| `scol_reclamations` | `Reclamation` | [Reclamation.ts](../easy-ecole-backend/src/modules/scolarite/models/Reclamation.ts) |
+| `scol_recus_caisse` | `RecuCaisse` | [RecuCaisse.ts](../easy-ecole-backend/src/modules/scolarite/models/RecuCaisse.ts) |
+| `scol_registres_academiques` | `RegistreAcademique` | [RegistreAcademique.ts](../easy-ecole-backend/src/modules/scolarite/models/RegistreAcademique.ts) |
+| `scol_reponses_reclamation` | `ReponseReclamation` | [ReponseReclamation.ts](../easy-ecole-backend/src/modules/scolarite/models/ReponseReclamation.ts) |
+| `scol_sanctions_academiques` | `SanctionAcademique` | [SanctionAcademique.ts](../easy-ecole-backend/src/modules/scolarite/models/SanctionAcademique.ts) |
+| `scol_sanctions_discipline` | `SanctionDiscipline` | [SanctionDiscipline.ts](../easy-ecole-backend/src/modules/scolarite/models/SanctionDiscipline.ts) |
+| `scol_types_document` | `TypeDocument` | [TypeDocument.ts](../easy-ecole-backend/src/modules/scolarite/models/TypeDocument.ts) |
+
+### Module stage - prefixe `stg_` (8)
+
+| Table | Modele Sequelize | Fichier source |
+|---|---|---|
+| `stg_attestations_stage` | `AttestationStage` | [AttestationStage.ts](../easy-ecole-backend/src/modules/stage/models/AttestationStage.ts) |
+| `stg_conventions_stage` | `ConventionStage` | [ConventionStage.ts](../easy-ecole-backend/src/modules/stage/models/ConventionStage.ts) |
+| `stg_demandes_stage` | `DemandeStage` | [DemandeStage.ts](../easy-ecole-backend/src/modules/stage/models/DemandeStage.ts) |
+| `stg_entreprises` | `Entreprise` | [Entreprise.ts](../easy-ecole-backend/src/modules/stage/models/Entreprise.ts) |
+| `stg_notes_stage` | `NoteStage` | [NoteStage.ts](../easy-ecole-backend/src/modules/stage/models/NoteStage.ts) |
+| `stg_offres_stage` | `OffreStage` | [OffreStage.ts](../easy-ecole-backend/src/modules/stage/models/OffreStage.ts) |
+| `stg_rapports_stage` | `RapportStage` | [RapportStage.ts](../easy-ecole-backend/src/modules/stage/models/RapportStage.ts) |
+| `stg_tuteurs` | `Tuteur` | [Tuteur.ts](../easy-ecole-backend/src/modules/stage/models/Tuteur.ts) |
+
+### Module stock - prefixe `stk_` (13)
+
+| Table | Modele Sequelize | Fichier source |
+|---|---|---|
+| `stk_article` | `Article` | [Article.ts](../easy-ecole-backend/src/modules/stock/models/Article.ts) |
+| `stk_besoin` | `Besoin` | [Besoin.ts](../easy-ecole-backend/src/modules/stock/models/Besoin.ts) |
+| `stk_bon_commande` | `BonCommande` | [BonCommande.ts](../easy-ecole-backend/src/modules/stock/models/BonCommande.ts) |
+| `stk_categorie_article` | `CategorieArticle` | [CategorieArticle.ts](../easy-ecole-backend/src/modules/stock/models/CategorieArticle.ts) |
+| `stk_correction_stock` | `CorrectionStock` | [CorrectionStock.ts](../easy-ecole-backend/src/modules/stock/models/CorrectionStock.ts) |
+| `stk_demande_prix` | `DemandePrix` | [DemandePrix.ts](../easy-ecole-backend/src/modules/stock/models/DemandePrix.ts) |
+| `stk_fournisseur` | `Fournisseur` | [Fournisseur.ts](../easy-ecole-backend/src/modules/stock/models/Fournisseur.ts) |
+| `stk_inventaire_stock` | `InventaireStock` | [InventaireStock.ts](../easy-ecole-backend/src/modules/stock/models/InventaireStock.ts) |
+| `stk_ligne_bon_commande` | `LigneBonCommande` | [LigneBonCommande.ts](../easy-ecole-backend/src/modules/stock/models/LigneBonCommande.ts) |
+| `stk_ligne_inventaire_stock` | `LigneInventaireStock` | [LigneInventaireStock.ts](../easy-ecole-backend/src/modules/stock/models/LigneInventaireStock.ts) |
+| `stk_mouvement_stock` | `MouvementStock` | [MouvementStock.ts](../easy-ecole-backend/src/modules/stock/models/MouvementStock.ts) |
+| `stk_rebut` | `Rebut` | [Rebut.ts](../easy-ecole-backend/src/modules/stock/models/Rebut.ts) |
+| `stk_transferts` | `TransfertStock` | [TransfertStock.ts](../easy-ecole-backend/src/modules/stock/models/TransfertStock.ts) |
+
+## Relations entre tables
+
+La colonne e Table portant la cle e identifie le cote qui contient le champ `foreignKey` declare. Les noms de cles et alias sont ceux des associations Sequelize.
+
+### achats
+
+| Table portant la cle | Cle declaree | Table liee | Association(s) / alias |
 |---|---|---|---|
-| auth | `aut_` | marche | `mar_` |
-| parent | `par_` | stock | `stk_` |
-| etablissement | `eta_` | immobilisation | `imm_` |
-| inscription | `ins_` | docgen | `docgen_` |
-| bulletins | `ins_` (hérite du préfixe inscription) | ged | `ged_` |
-| scolarite | `scol_` | elearning | `elearning_` |
-| rh | `rh_` | qualite | `qua_` |
-| stage | `stg_` | reporting | `rpt_` |
-| orientation | `ori_` | communication | `com_` |
-| achats | `ach_` | comptabilite | `cpt_` |
+| `ach_budgets` | `departementId` | `imm_departement` | belongsTo / hasMany<br>Budget.departement (belongsTo)<br>Departement.budgets (hasMany) |
+| `ach_commandes` | `demandeId` | `ach_demandes` | belongsTo / hasMany<br>Commande.demande (belongsTo)<br>Demande.commandes (hasMany) |
+| `ach_commandes` | `fournisseurId` | `ach_fournisseurs` | belongsTo / hasMany<br>Commande.fournisseur (belongsTo)<br>Fournisseur.commandes (hasMany) |
+| `ach_demandes` | `soumisParId` | `aut_utilisateurs` | belongsTo / hasMany<br>Demande.soumisPar (belongsTo)<br>Utilisateur.demandesAchats (hasMany) |
+| `ach_engagements` | `budgetId` | `ach_budgets` | belongsTo / hasMany<br>Budget.engagements (hasMany)<br>Engagement.budget (belongsTo) |
+| `ach_engagements` | `demandeId` | `ach_demandes` | belongsTo / hasMany<br>Demande.engagements (hasMany)<br>Engagement.demande (belongsTo) |
+| `ach_factures_proforma` | `commandeId` | `ach_commandes` | belongsTo / hasMany<br>Commande.facturesProforma (hasMany)<br>FactureProforma.commande (belongsTo) |
+| `ach_lignes_budget` | `budgetId` | `ach_budgets` | belongsTo / hasMany<br>Budget.lignesBudget (hasMany)<br>LigneBudget.budget (belongsTo) |
+| `ach_lignes_budget` | `categorieAchatId` | `ach_categories` | belongsTo / hasMany<br>CategorieAchat.lignesBudget (hasMany)<br>LigneBudget.categorieAchat (belongsTo) |
+| `ach_lignes_commande` | `commandeId` | `ach_commandes` | belongsTo / hasMany<br>Commande.lignesCommande (hasMany)<br>LigneCommande.commande (belongsTo) |
+| `ach_lignes_demande` | `demandeId` | `ach_demandes` | belongsTo / hasMany<br>Demande.lignesDemande (hasMany)<br>LigneDemande.demande (belongsTo) |
+| `ach_lignes_facture` | `factureId` | `ach_factures_proforma` | belongsTo / hasMany<br>FactureProforma.lignesFacture (hasMany)<br>LigneFacture.facture (belongsTo) |
+| `ach_lignes_facture` | `ligneCommandeId` | `ach_lignes_commande` | belongsTo / hasMany<br>LigneCommande.lignesFacture (hasMany)<br>LigneFacture.ligneCommande (belongsTo) |
+| `ach_lignes_reception` | `ligneCommandeId` | `ach_lignes_commande` | belongsTo / hasMany<br>LigneCommande.lignesReception (hasMany)<br>LigneReception.ligneCommande (belongsTo) |
+| `ach_lignes_reception` | `receptionId` | `ach_receptions` | belongsTo / hasMany<br>LigneReception.reception (belongsTo)<br>Reception.lignesReception (hasMany) |
+| `ach_receptions` | `commandeId` | `ach_commandes` | belongsTo / hasMany<br>Commande.receptions (hasMany)<br>Reception.commande (belongsTo) |
+| `ach_validateurs` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasOne<br>Utilisateur.validateur (hasOne)<br>Validateur.utilisateur (belongsTo) |
+| `ach_validations` | `demandeId` | `ach_demandes` | belongsTo / hasMany<br>Demande.validations (hasMany)<br>Validation.demande (belongsTo) |
+| `ach_validations` | `validateurId` | `ach_validateurs` | belongsTo / hasMany<br>Validateur.validations (hasMany)<br>Validation.validateur (belongsTo) |
 
-## Légende
+### auth
 
-- `→ table` : relation **belongsTo** (la table porte la clé étrangère ; "appartient à" / dépend de la cible)
-- `← table` : relation **hasMany / hasOne** (la cible porte la clé étrangère ; la table possède des enfants)
-- `⇄ table` : relation **belongsToMany** (many-to-many via une table de jonction)
-- `[fk]` : nom de la clé étrangère ; `(alias)` : alias Sequelize de l'association
-- `(X lignes)` : nombre de lignes actuelles en base (aide au seed)
-- Les colonnes `createdAt`, `updatedAt`, `deletedAt` (paranoid) et `id` ne sont pas répétées.
+| Table portant la cle | Cle declaree | Table liee | Association(s) / alias |
+|---|---|---|---|
+| `aut_adresses_apprenants` | `apprenantId` | `aut_apprenants` | belongsTo / hasOne<br>AdresseApprenant.apprenant (belongsTo)<br>Apprenant.adresse (hasOne) |
+| `aut_adresses_caissiers_banque` | `caissierBanqueId` | `aut_caissiers_banque` | belongsTo / hasOne<br>AdresseCaissierBanque.caissierBanque (belongsTo)<br>CaissierBanque.adresse (hasOne) |
+| `aut_adresses_enseignants` | `enseignantId` | `aut_enseignants` | belongsTo / hasOne<br>AdresseEnseignant.enseignant (belongsTo)<br>Enseignant.adresse (hasOne) |
+| `aut_adresses_institutions` | `institutionId` | `aut_institutions` | belongsTo / hasOne<br>AdresseInstitution.institution (belongsTo)<br>Institution.adresse (hasOne) |
+| `aut_apprenants` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasOne<br>Apprenant.utilisateur (belongsTo)<br>Utilisateur.apprenant (hasOne) |
+| `aut_caissiers_banque` | `banqueId` | `aut_banques` | belongsTo / hasMany<br>Banque.caissiers (hasMany)<br>CaissierBanque.banque (belongsTo) |
+| `aut_caissiers_banque` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasOne<br>CaissierBanque.utilisateur (belongsTo)<br>Utilisateur.caissierBanque (hasOne) |
+| `aut_comite_orientations` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasOne<br>ComiteOrientation.utilisateur (belongsTo)<br>Utilisateur.comiteOrientation (hasOne) |
+| `aut_enseignants` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasOne<br>Enseignant.utilisateur (belongsTo)<br>Utilisateur.enseignant (hasOne) |
+| `aut_identites_apprenants` | `apprenantId` | `aut_apprenants` | belongsTo / hasOne<br>Apprenant.identite (hasOne)<br>IdentiteApprenant.apprenant (belongsTo) |
+| `aut_informations_parents_apprenants` | `apprenantId` | `aut_apprenants` | belongsTo / hasOne<br>Apprenant.informationsParents (hasOne)<br>InformationsParentsApprenant.apprenant (belongsTo) |
+| `aut_informations_salarie_apprenants` | `apprenantId` | `aut_apprenants` | belongsTo / hasOne<br>Apprenant.informationsSalarie (hasOne)<br>InformationsSalarieApprenant.apprenant (belongsTo) |
+| `aut_institutions` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasOne<br>Institution.utilisateur (belongsTo)<br>Utilisateur.institution (hasOne) |
+| `aut_personnel_administratif` | `etablissementId` | `eta_etablissements` | belongsTo / hasMany<br>Etablissement.personnel (hasMany)<br>PersonnelAdministratif.etablissement (belongsTo) |
+| `aut_personnel_administratif` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasOne<br>PersonnelAdministratif.utilisateur (belongsTo)<br>Utilisateur.personnelAdministratif (hasOne) |
+| `aut_personnes_prevenir_apprenants` | `apprenantId` | `aut_apprenants` | belongsTo / hasOne<br>Apprenant.personnePrevenir (hasOne)<br>PersonnePrevenirApprenant.apprenant (belongsTo) |
+| `aut_role_menu_grants` | `roleId` | `aut_roles` | belongsTo / hasMany<br>Role.menuGrants (hasMany)<br>RoleMenuGrant.role (belongsTo) |
+| `aut_role_permissions` | `permissionId` | `aut_permissions` | belongsTo / hasMany<br>Permission.rolePermissions (hasMany)<br>RolePermission.permission (belongsTo) |
+| `aut_role_permissions` | `roleId` | `aut_roles` | belongsTo / hasMany<br>Role.rolePermissions (hasMany)<br>RolePermission.role (belongsTo) |
+| `aut_user_permissions` | `permissionId` | `aut_permissions` | belongsTo / hasMany<br>Permission.userPermissions (hasMany)<br>UserPermission.permission (belongsTo) |
+| `aut_user_permissions` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>UserPermission.utilisateur (belongsTo)<br>Utilisateur.userPermissions (hasMany) |
+| `aut_user_roles` | `roleId` | `aut_roles` | belongsTo / hasMany<br>Role.userRoles (hasMany)<br>UserRole.role (belongsTo) |
+| `aut_user_roles` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>UserRole.utilisateur (belongsTo)<br>Utilisateur.userRoles (hasMany) |
+| `aut_utilisateur_etablissements` | `etablissementId` | `eta_etablissements` | belongsTo / hasMany<br>Etablissement.affectationsUtilisateurs (hasMany)<br>SiteUtilisateur.etablissement (belongsTo) |
+| `aut_utilisateur_etablissements` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>SiteUtilisateur.utilisateur (belongsTo)<br>Utilisateur.affectationsSites (hasMany) |
+| `aut_utilisateurs` | `etablissementId` | `eta_etablissements` | hasMany<br>Etablissement.utilisateurs (hasMany) |
+
+### bourse
+
+| Table portant la cle | Cle declaree | Table liee | Association(s) / alias |
+|---|---|---|---|
+| `brs_attributions` | `configurationId` | `brs_configurations` | belongsTo / hasMany<br>BourseAttribution.configuration (belongsTo)<br>BourseConfiguration.attributions (hasMany) |
+| `brs_attributions` | `dossierEtudiantId` | `ins_dossiers_etudiants` | belongsTo / hasMany<br>BourseAttribution.dossierEtudiant (belongsTo)<br>DossierEtudiant.bourses (hasMany) |
+| `brs_attributions` | `niveauEtudeId` | `ins_niveaux_etudes` | belongsTo<br>BourseAttribution.niveauEtude (belongsTo) |
+| `brs_attributions` | `valideParId` | `aut_utilisateurs` | belongsTo<br>BourseAttribution.validePar (belongsTo) |
+
+### bulletins
+
+| Table portant la cle | Cle declaree | Table liee | Association(s) / alias |
+|---|---|---|---|
+| `ins_audit_notes` | `modifiePar` | `aut_utilisateurs` | belongsTo / hasMany<br>AuditNote.modifieParUtilisateur (belongsTo)<br>Utilisateur.auditsNotes (hasMany) |
+| `ins_audit_notes` | `noteEvaluationId` | `ins_notes_evaluation` | belongsTo / hasMany<br>AuditNote.noteEvaluation (belongsTo)<br>NoteEvaluation.audits (hasMany) |
+| `ins_bulletins` | `anneeAcademiqueId` | `ins_annees_academiques` | belongsTo<br>Bulletin.anneeAcademique (belongsTo) |
+| `ins_bulletins` | `classeId` | `ins_classes` | belongsTo<br>Bulletin.classe (belongsTo) |
+| `ins_bulletins` | `cursusApprenantId` | `ins_cursus_apprenants` | belongsTo<br>Bulletin.cursusApprenant (belongsTo) |
+| `ins_bulletins` | `niveauEtudeId` | `ins_niveaux_etudes` | belongsTo<br>Bulletin.niveauEtude (belongsTo) |
+| `ins_bulletins` | `parcoursId` | `ins_parcours` | belongsTo<br>Bulletin.parcours (belongsTo) |
+| `ins_bulletins` | `utilisateurId` | `aut_utilisateurs` | belongsTo<br>Bulletin.utilisateur (belongsTo) |
+| `ins_deliberations` | `anneeAcademiqueId` | `ins_annees_academiques` | belongsTo<br>Deliberation.anneeAcademique (belongsTo) |
+| `ins_deliberations` | `classeId` | `ins_classes` | belongsTo<br>Deliberation.classe (belongsTo) |
+| `ins_dettes_academiques` | `cursusApprenantId` | `ins_cursus_apprenants` | belongsTo / hasMany<br>CursusApprenant.dettesAcademiques (hasMany)<br>DetteAcademique.cursusApprenant (belongsTo) |
+| `ins_historique_decisions` | `deliberationId` | `ins_deliberations` | belongsTo / hasMany<br>Deliberation.historiqueDecisions (hasMany)<br>HistoriqueDecision.deliberation (belongsTo) |
+| `ins_historique_decisions` | `resultatId` | `ins_resultats_deliberation` | belongsTo / hasMany<br>HistoriqueDecision.resultat (belongsTo)<br>ResultatDeliberation.historiqueDecisions (hasMany) |
+| `ins_jury_membres` | `deliberationId` | `ins_deliberations` | belongsTo / hasMany<br>Deliberation.juryMembres (hasMany)<br>JuryMembre.deliberation (belongsTo) |
+| `ins_jury_membres` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>JuryMembre.utilisateur (belongsTo)<br>Utilisateur.juryMembres (hasMany) |
+| `ins_lignes_bulletins` | `bulletinId` | `ins_bulletins` | belongsTo / hasMany<br>Bulletin.lignesBulletins (hasMany)<br>LigneBulletin.bulletin (belongsTo) |
+| `ins_lignes_bulletins` | `coursId` | `ins_cours` | belongsTo<br>LigneBulletin.cours (belongsTo) |
+| `ins_resultats_deliberation` | `cursusApprenantId` | `ins_cursus_apprenants` | belongsTo<br>ResultatDeliberation.cursusApprenant (belongsTo) |
+| `ins_resultats_deliberation` | `deliberationId` | `ins_deliberations` | belongsTo / hasMany<br>Deliberation.resultats (hasMany)<br>ResultatDeliberation.deliberation (belongsTo) |
+
+### communication
+
+| Table portant la cle | Cle declaree | Table liee | Association(s) / alias |
+|---|---|---|---|
+| `com_communications` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>Communication.utilisateur (belongsTo)<br>Utilisateur.communications (hasMany) |
+| `com_reponses_suggestion` | `suggestionId` | `com_suggestions` | belongsTo / hasMany<br>ReponseSuggestion.suggestion (belongsTo)<br>Suggestion.reponsesSuggestion (hasMany) |
+| `com_reponses_suggestion` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>ReponseSuggestion.utilisateur (belongsTo)<br>Utilisateur.reponsesSuggestion (hasMany) |
+| `com_suggestions` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>Suggestion.utilisateur (belongsTo)<br>Utilisateur.suggestions (hasMany) |
+
+### comptabilite
+
+| Table portant la cle | Cle declaree | Table liee | Association(s) / alias |
+|---|---|---|---|
+| `cpt_bordereau_echeance` | `bordereauId` | `ins_bordereaux` | belongsTo / hasMany<br>Bordereau.imputations (hasMany)<br>BordereauEcheance.bordereau (belongsTo) |
+| `cpt_bordereau_echeance` | `echeanceId` | `ins_echeances` | belongsTo / hasMany<br>BordereauEcheance.echeance (belongsTo)<br>Echeance.imputations (hasMany) |
+| `cpt_ecritures_comptables` | `compteCreditId` | `cpt_comptes` | belongsTo / hasMany<br>Compte.creditures (hasMany)<br>EcritureComptable.compteCredit (belongsTo) |
+| `cpt_ecritures_comptables` | `compteDebitId` | `cpt_comptes` | belongsTo / hasMany<br>Compte.debitures (hasMany)<br>EcritureComptable.compteDebit (belongsTo) |
+| `cpt_ecritures_comptables` | `exerciceId` | `cpt_exercices` | belongsTo / hasMany<br>EcritureComptable.exercice (belongsTo)<br>ExerciceComptable.ecritures (hasMany) |
+| `cpt_ecritures_comptables` | `journalId` | `cpt_journaux_comptables` | belongsTo / hasMany<br>EcritureComptable.journal (belongsTo)<br>JournalComptable.ecritures (hasMany) |
+| `cpt_ecritures_comptables` | `utilisateurSaisieId` | `aut_utilisateurs` | belongsTo / hasMany<br>EcritureComptable.utilisateurSaisie (belongsTo)<br>Utilisateur.ecrituresSaisies (hasMany) |
+| `cpt_ecritures_comptables` | `utilisateurValidationId` | `aut_utilisateurs` | belongsTo / hasMany<br>EcritureComptable.utilisateurValidation (belongsTo)<br>Utilisateur.ecrituresValidees (hasMany) |
+| `cpt_frais_parcours` | `anneeAcademiqueId` | `ins_annees_academiques` | belongsTo / hasMany<br>AnneeAcademique.fraisParcoursAnnee (hasMany)<br>FraisParcours.anneeAcademique (belongsTo) |
+| `cpt_frais_parcours` | `niveauEtudeId` | `ins_niveaux_etudes` | belongsTo / hasMany<br>FraisParcours.niveauEtude (belongsTo)<br>NiveauEtude.fraisParcoursNiveau (hasMany) |
+| `cpt_frais_parcours` | `parcoursId` | `ins_parcours` | belongsTo / hasMany<br>FraisParcours.parcours (belongsTo)<br>Parcours.fraisParcoursParcours (hasMany) |
+| `cpt_lignes_frais_etudiant` | `dossierEtudiantId` | `ins_dossiers_etudiants` | belongsTo / hasMany<br>DossierEtudiant.lignesFrais (hasMany)<br>LigneFraisEtudiant.dossierEtudiant (belongsTo) |
+| `cpt_lignes_frais_etudiant` | `reductionId` | `cpt_reductions_frais` | belongsTo / hasMany<br>LigneFraisEtudiant.reduction (belongsTo)<br>ReductionFrais.lignesFraisReduction (hasMany) |
+| `cpt_lignes_releves_bancaires` | `ecritureComptableId` | `cpt_ecritures_comptables` | belongsTo / hasMany<br>EcritureComptable.lignesReleve (hasMany)<br>LigneReleveBancaire.ecritureComptable (belongsTo) |
+| `cpt_lignes_releves_bancaires` | `releveBancaireId` | `cpt_releves_bancaires` | belongsTo / hasMany<br>LigneReleveBancaire.releveBancaire (belongsTo)<br>ReleveBancaire.lignes (hasMany) |
+| `cpt_portefeuille_credit` | `bordereauId` | `ins_bordereaux` | belongsTo / hasMany<br>Bordereau.portefeuilleCredits (hasMany)<br>PortefeuilleCredit.bordereau (belongsTo) |
+| `cpt_portefeuille_credit` | `dossierEtudiantId` | `ins_dossiers_etudiants` | belongsTo / hasMany<br>DossierEtudiant.portefeuilleCredits (hasMany)<br>PortefeuilleCredit.dossierEtudiant (belongsTo) |
+| `cpt_portefeuille_credit` | `echeanceId` | `ins_echeances` | belongsTo / hasMany<br>Echeance.portefeuilleCredits (hasMany)<br>PortefeuilleCredit.echeance (belongsTo) |
+| `cpt_reductions_frais` | `dossierEtudiantId` | `ins_dossiers_etudiants` | belongsTo / hasMany<br>DossierEtudiant.reductions (hasMany)<br>ReductionFrais.dossierEtudiant (belongsTo) |
+| `cpt_reductions_frais` | `validePar` | `aut_utilisateurs` | belongsTo / hasMany<br>ReductionFrais.validateur (belongsTo)<br>Utilisateur.reductionsValidees (hasMany) |
+| `cpt_releves_bancaires` | `compteBancaireId` | `cpt_comptes_bancaires` | belongsTo / hasMany<br>CompteBancaire.releves (hasMany)<br>ReleveBancaire.compteBancaire (belongsTo) |
+
+### docgen
+
+| Table portant la cle | Cle declaree | Table liee | Association(s) / alias |
+|---|---|---|---|
+| `docgen_documents` | `templateId` | `docgen_templates` | belongsTo / hasMany<br>DocGenDocument.template (belongsTo)<br>DocGenTemplate.documents (hasMany) |
+| `docgen_documents` | `typeId` | `docgen_types` | belongsTo / hasMany<br>DocGenDocument.type (belongsTo)<br>DocGenType.documents (hasMany) |
+| `docgen_references` | `typeId` | `docgen_types` | belongsTo / hasMany<br>DocGenReference.type (belongsTo)<br>DocGenType.references (hasMany) |
+| `docgen_signatures` | `documentId` | `docgen_documents` | belongsTo / hasMany<br>DocGenDocument.signatures (hasMany)<br>DocGenSignature.document (belongsTo) |
+| `docgen_templates` | `typeId` | `docgen_types` | belongsTo / hasMany<br>DocGenTemplate.type (belongsTo)<br>DocGenType.templates (hasMany) |
+| `docgen_workflows` | `typeId` | `docgen_types` | belongsTo / hasMany<br>DocGenType.workflowSteps (hasMany)<br>DocGenWorkflow.type (belongsTo) |
+
+### elearning
+
+| Table portant la cle | Cle declaree | Table liee | Association(s) / alias |
+|---|---|---|---|
+| `elearning_audit` | `acteurId` | `aut_utilisateurs` | belongsTo / hasMany<br>Audit.acteur (belongsTo)<br>Utilisateur.auditsElearning (hasMany) |
+| `elearning_centres_examens` | `responsableId` | `aut_utilisateurs` | belongsTo / hasMany<br>CentreExamen.responsable (belongsTo)<br>Utilisateur.centresExamensGeres (hasMany) |
+| `elearning_certificats` | `apprenantId` | `aut_utilisateurs` | belongsTo / hasMany<br>Certificat.apprenant (belongsTo)<br>Utilisateur.certificats (hasMany) |
+| `elearning_certificats` | `coursId` | `elearning_cours` | belongsTo / hasMany<br>Certificat.cours (belongsTo)<br>CoursEnLigne.certificats (hasMany) |
+| `elearning_commentaires` | `supportId` | `elearning_supports` | belongsTo / hasMany<br>Commentaire.support (belongsTo)<br>Support.commentaires (hasMany) |
+| `elearning_couplages_mail` | `supportId` | `elearning_supports` | belongsTo / hasMany<br>CouplageMail.support (belongsTo)<br>Support.couplagesMail (hasMany) |
+| `elearning_cours` | `chargeSupportId` | `aut_utilisateurs` | belongsTo<br>CoursEnLigne.chargeSupport (belongsTo) |
+| `elearning_cours` | `coursId` | `ins_cours` | belongsTo / hasMany<br>Cours.coursEnLigne (hasMany)<br>CoursEnLigne.coursPedagogique (belongsTo) |
+| `elearning_cours` | `enseignantId` | `aut_utilisateurs` | belongsTo / hasMany<br>CoursEnLigne.enseignant (belongsTo)<br>Utilisateur.coursEnLigne (hasMany) |
+| `elearning_cours` | `professeurId` | `aut_utilisateurs` | belongsTo<br>CoursEnLigne.professeurResponsable (belongsTo) |
+| `elearning_cours` | `ueId` | `ins_cours` | belongsTo<br>CoursEnLigne.ue (belongsTo) |
+| `elearning_devoirs` | `coursId` | `elearning_cours` | belongsTo / hasMany<br>CoursEnLigne.devoirs (hasMany)<br>Devoir.cours (belongsTo) |
+| `elearning_devoirs` | `enseignantId` | `aut_utilisateurs` | belongsTo / hasMany<br>Devoir.enseignant (belongsTo)<br>Utilisateur.devoirs (hasMany) |
+| `elearning_encaissements` | `enveloppeId` | `elearning_enveloppes` | belongsTo / hasMany<br>Encaissement.enveloppe (belongsTo)<br>Enveloppe.encaissements (hasMany) |
+| `elearning_encaissements` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>Encaissement.utilisateur (belongsTo)<br>Utilisateur.encaissementsElearning (hasMany) |
+| `elearning_enveloppes` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>Enveloppe.utilisateur (belongsTo)<br>Utilisateur.enveloppesElearning (hasMany) |
+| `elearning_examens` | `coursId` | `elearning_cours` | belongsTo / hasMany<br>CoursEnLigne.examens (hasMany)<br>Examen.cours (belongsTo) |
+| `elearning_messages` | `salonId` | `elearning_salons` | belongsTo / hasMany<br>Message.salon (belongsTo)<br>Salon.messages (hasMany) |
+| `elearning_modules` | `coursId` | `elearning_cours` | belongsTo / hasMany<br>CoursEnLigne.modules (hasMany)<br>ModuleElearning.cours (belongsTo) |
+| `elearning_mouvements` | `enveloppeId` | `elearning_enveloppes` | belongsTo / hasMany<br>Enveloppe.mouvements (hasMany)<br>Mouvement.enveloppe (belongsTo) |
+| `elearning_notes_examens` | `examenId` | `elearning_examens` | belongsTo / hasMany<br>Examen.notes (hasMany)<br>NoteExamen.examen (belongsTo) |
+| `elearning_notes_examens` | `utilisateurId` | `aut_utilisateurs` | belongsTo<br>NoteExamen.apprenant (belongsTo) |
+| `elearning_participants_salon` | `salonId` | `elearning_salons` | belongsTo / hasMany<br>ParticipantSalon.salon (belongsTo)<br>Salon.participants (hasMany) |
+| `elearning_participants_salon` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>ParticipantSalon.utilisateur (belongsTo)<br>Utilisateur.participationsSalons (hasMany) |
+| `elearning_progression_apprenant` | `apprenantId` | `aut_utilisateurs` | belongsTo / hasMany<br>ProgressionApprenant.apprenant (belongsTo)<br>Utilisateur.progressionsElearning (hasMany) |
+| `elearning_progression_apprenant` | `supportId` | `elearning_supports` | belongsTo / hasMany<br>ProgressionApprenant.support (belongsTo)<br>Support.progressions (hasMany) |
+| `elearning_quiz` | `coursId` | `elearning_cours` | belongsTo / hasMany<br>CoursEnLigne.quiz (hasMany)<br>Quiz.cours (belongsTo) |
+| `elearning_reponses_quiz` | `apprenantId` | `aut_utilisateurs` | belongsTo / hasMany<br>ReponseQuiz.apprenant (belongsTo)<br>Utilisateur.reponsesQuiz (hasMany) |
+| `elearning_reponses_quiz` | `quizId` | `elearning_quiz` | belongsTo / hasMany<br>Quiz.reponses (hasMany)<br>ReponseQuiz.quiz (belongsTo) |
+| `elearning_reservations_examens` | `examenId` | `elearning_examens` | belongsTo / hasMany<br>Examen.reservations (hasMany)<br>ReservationExamen.examen (belongsTo) |
+| `elearning_reservations_examens` | `sessionId` | `elearning_sessions_examens` | belongsTo / hasMany<br>ReservationExamen.session (belongsTo)<br>SessionExamen.reservations (hasMany) |
+| `elearning_reservations_examens` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>ReservationExamen.utilisateur (belongsTo)<br>Utilisateur.reservationsExamens (hasMany) |
+| `elearning_salons` | `coursId` | `elearning_cours` | belongsTo / hasMany<br>CoursEnLigne.salons (hasMany)<br>Salon.cours (belongsTo) |
+| `elearning_salons` | `createdById` | `aut_utilisateurs` | belongsTo / hasMany<br>Salon.createdBy (belongsTo)<br>Utilisateur.salonsCrees (hasMany) |
+| `elearning_selections_cours` | `coursId` | `elearning_cours` | belongsTo / hasMany<br>CoursEnLigne.selections (hasMany)<br>SelectionCours.cours (belongsTo) |
+| `elearning_selections_cours` | `enveloppeId` | `elearning_enveloppes` | belongsTo / hasMany<br>Enveloppe.selections (hasMany)<br>SelectionCours.enveloppe (belongsTo) |
+| `elearning_sessions_examens` | `centreId` | `elearning_centres_examens` | belongsTo / hasMany<br>CentreExamen.sessions (hasMany)<br>SessionExamen.centre (belongsTo) |
+| `elearning_sessions_examens` | `examenId` | `elearning_examens` | belongsTo / hasMany<br>Examen.sessions (hasMany)<br>SessionExamen.examen (belongsTo) |
+| `elearning_soumissions_devoirs` | `apprenantId` | `aut_utilisateurs` | belongsTo / hasMany<br>SoumissionDevoir.apprenant (belongsTo)<br>Utilisateur.soumissionsDevoirs (hasMany) |
+| `elearning_soumissions_devoirs` | `devoirId` | `elearning_devoirs` | belongsTo / hasMany<br>Devoir.soumissions (hasMany)<br>SoumissionDevoir.devoir (belongsTo) |
+| `elearning_supports` | `moduleId` | `elearning_modules` | belongsTo / hasMany<br>ModuleElearning.supports (hasMany)<br>Support.module (belongsTo) |
+
+### ged
+
+| Table portant la cle | Cle declaree | Table liee | Association(s) / alias |
+|---|---|---|---|
+| `ged_audit_logs` | `documentId` | `ged_documents` | belongsTo / hasMany<br>DocumentAuditLog.document (belongsTo)<br>DocumentGed.auditLogs (hasMany) |
+| `ged_disposal_records` | `confirmedBy` | `aut_utilisateurs` | belongsTo / hasMany<br>DisposalRecord.confirmer (belongsTo)<br>Utilisateur.disposalConfirmations (hasMany) |
+| `ged_disposal_records` | `documentId` | `ged_documents` | belongsTo / hasMany<br>DisposalRecord.document (belongsTo)<br>DocumentGed.disposalRecords (hasMany) |
+| `ged_disposal_records` | `requestedBy` | `aut_utilisateurs` | belongsTo / hasMany<br>DisposalRecord.requester (belongsTo)<br>Utilisateur.disposalRequests (hasMany) |
+| `ged_document_access_grants` | `documentId` | `ged_documents` | belongsTo / hasMany<br>DocumentAccessGrant.document (belongsTo)<br>DocumentGed.accessGrants (hasMany) |
+| `ged_document_tags` | `documentId` | `ged_documents` | belongsTo / hasMany<br>DocumentGed.documentTags (hasMany)<br>DocumentTag.document (belongsTo) |
+| `ged_document_tags` | `tagId` | `ged_tags` | belongsTo / hasMany<br>DocumentTag.tag (belongsTo)<br>Tag.documentTags (hasMany) |
+| `ged_document_types` | `domainId` | `ged_domains` | belongsTo<br>DocumentType.domain (belongsTo) |
+| `ged_documents` | `documentTypeId` | `ged_document_types` | belongsTo / hasMany<br>DocumentGed.documentType (belongsTo)<br>DocumentType.documents (hasMany) |
+| `ged_documents` | `domainId` | `ged_domains` | belongsTo / hasMany<br>DocumentGed.domain (belongsTo)<br>Domain.documents (hasMany) |
+| `ged_documents` | `folderId` | `ged_folders` | belongsTo / hasMany<br>DocumentGed.folder (belongsTo)<br>Folder.documents (hasMany) |
+| `ged_documents` | `lockedBy` | `aut_utilisateurs` | belongsTo / hasMany<br>DocumentGed.locker (belongsTo)<br>Utilisateur.lockedDocuments (hasMany) |
+| `ged_documents` | `parentDocumentId` | `ged_documents` | belongsTo / hasMany<br>DocumentGed.parent (belongsTo)<br>DocumentGed.versions (hasMany) |
+| `ged_documents` | `processusGenerateurId` | `ged_processus` | belongsTo / hasMany<br>DocumentGed.processusGenerateur (belongsTo)<br>ProcessusGenerateur.documents (hasMany) |
+| `ged_documents` | `sessionId` | `ged_sessions` | belongsTo / hasMany<br>DocumentGed.session (belongsTo)<br>SessionGed.documents (hasMany) |
+| `ged_documents` | `uploaderId` | `aut_utilisateurs` | belongsTo / hasMany<br>DocumentGed.uploader (belongsTo)<br>Utilisateur.gedDocuments (hasMany) |
+| `ged_folders` | `createdBy` | `aut_utilisateurs` | belongsTo / hasMany<br>Folder.creator (belongsTo)<br>Utilisateur.gedFolders (hasMany) |
+| `ged_folders` | `domainId` | `ged_domains` | belongsTo / hasMany<br>Domain.folders (hasMany)<br>Folder.domain (belongsTo) |
+| `ged_folders` | `parentId` | `ged_folders` | belongsTo / hasMany<br>Folder.children (hasMany)<br>Folder.parent (belongsTo) |
+| `ged_registre_courrier` | `documentId` | `ged_documents` | belongsTo / hasMany<br>DocumentGed.registreCourriers (hasMany)<br>RegistreCourrier.document (belongsTo) |
+| `ged_registre_courrier` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>RegistreCourrier.utilisateur (belongsTo)<br>Utilisateur.registreCourriers (hasMany) |
+| `ged_role_permissions` | `domainId` | `ged_domains` | belongsTo / hasMany<br>Domain.rolePermissions (hasMany)<br>RolePermission.domain (belongsTo) |
+| `ged_role_permissions` | `processusGenerateurId` | `ged_processus` | belongsTo / hasMany<br>ProcessusGenerateur.rolePermissions (hasMany)<br>RolePermission.processusGenerateur (belongsTo) |
+| `ged_sessions` | `createdBy` | `aut_utilisateurs` | belongsTo / hasMany<br>SessionGed.creator (belongsTo)<br>Utilisateur.gedSessions (hasMany) |
+| `ged_signatures` | `documentId` | `ged_documents` | belongsTo / hasMany<br>DocumentGed.signatures (hasMany)<br>GedSignature.document (belongsTo) |
+| `ged_signatures` | `rejectedBy` | `aut_utilisateurs` | belongsTo / hasMany<br>GedSignature.rejector (belongsTo)<br>Utilisateur.signatureRejects (hasMany) |
+| `ged_signatures` | `requestedBy` | `aut_utilisateurs` | belongsTo / hasMany<br>GedSignature.requester (belongsTo)<br>Utilisateur.signatureRequests (hasMany) |
+| `ged_signatures` | `signedBy` | `aut_utilisateurs` | belongsTo / hasMany<br>GedSignature.signer (belongsTo)<br>Utilisateur.signatureSigns (hasMany) |
+
+### immobilisation
+
+| Table portant la cle | Cle declaree | Table liee | Association(s) / alias |
+|---|---|---|---|
+| `imm_acquisition` | `immobilisationId` | `imm_immobilisation` | belongsTo / hasOne<br>Acquisition.immobilisation (belongsTo)<br>Immobilisation.acquisition (hasOne) |
+| `imm_affectation` | `departementId` | `imm_departement` | belongsTo<br>Affectation.departement (belongsTo) |
+| `imm_affectation` | `immobilisationId` | `imm_immobilisation` | belongsTo / hasMany<br>Affectation.immobilisation (belongsTo)<br>Immobilisation.affectations (hasMany) |
+| `imm_affectation` | `localisationId` | `imm_localisation` | belongsTo<br>Affectation.localisation (belongsTo) |
+| `imm_affectation` | `siteId` | `imm_site` | belongsTo<br>Affectation.site (belongsTo) |
+| `imm_amortissement` | `immobilisationId` | `imm_immobilisation` | belongsTo / hasMany<br>Amortissement.immobilisation (belongsTo)<br>Immobilisation.amortissements (hasMany) |
+| `imm_assurance` | `immobilisationId` | `imm_immobilisation` | belongsTo / hasOne<br>Assurance.immobilisation (belongsTo)<br>Immobilisation.assurance (hasOne) |
+| `imm_batiment` | `siteId` | `imm_site` | belongsTo / hasMany<br>Batiment.site (belongsTo)<br>Site.batiments (hasMany) |
+| `imm_cession` | `immobilisationId` | `imm_immobilisation` | belongsTo / hasOne<br>Cession.immobilisation (belongsTo)<br>Immobilisation.cession (hasOne) |
+| `imm_immobilisation` | `categorieId` | `imm_categorie_immobilisation` | belongsTo / hasMany<br>CategorieImmobilisation.immobilisations (hasMany)<br>Immobilisation.categorie (belongsTo) |
+| `imm_immobilisation` | `departementId` | `imm_departement` | belongsTo / hasMany<br>Departement.immobilisations (hasMany)<br>Immobilisation.departement (belongsTo) |
+| `imm_immobilisation` | `localisationId` | `imm_localisation` | belongsTo<br>Immobilisation.localisation (belongsTo) |
+| `imm_immobilisation` | `siteId` | `imm_site` | belongsTo / hasMany<br>Immobilisation.site (belongsTo)<br>Site.immobilisations (hasMany) |
+| `imm_ligne_inventaire` | `immobilisationId` | `imm_immobilisation` | belongsTo / hasMany<br>Immobilisation.lignesInventaire (hasMany)<br>LigneInventaire.immobilisation (belongsTo) |
+| `imm_ligne_inventaire` | `inventaireId` | `imm_inventaire` | belongsTo / hasMany<br>Inventaire.lignes (hasMany)<br>LigneInventaire.inventaire (belongsTo) |
+| `imm_localisation` | `batimentId` | `imm_batiment` | belongsTo / hasMany<br>Batiment.localisations (hasMany)<br>Localisation.batiment (belongsTo) |
+| `imm_maintenance` | `immobilisationId` | `imm_immobilisation` | belongsTo / hasMany<br>Immobilisation.maintenances (hasMany)<br>Maintenance.immobilisation (belongsTo) |
+| `imm_maintenance_programmee` | `immobilisationId` | `imm_immobilisation` | belongsTo / hasMany<br>Immobilisation.maintenancesProgrammees (hasMany)<br>MaintenanceProgrammee.immobilisation (belongsTo) |
+| `imm_rebuts_immobilisation` | `immobilisationId` | `imm_immobilisation` | belongsTo / hasMany<br>Immobilisation.rebutsImmobilisation (hasMany)<br>RebutImmobilisation.immobilisation (belongsTo) |
+| `imm_sortie_provisoire` | `immobilisationId` | `imm_immobilisation` | belongsTo / hasMany<br>Immobilisation.sortiesProvisoires (hasMany)<br>SortieProvisoire.immobilisation (belongsTo) |
+
+### inscription
+
+| Table portant la cle | Cle declaree | Table liee | Association(s) / alias |
+|---|---|---|---|
+| `ins_absences` | `noteEvaluationId` | `ins_notes_evaluation` | belongsTo / hasOne<br>Absence.noteEvaluation (belongsTo)<br>NoteEvaluation.absence (hasOne) |
+| `ins_affectations_salles_classes` | `anneeAcademiqueId` | `ins_annees_academiques` | belongsTo / hasMany<br>AffectationSalleClasse.anneeAcademique (belongsTo)<br>AnneeAcademique.affectationsSallesClasses (hasMany) |
+| `ins_affectations_salles_classes` | `classeId` | `ins_classes` | belongsTo / hasMany<br>AffectationSalleClasse.classe (belongsTo)<br>Classe.affectationsSallesClasses (hasMany) |
+| `ins_affectations_salles_classes` | `etablissementId` | `eta_etablissements` | belongsTo / hasMany<br>AffectationSalleClasse.etablissement (belongsTo)<br>Etablissement.affectationsSallesClasses (hasMany) |
+| `ins_affectations_salles_classes` | `salleId` | `ins_salles_de_classes` | belongsTo / hasMany<br>AffectationSalleClasse.salle (belongsTo)<br>SalleDeClasse.affectationsSallesClasses (hasMany) |
+| `ins_blocs_cahier_de_texte` | `cahierDeTexteId` | `ins_cahiers_de_texte` | belongsTo / hasMany<br>BlocCahierDeTexte.cahierDeTexte (belongsTo)<br>CahierDeTexte.blocsCahierDeTexte (hasMany) |
+| `ins_bordereaux` | `echeanceId` | `ins_echeances` | belongsTo / hasMany<br>Bordereau.echeance (belongsTo)<br>Echeance.bordereaux (hasMany) |
+| `ins_bordereaux` | `saisiParId` | `aut_utilisateurs` | belongsTo / hasMany<br>Bordereau.saisiPar (belongsTo)<br>Utilisateur.bordereauxSaisis (hasMany) |
+| `ins_bordereaux` | `typeOperationId` | `ins_types_operations_bordereau` | belongsTo / hasMany<br>Bordereau.typeOperation (belongsTo)<br>TypeOperationBordereau.bordereaux (hasMany) |
+| `ins_bordereaux` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>Bordereau.utilisateur (belongsTo)<br>Utilisateur.bordereaux (hasMany) |
+| `ins_bordereaux` | `valideParId` | `aut_utilisateurs` | belongsTo / hasMany<br>Bordereau.validePar (belongsTo)<br>Utilisateur.bordereauxValides (hasMany) |
+| `ins_cahiers_de_texte` | `coursId` | `ins_cours` | belongsTo / hasMany<br>CahierDeTexte.cours (belongsTo)<br>Cours.cahiersDeTexte (hasMany) |
+| `ins_cahiers_de_texte` | `enseignantId` | `aut_enseignants` | belongsTo / hasMany<br>CahierDeTexte.enseignant (belongsTo)<br>Enseignant.cahiersDeTexte (hasMany) |
+| `ins_cahiers_de_texte` | `etablissementId` | `eta_etablissements` | belongsTo / hasMany<br>CahierDeTexte.etablissement (belongsTo)<br>Etablissement.cahiersDeTexte (hasMany) |
+| `ins_cahiers_de_texte` | `niveauEtudeId` | `ins_niveaux_etudes` | belongsTo / hasMany<br>CahierDeTexte.niveauEtude (belongsTo)<br>NiveauEtude.cahiersDeTexte (hasMany) |
+| `ins_cahiers_de_texte` | `parcoursId` | `ins_parcours` | belongsTo / hasMany<br>CahierDeTexte.parcours (belongsTo)<br>Parcours.cahiersDeTexte (hasMany) |
+| `ins_chapitres_cours` | `coursId` | `ins_cours` | belongsTo / hasMany<br>ChapitreCours.cours (belongsTo)<br>Cours.chapitresCours (hasMany) |
+| `ins_classes` | `etablissementId` | `eta_etablissements` | belongsTo / hasMany<br>Classe.etablissement (belongsTo)<br>Etablissement.classes (hasMany) |
+| `ins_classes` | `niveauEtudeId` | `ins_niveaux_etudes` | belongsTo / hasMany<br>Classe.niveauEtude (belongsTo)<br>NiveauEtude.classes (hasMany) |
+| `ins_classes` | `parcoursId` | `ins_parcours` | belongsTo / hasMany<br>Classe.parcours (belongsTo)<br>Parcours.classes (hasMany) |
+| `ins_comite_votes` | `demandeInscriptionId` | `ins_demandes_inscription` | belongsTo / hasMany<br>ComiteVote.demandeInscription (belongsTo)<br>DemandeInscription.comiteVotes (hasMany) |
+| `ins_comite_votes` | `membreId` | `aut_utilisateurs` | belongsTo / hasMany<br>ComiteVote.membre (belongsTo)<br>Utilisateur.comiteVotes (hasMany) |
+| `ins_cours` | `classeId` | `ins_classes` | belongsTo / hasMany<br>Classe.cours (hasMany)<br>Cours.classe (belongsTo) |
+| `ins_cours` | `enseignantId` | `aut_enseignants` | belongsTo / hasMany<br>Cours.enseignant (belongsTo)<br>Enseignant.cours (hasMany) |
+| `ins_cours` | `etablissementId` | `eta_etablissements` | belongsTo / hasMany<br>Cours.etablissement (belongsTo)<br>Etablissement.cours (hasMany) |
+| `ins_cours` | `parcoursId` | `ins_parcours` | belongsTo / hasMany<br>Cours.parcours (belongsTo)<br>Parcours.cours (hasMany) |
+| `ins_cours_choisis` | `coursId` | `ins_cours` | belongsTo / hasMany<br>Cours.coursChoisis (hasMany)<br>DemandeInscriptionCours.cours (belongsTo) |
+| `ins_cours_choisis` | `demandeInscriptionId` | `ins_demandes_inscription` | belongsTo / hasMany<br>DemandeInscription.coursChoisis (hasMany)<br>DemandeInscriptionCours.demandeInscription (belongsTo) |
+| `ins_cours_participants` | `coursId` | `ins_cours` | belongsTo / hasMany<br>Cours.coursParticipants (hasMany)<br>CoursParticipant.cours (belongsTo) |
+| `ins_cours_participants` | `cursusApprenantId` | `ins_cursus_apprenants` | belongsTo / hasMany<br>CoursParticipant.cursusApprenant (belongsTo)<br>CursusApprenant.coursParticipants (hasMany) |
+| `ins_cours_participants` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>CoursParticipant.utilisateur (belongsTo)<br>Utilisateur.coursParticipants (hasMany) |
+| `ins_cours_participants` | `utilisateurId` | `ins_dossiers_etudiants` | hasMany<br>DossierEtudiant.coursParticipants (hasMany) |
+| `ins_creneaux` | `etablissementId` | `eta_etablissements` | belongsTo / hasMany<br>Creneau.etablissement (belongsTo)<br>Etablissement.creneaux (hasMany) |
+| `ins_cursus_apprenants` | `anneeAcademiqueId` | `ins_annees_academiques` | belongsTo / hasMany<br>AnneeAcademique.cursusApprenant (hasMany)<br>CursusApprenant.anneeAcademique (belongsTo) |
+| `ins_cursus_apprenants` | `classeId` | `ins_classes` | belongsTo / hasMany<br>Classe.cursusApprenant (hasMany)<br>CursusApprenant.classe (belongsTo) |
+| `ins_cursus_apprenants` | `demandeInscriptionId` | `ins_demandes_inscription` | belongsTo / hasOne<br>CursusApprenant.demandeInscription (belongsTo)<br>DemandeInscription.cursusApprenant (hasOne) |
+| `ins_cursus_apprenants` | `etablissementId` | `eta_etablissements` | belongsTo / hasMany<br>CursusApprenant.etablissement (belongsTo)<br>Etablissement.cursusApprenants (hasMany) |
+| `ins_cursus_apprenants` | `niveauEtudeId` | `ins_niveaux_etudes` | belongsTo / hasMany<br>CursusApprenant.niveauEtude (belongsTo)<br>NiveauEtude.cursusApprenant (hasMany) |
+| `ins_cursus_apprenants` | `parcoursId` | `ins_parcours` | belongsTo / hasMany<br>CursusApprenant.parcours (belongsTo)<br>Parcours.cursusApprenant (hasMany) |
+| `ins_cursus_apprenants` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>CursusApprenant.utilisateur (belongsTo)<br>Utilisateur.cursusApprenant (hasMany) |
+| `ins_demandes_inscription` | `etablissementId` | `eta_etablissements` | hasMany<br>Etablissement.demandesInscription (hasMany) |
+| `ins_demandes_inscription` | `etapeInscriptionId` | `ins_etapes_inscription` | belongsTo / hasMany<br>DemandeInscription.etapeInscription (belongsTo)<br>EtapeInscription.demandesInscriptionEtape (hasMany) |
+| `ins_demandes_inscription` | `sessionId` | `ins_sessions` | belongsTo / hasMany<br>DemandeInscription.session (belongsTo)<br>Session.demandesInscription (hasMany) |
+| `ins_demandes_inscription` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>DemandeInscription.utilisateur (belongsTo)<br>Utilisateur.demandesInscription (hasMany) |
+| `ins_designation_memoires` | `cursusApprenantId` | `ins_cursus_apprenants` | belongsTo / hasMany<br>CursusApprenant.designationMemoire (hasMany)<br>DesignationMemoire.cursusApprenant (belongsTo) |
+| `ins_designation_memoires` | `superviseurId` | `aut_utilisateurs` | belongsTo / hasMany<br>DesignationMemoire.superviseur (belongsTo)<br>Utilisateur.designationsMemoire (hasMany) |
+| `ins_dispenses` | `coursId` | `ins_cours` | belongsTo / hasMany<br>Cours.dispenses (hasMany)<br>Dispense.cours (belongsTo) |
+| `ins_dispenses` | `cursusApprenantId` | `ins_cursus_apprenants` | belongsTo / hasMany<br>CursusApprenant.dispenses (hasMany)<br>Dispense.cursusApprenant (belongsTo) |
+| `ins_dispenses` | `validePar` | `aut_utilisateurs` | belongsTo / hasMany<br>Dispense.valideParUtilisateur (belongsTo)<br>Utilisateur.dispensesValidees (hasMany) |
+| `ins_dossiers_demandes` | `demandeId` | `ins_demandes_inscription` | belongsTo / hasMany<br>DemandeInscription.dossiersDemande (hasMany)<br>DemandeInscriptionDossier.demandeInscription (belongsTo) |
+| `ins_dossiers_demandes` | `dossierId` | `ins_dossiers_inscription` | belongsTo / hasMany<br>DemandeInscriptionDossier.dossierInscription (belongsTo)<br>DossierInscription.dossiersDemande (hasMany) |
+| `ins_dossiers_etudiants` | `etablissementId` | `eta_etablissements` | belongsTo<br>DossierEtudiant.etablissement (belongsTo) |
+| `ins_dossiers_etudiants` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>DossierEtudiant.utilisateur (belongsTo)<br>Utilisateur.dossiersEtudiants (hasMany) |
+| `ins_dossiers_inscription` | `sessionId` | `ins_sessions` | belongsTo / hasMany<br>DossierInscription.session (belongsTo)<br>Session.dossiersInscription (hasMany) |
+| `ins_echeances` | `dossierEtudiantId` | `ins_dossiers_etudiants` | belongsTo / hasMany<br>DossierEtudiant.echeances (hasMany)<br>Echeance.dossierEtudiant (belongsTo) |
+| `ins_ecue` | `coursId` | `ins_cours` | belongsTo / hasMany<br>Cours.ecues (hasMany)<br>Ecue.cours (belongsTo) |
+| `ins_ecue` | `enseignantId` | `aut_enseignants` | belongsTo / hasMany<br>Ecue.enseignant (belongsTo)<br>Enseignant.ecues (hasMany) |
+| `ins_equivalences` | `coursDestinationId` | `ins_cours` | belongsTo / hasMany<br>Cours.equivalences (hasMany)<br>Equivalence.coursDestination (belongsTo) |
+| `ins_equivalences` | `cursusApprenantId` | `ins_cursus_apprenants` | belongsTo / hasMany<br>CursusApprenant.equivalences (hasMany)<br>Equivalence.cursusApprenant (belongsTo) |
+| `ins_equivalences` | `validePar` | `aut_utilisateurs` | belongsTo / hasMany<br>Equivalence.valideParUtilisateur (belongsTo)<br>Utilisateur.equivalencesValidees (hasMany) |
+| `ins_fichiers_ressources` | `ressourceId` | `ins_ressources` | belongsTo / hasMany<br>FichierRessource.ressource (belongsTo)<br>Ressource.fichiersRessource (hasMany) |
+| `ins_frais_inscription` | `sessionId` | `ins_sessions` | belongsTo / hasMany<br>FraisInscription.session (belongsTo)<br>Session.fraisInscription (hasMany) |
+| `ins_frais_parcours` | `anneeAcademiqueId` | `ins_annees_academiques` | belongsTo / hasMany<br>AnneeAcademique.fraisParcours (hasMany)<br>FraisParcours.anneeAcademique (belongsTo) |
+| `ins_frais_parcours` | `niveauEtudeId` | `ins_niveaux_etudes` | belongsTo / hasMany<br>FraisParcours.niveauEtude (belongsTo)<br>NiveauEtude.fraisParcours (hasMany) |
+| `ins_frais_parcours` | `parcoursId` | `ins_parcours` | belongsTo / hasMany<br>FraisParcours.parcours (belongsTo)<br>Parcours.fraisParcours (hasMany) |
+| `ins_frais_scolarites` | `sessionId` | `ins_sessions` | belongsTo / hasMany<br>FraisScolarite.session (belongsTo)<br>Session.fraisScolarite (hasMany) |
+| `ins_listes_notes_evaluation` | `anneeAcademiqueId` | `ins_annees_academiques` | belongsTo / hasMany<br>AnneeAcademique.listesNotesEvaluation (hasMany)<br>ListeNoteEvaluation.anneeAcademique (belongsTo) |
+| `ins_listes_notes_evaluation` | `coursId` | `ins_cours` | belongsTo / hasMany<br>Cours.listesNotesEvaluation (hasMany)<br>ListeNoteEvaluation.cours (belongsTo) |
+| `ins_listes_notes_evaluation` | `enseignantId` | `aut_enseignants` | belongsTo / hasMany<br>Enseignant.listesNotesEvaluation (hasMany)<br>ListeNoteEvaluation.enseignant (belongsTo) |
+| `ins_listes_notes_evaluation` | `typeNoteEvaluationId` | `ins_types_note_evaluation` | belongsTo / hasMany<br>ListeNoteEvaluation.typeNoteEvaluation (belongsTo)<br>TypeNoteEvaluation.listesNotesEvaluation (hasMany) |
+| `ins_listes_presences` | `coursId` | `ins_cours` | belongsTo / hasMany<br>Cours.listesPresences (hasMany)<br>ListePresence.cours (belongsTo) |
+| `ins_listes_presences` | `enseignantId` | `aut_enseignants` | belongsTo / hasMany<br>Enseignant.listesPresences (hasMany)<br>ListePresence.enseignant (belongsTo) |
+| `ins_listes_presences` | `etablissementId` | `eta_etablissements` | belongsTo / hasMany<br>Etablissement.listesPresences (hasMany)<br>ListePresence.etablissement (belongsTo) |
+| `ins_listes_presences` | `niveauEtudeId` | `ins_niveaux_etudes` | belongsTo / hasMany<br>ListePresence.niveauEtude (belongsTo)<br>NiveauEtude.listesPresences (hasMany) |
+| `ins_listes_presences` | `parcoursId` | `ins_parcours` | belongsTo / hasMany<br>ListePresence.parcours (belongsTo)<br>Parcours.listesPresences (hasMany) |
+| `ins_mcc` | `coursId` | `ins_cours` | belongsTo / hasMany<br>Cours.mccs (hasMany)<br>Mcc.cours (belongsTo) |
+| `ins_mcc` | `ecueId` | `ins_ecue` | belongsTo / hasMany<br>Ecue.mccs (hasMany)<br>Mcc.ecue (belongsTo) |
+| `ins_notes_evaluation` | `coursParticipantId` | `ins_cours_participants` | belongsTo / hasMany<br>CoursParticipant.notesEvaluation (hasMany)<br>NoteEvaluation.coursParticipant (belongsTo) |
+| `ins_notes_evaluation` | `listeNoteEvaluationId` | `ins_listes_notes_evaluation` | belongsTo / hasMany<br>ListeNoteEvaluation.notesEvaluation (hasMany)<br>NoteEvaluation.listeNoteEvaluation (belongsTo) |
+| `ins_paiements_inscription` | `matriculeInscription` | `ins_demandes_inscription` | belongsTo / hasMany<br>DemandeInscription.paiementsInscription (hasMany)<br>PaiementInscription.demandeInscription (belongsTo) |
+| `ins_paiements_inscription` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>PaiementInscription.utilisateur (belongsTo)<br>Utilisateur.paiementsInscription (hasMany) |
+| `ins_parcours` | `etablissementId` | `eta_etablissements` | hasMany<br>Etablissement.parcours (hasMany) |
+| `ins_parcours` | `niveauEtudeId` | `ins_niveaux_etudes` | belongsTo / hasMany<br>NiveauEtude.parcours (hasMany)<br>Parcours.niveauEtude (belongsTo) |
+| `ins_parcours_choisis` | `demandeInscriptionId` | `ins_demandes_inscription` | belongsTo / hasMany<br>DemandeInscription.parcoursChoisis (hasMany)<br>ParcoursChoisi.parcoursChoisi (belongsTo) |
+| `ins_parcours_choisis` | `parcoursId` | `ins_parcours` | belongsTo / hasMany<br>Parcours.parcoursChoisis (hasMany)<br>ParcoursChoisi.parcours (belongsTo) |
+| `ins_penalite_retard` | `fraisParcoursId` | `ins_frais_parcours` | belongsTo / hasMany<br>FraisParcours.penalites (hasMany)<br>PenaliteRetard.fraisParcours (belongsTo) |
+| `ins_pointage_scans` | `pointageId` | `ins_pointages` | belongsTo / hasMany<br>Pointage.scans (hasMany)<br>PointageScan.pointage (belongsTo) |
+| `ins_pointages` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>Pointage.utilisateur (belongsTo)<br>Utilisateur.pointages (hasMany) |
+| `ins_pre_inscriptions` | `demandeInscriptionId` | `ins_demandes_inscription` | belongsTo / hasOne<br>DemandeInscription.preInscription (hasOne)<br>PreInscription.demandeInscription (belongsTo) |
+| `ins_pre_inscriptions` | `traiteParId` | `aut_utilisateurs` | belongsTo / hasMany<br>PreInscription.traitePar (belongsTo)<br>Utilisateur.preInscriptionsTraitees (hasMany) |
+| `ins_prerequis_parcours` | `matierePrerequisId` | `ins_matieres_prerequis` | belongsTo / hasMany<br>MatierePrerequis.prerequisParcours (hasMany)<br>PrerequisParcours.matierePrerequis (belongsTo) |
+| `ins_prerequis_parcours` | `niveauEtudeId` | `ins_niveaux_etudes` | belongsTo / hasMany<br>NiveauEtude.prerequisParcours (hasMany)<br>PrerequisParcours.niveauEtude (belongsTo) |
+| `ins_prerequis_parcours` | `parcoursId` | `ins_parcours` | belongsTo / hasMany<br>Parcours.prerequisParcours (hasMany)<br>PrerequisParcours.parcours (belongsTo) |
+| `ins_prerequis_parcours_choisis` | `parcoursChoisiId` | `ins_parcours_choisis` | belongsTo / hasMany<br>ParcoursChoisi.prerequisParcoursChoisis (hasMany)<br>PrerequisParcoursChoisi.parcoursChoisi (belongsTo) |
+| `ins_prerequis_parcours_choisis` | `prerequisParcoursId` | `ins_prerequis_parcours` | belongsTo<br>PrerequisParcoursChoisi.prerequisParcours (belongsTo) |
+| `ins_presences` | `listePresenceId` | `ins_listes_presences` | belongsTo / hasMany<br>ListePresence.presences (hasMany)<br>Presence.listePresence (belongsTo) |
+| `ins_presences_cours_participants` | `coursParticipantId` | `ins_cours_participants` | belongsTo / hasMany<br>CoursParticipant.presencesCoursParticipants (hasMany)<br>PresenceCoursParticipant.coursParticipant (belongsTo) |
+| `ins_presences_cours_participants` | `presenceId` | `ins_presences` | belongsTo / hasMany<br>Presence.presencesCoursParticipants (hasMany)<br>PresenceCoursParticipant.presence (belongsTo) |
+| `ins_publications_notes` | `listeNoteEvaluationId` | `ins_listes_notes_evaluation` | belongsTo / hasMany<br>ListeNoteEvaluation.publicationsNotes (hasMany)<br>PublicationNote.listeNoteEvaluation (belongsTo) |
+| `ins_publications_notes` | `publiePar` | `aut_utilisateurs` | belongsTo / hasMany<br>PublicationNote.publieParUtilisateur (belongsTo)<br>Utilisateur.publicationsNotes (hasMany) |
+| `ins_quitus` | `bordereauId` | `ins_bordereaux` | belongsTo / hasOne<br>Bordereau.quitus (hasOne)<br>Quitus.bordereau (belongsTo) |
+| `ins_quitus` | `paiementInscriptionId` | `ins_paiements_inscription` | belongsTo / hasOne<br>PaiementInscription.quitus (hasOne)<br>Quitus.paiementInscription (belongsTo) |
+| `ins_rattrapage_comite_votes` | `membreId` | `aut_utilisateurs` | belongsTo / hasMany<br>RattrapageComiteVote.membre (belongsTo)<br>Utilisateur.comiteVotesRattrapage (hasMany) |
+| `ins_rattrapage_comite_votes` | `rattrapageInscriptionId` | `ins_rattrapages_inscriptions` | belongsTo / hasMany<br>RattrapageComiteVote.rattrapageInscription (belongsTo)<br>RattrapageInscription.comiteVotes (hasMany) |
+| `ins_rattrapage_documents_deposes` | `documentRequisId` | `ins_rattrapage_documents_requis` | belongsTo / hasMany<br>RattrapageDocumentDepose.documentRequis (belongsTo)<br>RattrapageDocumentRequis.documentsDeposes (hasMany) |
+| `ins_rattrapage_documents_deposes` | `rattrapageInscriptionId` | `ins_rattrapages_inscriptions` | belongsTo / hasMany<br>RattrapageDocumentDepose.rattrapageInscription (belongsTo)<br>RattrapageInscription.documentsDeposes (hasMany) |
+| `ins_rattrapage_documents_requis` | `rattrapageSessionId` | `ins_sessions_rattrapage` | belongsTo / hasMany<br>RattrapageDocumentRequis.rattrapageSession (belongsTo)<br>RattrapageSession.documentsRequis (hasMany) |
+| `ins_rattrapage_enseignants` | `ecueId` | `ins_cours` | belongsTo / hasMany<br>Cours.rattrapagesEnseignantEcue (hasMany)<br>RattrapageEnseignant.ecue (belongsTo) |
+| `ins_rattrapage_enseignants` | `enseignantId` | `aut_enseignants` | belongsTo / hasMany<br>Enseignant.rattrapagesEnseignant (hasMany)<br>RattrapageEnseignant.enseignant (belongsTo) |
+| `ins_rattrapage_enseignants` | `rattrapagePlanningId` | `ins_rattrapage_planning` | belongsTo / hasMany<br>RattrapageEnseignant.rattrapagePlanning (belongsTo)<br>RattrapagePlanning.enseignants (hasMany) |
+| `ins_rattrapage_enseignants` | `ueId` | `ins_cours` | belongsTo / hasMany<br>Cours.rattrapagesEnseignantUe (hasMany)<br>RattrapageEnseignant.ue (belongsTo) |
+| `ins_rattrapage_notes` | `etudiantId` | `aut_utilisateurs` | belongsTo / hasMany<br>RattrapageNote.etudiant (belongsTo)<br>Utilisateur.rattrapageNotes (hasMany) |
+| `ins_rattrapage_notes` | `rattrapageInscriptionId` | `ins_rattrapages_inscriptions` | belongsTo / hasMany<br>RattrapageInscription.notes (hasMany)<br>RattrapageNote.rattrapageInscription (belongsTo) |
+| `ins_rattrapage_notes` | `saisiPar` | `aut_utilisateurs` | belongsTo / hasMany<br>RattrapageNote.saisiParUser (belongsTo)<br>Utilisateur.notesSaisiesRattrapage (hasMany) |
+| `ins_rattrapage_notes` | `ueId` | `ins_cours` | belongsTo / hasMany<br>Cours.rattrapageNotes (hasMany)<br>RattrapageNote.ue (belongsTo) |
+| `ins_rattrapage_planning` | `classeId` | `ins_classes` | belongsTo / hasMany<br>Classe.planningRattrapage (hasMany)<br>RattrapagePlanning.classe (belongsTo) |
+| `ins_rattrapage_planning` | `rattrapageSessionId` | `ins_sessions_rattrapage` | belongsTo / hasMany<br>RattrapagePlanning.rattrapageSession (belongsTo)<br>RattrapageSession.planning (hasMany) |
+| `ins_rattrapage_planning` | `salleId` | `ins_salles_de_classes` | belongsTo / hasMany<br>RattrapagePlanning.salle (belongsTo)<br>SalleDeClasse.planningRattrapage (hasMany) |
+| `ins_rattrapages_inscriptions` | `bordereauId` | `ins_bordereaux` | belongsTo / hasMany<br>Bordereau.rattrapagesInscriptions (hasMany)<br>RattrapageInscription.bordereauDepose (belongsTo) |
+| `ins_rattrapages_inscriptions` | `coursId` | `ins_cours` | belongsTo / hasMany<br>Cours.rattrapagesInscription (hasMany)<br>RattrapageInscription.cours (belongsTo) |
+| `ins_rattrapages_inscriptions` | `coursParticipantId` | `ins_cours_participants` | belongsTo / hasMany<br>CoursParticipant.rattrapagesInscription (hasMany)<br>RattrapageInscription.coursParticipant (belongsTo) |
+| `ins_rattrapages_inscriptions` | `demandePar` | `aut_utilisateurs` | belongsTo / hasMany<br>RattrapageInscription.demandeur (belongsTo)<br>Utilisateur.rattrapagesDemandes (hasMany) |
+| `ins_rattrapages_inscriptions` | `enseignantGradientId` | `aut_enseignants` | belongsTo / hasMany<br>Enseignant.rattrapagesInscriptionEnseignant (hasMany)<br>RattrapageInscription.enseignantGradient (belongsTo) |
+| `ins_rattrapages_inscriptions` | `paiementId` | `ins_bordereaux` | belongsTo / hasOne<br>Bordereau.rattrapage (hasOne)<br>RattrapageInscription.bordereau (belongsTo) |
+| `ins_rattrapages_inscriptions` | `planningId` | `ins_rattrapage_planning` | belongsTo<br>RattrapageInscription.planning (belongsTo) |
+| `ins_rattrapages_inscriptions` | `rattrapageSessionId` | `ins_sessions_rattrapage` | belongsTo / hasMany<br>RattrapageInscription.rattrapageSession (belongsTo)<br>RattrapageSession.inscriptions (hasMany) |
+| `ins_rattrapages_inscriptions` | `sessionExamenId` | `ins_sessions_examens` | belongsTo / hasMany<br>RattrapageInscription.sessionExamen (belongsTo)<br>SessionExamen.rattrapagesInscription (hasMany) |
+| `ins_reduction_frais` | `fraisParcoursId` | `ins_frais_parcours` | belongsTo / hasMany<br>FraisParcours.reductions (hasMany)<br>ReductionFrais.fraisParcours (belongsTo) |
+| `ins_regles_evaluation` | `parcoursId` | `ins_parcours` | belongsTo / hasMany<br>Parcours.reglesEvaluation (hasMany)<br>RegleEvaluation.parcours (belongsTo) |
+| `ins_reponses_inscription` | `demandeInscriptionId` | `ins_demandes_inscription` | belongsTo / hasOne<br>DemandeInscription.reponseInscription (hasOne)<br>ReponseInscription.demandeInscription (belongsTo) |
+| `ins_reponses_inscription` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>ReponseInscription.utilisateur (belongsTo)<br>Utilisateur.reponsesInscription (hasMany) |
+| `ins_ressources` | `chapitreCoursId` | `ins_chapitres_cours` | belongsTo / hasMany<br>ChapitreCours.ressources (hasMany)<br>Ressource.chapitreCours (belongsTo) |
+| `ins_salles_de_classes` | `classeId` | `ins_classes` | belongsTo / hasMany<br>Classe.sallesDeClasse (hasMany)<br>SalleDeClasse.classe (belongsTo) |
+| `ins_salles_de_classes` | `etablissementId` | `eta_etablissements` | belongsTo / hasMany<br>Etablissement.sallesDeClasse (hasMany)<br>SalleDeClasse.etablissement (belongsTo) |
+| `ins_salles_de_classes` | `localisationId` | `imm_localisation` | belongsTo / hasMany<br>Localisation.sallesDeClasse (hasMany)<br>SalleDeClasse.localisation (belongsTo) |
+| `ins_salles_de_classes` | `parcoursId` | `ins_parcours` | belongsTo / hasMany<br>Parcours.sallesDeClasse (hasMany)<br>SalleDeClasse.parcours (belongsTo) |
+| `ins_seance_pointages` | `etablissementId` | `eta_etablissements` | belongsTo<br>SeancePointage.etablissement (belongsTo) |
+| `ins_seance_pointages` | `seanceId` | `ins_seances` | belongsTo<br>SeancePointage.seance (belongsTo) |
+| `ins_seance_pointages` | `utilisateurId` | `aut_utilisateurs` | belongsTo<br>SeancePointage.utilisateur (belongsTo) |
+| `ins_seances` | `anneeAcademiqueId` | `ins_annees_academiques` | belongsTo / hasMany<br>AnneeAcademique.seances (hasMany)<br>Seance.anneeAcademique (belongsTo) |
+| `ins_seances` | `classeGroupeId` | `ins_classes` | belongsTo / hasMany<br>Classe.seancesClasseGroupe (hasMany)<br>Seance.classeGroupe (belongsTo) |
+| `ins_seances` | `coursId` | `ins_cours` | belongsTo / hasMany<br>Cours.seances (hasMany)<br>Seance.cours (belongsTo) |
+| `ins_seances` | `creneauId` | `ins_creneaux` | belongsTo / hasMany<br>Creneau.seances (hasMany)<br>Seance.creneau (belongsTo) |
+| `ins_seances` | `enseignantId` | `aut_enseignants` | belongsTo / hasMany<br>Enseignant.seances (hasMany)<br>Seance.enseignant (belongsTo) |
+| `ins_seances` | `etablissementId` | `eta_etablissements` | belongsTo / hasMany<br>Etablissement.seances (hasMany)<br>Seance.etablissement (belongsTo) |
+| `ins_seances` | `niveauEtudeId` | `ins_niveaux_etudes` | belongsTo / hasMany<br>NiveauEtude.seances (hasMany)<br>Seance.niveauEtude (belongsTo) |
+| `ins_seances` | `parcoursId` | `ins_parcours` | belongsTo / hasMany<br>Parcours.seances (hasMany)<br>Seance.parcours (belongsTo) |
+| `ins_seances` | `salleDeClasseId` | `ins_salles_de_classes` | belongsTo / hasMany<br>SalleDeClasse.seances (hasMany)<br>Seance.salleDeClasse (belongsTo) |
+| `ins_seances` | `semestreAcademiqueId` | `ins_semestres_academiques` | belongsTo / hasMany<br>Seance.semestreAcademique (belongsTo)<br>SemestreAcademique.seances (hasMany) |
+| `ins_semestres_academiques` | `anneeAcademiqueId` | `ins_annees_academiques` | belongsTo / hasMany<br>AnneeAcademique.semestresAcademiques (hasMany)<br>SemestreAcademique.anneeAcademique (belongsTo) |
+| `ins_semestres_academiques` | `parcoursId` | `ins_parcours` | belongsTo / hasMany<br>Parcours.semestresAcademiques (hasMany)<br>SemestreAcademique.parcours (belongsTo) |
+| `ins_session_correcteurs` | `coursId` | `ins_cours` | belongsTo / hasMany<br>Cours.correcteursSession (hasMany)<br>SessionCorrecteur.cours (belongsTo) |
+| `ins_session_correcteurs` | `enseignantId` | `aut_enseignants` | belongsTo / hasMany<br>Enseignant.correcteursSession (hasMany)<br>SessionCorrecteur.enseignant (belongsTo) |
+| `ins_session_correcteurs` | `sessionExamenId` | `ins_sessions_examens` | belongsTo / hasMany<br>SessionCorrecteur.sessionExamen (belongsTo)<br>SessionExamen.correcteurs (hasMany) |
+| `ins_sessions` | `anneeAcademiqueId` | `ins_annees_academiques` | belongsTo / hasMany<br>AnneeAcademique.sessions (hasMany)<br>Session.anneeAcademique (belongsTo) |
+| `ins_sessions` | `etablissementId` | `eta_etablissements` | hasMany<br>Etablissement.sessions (hasMany) |
+| `ins_sessions` | `niveauEtudeId` | `ins_niveaux_etudes` | belongsTo / hasMany<br>NiveauEtude.sessions (hasMany)<br>Session.niveauEtude (belongsTo) |
+| `ins_sessions_examens` | `anneeAcademiqueId` | `ins_annees_academiques` | belongsTo / hasMany<br>AnneeAcademique.sessionsExamen (hasMany)<br>SessionExamen.anneeAcademique (belongsTo) |
+| `ins_sessions_examens` | `classeId` | `ins_classes` | belongsTo / hasMany<br>Classe.sessionsExamen (hasMany)<br>SessionExamen.classe (belongsTo) |
+| `ins_sessions_rattrapage` | `anneeAcademiqueId` | `ins_annees_academiques` | belongsTo / hasMany<br>AnneeAcademique.rattrapagesSessions (hasMany)<br>RattrapageSession.anneeAcademique (belongsTo) |
+| `ins_sessions_rattrapage_classes` | `classeId` | `ins_classes` | belongsTo / hasMany<br>Classe.sessionsRattrapageClasses (hasMany)<br>RattrapageSessionClasse.classe (belongsTo) |
+| `ins_sessions_rattrapage_classes` | `rattrapageSessionId` | `ins_sessions_rattrapage` | belongsTo / hasMany<br>RattrapageSession.classes (hasMany)<br>RattrapageSessionClasse.rattrapageSession (belongsTo) |
+
+### marche
+
+| Table portant la cle | Cle declaree | Table liee | Association(s) / alias |
+|---|---|---|---|
+| `mar_appels_offre` | `planificationMarcheId` | `mar_planifications` | belongsTo / hasMany<br>AppelOffre.planification (belongsTo)<br>PlanificationMarche.appelsOffre (hasMany) |
+| `mar_avenants` | `contratMarcheId` | `mar_contrats` | belongsTo / hasMany<br>AvenantMarche.contrat (belongsTo)<br>ContratMarche.avenants (hasMany) |
+| `mar_contrats` | `appelOffreId` | `mar_appels_offre` | belongsTo / hasMany<br>AppelOffre.contrats (hasMany)<br>ContratMarche.appelOffre (belongsTo) |
+| `mar_contrats` | `manifestationInteretId` | `mar_manifestations_interet` | belongsTo / hasMany<br>ContratMarche.manifestationInteret (belongsTo)<br>ManifestationInteret.contrats (hasMany) |
+| `mar_manifestations_interet` | `planificationMarcheId` | `mar_planifications` | belongsTo / hasMany<br>ManifestationInteret.planification (belongsTo)<br>PlanificationMarche.manifestations (hasMany) |
+
+### orientation
+
+| Table portant la cle | Cle declaree | Table liee | Association(s) / alias |
+|---|---|---|---|
+| `ori_debouches_parcours` | `parcoursId` | `ori_parcours` | belongsTo / hasMany<br>DeboucheParcours.parcours (belongsTo)<br>Parcours.debouchesParcours (hasMany) |
+| `ori_demandes_orientation` | `anneeAcademiqueId` | `ins_annees_academiques` | belongsTo / hasMany<br>AnneeAcademique.demandesOrientation (hasMany)<br>DemandeOrientation.anneeAcademique (belongsTo) |
+| `ori_demandes_orientation` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>DemandeOrientation.utilisateur (belongsTo)<br>Utilisateur.demandesOrientation (hasMany) |
+| `ori_panier_parcours_choisis` | `parcoursChoisiId` | `ori_parcours_choisis` | belongsTo / hasMany<br>PanierParcoursChoisi.parcoursChoisi (belongsTo)<br>ParcoursChoisi.panierParcoursChoisis (hasMany) |
+| `ori_panier_parcours_choisis` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>PanierParcoursChoisi.utilisateur (belongsTo)<br>Utilisateur.panierParcoursChoisis (hasMany) |
+| `ori_parcours` | `categorieId` | `ori_categories` | belongsTo / hasMany<br>Categorie.parcours (hasMany)<br>Parcours.categorie (belongsTo) |
+| `ori_parcours` | `niveauEtudeId` | `ori_niveaux_etudes` | belongsTo / hasMany<br>NiveauEtude.parcours (hasMany)<br>Parcours.niveauEtude (belongsTo) |
+| `ori_parcours_choisis` | `demandeOrientationId` | `ori_demandes_orientation` | belongsTo / hasMany<br>DemandeOrientation.parcoursChoisis (hasMany)<br>ParcoursChoisi.parcoursChoisi (belongsTo) |
+| `ori_parcours_choisis` | `parcoursId` | `ori_parcours` | belongsTo / hasMany<br>Parcours.parcoursChoisis (hasMany)<br>ParcoursChoisi.parcours (belongsTo) |
+| `ori_prerequis_parcours` | `matierePrerequisId` | `ori_matieres_prerequis` | belongsTo / hasMany<br>MatierePrerequis.prerequisParcours (hasMany)<br>PrerequisParcours.matierePrerequis (belongsTo) |
+| `ori_prerequis_parcours` | `niveauEtudeId` | `ori_niveaux_etudes` | belongsTo / hasMany<br>NiveauEtude.prerequisParcours (hasMany)<br>PrerequisParcours.niveauEtude (belongsTo) |
+| `ori_prerequis_parcours` | `parcoursId` | `ori_parcours` | belongsTo / hasMany<br>Parcours.prerequisParcours (hasMany)<br>PrerequisParcours.parcours (belongsTo) |
+| `ori_prerequis_parcours_choisis` | `parcoursChoisiId` | `ori_parcours_choisis` | belongsTo / hasMany<br>ParcoursChoisi.prerequisParcoursChoisis (hasMany)<br>PrerequisParcoursChoisi.parcoursChoisi (belongsTo) |
+| `ori_prerequis_parcours_choisis` | `prerequisParcoursId` | `ori_prerequis_parcours` | belongsTo<br>PrerequisParcoursChoisi.prerequisParcours (belongsTo) |
+| `ori_reponses_orientation` | `demandeOrientationId` | `ori_demandes_orientation` | belongsTo / hasOne<br>DemandeOrientation.reponseOrientation (hasOne)<br>ReponseOrientation.demandeOrientation (belongsTo) |
+| `ori_reponses_orientation` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>ReponseOrientation.utilisateur (belongsTo)<br>Utilisateur.reponsesOrientation (hasMany) |
+
+### parent
+
+| Table portant la cle | Cle declaree | Table liee | Association(s) / alias |
+|---|---|---|---|
+| `par_parents_enfants` | `apprenantId` | `aut_apprenants` | belongsTo / hasMany<br>Apprenant.parents (hasMany)<br>ParentEnfant.apprenant (belongsTo) |
+| `par_parents_enfants` | `parentUtilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>ParentEnfant.parentUtilisateur (belongsTo)<br>Utilisateur.parentEnfants (hasMany) |
+
+### qualite
+
+| Table portant la cle | Cle declaree | Table liee | Association(s) / alias |
+|---|---|---|---|
+| `qua_actions_correctives` | `nonConformiteId` | `qua_non_conformites` | belongsTo / hasMany<br>QuaActionCorrective.nonConformite (belongsTo)<br>QuaNonConformite.actionsCorrectives (hasMany) |
+| `qua_audit_pistes` | `auditId` | `qua_audits` | belongsTo / hasMany<br>QuaAudit.pistes (hasMany)<br>QuaAuditPiste.audit (belongsTo) |
+| `qua_decisions_revue` | `revueDirectionId` | `qua_revues_direction` | belongsTo / hasMany<br>QuaDecisionRevue.revueDirection (belongsTo)<br>QuaRevueDirection.decisions (hasMany) |
+| `qua_reponses_satisfaction` | `enqueteSatisfactionId` | `qua_enquetes_satisfaction` | belongsTo / hasMany<br>QuaEnqueteSatisfaction.reponses (hasMany)<br>QuaReponseSatisfaction.enquete (belongsTo) |
+
+### rh
+
+| Table portant la cle | Cle declaree | Table liee | Association(s) / alias |
+|---|---|---|---|
+| `rh_bulletins_paie` | `employeId` | `rh_employes` | belongsTo / hasMany<br>RhBulletinPaie.employe (belongsTo)<br>RhEmploye.bulletinsPaie (hasMany) |
+| `rh_bulletins_paie` | `periodeId` | `rh_periodes_paie` | belongsTo / hasMany<br>RhBulletinPaie.periode (belongsTo)<br>RhPeriodePaie.bulletinsPaie (hasMany) |
+| `rh_candidatures` | `offreId` | `rh_offres_emploi` | belongsTo / hasMany<br>RhCandidature.offre (belongsTo)<br>RhOffreEmploi.candidatures (hasMany) |
+| `rh_contrats_enseignant` | `employeId` | `rh_employes` | belongsTo / hasMany<br>RhContratEnseignant.employe (belongsTo)<br>RhEmploye.contratsEnseignant (hasMany) |
+| `rh_demandes_conge` | `employeId` | `rh_employes` | belongsTo / hasMany<br>RhDemandeConge.employe (belongsTo)<br>RhEmploye.demandesConge (hasMany) |
+| `rh_employes` | `departementId` | `rh_departements` | belongsTo / hasMany<br>RhDepartement.employes (hasMany)<br>RhEmploye.departement (belongsTo) |
+| `rh_employes` | `posteId` | `rh_postes` | belongsTo / hasMany<br>RhEmploye.poste (belongsTo)<br>RhPoste.employes (hasMany) |
+| `rh_employes` | `typeContratId` | `rh_types_contrat` | belongsTo / hasMany<br>RhEmploye.typeContrat (belongsTo)<br>RhTypeContrat.employes (hasMany) |
+| `rh_entretiens` | `candidatureId` | `rh_candidatures` | belongsTo / hasMany<br>RhCandidature.entretiens (hasMany)<br>RhEntretien.candidature (belongsTo) |
+| `rh_evaluations_criteres` | `critereId` | `rh_criteres_evaluation` | belongsTo / hasMany<br>RhCritereEvaluation.evaluationsCriteres (hasMany)<br>RhEvaluationCritere.critere (belongsTo) |
+| `rh_evaluations_criteres` | `ficheId` | `rh_fiches_evaluation` | belongsTo / hasMany<br>RhEvaluationCritere.fiche (belongsTo)<br>RhFicheEvaluation.evaluationsCriteres (hasMany) |
+| `rh_fiches_evaluation` | `employeId` | `rh_employes` | belongsTo / hasMany<br>RhEmploye.fichesEvaluation (hasMany)<br>RhFicheEvaluation.employe (belongsTo) |
+| `rh_grille_salariale` | `categorieId` | `rh_categories_professionnelles` | belongsTo / hasMany<br>RhCategorieProfessionnelle.grillesSalariales (hasMany)<br>RhGrilleSalariale.categorie (belongsTo) |
+| `rh_grille_salariale` | `posteId` | `rh_postes` | belongsTo / hasMany<br>RhGrilleSalariale.poste (belongsTo)<br>RhPoste.grillesSalariales (hasMany) |
+| `rh_heures_supplementaires` | `employeId` | `rh_employes` | belongsTo / hasMany<br>RhEmploye.heuresSupplementaires (hasMany)<br>RhHeureSupplementaire.employe (belongsTo) |
+| `rh_indemnites_prestataires` | `prestataireId` | `rh_prestataires` | belongsTo / hasMany<br>RhIndemnitePrestataire.prestataire (belongsTo)<br>RhPrestataire.indemnites (hasMany) |
+| `rh_lignes_bulletin` | `bulletinId` | `rh_bulletins_paie` | belongsTo / hasMany<br>RhBulletinPaie.lignesBulletin (hasMany)<br>RhLigneBulletin.bulletin (belongsTo) |
+| `rh_lignes_bulletin` | `rubriqueId` | `rh_rubriques_paie` | belongsTo / hasMany<br>RhLigneBulletin.rubrique (belongsTo)<br>RhRubriquePaie.lignesBulletin (hasMany) |
+| `rh_offres_emploi` | `posteId` | `rh_postes` | belongsTo / hasMany<br>RhOffreEmploi.poste (belongsTo)<br>RhPoste.offresEmploi (hasMany) |
+| `rh_participations_formation` | `employeId` | `rh_employes` | belongsTo / hasMany<br>RhEmploye.participationsFormation (hasMany)<br>RhParticipationFormation.employe (belongsTo) |
+| `rh_participations_formation` | `formationId` | `rh_formations` | belongsTo / hasMany<br>RhFormation.participations (hasMany)<br>RhParticipationFormation.formation (belongsTo) |
+| `rh_planning_personnel` | `employeId` | `rh_employes` | belongsTo / hasMany<br>RhEmploye.planningsPersonnel (hasMany)<br>RhPlanningPersonnel.employe (belongsTo) |
+| `rh_postes` | `departementId` | `rh_departements` | belongsTo / hasMany<br>RhDepartement.postes (hasMany)<br>RhPoste.departement (belongsTo) |
+| `rh_prestations_enseignant` | `enseignantId` | `rh_employes` | belongsTo / hasMany<br>RhEmploye.prestationsEnseignant (hasMany)<br>RhPrestationEnseignant.enseignant (belongsTo) |
+| `rh_prets` | `employeId` | `rh_employes` | belongsTo / hasMany<br>RhEmploye.prets (hasMany)<br>RhPret.employe (belongsTo) |
+| `rh_remboursements_pret` | `pretId` | `rh_prets` | belongsTo / hasMany<br>RhPret.remboursements (hasMany)<br>RhRemboursementPret.pret (belongsTo) |
+| `rh_rubriques_paie` | `categorieId` | `rh_categories_professionnelles` | belongsTo / hasMany<br>RhCategorieProfessionnelle.rubriquesPaie (hasMany)<br>RhRubriquePaie.categoriePro (belongsTo) |
+| `rh_rubriques_paie` | `posteId` | `rh_postes` | belongsTo / hasMany<br>RhPoste.rubriquesPaie (hasMany)<br>RhRubriquePaie.poste (belongsTo) |
+| `rh_soldes_conge` | `employeId` | `rh_employes` | belongsTo / hasMany<br>RhEmploye.soldesConge (hasMany)<br>RhSoldeConge.employe (belongsTo) |
+
+### scolarite
+
+| Table portant la cle | Cle declaree | Table liee | Association(s) / alias |
+|---|---|---|---|
+| `scol_clotures_caisse` | `caissierId` | `aut_utilisateurs` | belongsTo / hasMany<br>ClotureCaisse.caissier (belongsTo)<br>Utilisateur.cloturesCaisse (hasMany) |
+| `scol_decisions_conseil` | `conseilClasseId` | `scol_conseils_classe` | belongsTo / hasMany<br>ConseilClasse.decisions (hasMany)<br>DecisionConseil.conseilClasse (belongsTo) |
+| `scol_decisions_passage` | `anneeAcademiqueId` | `ins_annees_academiques` | belongsTo / hasMany<br>AnneeAcademique.decisionsPassage (hasMany)<br>DecisionPassage.anneeAcademique (belongsTo) |
+| `scol_decisions_passage` | `cursusApprenantId` | `ins_cursus_apprenants` | belongsTo / hasMany<br>CursusApprenant.decisionsPassage (hasMany)<br>DecisionPassage.cursusApprenant (belongsTo) |
+| `scol_decisions_passage` | `validePar` | `aut_utilisateurs` | belongsTo / hasMany<br>DecisionPassage.valideParUtilisateur (belongsTo)<br>Utilisateur.decisionsPassage (hasMany) |
+| `scol_demandes_document` | `caissierId` | `aut_utilisateurs` | belongsTo<br>DemandeDocument.caissier (belongsTo) |
+| `scol_demandes_document` | `etudiantId` | `aut_utilisateurs` | belongsTo / hasMany<br>DemandeDocument.etudiant (belongsTo)<br>Utilisateur.demandesDocument (hasMany) |
+| `scol_demandes_document` | `recuCaisseId` | `scol_recus_caisse` | belongsTo<br>DemandeDocument.recuCaisse (belongsTo) |
+| `scol_demandes_document` | `typeDocumentId` | `scol_types_document` | belongsTo / hasMany<br>DemandeDocument.typeDocument (belongsTo)<br>TypeDocument.demandesDocument (hasMany) |
+| `scol_demandes_document_pieces` | `demandeId` | `scol_demandes_document` | belongsTo / hasMany<br>DemandeDocument.pieces (hasMany)<br>DemandeDocumentPiece.demande (belongsTo) |
+| `scol_demandes_document_votes` | `demandeId` | `scol_demandes_document` | belongsTo / hasMany<br>DemandeDocument.votesComite (hasMany)<br>DemandeDocumentVote.demande (belongsTo) |
+| `scol_demandes_document_votes` | `membreId` | `aut_utilisateurs` | belongsTo<br>DemandeDocumentVote.membre (belongsTo) |
+| `scol_demandes_reorientation` | `cursusApprenantId` | `ins_cursus_apprenants` | belongsTo / hasMany<br>CursusApprenant.demandesReorientation (hasMany)<br>DemandeReorientation.cursusApprenant (belongsTo) |
+| `scol_demandes_reorientation` | `parcoursActuelId` | `ins_parcours` | belongsTo / hasMany<br>DemandeReorientation.parcoursActuel (belongsTo)<br>Parcours.demandesReorientationActuel (hasMany) |
+| `scol_demandes_reorientation` | `parcoursCibleId` | `ins_parcours` | belongsTo / hasMany<br>DemandeReorientation.parcoursCible (belongsTo)<br>Parcours.demandesReorientationCible (hasMany) |
+| `scol_demandes_reorientation` | `traitePar` | `aut_utilisateurs` | belongsTo / hasMany<br>DemandeReorientation.traiteParUtilisateur (belongsTo)<br>Utilisateur.demandesReorientationTraite (hasMany) |
+| `scol_demandes_vae` | `parcoursCibleId` | `ins_parcours` | belongsTo / hasMany<br>DemandeVAE.parcoursCible (belongsTo)<br>Parcours.demandesVAE (hasMany) |
+| `scol_demandes_vae` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>DemandeVAE.utilisateur (belongsTo)<br>Utilisateur.demandesVAE (hasMany) |
+| `scol_diplomes` | `cursusApprenantId` | `ins_cursus_apprenants` | belongsTo / hasMany<br>CursusApprenant.diplomes (hasMany)<br>Diplome.cursusApprenant (belongsTo) |
+| `scol_diplomes` | `niveauEtudeId` | `ins_niveaux_etudes` | belongsTo / hasMany<br>Diplome.niveauEtude (belongsTo)<br>NiveauEtude.diplomes (hasMany) |
+| `scol_diplomes` | `parcoursId` | `ins_parcours` | belongsTo / hasMany<br>Diplome.parcours (belongsTo)<br>Parcours.diplomes (hasMany) |
+| `scol_documents_delivres` | `demandeId` | `scol_demandes_document` | belongsTo / hasOne<br>DemandeDocument.documentDelivre (hasOne)<br>DocumentDelivre.demande (belongsTo) |
+| `scol_evenements_calendrier` | `classeId` | `ins_classes` | belongsTo / hasMany<br>Classe.evenementsCalendrier (hasMany)<br>EvenementCalendrier.classe (belongsTo) |
+| `scol_evenements_calendrier` | `parcoursId` | `ins_parcours` | belongsTo / hasMany<br>EvenementCalendrier.parcours (belongsTo)<br>Parcours.evenementsCalendrier (hasMany) |
+| `scol_journal_caisse` | `clotureId` | `scol_clotures_caisse` | belongsTo / hasMany<br>ClotureCaisse.lignes (hasMany)<br>JournalCaisse.cloture (belongsTo) |
+| `scol_journal_caisse` | `demandeDocumentId` | `scol_demandes_document` | belongsTo / hasMany<br>DemandeDocument.lignesCaisse (hasMany)<br>JournalCaisse.demandeDocument (belongsTo) |
+| `scol_journal_secretariat` | `utilisateurId` | `aut_utilisateurs` | belongsTo / hasMany<br>JournalSecretariat.utilisateur (belongsTo)<br>Utilisateur.actionsSecretariat (hasMany) |
+| `scol_livres` | `uploaderId` | `aut_utilisateurs` | belongsTo / hasMany<br>Livre.uploader (belongsTo)<br>Utilisateur.livres (hasMany) |
+| `scol_progression_pedagogique` | `chapitreId` | `ins_chapitres_cours` | belongsTo / hasMany<br>ChapitreCours.progressionsPedagogiques (hasMany)<br>ProgressionPedagogique.chapitre (belongsTo) |
+| `scol_progression_pedagogique` | `coursId` | `ins_cours` | belongsTo / hasMany<br>Cours.progressionsPedagogiques (hasMany)<br>ProgressionPedagogique.cours (belongsTo) |
+| `scol_reclamations` | `etudiantId` | `aut_utilisateurs` | belongsTo / hasMany<br>Reclamation.etudiant (belongsTo)<br>Utilisateur.reclamations (hasMany) |
+| `scol_recus_caisse` | `caissierId` | `aut_utilisateurs` | belongsTo / hasMany<br>RecuCaisse.caissier (belongsTo)<br>Utilisateur.recusEncaisses (hasMany) |
+| `scol_recus_caisse` | `demandeDocumentId` | `scol_demandes_document` | belongsTo / hasMany<br>DemandeDocument.recus (hasMany)<br>RecuCaisse.demandeDocument (belongsTo) |
+| `scol_recus_caisse` | `etudiantId` | `aut_utilisateurs` | belongsTo<br>RecuCaisse.etudiant (belongsTo) |
+| `scol_recus_caisse` | `typeDocumentId` | `scol_types_document` | belongsTo<br>RecuCaisse.typeDocument (belongsTo) |
+| `scol_registres_academiques` | `cursusApprenantId` | `ins_cursus_apprenants` | belongsTo / hasMany<br>CursusApprenant.registresAcademiques (hasMany)<br>RegistreAcademique.cursusApprenant (belongsTo) |
+| `scol_reponses_reclamation` | `reclamationId` | `scol_reclamations` | belongsTo / hasMany<br>Reclamation.reponsesReclamation (hasMany)<br>ReponseReclamation.reclamation (belongsTo) |
+| `scol_reponses_reclamation` | `repondeurId` | `aut_utilisateurs` | belongsTo / hasMany<br>ReponseReclamation.repondeur (belongsTo)<br>Utilisateur.reponsesReclamation (hasMany) |
+| `scol_sanctions_academiques` | `cursusApprenantId` | `ins_cursus_apprenants` | belongsTo / hasMany<br>CursusApprenant.sanctionsAcademiques (hasMany)<br>SanctionAcademique.cursusApprenant (belongsTo) |
+| `scol_sanctions_academiques` | `decidePar` | `aut_utilisateurs` | belongsTo / hasMany<br>SanctionAcademique.decideParUtilisateur (belongsTo)<br>Utilisateur.sanctionsAcademiques (hasMany) |
+
+### stage
+
+| Table portant la cle | Cle declaree | Table liee | Association(s) / alias |
+|---|---|---|---|
+| `stg_attestations_stage` | `demandeStageId` | `stg_demandes_stage` | belongsTo / hasOne<br>AttestationStage.demandeStage (belongsTo)<br>DemandeStage.attestationStage (hasOne) |
+| `stg_conventions_stage` | `demandeStageId` | `stg_demandes_stage` | belongsTo / hasOne<br>ConventionStage.demandeStage (belongsTo)<br>DemandeStage.conventionStage (hasOne) |
+| `stg_demandes_stage` | `apprenantId` | `aut_apprenants` | belongsTo / hasMany<br>Apprenant.demandesStage (hasMany)<br>DemandeStage.apprenant (belongsTo) |
+| `stg_demandes_stage` | `entrepriseId` | `stg_entreprises` | belongsTo<br>DemandeStage.entreprise (belongsTo) |
+| `stg_demandes_stage` | `offreStageId` | `stg_offres_stage` | belongsTo<br>DemandeStage.offreStage (belongsTo) |
+| `stg_notes_stage` | `demandeStageId` | `stg_demandes_stage` | belongsTo / hasOne<br>DemandeStage.noteStage (hasOne)<br>NoteStage.demandeStage (belongsTo) |
+| `stg_notes_stage` | `enseignantId` | `aut_enseignants` | belongsTo / hasMany<br>Enseignant.notesStage (hasMany)<br>NoteStage.enseignant (belongsTo) |
+| `stg_offres_stage` | `institutionId` | `aut_institutions` | belongsTo / hasMany<br>Institution.offresStage (hasMany)<br>OffreStage.institution (belongsTo) |
+| `stg_rapports_stage` | `demandeStageId` | `stg_demandes_stage` | belongsTo / hasOne<br>DemandeStage.rapportStage (hasOne)<br>RapportStage.demandeStage (belongsTo) |
+| `stg_tuteurs` | `entrepriseId` | `stg_entreprises` | belongsTo / hasMany<br>Entreprise.tuteurs (hasMany)<br>Tuteur.entreprise (belongsTo) |
+
+### stock
+
+| Table portant la cle | Cle declaree | Table liee | Association(s) / alias |
+|---|---|---|---|
+| `stk_article` | `categorieId` | `stk_categorie_article` | belongsTo / hasMany<br>Article.categorie (belongsTo)<br>CategorieArticle.articles (hasMany) |
+| `stk_article` | `siteId` | `imm_site` | belongsTo / hasMany<br>Article.site (belongsTo)<br>Site.articles (hasMany) |
+| `stk_besoin` | `articleId` | `stk_article` | belongsTo / hasMany<br>Article.besoins (hasMany)<br>Besoin.article (belongsTo) |
+| `stk_bon_commande` | `fournisseurId` | `stk_fournisseur` | belongsTo / hasMany<br>BonCommande.fournisseur (belongsTo)<br>Fournisseur.bonsCommande (hasMany) |
+| `stk_bon_commande` | `siteId` | `imm_site` | belongsTo / hasMany<br>BonCommande.site (belongsTo)<br>Site.bonsCommande (hasMany) |
+| `stk_correction_stock` | `articleId` | `stk_article` | belongsTo / hasMany<br>Article.correctionsStock (hasMany)<br>CorrectionStock.article (belongsTo) |
+| `stk_demande_prix` | `articleId` | `stk_article` | belongsTo / hasMany<br>Article.demandesPrix (hasMany)<br>DemandePrix.article (belongsTo) |
+| `stk_demande_prix` | `fournisseurId` | `stk_fournisseur` | belongsTo / hasMany<br>DemandePrix.fournisseur (belongsTo)<br>Fournisseur.demandesPrix (hasMany) |
+| `stk_ligne_bon_commande` | `articleId` | `stk_article` | belongsTo<br>LigneBonCommande.article (belongsTo) |
+| `stk_ligne_bon_commande` | `bonCommandeId` | `stk_bon_commande` | belongsTo / hasMany<br>BonCommande.lignesBonCommande (hasMany)<br>LigneBonCommande.bonCommande (belongsTo) |
+| `stk_ligne_inventaire_stock` | `articleId` | `stk_article` | belongsTo / hasMany<br>Article.lignesInventaireStock (hasMany)<br>LigneInventaireStock.article (belongsTo) |
+| `stk_ligne_inventaire_stock` | `inventaireId` | `stk_inventaire_stock` | belongsTo / hasMany<br>InventaireStock.lignes (hasMany)<br>LigneInventaireStock.inventaire (belongsTo) |
+| `stk_mouvement_stock` | `articleId` | `stk_article` | belongsTo / hasMany<br>Article.mouvementsStock (hasMany)<br>MouvementStock.article (belongsTo) |
+| `stk_mouvement_stock` | `fournisseurId` | `stk_fournisseur` | belongsTo / hasMany<br>Fournisseur.mouvementsStock (hasMany)<br>MouvementStock.fournisseur (belongsTo) |
+| `stk_mouvement_stock` | `siteId` | `imm_site` | belongsTo / hasMany<br>MouvementStock.site (belongsTo)<br>Site.mouvementsStock (hasMany) |
+| `stk_rebut` | `articleId` | `stk_article` | belongsTo / hasMany<br>Article.rebuts (hasMany)<br>Rebut.article (belongsTo) |
+
+### Relations plusieurs-a-plusieurs
+
+| Tables liees | Table / modele de jonction declare | Alias |
+|---|---|---|
+| `aut_permissions` <-> `aut_roles` | `RolePermission` | Permission.roles<br>Role.permissions |
+| `aut_roles` <-> `aut_utilisateurs` | `UserRole` | Role.utilisateurs<br>Utilisateur.roles |
+| `ged_documents` <-> `ged_tags` | `DocumentTag` | DocumentGed.tagList<br>Tag.documents |
+| `ins_classes` <-> `ins_sessions_examens` | `SessionExamenClasse` | Classe.sessionsExamensCibles<br>SessionExamen.classesCibles |
+| `ins_cours` <-> `ins_demandes_inscription` | `DemandeInscriptionCours` | Cours.demandesInscription<br>DemandeInscription.cours |
+| `ins_demandes_inscription` <-> `ins_dossiers_inscription` | `DemandeInscriptionDossier` | DemandeInscription.dossiersInscription<br>DossierInscription.demandesInscription |
 
 ---
 
-# 1. Module auth (`aut_`)
-
-## `aut_utilisateurs` — Utilisateur (37 lignes)
-- ⇄ `aut_roles` via `aut_user_roles` [roleId → roles]
-- → `eta_etablissements` [etablissementId] *(déclaré côté etablissement)*
-- ← `aut_apprenants` (hasOne) [utilisateurId] (alias `apprenant`)
-- ← `aut_institutions` (hasOne) [utilisateurId] (alias `institution`)
-- ← `aut_caissiers_banque` (hasOne) [utilisateurId] (alias `caissierBanque`)
-- ← `aut_enseignants` (hasOne) [utilisateurId] (alias `enseignant`)
-- ← `aut_comite_orientations` (hasOne) [utilisateurId] (alias `comiteOrientation`)
-- ← `aut_user_permissions` (hasMany) [utilisateurId]
-- ← `aut_user_roles` (hasMany) [utilisateurId]
-- ← `par_parents_enfants` (hasMany) [parentUtilisateurId] (alias `parentEnfants`)
-- ← `ins_pre_inscriptions` (hasMany) [traiteParId] (alias `preInscriptionsTraitees`)
-- ← `ins_demandes_inscription` (hasMany) [utilisateurId]
-- ← `ins_reponses_inscription` (hasMany) [utilisateurId]
-- ← `ins_paiements_inscription` (hasMany) [utilisateurId]
-- ← `ins_cursus_apprenants` (hasMany) [utilisateurId]
-- ← `ins_cours_participants` (hasMany) [utilisateurId]
-- ← `ins_pointages` (hasMany) [utilisateurId]
-- ← `ins_dossiers_etudiants` (hasMany) [utilisateurId]
-- ← `ins_bordereaux` (hasMany) [utilisateurId] + [valideParId] (alias `bordereauxValides`)
-- ← `ins_equivalences` (hasMany) [validePar]
-- ← `ins_dispenses` (hasMany) [validePar]
-- ← `ins_rattrapages_inscriptions` (hasMany) [demandePar]
-- ← `ins_publications_notes` (hasMany) [publiePar]
-- ← `ins_audit_notes` (hasMany) [modifiePar]
-- ← `ins_jury_membres` (hasMany) [utilisateurId]
-- ← `ins_bulletins` (hasMany) [utilisateurId]
-- ← `com_communications` (hasMany) [utilisateurId]
-- ← `com_suggestions` (hasMany) [utilisateurId]
-- ← `com_reponses_suggestion` (hasMany) [utilisateurId]
-- ← `scol_demandes_document` (hasMany) [etudiantId]
-- ← `scol_reclamations` (hasMany) [etudiantId]
-- ← `scol_reponses_reclamation` (hasMany) [repondeurId]
-- ← `scol_livres` (hasMany) [uploaderId]
-- ← `scol_decisions_passage` (hasMany) [validePar]
-- ← `scol_demandes_reorientation` (hasMany) [traitePar]
-- ← `scol_sanctions_academiques` (hasMany) [decidePar]
-- ← `scol_demandes_vae` (hasMany) [utilisateurId]
-- ← `ori_demandes_orientation` (hasMany) [utilisateurId]
-- ← `ori_reponses_orientation` (hasMany) [utilisateurId]
-- ← `ori_panier_parcours_choisis` (hasMany) [utilisateurId]
-- ← `ach_demandes` (hasMany) [soumisParId] (alias `demandesAchats`)
-- ← `ach_validateurs` (hasOne) [utilisateurId]
-- ← `cpt_ecritures_comptables` (hasMany) [utilisateurSaisieId] + [utilisateurValidationId]
-- ← `cpt_reductions_frais` (hasMany) [validePar]
-- ← `ged_documents` (hasMany) [uploaderId] + [lockedBy]
-- ← `ged_folders` (hasMany) [createdBy]
-- ← `ged_sessions` (hasMany) [createdBy]
-- ← `ged_disposal_records` (hasMany) [requestedBy] + [confirmedBy]
-- ← `ged_signatures` (hasMany) [requestedBy] + [signedBy] + [rejectedBy]
-- ← `ged_registre_courrier` (hasMany) [utilisateurId]
-- ← `elearning_cours` (hasMany) [enseignantId]
-- ← `elearning_devoirs` (hasMany) [enseignantId]
-- ← `elearning_soumissions_devoirs` (hasMany) [apprenantId]
-- ← `elearning_reponses_quiz` (hasMany) [apprenantId]
-- ← `elearning_certificats` (hasMany) [apprenantId]
-- ← `elearning_progression_apprenant` (hasMany) [apprenantId]
-- ← `elearning_salons` (hasMany) [createdById]
-- ← `elearning_participants_salon` (hasMany) [utilisateurId]
-
-## `aut_apprenants` — Apprenant (23 lignes)
-- → `aut_utilisateurs` [utilisateurId] (alias `utilisateur`)
-- ← `aut_adresses_apprenants` (hasOne) [apprenantId]
-- ← `aut_identites_apprenants` (hasOne) [apprenantId]
-- ← `aut_informations_salarie_apprenants` (hasOne) [apprenantId]
-- ← `aut_informations_parents_apprenants` (hasOne) [apprenantId]
-- ← `aut_personnes_prevenir_apprenants` (hasOne) [apprenantId]
-- ← `par_parents_enfants` (hasMany) [apprenantId] (alias `parents`)
-- ← `stg_demandes_stage` (hasMany) [apprenantId]
-
-## `aut_institutions` — Institution (2 lignes)
-- → `aut_utilisateurs` [utilisateurId] (alias `utilisateur`)
-- ← `aut_adresses_institutions` (hasOne) [institutionId]
-- ← `stg_offres_stage` (hasMany) [institutionId]
-
-## `aut_banques` — Banque (1 ligne)
-- ← `aut_caissiers_banque` (hasMany) [banqueId]
-
-## `aut_caissiers_banque` — CaissierBanque (2 lignes)
-- → `aut_utilisateurs` [utilisateurId]
-- → `aut_banques` [banqueId]
-- ← `aut_adresses_caissiers_banque` (hasOne) [caissierBanqueId]
-
-## `aut_enseignants` — Enseignant (5 lignes)
-- → `aut_utilisateurs` [utilisateurId]
-- ← `aut_adresses_enseignants` (hasOne) [enseignantId]
-- ← `ins_cours` (hasMany) [enseignantId]
-- ← `ins_seances` (hasMany) [enseignantId]
-- ← `ins_listes_presences` (hasMany) [enseignantId]
-- ← `ins_cahiers_de_texte` (hasMany) [enseignantId]
-- ← `ins_listes_notes_evaluation` (hasMany) [enseignantId]
-- ← `stg_notes_stage` (hasMany) [enseignantId]
-
-## `aut_comite_orientations` — ComiteOrientation (3 lignes)
-- → `aut_utilisateurs` [utilisateurId]
-
-## Tables "satellites" (1-1, portent la FK vers leur parent)
-| Table | belongsTo |
-|---|---|
-| `aut_adresses_apprenants` (22) | → `aut_apprenants` [apprenantId] |
-| `aut_identites_apprenants` (21) | → `aut_apprenants` [apprenantId] |
-| `aut_informations_salarie_apprenants` (7) | → `aut_apprenants` [apprenantId] |
-| `aut_informations_parents_apprenants` (21) | → `aut_apprenants` [apprenantId] |
-| `aut_personnes_prevenir_apprenants` (21) | → `aut_apprenants` [apprenantId] |
-| `aut_adresses_institutions` (2) | → `aut_institutions` [institutionId] |
-| `aut_adresses_caissiers_banque` (2) | → `aut_caissiers_banque` [caissierBanqueId] |
-| `aut_adresses_enseignants` (5) | → `aut_enseignants` [enseignantId] |
-
-## Rôles & permissions
-| Table | Relations |
-|---|---|
-| `aut_roles` (8) | ⇄ `aut_utilisateurs` via `aut_user_roles` [roleId] · ⇄ `aut_permissions` via `aut_role_permissions` [roleId] · ← `aut_user_roles` · ← `aut_role_permissions` |
-| `aut_permissions` (259) | ⇄ `aut_roles` via `aut_role_permissions` [permissionId] · ← `aut_user_permissions` · ← `aut_role_permissions` |
-| `aut_role_permissions` (232) | → `aut_permissions` [permissionId] · → `aut_roles` [roleId] |
-| `aut_user_permissions` (0) | → `aut_permissions` [permissionId] · → `aut_utilisateurs` [utilisateurId] |
-| `aut_user_roles` (2) | → `aut_utilisateurs` [utilisateurId] · → `aut_roles` [roleId] |
-
----
-
-# 2. Module parent (`par_`)
-
-## `par_parents_enfants` — ParentEnfant (0 ligne)
-- → `aut_utilisateurs` [parentUtilisateurId] (alias `parentUtilisateur`)
-- → `aut_apprenants` [apprenantId] (alias `apprenant`)
-
----
-
-# 3. Module etablissement (`eta_`)
-
-## `eta_etablissements` — Etablissement (0 ligne)
-- ← `aut_utilisateurs` (hasMany) [etablissementId] (alias `utilisateurs`)
-- ← `ins_cours` (hasMany) [etablissementId]
-- ← `ins_classes` (hasMany) [etablissementId]
-- ← `ins_parcours` (hasMany) [etablissementId]
-- ← `ins_sessions` (hasMany) [etablissementId]
-- ← `ins_demandes_inscription` (hasMany) [etablissementId]
-- ← `ins_cursus_apprenants` (hasMany) [etablissementId]
-- ← `ins_salles_de_classes` (hasMany) [etablissementId]
-
-> Aucun belongsTo : c'est la table racine (sans parent).
-
----
-
-# 4. Module inscription (`ins_`)
-
-> Module central (scolarité). Comprend aussi les tables de bulletins (même préfixe).
-
-## `ins_niveaux_etudes` — NiveauEtude (5 lignes)
-- ← `ins_classes` (hasMany) [niveauEtudeId]
-- ← `ins_parcours` (hasMany) [niveauEtudeId]
-- ← `ins_sessions` (hasMany) [niveauEtudeId]
-- ← `ins_prerequis_parcours` (hasMany) [niveauEtudeId]
-- ← `ins_frais_parcours` (hasMany) [niveauEtudeId]
-- ← `ins_cursus_apprenants` (hasMany) [niveauEtudeId]
-- ← `ins_bulletins` (hasMany) [niveauEtudeId]
-- ← `cpt_frais_parcours` (hasMany) [niveauEtudeId]
-- ← `scol_diplomes` (hasMany) [niveauEtudeId]
-
-## `ins_annees_academiques` — AnneeAcademique (2 lignes)
-- ← `ins_sessions` (hasMany) [anneeAcademiqueId]
-- ← `ins_frais_parcours` (hasMany) [anneeAcademiqueId]
-- ← `ins_cursus_apprenants` (hasMany) [anneeAcademiqueId]
-- ← `ins_semestres_academiques` (hasMany) [anneeAcademiqueId]
-- ← `ins_listes_notes_evaluation` (hasMany) [anneeAcademiqueId]
-- ← `ins_sessions_examens` (hasMany) [anneeAcademiqueId]
-- ← `ins_bulletins` (hasMany) [anneeAcademiqueId]
-- ← `cpt_frais_parcours` (hasMany) [anneeAcademiqueId]
-- ← `scol_decisions_passage` (hasMany) [anneeAcademiqueId]
-- ← `ori_demandes_orientation` (hasMany) [anneeAcademiqueId]
-
-## `ins_parcours` — Parcours (15 lignes)
-- → `ins_niveaux_etudes` [niveauEtudeId]
-- → `eta_etablissements` [etablissementId]
-- ← `ins_cours` (hasMany) [parcoursId]
-- ← `ins_salles_de_classes` (hasMany) [parcoursId]
-- ← `ins_classes` (hasMany) [parcoursId]
-- ← `ins_prerequis_parcours` (hasMany) [parcoursId]
-- ← `ins_parcours_choisis` (hasMany) [parcoursId]
-- ← `ins_frais_parcours` (hasMany) [parcoursId]
-- ← `ins_cursus_apprenants` (hasMany) [parcoursId]
-- ← `ins_semestres_academiques` (hasMany) [parcoursId]
-- ← `ins_regles_evaluation` (hasMany) [parcoursId]
-- ← `ins_bulletins` (hasMany) [parcoursId]
-- ← `cpt_frais_parcours` (hasMany) [parcoursId]
-- ← `scol_demandes_reorientation` (hasMany) [parcoursActuelId] + [parcoursCibleId]
-- ← `scol_diplomes` (hasMany) [parcoursId]
-- ← `scol_demandes_vae` (hasMany) [parcoursCibleId]
-- ← `scol_evenements_calendrier` (hasMany) [parcoursId]
-
-## `ins_classes` — Classe (73 lignes)
-- → `ins_niveaux_etudes` [niveauEtudeId]
-- → `ins_parcours` [parcoursId]
-- → `eta_etablissements` [etablissementId]
-- ← `ins_cours` (hasMany) [classeId]
-- ← `ins_salles_de_classes` (hasMany) [classeId]
-- ← `ins_cursus_apprenants` (hasMany) [classeId]
-- ← `ins_sessions_examens` (hasMany) [classeId]
-- ← `ins_bulletins` (hasMany) [classeId]
-- ← `scol_evenements_calendrier` (hasMany) [classeId]
-
-## `ins_sessions` — Session (4 lignes)
-- → `ins_niveaux_etudes` [niveauEtudeId]
-- → `ins_annees_academiques` [anneeAcademiqueId]
-- → `eta_etablissements` [etablissementId]
-- ← `ins_demandes_inscription` (hasMany) [sessionId]
-- ← `ins_frais_inscription` (hasMany) [sessionId]
-- ← `ins_dossiers_inscription` (hasMany) [sessionId]
-
-## `ins_matieres_prerequis` — MatierePrerequis (4 lignes)
-- ← `ins_prerequis_parcours` (hasMany) [matierePrerequisId]
-
-## `ins_prerequis_parcours` — PrerequisParcours (4 lignes)
-- → `ins_niveaux_etudes` [niveauEtudeId]
-- → `ins_matieres_prerequis` [matierePrerequisId]
-- → `ins_parcours` [parcoursId]
-- ← `ins_prerequis_parcours_choisis` (hasMany) [prerequisParcoursId]
-
-## `ins_parcours_choisis` — ParcoursChoisi (22 lignes)
-- → `ins_parcours` [parcoursId]
-- → `ins_demandes_inscription` [demandeInscriptionId]
-- ← `ins_prerequis_parcours_choisis` (hasMany) [parcoursChoisiId]
-
-## `ins_prerequis_parcours_choisis` — PrerequisParcoursChoisi (1 ligne)
-- → `ins_parcours_choisis` [parcoursChoisiId]
-- → `ins_prerequis_parcours` [prerequisParcoursId]
-
-## `ins_demandes_inscription` — DemandeInscription (23 lignes)
-- → `aut_utilisateurs` [utilisateurId]
-- → `ins_sessions` [sessionId]
-- → `ins_etapes_inscription` [etapeInscriptionId]
-- → `eta_etablissements` [etablissementId]
-- ← `ins_parcours_choisis` (hasMany) [demandeInscriptionId]
-- ← `ins_reponses_inscription` (hasOne) [demandeInscriptionId]
-- ← `ins_pre_inscriptions` (hasOne) [demandeInscriptionId]
-- ⇄ `ins_cours` via `ins_cours_choisis` [demandeInscriptionId]
-- ⇄ `ins_dossiers_inscription` via `ins_dossiers_demandes` [demandeId]
-- ← `ins_cours_choisis` (hasMany) [demandeInscriptionId]
-- ← `ins_dossiers_demandes` (hasMany) [demandeId]
-- ← `ins_paiements_inscription` (hasMany) [matriculeInscription → sourceKey matricule]
-- ← `ins_cursus_apprenants` (hasOne) [demandeInscriptionId]
-
-## `ins_cours` — Cours (559 lignes)
-- → `ins_parcours` [parcoursId]
-- → `ins_classes` [classeId]
-- → `aut_enseignants` [enseignantId]
-- → `eta_etablissements` [etablissementId]
-- ⇄ `ins_demandes_inscription` via `ins_cours_choisis` [coursId]
-- ← `ins_cours_choisis` (hasMany) [coursId]
-- ← `ins_cours_participants` (hasMany) [coursId]
-- ← `ins_chapitres_cours` (hasMany) [coursId]
-- ← `ins_seances` (hasMany) [coursId]
-- ← `ins_listes_presences` (hasMany) [coursId]
-- ← `ins_cahiers_de_texte` (hasMany) [coursId]
-- ← `ins_listes_notes_evaluation` (hasMany) [coursId]
-- ← `ins_mcc` (hasMany) [coursId]
-- ← `ins_ecue` (hasMany) [coursId]
-- ← `ins_equivalences` (hasMany) [coursDestinationId]
-- ← `ins_dispenses` (hasMany) [coursId]
-- ← `ins_rattrapages_inscriptions` (hasMany) [coursId]
-- ← `ins_lignes_bulletins` (hasMany) [coursId]
-- ← `scol_progression_pedagogique` (hasMany) [coursId]
-- ← `elearning_cours` (hasMany) [coursId] *(sans contrainte FK)*
-
-## `ins_salles_de_classes` — SalleDeClasse (3 lignes)
-- → `ins_classes` [classeId]
-- → `imm_localisation` [localisationId]
-- → `ins_parcours` [parcoursId]
-- → `eta_etablissements` [etablissementId]
-- ← `ins_seances` (hasMany) [salleDeClasseId]
-
-## `ins_etapes_inscription` — EtapeInscription (0 ligne)
-- ← `ins_demandes_inscription` (hasMany) [etapeInscriptionId]
-
-## `ins_reponses_inscription` — ReponseInscription (22 lignes)
-- → `ins_demandes_inscription` [demandeInscriptionId]
-- → `aut_utilisateurs` [utilisateurId]
-
-## `ins_pre_inscriptions` — PreInscription (22 lignes)
-- → `ins_demandes_inscription` [demandeInscriptionId]
-- → `aut_utilisateurs` [traiteParId]
-
-## `ins_cours_choisis` — DemandeInscriptionCours (301 lignes, table de jonction)
-- → `ins_cours` [coursId]
-- → `ins_demandes_inscription` [demandeInscriptionId]
-
-## `ins_dossiers_inscription` — DossierInscription (6 lignes)
-- → `ins_sessions` [sessionId]
-- ⇄ `ins_demandes_inscription` via `ins_dossiers_demandes` [dossierId]
-- ← `ins_dossiers_demandes` (hasMany) [dossierId]
-
-## `ins_dossiers_demandes` — DemandeInscriptionDossier (12 lignes, table de jonction)
-- → `ins_dossiers_inscription` [dossierId]
-- → `ins_demandes_inscription` [demandeId]
-
-## `ins_frais_inscription` — FraisInscription (4 lignes)
-- → `ins_sessions` [sessionId]
-
-## `ins_paiements_inscription` — PaiementInscription (21 lignes)
-- → `aut_utilisateurs` [utilisateurId]
-- → `ins_demandes_inscription` [matriculeInscription → targetKey matricule]
-- ← `ins_quitus` (hasOne) [paiementInscriptionId]
-
-## `ins_quitus` — Quitus (0 ligne)
-- → `ins_paiements_inscription` [paiementInscriptionId]
-- → `ins_bordereaux` [bordereauId]
-
-## `ins_dossiers_etudiants` — DossierEtudiant (20 lignes)
-- → `aut_utilisateurs` [utilisateurId]
-- ← `ins_echeances` (hasMany) [dossierEtudiantId]
-- ← `ins_cours_participants` (hasMany) [utilisateurId]
-- ← `cpt_lignes_frais_etudiant` (hasMany) [dossierEtudiantId]
-- ← `cpt_reductions_frais` (hasMany) [dossierEtudiantId]
-
-## `ins_echeances` — Echeance (60 lignes)
-- → `ins_dossiers_etudiants` [dossierEtudiantId]
-- ← `ins_bordereaux` (hasMany) [echeanceId]
-
-## `ins_bordereaux` — Bordereau (11 lignes)
-- → `ins_echeances` [echeanceId]
-- → `aut_utilisateurs` [utilisateurId] + [valideParId] (alias `validePar`)
-- → `ins_rattrapages_inscriptions` (hasOne) [paiementId]
-- ← `ins_quitus` (hasOne) [bordereauId]
-
-## `ins_cursus_apprenants` — CursusApprenant (20 lignes)
-- → `aut_utilisateurs` [utilisateurId]
-- → `eta_etablissements` [etablissementId]
-- → `ins_parcours` [parcoursId]
-- → `ins_niveaux_etudes` [niveauEtudeId]
-- → `ins_classes` [classeId]
-- → `ins_annees_academiques` [anneeAcademiqueId]
-- → `ins_demandes_inscription` [demandeInscriptionId]
-- ← `ins_cours_participants` (hasMany) [cursusApprenantId]
-- ← `ins_equivalences` (hasMany) [cursusApprenantId]
-- ← `ins_dispenses` (hasMany) [cursusApprenantId]
-- ← `ins_bulletins` (hasMany) [cursusApprenantId]
-- ← `ins_resultats_deliberation` (hasMany) [cursusApprenantId]
-- ← `ins_dettes_academiques` (hasMany) [cursusApprenantId]
-- ← `scol_decisions_passage` (hasMany) [cursusApprenantId]
-- ← `scol_demandes_reorientation` (hasMany) [cursusApprenantId]
-- ← `scol_sanctions_academiques` (hasMany) [cursusApprenantId]
-- ← `scol_diplomes` (hasMany) [cursusApprenantId]
-- ← `scol_registres_academiques` (hasMany) [cursusApprenantId]
-
-## `ins_cours_participants` — CoursParticipant (296 lignes)
-- → `ins_cours` [coursId]
-- → `aut_utilisateurs` [utilisateurId]
-- → `ins_cursus_apprenants` [cursusApprenantId]
-- → `ins_dossiers_etudiants` (alias `dossierEtudiant`, via utilisateurId)
-- ← `ins_presences_cours_participants` (hasMany) [coursParticipantId]
-- ← `ins_notes_evaluation` (hasMany) [coursParticipantId]
-- ← `ins_rattrapages_inscriptions` (hasMany) [coursParticipantId]
-
-## `ins_chapitres_cours` — ChapitreCours (3 lignes)
-- → `ins_cours` [coursId]
-- ← `ins_ressources` (hasMany) [chapitreCoursId]
-- ← `scol_progression_pedagogique` (hasMany) [chapitreId]
-
-## `ins_ressources` — Ressource (3 lignes)
-- → `ins_chapitres_cours` [chapitreCoursId]
-- ← `ins_fichiers_ressources` (hasMany) [ressourceId]
-
-## `ins_fichiers_ressources` — FichierRessource (3 lignes)
-- → `ins_ressources` [ressourceId]
-
-## `ins_seances` — Seance (8 lignes)
-- → `ins_cours` [coursId]
-- → `aut_enseignants` [enseignantId]
-- → `ins_salles_de_classes` [salleDeClasseId]
-
-## `ins_listes_presences` — ListePresence (3 lignes)
-- → `ins_cours` [coursId]
-- → `aut_enseignants` [enseignantId]
-- ← `ins_presences` (hasMany) [listePresenceId]
-
-## `ins_presences` — Presence (3 lignes)
-- → `ins_listes_presences` [listePresenceId]
-- ← `ins_presences_cours_participants` (hasMany) [presenceId]
-
-## `ins_presences_cours_participants` — PresenceCoursParticipant (12 lignes)
-- → `ins_presences` [presenceId]
-- → `ins_cours_participants` [coursParticipantId]
-
-## `ins_cahiers_de_texte` — CahierDeTexte (8 lignes)
-- → `ins_cours` [coursId]
-- → `aut_enseignants` [enseignantId]
-- ← `ins_blocs_cahier_de_texte` (hasMany) [cahierDeTexteId]
-
-## `ins_blocs_cahier_de_texte` — BlocCahierDeTexte (16 lignes)
-- → `ins_cahiers_de_texte` [cahierDeTexteId]
-
-## `ins_types_note_evaluation` — TypeNoteEvaluation (3 lignes)
-- ← `ins_listes_notes_evaluation` (hasMany) [typeNoteEvaluationId]
-
-## `ins_listes_notes_evaluation` — ListeNoteEvaluation (24 lignes)
-- → `ins_types_note_evaluation` [typeNoteEvaluationId]
-- → `ins_cours` [coursId]
-- → `ins_annees_academiques` [anneeAcademiqueId]
-- → `aut_enseignants` [enseignantId]
-- ← `ins_notes_evaluation` (hasMany) [listeNoteEvaluationId]
-- ← `ins_publications_notes` (hasMany) [listeNoteEvaluationId]
-
-## `ins_notes_evaluation` — NoteEvaluation (112 lignes)
-- → `ins_listes_notes_evaluation` [listeNoteEvaluationId]
-- → `ins_cours_participants` [coursParticipantId]
-- ← `ins_absences` (hasOne) [noteEvaluationId]
-- ← `ins_audit_notes` (hasMany) [noteEvaluationId]
-
-## `ins_pointages` — Pointage (0 ligne)
-- → `aut_utilisateurs` [utilisateurId]
-
-## `ins_mcc` — Mcc (8 lignes)
-- → `ins_cours` [coursId]
-- → `ins_ecue` [ecueId]
-
-## `ins_ecue` — Ecue (0 ligne)
-- → `ins_cours` [coursId]
-- ← `ins_mcc` (hasMany) [ecueId]
-
-## `ins_regles_evaluation` — RegleEvaluation (5 lignes)
-- → `ins_parcours` [parcoursId]
-
-## `ins_sessions_examens` — SessionExamen (2 lignes)
-- → `ins_classes` [classeId]
-- → `ins_annees_academiques` [anneeAcademiqueId]
-- ← `ins_rattrapages_inscriptions` (hasMany) [sessionExamenId]
-
-## `ins_absences` — Absence (0 ligne)
-- → `ins_notes_evaluation` [noteEvaluationId]
-
-## `ins_equivalences` — Equivalence (2 lignes)
-- → `ins_cursus_apprenants` [cursusApprenantId]
-- → `ins_cours` [coursDestinationId]
-- → `aut_utilisateurs` [validePar]
-
-## `ins_dispenses` — Dispense (2 lignes)
-- → `ins_cursus_apprenants` [cursusApprenantId]
-- → `ins_cours` [coursId]
-- → `aut_utilisateurs` [validePar]
-
-## `ins_rattrapages_inscriptions` — RattrapageInscription (2 lignes)
-- → `ins_cours_participants` [coursParticipantId]
-- → `ins_cours` [coursId]
-- → `ins_sessions_examens` [sessionExamenId]
-- → `aut_utilisateurs` [demandePar] (alias `demandeur`)
-- → `ins_bordereaux` [paiementId]
-
-## `ins_publications_notes` — PublicationNote (0 ligne)
-- → `ins_listes_notes_evaluation` [listeNoteEvaluationId]
-- → `aut_utilisateurs` [publiePar]
-
-## `ins_frais_parcours` — FraisParcours (inscription) (0 ligne)
-- → `ins_parcours` [parcoursId]
-- → `ins_niveaux_etudes` [niveauEtudeId]
-- → `ins_annees_academiques` [anneeAcademiqueId]
-- ← `ins_reduction_frais` (hasMany) [fraisParcoursId]
-- ← `ins_penalite_retard` (hasMany) [fraisParcoursId]
-
-## `ins_reduction_frais` — ReductionFrais (inscription) (0 ligne)
-- → `ins_frais_parcours` [fraisParcoursId]
-
-## `ins_penalite_retard` — PenaliteRetard (inscription) (0 ligne)
-- → `ins_frais_parcours` [fraisParcoursId]
-
-## `ins_semestres_academiques` — SemestreAcademique (0 ligne)
-- → `ins_parcours` [parcoursId]
-- → `ins_annees_academiques` [anneeAcademiqueId]
-
----
-
-# 5. Module bulletins (`ins_`)
-
-> Module sans fichier `*Module.ts` : utilise le préfixe `ins_`. Associations initialisées via `initBulletinAssociations()` appelée depuis inscription.
-
-## `ins_bulletins` — Bulletin (16 lignes)
-- → `ins_annees_academiques` [anneeAcademiqueId]
-- → `ins_cursus_apprenants` [cursusApprenantId]
-- → `aut_utilisateurs` [utilisateurId]
-- → `ins_classes` [classeId]
-- → `ins_parcours` [parcoursId]
-- → `ins_niveaux_etudes` [niveauEtudeId]
-- ← `ins_lignes_bulletins` (hasMany) [bulletinId] *(onDelete cascade)*
-
-## `ins_lignes_bulletins` — LigneBulletin (36 lignes)
-- → `ins_bulletins` [bulletinId]
-- → `ins_cours` [coursId]
-
-## `ins_deliberations` — Deliberation (0 ligne)
-- → `ins_classes` [classeId]
-- → `ins_annees_academiques` [anneeAcademiqueId]
-- ← `ins_resultats_deliberation` (hasMany) [deliberationId] *(cascade)*
-- ← `ins_jury_membres` (hasMany) [deliberationId] *(cascade)*
-- ← `ins_historique_decisions` (hasMany) [deliberationId] *(cascade)*
-
-## `ins_resultats_deliberation` — ResultatDeliberation (16 lignes)
-- → `ins_deliberations` [deliberationId]
-- → `ins_cursus_apprenants` [cursusApprenantId]
-- ← `ins_historique_decisions` (hasMany) [resultatId] *(cascade)*
-
-## `ins_audit_notes` — AuditNote (9 lignes)
-- → `ins_notes_evaluation` [noteEvaluationId]
-- → `aut_utilisateurs` [modifiePar]
-
-## `ins_echelles_notes` — EchelleNote (8 lignes)
-- *Aucune association déclarée*
-
-## `ins_jury_membres` — JuryMembre (3 lignes)
-- → `ins_deliberations` [deliberationId]
-- → `aut_utilisateurs` [utilisateurId]
-
-## `ins_historique_decisions` — HistoriqueDecision (0 ligne)
-- → `ins_deliberations` [deliberationId]
-- → `ins_resultats_deliberation` [resultatId]
-
-## `ins_dettes_academiques` — DetteAcademique (0 ligne)
-- → `ins_cursus_apprenants` [cursusApprenantId] *(cascade)*
-
----
-
-# 6. Module scolarite (`scol_`)
-
-## `scol_types_document` — TypeDocument (4 lignes)
-- ← `scol_demandes_document` (hasMany) [typeDocumentId]
-
-## `scol_demandes_document` — DemandeDocument (5 lignes)
-- → `scol_types_document` [typeDocumentId]
-- → `aut_utilisateurs` [etudiantId] (alias `etudiant`)
-- ← `scol_documents_delivres` (hasOne) [demandeId]
-
-## `scol_documents_delivres` — DocumentDelivre (3 lignes)
-- → `scol_demandes_document` [demandeId]
-
-## `scol_reclamations` — Reclamation (3 lignes)
-- → `aut_utilisateurs` [etudiantId]
-- ← `scol_reponses_reclamation` (hasMany) [reclamationId]
-
-## `scol_reponses_reclamation` — ReponseReclamation (2 lignes)
-- → `scol_reclamations` [reclamationId]
-- → `aut_utilisateurs` [repondeurId]
-
-## `scol_conseils_classe` — ConseilClasse (0 ligne)
-- ← `scol_decisions_conseil` (hasMany) [conseilClasseId]
-
-## `scol_decisions_conseil` — DecisionConseil (0 ligne)
-- → `scol_conseils_classe` [conseilClasseId]
-
-## `scol_sanctions_discipline` — SanctionDiscipline (2 lignes)
-- *Aucune association déclarée*
-
-## `scol_registres_academiques` — RegistreAcademique (16 lignes)
-- → `ins_cursus_apprenants` [cursusApprenantId]
-
-## `scol_evenements_calendrier` — EvenementCalendrier (3 lignes)
-- → `ins_classes` [classeId]
-- → `ins_parcours` [parcoursId]
-
-## `scol_livres` — Livre (0 ligne)
-- → `aut_utilisateurs` [uploaderId]
-
-## `scol_decisions_passage` — DecisionPassage (0 ligne)
-- → `ins_cursus_apprenants` [cursusApprenantId]
-- → `ins_annees_academiques` [anneeAcademiqueId]
-- → `aut_utilisateurs` [validePar]
-
-## `scol_demandes_reorientation` — DemandeReorientation (0 ligne)
-- → `ins_cursus_apprenants` [cursusApprenantId]
-- → `ins_parcours` [parcoursActuelId] + [parcoursCibleId]
-- → `aut_utilisateurs` [traitePar]
-
-## `scol_sanctions_academiques` — SanctionAcademique (0 ligne)
-- → `ins_cursus_apprenants` [cursusApprenantId]
-- → `aut_utilisateurs` [decidePar]
-
-## `scol_diplomes` — Diplome (0 ligne)
-- → `ins_cursus_apprenants` [cursusApprenantId]
-- → `ins_parcours` [parcoursId]
-- → `ins_niveaux_etudes` [niveauEtudeId]
-
-## `scol_demandes_vae` — DemandeVAE (0 ligne)
-- → `aut_utilisateurs` [utilisateurId]
-- → `ins_parcours` [parcoursCibleId]
-
-## `scol_progression_pedagogique` — ProgressionPedagogique (0 ligne)
-- → `ins_cours` [coursId]
-- → `ins_chapitres_cours` [chapitreId]
-
----
-
-# 7. Module rh (`rh_`)
-
-## `rh_departements` — RhDepartement (5 lignes)
-- ← `rh_postes` (hasMany) [departementId]
-- ← `rh_employes` (hasMany) [departementId]
-
-## `rh_postes` — RhPoste (10 lignes)
-- → `rh_departements` [departementId]
-- ← `rh_employes` (hasMany) [posteId]
-- ← `rh_offres_emploi` (hasMany) [posteId]
-- ← `rh_rubriques_paie` (hasMany) [posteId]
-- ← `rh_grille_salariale` (hasMany) [posteId]
-
-## `rh_types_contrat` — RhTypeContrat (3 lignes)
-- ← `rh_employes` (hasMany) [typeContratId]
-
-## `rh_employes` — RhEmploye (5 lignes)
-- → `rh_departements` [departementId]
-- → `rh_postes` [posteId]
-- → `rh_types_contrat` [typeContratId]
-- ← `rh_participations_formation` (hasMany) [employeId]
-- ← `rh_fiches_evaluation` (hasMany) [employeId]
-- ← `rh_bulletins_paie` (hasMany) [employeId]
-- ← `rh_prestations_enseignant` (hasMany) [enseignantId]
-- ← `rh_contrats_enseignant` (hasMany) [employeId]
-- ← `rh_planning_personnel` (hasMany) [employeId]
-- ← `rh_heures_supplementaires` (hasMany) [employeId]
-- ← `rh_prets` (hasMany) [employeId]
-- ← `rh_demandes_conge` (hasMany) [employeId]
-- ← `rh_soldes_conge` (hasMany) [employeId]
-
-## `rh_offres_emploi` — RhOffreEmploi (2 lignes)
-- → `rh_postes` [posteId]
-- ← `rh_candidatures` (hasMany) [offreId]
-
-## `rh_candidatures` — RhCandidature (3 lignes)
-- → `rh_offres_emploi` [offreId]
-- ← `rh_entretiens` (hasMany) [candidatureId]
-
-## `rh_entretiens` — RhEntretien (2 lignes)
-- → `rh_candidatures` [candidatureId]
-
-## `rh_formations` — RhFormation (2 lignes)
-- ← `rh_participations_formation` (hasMany) [formationId]
-
-## `rh_participations_formation` — RhParticipationFormation (5 lignes)
-- → `rh_formations` [formationId]
-- → `rh_employes` [employeId]
-
-## `rh_criteres_evaluation` — RhCritereEvaluation (4 lignes)
-- ← `rh_evaluations_criteres` (hasMany) [critereId]
-
-## `rh_fiches_evaluation` — RhFicheEvaluation (3 lignes)
-- → `rh_employes` [employeId]
-- ← `rh_evaluations_criteres` (hasMany) [ficheId]
-
-## `rh_evaluations_criteres` — RhEvaluationCritere (12 lignes)
-- → `rh_fiches_evaluation` [ficheId]
-- → `rh_criteres_evaluation` [critereId]
-
-## `rh_rubriques_paie` — RhRubriquePaie (5 lignes)
-- → `rh_postes` [posteId]
-- → `rh_categories_professionnelles` [categorieId]
-- ← `rh_lignes_bulletin` (hasMany) [rubriqueId]
-
-## `rh_categories_professionnelles` — RhCategorieProfessionnelle (0 ligne)
-- ← `rh_grille_salariale` (hasMany) [categorieId]
-- ← `rh_rubriques_paie` (hasMany) [categorieId]
-
-## `rh_periodes_paie` — RhPeriodePaie (0 ligne)
-- ← `rh_bulletins_paie` (hasMany) [periodeId]
-
-## `rh_bulletins_paie` — RhBulletinPaie (5 lignes)
-- → `rh_periodes_paie` [periodeId]
-- → `rh_employes` [employeId]
-- ← `rh_lignes_bulletin` (hasMany) [bulletinId]
-
-## `rh_lignes_bulletin` — RhLigneBulletin (25 lignes)
-- → `rh_bulletins_paie` [bulletinId]
-- → `rh_rubriques_paie` [rubriqueId]
-
-## `rh_prestations_enseignant` — RhPrestationEnseignant (5 lignes)
-- → `rh_employes` [enseignantId]
-
-## `rh_contrats_enseignant` — RhContratEnseignant (0 ligne)
-- → `rh_employes` [employeId]
-
-## `rh_planning_personnel` — RhPlanningPersonnel (0 ligne)
-- → `rh_employes` [employeId]
-
-## `rh_grille_salariale` — RhGrilleSalariale (0 ligne)
-- → `rh_categories_professionnelles` [categorieId]
-- → `rh_postes` [posteId]
-
-## `rh_heures_supplementaires` — RhHeureSupplementaire (0 ligne)
-- → `rh_employes` [employeId]
-
-## `rh_prets` — RhPret (0 ligne)
-- → `rh_employes` [employeId]
-- ← `rh_remboursements_pret` (hasMany) [pretId]
-
-## `rh_remboursements_pret` — RhRemboursementPret (0 ligne)
-- → `rh_prets` [pretId]
-
-## `rh_prestataires` — RhPrestataire (0 ligne)
-- ← `rh_indemnites_prestataires` (hasMany) [prestataireId]
-
-## `rh_indemnites_prestataires` — RhIndemnitePrestataire (0 ligne)
-- → `rh_prestataires` [prestataireId]
-
-## `rh_demandes_conge` — RhDemandeConge (0 ligne)
-- → `rh_employes` [employeId]
-
-## `rh_soldes_conge` — RhSoldeConge (0 ligne)
-- → `rh_employes` [employeId]
-
----
-
-# 8. Module stage (`stg_`)
-
-## `stg_entreprises` — Entreprise (3 lignes)
-- ← `stg_tuteurs` (hasMany) [entrepriseId]
-- ← `stg_demandes_stage` (hasMany) [entrepriseId]
-
-## `stg_tuteurs` — Tuteur (3 lignes)
-- → `stg_entreprises` [entrepriseId]
-
-## `stg_offres_stage` — OffreStage (3 lignes)
-- → `aut_institutions` [institutionId]
-- ← `stg_demandes_stage` (hasMany) [offreStageId]
-
-## `stg_demandes_stage` — DemandeStage (3 lignes)
-- → `stg_offres_stage` [offreStageId]
-- → `stg_entreprises` [entrepriseId]
-- → `aut_apprenants` [apprenantId]
-- ← `stg_conventions_stage` (hasOne) [demandeStageId]
-- ← `stg_rapports_stage` (hasOne) [demandeStageId]
-- ← `stg_notes_stage` (hasOne) [demandeStageId]
-- ← `stg_attestations_stage` (hasOne) [demandeStageId]
-
-## `stg_conventions_stage` — ConventionStage (3 lignes)
-- → `stg_demandes_stage` [demandeStageId]
-
-## `stg_rapports_stage` — RapportStage (3 lignes)
-- → `stg_demandes_stage` [demandeStageId]
-
-## `stg_notes_stage` — NoteStage (3 lignes)
-- → `stg_demandes_stage` [demandeStageId]
-- → `aut_enseignants` [enseignantId]
-
-## `stg_attestations_stage` — AttestationStage (0 ligne)
-- → `stg_demandes_stage` [demandeStageId]
-
----
-
-# 9. Module orientation (`ori_`)
-
-> Module miroir de l'inscription : ses propres `niveaux_etudes`, `parcours`, `prerequis`, `parcours_choisis`.
-
-## `ori_categories` — Categorie (3 lignes)
-- ← `ori_parcours` (hasMany) [categorieId]
-
-## `ori_niveaux_etudes` — NiveauEtude (3 lignes)
-- ← `ori_parcours` (hasMany) [niveauEtudeId]
-- ← `ori_prerequis_parcours` (hasMany) [niveauEtudeId]
-
-## `ori_parcours` — Parcours (5 lignes)
-- → `ori_categories` [categorieId]
-- → `ori_niveaux_etudes` [niveauEtudeId]
-- ← `ori_prerequis_parcours` (hasMany) [parcoursId]
-- ← `ori_parcours_choisis` (hasMany) [parcoursId]
-- ← `ori_debouches_parcours` (hasMany) [parcoursId]
-
-## `ori_matieres_prerequis` — MatierePrerequis (5 lignes)
-- ← `ori_prerequis_parcours` (hasMany) [matierePrerequisId]
-
-## `ori_prerequis_parcours` — PrerequisParcours (5 lignes)
-- → `ori_niveaux_etudes` [niveauEtudeId]
-- → `ori_matieres_prerequis` [matierePrerequisId]
-- → `ori_parcours` [parcoursId]
-- ← `ori_prerequis_parcours_choisis` (hasMany) [prerequisParcoursId]
-
-## `ori_debouches_parcours` — DeboucheParcours (5 lignes)
-- → `ori_parcours` [parcoursId]
-
-## `ori_parcours_choisis` — ParcoursChoisi (0 ligne)
-- → `ori_parcours` [parcoursId]
-- → `ori_demandes_orientation` [demandeOrientationId]
-- ← `ori_prerequis_parcours_choisis` (hasMany) [parcoursChoisiId]
-- ← `ori_panier_parcours_choisis` (hasMany) [parcoursChoisiId]
-
-## `ori_prerequis_parcours_choisis` — PrerequisParcoursChoisi (0 ligne)
-- → `ori_parcours_choisis` [parcoursChoisiId]
-- → `ori_prerequis_parcours` [prerequisParcoursId]
-
-## `ori_panier_parcours_choisis` — PanierParcoursChoisi (0 ligne)
-- → `ori_parcours_choisis` [parcoursChoisiId]
-- → `aut_utilisateurs` [utilisateurId]
-
-## `ori_demandes_orientation` — DemandeOrientation (1 ligne)
-- → `aut_utilisateurs` [utilisateurId]
-- → `ins_annees_academiques` [anneeAcademiqueId] *(inter-module)*
-- ← `ori_parcours_choisis` (hasMany) [demandeOrientationId]
-- ← `ori_reponses_orientation` (hasOne) [demandeOrientationId]
-
-## `ori_reponses_orientation` — ReponseOrientation (1 ligne)
-- → `ori_demandes_orientation` [demandeOrientationId]
-- → `aut_utilisateurs` [utilisateurId]
-
----
-
-# 10. Module communication (`com_`)
-
-## `com_communications` — Communication (3 lignes)
-- → `aut_utilisateurs` [utilisateurId]
-
-## `com_actualites` — Actualite (2 lignes)
-- *Aucune association déclarée*
-
-## `com_suggestions` — Suggestion (2 lignes)
-- → `aut_utilisateurs` [utilisateurId]
-- ← `com_reponses_suggestion` (hasMany) [suggestionId]
-
-## `com_reponses_suggestion` — ReponseSuggestion (0 ligne)
-- → `com_suggestions` [suggestionId]
-- → `aut_utilisateurs` [utilisateurId]
-
----
-
-# 11. Module comptabilite (`cpt_`)
-
-## `cpt_comptes` — Compte (41 lignes)
-- ← `cpt_ecritures_comptables` (hasMany) [compteDebitId] (alias `debitures`) + [compteCreditId] (alias `creditures`)
-
-## `cpt_journaux_comptables` — JournalComptable (3 lignes)
-- ← `cpt_ecritures_comptables` (hasMany) [journalId]
-
-## `cpt_exercices` — ExerciceComptable (1 ligne)
-- ← `cpt_ecritures_comptables` (hasMany) [exerciceId]
-
-## `cpt_ecritures_comptables` — EcritureComptable (3 lignes)
-- → `cpt_exercices` [exerciceId]
-- → `cpt_journaux_comptables` [journalId]
-- → `cpt_comptes` [compteDebitId] + [compteCreditId]
-- → `aut_utilisateurs` [utilisateurSaisieId] + [utilisateurValidationId]
-- ← `cpt_lignes_releves_bancaires` (hasMany) [ecritureComptableId]
-
-## `cpt_frais_parcours` — FraisParcours (comptabilite) (1 ligne)
-- → `ins_parcours` [parcoursId] *(inter-module)*
-- → `ins_niveaux_etudes` [niveauEtudeId] *(inter-module)*
-- → `ins_annees_academiques` [anneeAcademiqueId] *(inter-module)*
-
-> ⚠️ Ne pas confondre avec `ins_frais_parcours` (module inscription) : deux modèles distincts portant le même nom `FraisParcours`.
-
-## `cpt_lignes_frais_etudiant` — LigneFraisEtudiant (0 ligne)
-- → `ins_dossiers_etudiants` [dossierEtudiantId] *(inter-module)*
-- → `cpt_reductions_frais` [reductionId]
-
-## `cpt_reductions_frais` — ReductionFrais (comptabilite) (0 ligne)
-- → `ins_dossiers_etudiants` [dossierEtudiantId] *(inter-module)*
-- → `aut_utilisateurs` [validePar]
-- ← `cpt_lignes_frais_etudiant` (hasMany) [reductionId]
-
-## `cpt_penalites_retard` — PenaliteRetard (comptabilite) (0 ligne)
-- *Aucune association déclarée*
-
-## `cpt_parametres_frais` — ParametreFrais (4 lignes)
-- *Aucune association déclarée*
-
-## `cpt_comptes_bancaires` — CompteBancaire (0 ligne)
-- ← `cpt_releves_bancaires` (hasMany) [compteBancaireId]
-
-## `cpt_releves_bancaires` — ReleveBancaire (0 ligne)
-- → `cpt_comptes_bancaires` [compteBancaireId]
-- ← `cpt_lignes_releves_bancaires` (hasMany) [releveBancaireId]
-
-## `cpt_lignes_releves_bancaires` — LigneReleveBancaire (0 ligne)
-- → `cpt_releves_bancaires` [releveBancaireId]
-- → `cpt_ecritures_comptables` [ecritureComptableId]
-
----
-
-# 12. Module achats (`ach_`)
-
-## `ach_categories` — CategorieAchat (3 lignes)
-- ← `ach_lignes_budget` (hasMany) [categorieAchatId]
-
-## `ach_budgets` — Budget (0 ligne)
-- → `imm_departement` [departementId] *(inter-module)*
-- ← `ach_lignes_budget` (hasMany) [budgetId]
-- ← `ach_engagements` (hasMany) [budgetId]
-
-## `ach_lignes_budget` — LigneBudget (3 lignes)
-- → `ach_categories` [categorieAchatId]
-- → `ach_budgets` [budgetId]
-
-## `ach_demandes` — Demande (0 ligne)
-- → `aut_utilisateurs` [soumisParId] (alias `soumisPar`)
-- ← `ach_lignes_demande` (hasMany) [demandeId]
-- ← `ach_validations` (hasMany) [demandeId]
-- ← `ach_engagements` (hasMany) [demandeId]
-- ← `ach_commandes` (hasMany) [demandeId]
-
-## `ach_lignes_demande` — LigneDemande (2 lignes)
-- → `ach_demandes` [demandeId]
-
-## `ach_validateurs` — Validateur (2 lignes)
-- → `aut_utilisateurs` [utilisateurId]
-- ← `ach_validations` (hasMany) [validateurId]
-
-## `ach_validations` — Validation (0 ligne)
-- → `ach_demandes` [demandeId]
-- → `ach_validateurs` [validateurId]
-
-## `ach_engagements` — Engagement (0 ligne)
-- → `ach_demandes` [demandeId]
-- → `ach_budgets` [budgetId]
-
-## `ach_fournisseurs` — Fournisseur (2 lignes)
-- ← `ach_commandes` (hasMany) [fournisseurId]
-
-## `ach_commandes` — Commande (0 ligne)
-- → `ach_demandes` [demandeId]
-- → `ach_fournisseurs` [fournisseurId]
-- ← `ach_lignes_commande` (hasMany) [commandeId]
-- ← `ach_receptions` (hasMany) [commandeId]
-- ← `ach_factures_proforma` (hasMany) [commandeId]
-
-## `ach_lignes_commande` — LigneCommande (2 lignes)
-- → `ach_commandes` [commandeId]
-- ← `ach_lignes_reception` (hasMany) [ligneCommandeId]
-- ← `ach_lignes_facture` (hasMany) [ligneCommandeId]
-
-## `ach_receptions` — Reception (0 ligne)
-- → `ach_commandes` [commandeId]
-- ← `ach_lignes_reception` (hasMany) [receptionId]
-
-## `ach_lignes_reception` — LigneReception (2 lignes)
-- → `ach_receptions` [receptionId]
-- → `ach_lignes_commande` [ligneCommandeId]
-
-## `ach_factures_proforma` — FactureProforma (1 ligne)
-- → `ach_commandes` [commandeId]
-- ← `ach_lignes_facture` (hasMany) [factureId]
-- *(colonnes signature : `signatureData`, `signataireNom`, `signataireRole`, `dateSignature`)*
-
-## `ach_lignes_facture` — LigneFacture (2 lignes)
-- → `ach_lignes_commande` [ligneCommandeId]
-- → `ach_factures_proforma` [factureId]
-
----
-
-# 13. Module marche (`mar_`)
-
-## `mar_planifications` — PlanificationMarche (0 ligne)
-- ← `mar_manifestations_interet` (hasMany) [planificationMarcheId]
-- ← `mar_appels_offre` (hasMany) [planificationMarcheId]
-
-## `mar_manifestations_interet` — ManifestationInteret (0 ligne)
-- → `mar_planifications` [planificationMarcheId]
-- ← `mar_contrats` (hasMany) [manifestationInteretId]
-
-## `mar_appels_offre` — AppelOffre (0 ligne)
-- → `mar_planifications` [planificationMarcheId]
-- ← `mar_contrats` (hasMany) [appelOffreId]
-
-## `mar_contrats` — ContratMarche (0 ligne)
-- → `mar_appels_offre` [appelOffreId]
-- → `mar_manifestations_interet` [manifestationInteretId]
-- ← `mar_avenants` (hasMany) [contratMarcheId]
-
-## `mar_avenants` — AvenantMarche (0 ligne)
-- → `mar_contrats` [contratMarcheId]
-
----
-
-# 14. Module stock (`stk_`)
-
-## `stk_categorie_article` — CategorieArticle (2 lignes)
-- ← `stk_article` (hasMany) [categorieId]
-
-## `stk_article` — Article (5 lignes)
-- → `stk_categorie_article` [categorieId]
-- → `imm_site` [siteId] *(inter-module)*
-- ← `stk_mouvement_stock` (hasMany) [articleId]
-- ← `stk_besoin` (hasMany) [articleId]
-- ← `stk_demande_prix` (hasMany) [articleId]
-- ← `stk_rebut` (hasMany) [articleId]
-- ← `stk_correction_stock` (hasMany) [articleId]
-- ← `stk_ligne_inventaire_stock` (hasMany) [articleId]
-- ← `stk_ligne_bon_commande` (hasMany) [articleId]
-
-## `stk_fournisseur` — Fournisseur (2 lignes)
-- ← `stk_mouvement_stock` (hasMany) [fournisseurId]
-- ← `stk_bon_commande` (hasMany) [fournisseurId]
-- ← `stk_demande_prix` (hasMany) [fournisseurId]
-
-## `stk_bon_commande` — BonCommande (0 ligne)
-- → `stk_fournisseur` [fournisseurId]
-- → `imm_site` [siteId] *(inter-module)*
-- ← `stk_ligne_bon_commande` (hasMany) [bonCommandeId]
-
-## `stk_ligne_bon_commande` — LigneBonCommande (0 ligne)
-- → `stk_bon_commande` [bonCommandeId]
-- → `stk_article` [articleId]
-
-## `stk_mouvement_stock` — MouvementStock (4 lignes)
-- → `stk_article` [articleId]
-- → `stk_fournisseur` [fournisseurId]
-- → `imm_site` [siteId] *(inter-module)*
-
-## `stk_besoin` — Besoin (0 ligne)
-- → `stk_article` [articleId]
-
-## `stk_demande_prix` — DemandePrix (0 ligne)
-- → `stk_article` [articleId]
-- → `stk_fournisseur` [fournisseurId]
-
-## `stk_rebut` — Rebut (0 ligne)
-- → `stk_article` [articleId]
-
-## `stk_correction_stock` — CorrectionStock (0 ligne)
-- → `stk_article` [articleId]
-
-## `stk_inventaire_stock` — InventaireStock (0 ligne)
-- ← `stk_ligne_inventaire_stock` (hasMany) [inventaireId]
-
-## `stk_ligne_inventaire_stock` — LigneInventaireStock (0 ligne)
-- → `stk_inventaire_stock` [inventaireId]
-- → `stk_article` [articleId]
-
-## `stk_transferts` — TransfertStock (0 ligne)
-- *Aucune association déclarée*
-
----
-
-# 15. Module immobilisation (`imm_`)
-
-## `imm_site` — Site (2 lignes)
-- ← `imm_batiment` (hasMany) [siteId]
-- ← `imm_immobilisation` (hasMany) [siteId]
-- ← `imm_affectation` (hasMany) [siteId]
-- ← `stk_article` (hasMany) [siteId]
-- ← `stk_mouvement_stock` (hasMany) [siteId]
-- ← `stk_bon_commande` (hasMany) [siteId]
-
-## `imm_batiment` — Batiment (3 lignes)
-- → `imm_site` [siteId]
-- ← `imm_localisation` (hasMany) [batimentId]
-
-## `imm_localisation` — Localisation (3 lignes)
-- → `imm_batiment` [batimentId]
-- ← `imm_immobilisation` (hasMany) [localisationId]
-- ← `imm_affectation` (hasMany) [localisationId]
-- ← `ins_salles_de_classes` (hasMany) [localisationId]
-
-## `imm_departement` — Departement (2 lignes)
-- ← `imm_immobilisation` (hasMany) [departementId]
-- ← `imm_affectation` (hasMany) [departementId]
-- ← `ach_budgets` (hasMany) [departementId]
-
-## `imm_categorie_immobilisation` — CategorieImmobilisation (3 lignes)
-- ← `imm_immobilisation` (hasMany) [categorieId]
-
-## `imm_immobilisation` — Immobilisation (4 lignes)
-- → `imm_categorie_immobilisation` [categorieId]
-- → `imm_localisation` [localisationId]
-- → `imm_departement` [departementId]
-- → `imm_site` [siteId]
-- ← `imm_acquisition` (hasOne) [immobilisationId]
-- ← `imm_amortissement` (hasMany) [immobilisationId]
-- ← `imm_maintenance` (hasMany) [immobilisationId]
-- ← `imm_maintenance_programmee` (hasMany) [immobilisationId]
-- ← `imm_cession` (hasOne) [immobilisationId]
-- ← `imm_assurance` (hasOne) [immobilisationId]
-- ← `imm_affectation` (hasMany) [immobilisationId]
-- ← `imm_sortie_provisoire` (hasMany) [immobilisationId]
-- ← `imm_ligne_inventaire` (hasMany) [immobilisationId]
-- ← `imm_rebuts_immobilisation` (hasMany) [immobilisationId]
-
-## `imm_acquisition` — Acquisition (4 lignes)
-- → `imm_immobilisation` [immobilisationId]
-
-## `imm_amortissement` — Amortissement (0 ligne)
-- → `imm_immobilisation` [immobilisationId]
-
-## `imm_maintenance` — Maintenance (4 lignes)
-- → `imm_immobilisation` [immobilisationId]
-
-## `imm_maintenance_programmee` — MaintenanceProgrammee (0 ligne)
-- → `imm_immobilisation` [immobilisationId]
-
-## `imm_cession` — Cession (0 ligne)
-- → `imm_immobilisation` [immobilisationId]
-
-## `imm_assurance` — Assurance (0 ligne)
-- → `imm_immobilisation` [immobilisationId]
-
-## `imm_affectation` — Affectation (0 ligne)
-- → `imm_immobilisation` [immobilisationId]
-- → `imm_site` [siteId]
-- → `imm_departement` [departementId]
-- → `imm_localisation` [localisationId]
-
-## `imm_sortie_provisoire` — SortieProvisoire (0 ligne)
-- → `imm_immobilisation` [immobilisationId]
-
-## `imm_inventaire` — Inventaire (0 ligne)
-- ← `imm_ligne_inventaire` (hasMany) [inventaireId]
-
-## `imm_ligne_inventaire` — LigneInventaire (0 ligne)
-- → `imm_inventaire` [inventaireId]
-- → `imm_immobilisation` [immobilisationId]
-
-## `imm_rebuts_immobilisation` — RebutImmobilisation (0 ligne)
-- → `imm_immobilisation` [immobilisationId]
-
----
-
-# 16. Module docgen (`docgen_`)
-
-## `docgen_types` — DocGenType (0 ligne)
-- ← `docgen_templates` (hasMany) [typeId]
-- ← `docgen_documents` (hasMany) [typeId]
-- ← `docgen_workflows` (hasMany) [typeId]
-- ← `docgen_references` (hasMany) [typeId]
-
-## `docgen_templates` — DocGenTemplate (0 ligne)
-- → `docgen_types` [typeId]
-- ← `docgen_documents` (hasMany) [templateId]
-
-## `docgen_documents` — DocGenDocument (0 ligne)
-- → `docgen_types` [typeId]
-- → `docgen_templates` [templateId]
-- ← `docgen_signatures` (hasMany) [documentId]
-
-## `docgen_signatures` — DocGenSignature (0 ligne)
-- → `docgen_documents` [documentId]
-
-## `docgen_workflows` — DocGenWorkflow (0 ligne)
-- → `docgen_types` [typeId]
-
-## `docgen_references` — DocGenReference (0 ligne)
-- → `docgen_types` [typeId]
-
-## `docgen_cachets` — DocGenCachet (0 ligne)
-- *Aucune association déclarée*
-
----
-
-# 17. Module ged (`ged_`)
-
-## `ged_domains` — Domain (0 ligne)
-- ← `ged_folders` (hasMany) [domainId]
-- ← `ged_documents` (hasMany) [domainId]
-- ← `ged_role_permissions` (hasMany) [domainId]
-
-## `ged_folders` — Folder (0 ligne)
-- → `ged_domains` [domainId]
-- → `aut_utilisateurs` [createdBy] (alias `creator`)
-- → `ged_folders` [parentId] *(auto-référence : arborescence)*
-- ← `ged_documents` (hasMany) [folderId]
-- ← `ged_folders` (hasMany) [parentId] (alias `children`)
-
-## `ged_sessions` — SessionGed (0 ligne)
-- → `aut_utilisateurs` [createdBy]
-- ← `ged_documents` (hasMany) [sessionId]
-
-## `ged_document_types` — DocumentType (0 ligne)
-- ← `ged_documents` (hasMany) [documentTypeId]
-
-## `ged_documents` — DocumentGed (0 ligne)
-- → `aut_utilisateurs` [uploaderId] + [lockedBy] (alias `locker`)
-- → `ged_folders` [folderId]
-- → `ged_sessions` [sessionId]
-- → `ged_domains` [domainId]
-- → `ged_document_types` [documentTypeId]
-- → `ged_documents` [parentDocumentId] *(auto-référence : versioning)*
-- → `ged_processus` [processusGenerateurId]
-- ⇄ `ged_tags` via `ged_document_tags` [documentId]
-- ← `ged_documents` (hasMany) [parentDocumentId] (alias `versions`)
-- ← `ged_audit_logs` (hasMany) [documentId]
-- ← `ged_disposal_records` (hasMany) [documentId]
-- ← `ged_document_access_grants` (hasMany) [documentId]
-- ← `ged_signatures` (hasMany) [documentId]
-- ← `ged_registre_courrier` (hasMany) [documentId]
-- ← `ged_document_tags` (hasMany) [documentId]
-
-## `ged_processus` — ProcessusGenerateur (0 ligne)
-- ← `ged_documents` (hasMany) [processusGenerateurId]
-- ← `ged_role_permissions` (hasMany) [processusGenerateurId]
-
-## `ged_role_permissions` — RolePermission (0 ligne)
-- → `ged_domains` [domainId]
-- → `ged_processus` [processusGenerateurId]
-
-## `ged_signatures` — GedSignature (0 ligne)
-- → `ged_documents` [documentId]
-- → `aut_utilisateurs` [requestedBy] + [signedBy] + [rejectedBy]
-
-## `ged_registre_courrier` — RegistreCourrier (0 ligne)
-- → `ged_documents` [documentId]
-- → `aut_utilisateurs` [utilisateurId]
-
-## `ged_tags` — Tag (0 ligne)
-- ⇄ `ged_documents` via `ged_document_tags` [tagId]
-- ← `ged_document_tags` (hasMany) [tagId]
-
-## `ged_document_tags` — DocumentTag (0 ligne, table de jonction)
-- → `ged_documents` [documentId]
-- → `ged_tags` [tagId]
-
-## Tables sans association
-| Table | Remarque |
-|---|---|
-| `ged_audit_logs` (0) | → `ged_documents` [documentId] déclaré |
-| `ged_disposal_records` (0) | → `ged_documents` + `aut_utilisateurs` (requester/confirmer) |
-| `ged_document_access_grants` (0) | → `ged_documents` [documentId] |
-| `ged_notifications` (0) | aucune relation |
-| `ged_backups` (0) | aucune relation |
-| `ged_reference_counters` (0) | aucune relation |
-
----
-
-# 18. Module elearning (`elearning_`)
-
-## `elearning_cours` — CoursEnLigne (3 lignes)
-- → `ins_cours` [coursId] *(alias `coursPedagogique`, sans contrainte FK)*
-- → `aut_utilisateurs` [enseignantId]
-- ← `elearning_modules` (hasMany) [coursId]
-- ← `elearning_salons` (hasMany) [coursId]
-- ← `elearning_devoirs` (hasMany) [coursId]
-- ← `elearning_quiz` (hasMany) [coursId]
-- ← `elearning_certificats` (hasMany) [coursId]
-
-## `elearning_modules` — ModuleElearning (3 lignes)
-- → `elearning_cours` [coursId]
-- ← `elearning_supports` (hasMany) [moduleId]
-
-## `elearning_supports` — Support (3 lignes)
-- → `elearning_modules` [moduleId]
-- ← `elearning_commentaires` (hasMany) [supportId]
-- ← `elearning_couplages_mail` (hasMany) [supportId]
-- ← `elearning_progression_apprenant` (hasMany) [supportId]
-
-## `elearning_commentaires` — Commentaire (3 lignes)
-- → `elearning_supports` [supportId]
-
-## `elearning_couplages_mail` — CouplageMail (2 lignes)
-- → `elearning_supports` [supportId]
-
-## `elearning_salons` — Salon (5 lignes)
-- → `elearning_cours` [coursId]
-- → `aut_utilisateurs` [createdById] *(sans contrainte FK)*
-- ← `elearning_messages` (hasMany) [salonId]
-- ← `elearning_participants_salon` (hasMany) [salonId]
-
-## `elearning_messages` — Message (5 lignes)
-- → `elearning_salons` [salonId]
-
-## `elearning_participants_salon` — ParticipantSalon (13 lignes)
-- → `elearning_salons` [salonId]
-- → `aut_utilisateurs` [utilisateurId] *(sans contrainte FK)*
-
-## `elearning_devoirs` — Devoir (0 ligne)
-- → `elearning_cours` [coursId]
-- → `aut_utilisateurs` [enseignantId]
-- ← `elearning_soumissions_devoirs` (hasMany) [devoirId]
-
-## `elearning_soumissions_devoirs` — SoumissionDevoir (0 ligne)
-- → `elearning_devoirs` [devoirId]
-- → `aut_utilisateurs` [apprenantId]
-
-## `elearning_quiz` — Quiz (0 ligne)
-- → `elearning_cours` [coursId]
-- ← `elearning_reponses_quiz` (hasMany) [quizId]
-
-## `elearning_reponses_quiz` — ReponseQuiz (0 ligne)
-- → `elearning_quiz` [quizId]
-- → `aut_utilisateurs` [apprenantId]
-
-## `elearning_certificats` — Certificat (0 ligne)
-- → `elearning_cours` [coursId]
-- → `aut_utilisateurs` [apprenantId]
-
-## `elearning_progression_apprenant` — ProgressionApprenant (3 lignes)
-- → `elearning_supports` [supportId]
-- → `aut_utilisateurs` [apprenantId]
-
-## `elearning_notifications` — Notification (11 lignes)
-- *Aucune association déclarée*
-
----
-
-# 19. Module qualite (`qua_`)
-
-## `qua_non_conformites` — QuaNonConformite (0 ligne)
-- ← `qua_actions_correctives` (hasMany) [nonConformiteId]
-
-## `qua_actions_correctives` — QuaActionCorrective (0 ligne)
-- → `qua_non_conformites` [nonConformiteId]
-
-## `qua_audits` — QuaAudit (0 ligne)
-- ← `qua_audit_pistes` (hasMany) [auditId]
-
-## `qua_audit_pistes` — QuaAuditPiste (0 ligne)
-- → `qua_audits` [auditId]
-
-## `qua_revues_direction` — QuaRevueDirection (0 ligne)
-- ← `qua_decisions_revue` (hasMany) [revueDirectionId]
-
-## `qua_decisions_revue` — QuaDecisionRevue (0 ligne)
-- → `qua_revues_direction` [revueDirectionId]
-
-## `qua_enquetes_satisfaction` — QuaEnqueteSatisfaction (0 ligne)
-- ← `qua_reponses_satisfaction` (hasMany) [enqueteSatisfactionId]
-
-## `qua_reponses_satisfaction` — QuaReponseSatisfaction (0 ligne)
-- → `qua_enquetes_satisfaction` [enqueteSatisfactionId]
-
----
-
-# 20. Module reporting (`rpt_`)
-
-> Tables de restitution (vues matérialisées / agrégats). **Aucune association déclarée**, aucune FK.
-
-| Table | Table |
-|---|---|
-| `rpt_effectifs` | `rpt_paiements` |
-| `rpt_inscriptions` | `rpt_budget_vs_reel` |
-| `rpt_notes_moyennes` | `rpt_factures` |
-| `rpt_presence` | `rpt_effectifs_rh` |
-| `rpt_reussite` | `rpt_paie` |
-| `rpt_document_academique` | `rpt_formations_rh` |
-| `rpt_evaluations` | `rpt_achats` |
-| `rpt_stocks` | `rpt_immobilisations` |
-
----
-
-# 21. Tables sans aucune relation (récapitulatif)
-
-| Table | Module |
-|---|---|
-| `ins_echelles_notes` | bulletins |
-| `ins_etapes_inscription` (sauf relation déclarée côté DemandeInscription) | inscription |
-| `scol_sanctions_discipline` | scolarite |
-| `com_actualites` | communication |
-| `cpt_penalites_retard` (comptabilite) | comptabilite |
-| `cpt_parametres_frais` | comptabilite |
-| `stk_transferts` | stock |
-| `docgen_cachets` | docgen |
-| `ged_notifications`, `ged_backups`, `ged_reference_counters` | ged |
-| `elearning_notifications` | elearning |
-| Toutes les tables `rpt_*` | reporting |
-
----
-
-# 22. Dépendances inter-modules (qui référence qui)
-
-| Table | Référence (module → table) |
-|---|---|
-| `aut_utilisateurs` | → etablissement (`eta_etablissements`) |
-| `par_parents_enfants` | → auth (`aut_utilisateurs`, `aut_apprenants`) |
-| `ins_cours` | → auth (`aut_enseignants`) · etablissement (`eta_etablissements`) |
-| `ins_salles_de_classes` | → immobilisation (`imm_localisation`) |
-| `ins_cursus_apprenants` | → etablissement (`eta_etablissements`) |
-| `ins_dossiers_etudiants` | → auth (`aut_utilisateurs`) |
-| `ins_bulletins` / lignes | → auth (`aut_utilisateurs`) |
-| `scol_*` | → auth (`aut_utilisateurs`) · inscription (`ins_*`) |
-| `ori_demandes_orientation` | → inscription (`ins_annees_academiques`) |
-| `stg_offres_stage` | → auth (`aut_institutions`) |
-| `stg_demandes_stage` | → auth (`aut_apprenants`) |
-| `stg_notes_stage` | → auth (`aut_enseignants`) |
-| `cpt_frais_parcours` | → inscription (`ins_parcours`, `ins_niveaux_etudes`, `ins_annees_academiques`) |
-| `cpt_lignes_frais_etudiant` / `cpt_reductions_frais` | → inscription (`ins_dossiers_etudiants`) |
-| `cpt_ecritures_comptables` | → auth (`aut_utilisateurs`) |
-| `ach_budgets` | → immobilisation (`imm_departement`) |
-| `stk_article`, `stk_bon_commande`, `stk_mouvement_stock` | → immobilisation (`imm_site`) |
-| `ged_*` | → auth (`aut_utilisateurs`) |
-| `elearning_*` | → inscription (`ins_cours`) · auth (`aut_utilisateurs`) |
-
----
-
-# 23. Ordre de peuplement conseillé (pour le seed complet)
-
-1. **etablissement** : `eta_etablissements` (racine)
-2. **immobilisation (partiel)** : `imm_site` → `imm_batiment` → `imm_localisation` → `imm_departement` → `imm_categorie_immobilisation`
-3. **auth** : `aut_utilisateurs` → `aut_roles` → `aut_permissions` → `aut_role_permissions` → `aut_user_roles`/`aut_user_permissions` → profils (`aut_apprenants`/`aut_institutions`/`aut_enseignants`/`aut_caissiers_banque`/`aut_comite_orientations`) → adresses/identités/infos (1-1)
-4. **parent** : `par_parents_enfants`
-5. **inscription (référentiels)** : `ins_niveaux_etudes` → `ins_annees_academiques` → `ins_parcours` → `ins_classes` → `ins_sessions` → `ins_matieres_prerequis` → `ins_prerequis_parcours` → `ins_etapes_inscription`
-6. **inscription (parcours candidat)** : `ins_demandes_inscription` → `ins_parcours_choisis` → `ins_prerequis_parcours_choisis` → `ins_reponses_inscription` → `ins_pre_inscriptions` → `ins_dossiers_inscription` + `ins_dossiers_demandes` → `ins_cours_choisis` → `ins_frais_inscription` → `ins_paiements_inscription` → `ins_quitus` → `ins_dossiers_etudiants` → `ins_echeances` → `ins_bordereaux`
-7. **inscription (pédagogique)** : `ins_cours` → `ins_salles_de_classes` → `ins_chapitres_cours` → `ins_ressources` → `ins_fichiers_ressources` → `ins_cursus_apprenants` → `ins_cours_participants` → `ins_seances` → `ins_listes_presences` → `ins_presences` → `ins_presences_cours_participants` → `ins_cahiers_de_texte` → `ins_blocs_cahier_de_texte` → `ins_types_note_evaluation` → `ins_listes_notes_evaluation` → `ins_notes_evaluation` → `ins_absences` → `ins_pointages` → `ins_ecue` → `ins_mcc` → `ins_regles_evaluation` → `ins_sessions_examens` → `ins_equivalences` → `ins_dispenses` → `ins_rattrapages_inscriptions` → `ins_publications_notes` → `ins_semestres_academiques` → `ins_frais_parcours` → `ins_reduction_frais` → `ins_penalite_retard`
-8. **bulletins** : `ins_bulletins` → `ins_lignes_bulletins` → `ins_deliberations` → `ins_jury_membres` → `ins_resultats_deliberation` → `ins_historique_decisions` → `ins_dettes_academiques` → `ins_audit_notes` → `ins_echelles_notes`
-9. **scolarite** : `scol_types_document` → `scol_demandes_document` → `scol_documents_delivres` · `scol_conseils_classe` → `scol_decisions_conseil` · `scol_reclamations` → `scol_reponses_reclamation` · `scol_evenements_calendrier` · `scol_registres_academiques` · `scol_livres` · `scol_decisions_passage` · `scol_demandes_reorientation` · `scol_sanctions_academiques` · `scol_diplomes` · `scol_demandes_vae` · `scol_progression_pedagogique`
-10. **orientation** : `ori_categories` → `ori_niveaux_etudes` → `ori_parcours` → `ori_matieres_prerequis` → `ori_prerequis_parcours` → `ori_debouches_parcours` → `ori_demandes_orientation` → `ori_parcours_choisis` → `ori_prerequis_parcours_choisis` → `ori_reponses_orientation` → `ori_panier_parcours_choisis`
-11. **rh** : `rh_departements` → `rh_postes` → `rh_types_contrat` → `rh_categories_professionnelles` → `rh_employes` → `rh_rubriques_paie` → `rh_grille_salariale` → `rh_offres_emploi` → `rh_candidatures` → `rh_entretiens` → `rh_formations` → `rh_participations_formation` → `rh_criteres_evaluation` → `rh_fiches_evaluation` → `rh_evaluations_criteres` → `rh_periodes_paie` → `rh_bulletins_paie` → `rh_lignes_bulletin` → `rh_prestations_enseignant` → `rh_contrats_enseignant` → `rh_planning_personnel` → `rh_heures_supplementaires` → `rh_prets` → `rh_remboursements_pret` → `rh_prestataires` → `rh_indemnites_prestataires` → `rh_demandes_conge` → `rh_soldes_conge`
-12. **stage** : `stg_entreprises` → `stg_tuteurs` → `stg_offres_stage` → `stg_demandes_stage` → `stg_conventions_stage` → `stg_rapports_stage` → `stg_notes_stage` → `stg_attestations_stage`
-13. **communication** : `com_communications` · `com_actualites` · `com_suggestions` → `com_reponses_suggestion`
-14. **comptabilite** : `cpt_comptes` → `cpt_journaux_comptables` → `cpt_exercices` → `cpt_ecritures_comptables` → `cpt_comptes_bancaires` → `cpt_releves_bancaires` → `cpt_lignes_releves_bancaires` → `cpt_parametres_frais` → `cpt_frais_parcours` → `cpt_reductions_frais` → `cpt_lignes_frais_etudiant`
-15. **achats** : `ach_categories` → `ach_budgets` → `ach_lignes_budget` → `ach_validateurs` → `ach_demandes` → `ach_lignes_demande` → `ach_validations` → `ach_engagements` → `ach_fournisseurs` → `ach_commandes` → `ach_lignes_commande` → `ach_receptions` → `ach_lignes_reception` → `ach_factures_proforma` → `ach_lignes_facture`
-16. **marche** : `mar_planifications` → `mar_manifestations_interet` → `mar_appels_offre` → `mar_contrats` → `mar_avenants`
-17. **stock** : `stk_categorie_article` → `stk_article` → `stk_fournisseur` → `stk_bon_commande` → `stk_ligne_bon_commande` → `stk_mouvement_stock` → `stk_besoin` → `stk_demande_prix` → `stk_rebut` → `stk_correction_stock` → `stk_inventaire_stock` → `stk_ligne_inventaire_stock` → `stk_transferts`
-18. **immobilisation (suite)** : `imm_immobilisation` → `imm_acquisition` → `imm_amortissement` → `imm_maintenance` → `imm_maintenance_programmee` → `imm_cession` → `imm_assurance` → `imm_affectation` → `imm_sortie_provisoire` → `imm_inventaire` → `imm_ligne_inventaire` → `imm_rebuts_immobilisation`
-19. **docgen** : `docgen_types` → `docgen_templates` → `docgen_documents` → `docgen_signatures` · `docgen_workflows` → `docgen_references` → `docgen_cachets`
-20. **ged** : `ged_domains` → `ged_document_types` → `ged_folders` (arborescence) → `ged_sessions` → `ged_processus` → `ged_role_permissions` → `ged_documents` → `ged_audit_logs` → `ged_disposal_records` → `ged_document_access_grants` → `ged_signatures` → `ged_registre_courrier` → `ged_tags` → `ged_document_tags` → `ged_notifications`/`ged_backups`/`ged_reference_counters`
-21. **elearning** : `elearning_cours` → `elearning_modules` → `elearning_supports` → `elearning_commentaires` → `elearning_couplages_mail` → `elearning_progression_apprenant` → `elearning_salons` → `elearning_messages` → `elearning_participants_salon` → `elearning_devoirs` → `elearning_soumissions_devoirs` → `elearning_quiz` → `elearning_reponses_quiz` → `elearning_certificats` → `elearning_notifications`
-22. **qualite** : `qua_non_conformites` → `qua_actions_correctives` · `qua_audits` → `qua_audit_pistes` · `qua_revues_direction` → `qua_decisions_revue` · `qua_enquetes_satisfaction` → `qua_reponses_satisfaction`
-23. **reporting** : tables `rpt_*` (indépendantes, alimentées par agrégats)
-
----
-
-## Notes
-
-- **`ins_bulletins` et associés** appartiennent au module bulletins mais portent le préfixe `ins_` (pas de `*Module.ts`, héritage du préfixe inscription).
-- **Doublons de noms de modèles** : `FraisParcours`, `ReductionFrais`, `PenaliteRetard` existent à la fois dans inscription (`ins_*`) et comptabilite (`cpt_*`) ; le seed devra traiter les deux explicitement.
-- **FK sans contrainte** (`constraints: false`) : `elearning_cours.coursId`, `elearning_salons.createdById`, `elearning_participants_salon.utilisateurId` — pas de contrainte en base, mais relation logique pour l'API.
-- **Tables de jonction** : `aut_role_permissions`, `aut_user_roles`, `aut_user_permissions`, `ins_cours_choisis`, `ins_dossiers_demandes`, `ged_document_tags`.
-- **Auto-références** : `ged_folders.parentId` (arborescence), `ged_documents.parentDocumentId` (versioning).
-- Nombre total de tables en base : **~280** (dont 5 tables `docgen_*` sans seed précédent, 14 tables `rpt_*`, et la plupart des modules financiers/logistiques vides).
+Source de generation : modeles et fichiers `models/_associations.ts` du backend. Pour confirmer l'etat reellement deploye, comparer avec les migrations et `information_schema` de la base cible.

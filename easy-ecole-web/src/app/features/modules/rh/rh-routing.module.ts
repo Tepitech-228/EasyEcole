@@ -27,6 +27,7 @@ import { ListePrestatairesPageComponent } from './pages/liste-prestataires-page/
 import { IndemnitesPrestatairePageComponent } from './pages/indemnites-prestataire-page/indemnites-prestataire-page.component';
 import { DemandesCongePageComponent } from './pages/demandes-conge-page/demandes-conge-page.component';
 import { SoldesCongePageComponent } from './pages/soldes-conge-page/soldes-conge-page.component';
+import { TauxHorairesEnseignantsPageComponent } from './pages/taux-horaires-enseignants-page/taux-horaires-enseignants-page.component';
 
 const routes: Routes = [
   {
@@ -116,7 +117,22 @@ const routes: Routes = [
   },
   {
     path: 'paie',
+    redirectTo: 'paie/personnel',
+    pathMatch: 'full'
+  },
+  {
+    path: 'paie/personnel',
     component: PaiePageComponent,
+    data: { population: 'personnel' }
+  },
+  {
+    path: 'paie/enseignants',
+    component: PaiePageComponent,
+    data: { population: 'enseignants' }
+  },
+  {
+    path: 'taux-horaires-enseignants',
+    component: TauxHorairesEnseignantsPageComponent,
     pathMatch: 'full'
   },
   {

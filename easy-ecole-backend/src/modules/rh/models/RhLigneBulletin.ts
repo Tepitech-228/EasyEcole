@@ -16,6 +16,8 @@ export class RhLigneBulletin extends Model<InferAttributes<RhLigneBulletin>, Inf
   declare source: CreationOptional<string | null>
   /** Identifiant de l'élément source (rubrique, heure supp, prestation ou prêt). */
   declare sourceId: CreationOptional<string | null>
+  declare siteId: CreationOptional<number | null>
+  declare siteNom: CreationOptional<string | null>
   declare readonly createdAt: CreationOptional<Date>
   declare readonly updatedAt: CreationOptional<Date>
 
@@ -61,6 +63,8 @@ RhLigneBulletin.init({
     type: new DataTypes.STRING(64),
     allowNull: true
   },
+  siteId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
+  siteNom: { type: DataTypes.STRING(150), allowNull: true },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
 }, {

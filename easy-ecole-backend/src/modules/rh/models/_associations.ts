@@ -26,6 +26,7 @@ import { RhPrestataire } from "./RhPrestataire";
 import { RhIndemnitePrestataire } from "./RhIndemnitePrestataire";
 import { RhDemandeConge } from "./RhDemandeConge";
 import { RhSoldeConge } from "./RhSoldeConge";
+import { RhTauxHoraireEnseignant } from "./RhTauxHoraireEnseignant";
 
 // Departement - Poste
 RhDepartement.hasMany(RhPoste, { foreignKey: 'departementId', as: 'postes' })

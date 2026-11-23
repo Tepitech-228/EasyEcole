@@ -1,0 +1,74 @@
+<app-return-back link="/rh/paie/enseignants" text="Retour à la paie des enseignants"></app-return-back>
+<app-header-title title="Taux horaires des enseignants"></app-header-title>
+
+<div class="mb-6 rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-800">
+  Définissez un taux général par niveau et cours. Un taux propre à un enseignant remplace le taux général correspondant.
+</div>
+
+<div *ngIf="errorMessage" class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ errorMessage }}</div>
+
+<section class="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+  <h2 class="mb-4 text-lg font-semibold text-gray-900">Ajouter ou modifier un taux</h2>
+  <form [formGroup]="form" (ngSubmit)="save()" class="grid grid-cols-1 gap-4 md:grid-cols-2">
+    <label class="text-sm font-medium text-gray-700">
+      Niveau d’étude
+      <select formControlName="niveauEtudeId" class="mt-1 w-full rounded-lg border-gray-300">
+        <option [ngValue]="null">Choisir un niveau</option>
+        <option *ngFor="let niveau of niveaux" [ngValue]="niveau.id">{{ niveau.libelle }}</option>
+      </select>
+    </label>
+    <label class="text-sm font-medium text-gray-700">
+      Cours
+      <select formControlName="coursId" class="mt-1 w-full rounded-lg border-gray-300">
+        <option [ngValue]="null">Choisir un cours</option>
+        <option *ngFor="let item of cours" [ngValue]="item.id">{{ item.code }} - {{ item.intitule }}</option>
+      </select>
+    </label>
+    <label class="text-sm font-medium text-gray-700">
+      Enseignant
+      <select formControlName="enseignantId" class="mt-1 w-full rounded-lg border-gray-300">
+        <option [ngValue]="null">Taux général du niveau et du cours</option>
+        <option *ngFor="let enseignant of enseignants" [ngValue]="enseignant.id">{{ enseignant.nomComplet }}</option>
+      </select>
+    </label>
+    <label class="text-sm font-medium text-gray-700">
+      Taux horaire (XAF)
+      <input type="number" min="0.01" step="1" formControlName="tauxHoraire" class="mt-1 w-full rounded-lg border-gray-300">
+    </label>
+    <div class="md:col-span-2">
+      <button type="submit" [disabled]="form.invalid || saving" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+        {{ saving ? 'Enregistrement…' : 'Enregistrer le taux' }}
+      </button>
+    </div>
+  </form>
+</section>
+
+<app-loading-spinner *ngIf="loading"></app-loading-spinner>
+<section *ngIf="!loading" class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+  <div class="border-b border-gray-100 px-5 py-4">
+    <h2 class="font-semibold text-gray-900">Taux enregistrés</h2>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-gray-500">Niveau</th>
+          <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-gray-500">Cours</th>
+          <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-gray-500">Enseignant</th>
+          <th class="px-5 py-3 text-right text-xs font-semibold uppercase text-gray-500">Taux horaire</th>
+          <th class="px-5 py-3 text-right text-xs font-semibold uppercase text-gray-500">Action</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <tr *ngFor="let rate of rates">
+          <td class="px-5 py-3 text-sm">{{ niveauLabel(rate.niveauEtudeId) }}</td>
+          <td class="px-5 py-3 text-sm">{{ coursLabel(rate.coursId) }}</td>
+          <td class="px-5 py-3 text-sm">{{ enseignantLabel(rate.enseignantId) }}</td>
+          <td class="px-5 py-3 text-right text-sm font-semibold">{{ rate.tauxHoraire | number:'1.0-2' }} XAF</td>
+          <td class="px-5 py-3 text-right"><button (click)="delete(rate)" class="text-sm font-medium text-red-600">Supprimer</button></td>
+        </tr>
+        <tr *ngIf="rates.length === 0"><td colspan="5" class="px-5 py-8 text-center text-sm text-gray-500">Aucun taux n’est encore configuré.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>

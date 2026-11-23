@@ -30,6 +30,7 @@ import { ListePrestatairesPageComponent } from './pages/liste-prestataires-page/
 import { IndemnitesPrestatairePageComponent } from './pages/indemnites-prestataire-page/indemnites-prestataire-page.component';
 import { DemandesCongePageComponent } from './pages/demandes-conge-page/demandes-conge-page.component';
 import { SoldesCongePageComponent } from './pages/soldes-conge-page/soldes-conge-page.component';
+import { TauxHorairesEnseignantsPageComponent } from './pages/taux-horaires-enseignants-page/taux-horaires-enseignants-page.component';
 
 @NgModule({
   declarations: [
@@ -60,6 +61,7 @@ import { SoldesCongePageComponent } from './pages/soldes-conge-page/soldes-conge
     IndemnitesPrestatairePageComponent,
     DemandesCongePageComponent,
     SoldesCongePageComponent,
+    TauxHorairesEnseignantsPageComponent,
   ],
   imports: [
     CommonModule,

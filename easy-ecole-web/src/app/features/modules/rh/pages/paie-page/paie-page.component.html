@@ -1,4 +1,13 @@
-<app-header-title title="Paie"></app-header-title>
+<app-header-title [title]="population === 'enseignants' ? 'Paie des enseignants' : 'Paie du personnel administratif'"></app-header-title>
+
+<nav class="mb-6 flex flex-wrap gap-3" aria-label="Catégorie de paie">
+  <a routerLink="/rh/paie/personnel" class="rounded-lg px-4 py-2 text-sm font-semibold"
+    [ngClass]="population === 'personnel' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 border border-gray-200'">Personnel administratif</a>
+  <a routerLink="/rh/paie/enseignants" class="rounded-lg px-4 py-2 text-sm font-semibold"
+    [ngClass]="population === 'enseignants' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 border border-gray-200'">Enseignants</a>
+  <a *ngIf="population === 'personnel'" routerLink="/rh/employes" class="rounded-lg px-4 py-2 text-sm font-semibold bg-white text-gray-700 border border-gray-200">Taux et informations du personnel</a>
+  <a *ngIf="population === 'enseignants'" routerLink="/rh/taux-horaires-enseignants" class="rounded-lg px-4 py-2 text-sm font-semibold bg-white text-gray-700 border border-gray-200">Configurer les taux par cours</a>
+</nav>
 
 <!-- ===== STATS CARDS ===== -->
 <div class="paie-stats-grid">
@@ -159,7 +168,8 @@
     </div>
     <p class="paie-sidebar-text">
       Créez une nouvelle période de paie en définissant le mois, l'année et les dates de début et fin.
-      Les bulletins de paie seront générés automatiquement pour les employés actifs.
+      <ng-container *ngIf="population === 'personnel'">Les heures normales proviennent des pointages et les heures supplémentaires des déclarations validées.</ng-container>
+      <ng-container *ngIf="population === 'enseignants'">Les heures de cours sont calculées à partir des horaires réels pointés et des taux configurés par cours et niveau.</ng-container>
     </p>
     <div class="paie-sidebar-btn-wrapper">
       <button (click)="openCreate()" class="paie-btn paie-btn--primary w-full justify-center">

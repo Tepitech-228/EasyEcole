@@ -51,7 +51,16 @@ export class ListeEmployesPageComponent extends BaseComponentClass implements On
       typeContratId: [null],
       statut: ['actif', Validators.required],
       dateEmbauche: [new Date().toISOString().slice(0, 10)],
-      salaireBase: [0]
+      salaireBase: [0],
+      tauxHoraireNormal: [0, [Validators.min(0)]],
+      tauxHoraireSupplementaire: [0, [Validators.min(0)]],
+      niveauProfessionnel: [''],
+      qualification: [''],
+      grilleSalariale: [0, [Validators.min(0)]],
+      numeroFiscal: [''],
+      tauxFiscal: [0, [Validators.min(0), Validators.max(1)]],
+      numeroCompte: [''],
+      banque: ['']
     });
   }
 
@@ -102,7 +111,16 @@ export class ListeEmployesPageComponent extends BaseComponentClass implements On
       typeContratId: emp.typeContratId ?? null,
       statut: emp.statut || 'actif',
       dateEmbauche: emp.dateEmbauche || new Date().toISOString().slice(0, 10),
-      salaireBase: emp.salaireBase || 0
+      salaireBase: emp.salaireBase || 0,
+      tauxHoraireNormal: emp.tauxHoraireNormal || 0,
+      tauxHoraireSupplementaire: emp.tauxHoraireSupplementaire || 0,
+      niveauProfessionnel: emp.niveauProfessionnel || '',
+      qualification: emp.qualification || '',
+      grilleSalariale: emp.grilleSalariale || 0,
+      numeroFiscal: emp.numeroFiscal || '',
+      tauxFiscal: emp.tauxFiscal || 0,
+      numeroCompte: emp.numeroCompte || '',
+      banque: emp.banque || ''
     });
     this.showModal = true;
   }
@@ -121,6 +139,15 @@ export class ListeEmployesPageComponent extends BaseComponentClass implements On
       dateEmbauche: this.form.value.dateEmbauche,
       typeContratId: this.form.value.typeContratId || null,
       salaireBase: Number(this.form.value.salaireBase) || 0,
+      tauxHoraireNormal: Number(this.form.value.tauxHoraireNormal) || 0,
+      tauxHoraireSupplementaire: Number(this.form.value.tauxHoraireSupplementaire) || 0,
+      niveauProfessionnel: this.form.value.niveauProfessionnel || null,
+      qualification: this.form.value.qualification || null,
+      grilleSalariale: Number(this.form.value.grilleSalariale) || 0,
+      numeroFiscal: this.form.value.numeroFiscal || null,
+      tauxFiscal: Number(this.form.value.tauxFiscal) || 0,
+      numeroCompte: this.form.value.numeroCompte || null,
+      banque: this.form.value.banque || null,
       statut: this.form.value.statut,
       nom: this.form.value.nom,
       prenoms: this.form.value.prenoms

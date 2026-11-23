@@ -17,6 +17,15 @@ export class RhEmploye extends Model<InferAttributes<RhEmploye>, InferCreationAt
   declare dateEmbauche: Date
   declare typeContratId: ForeignKey<RhTypeContrat['id']>
   declare salaireBase: CreationOptional<number>
+  declare tauxHoraireNormal: CreationOptional<number>
+  declare tauxHoraireSupplementaire: CreationOptional<number>
+  declare niveauProfessionnel: CreationOptional<string | null>
+  declare qualification: CreationOptional<string | null>
+  declare grilleSalariale: CreationOptional<number>
+  declare numeroFiscal: CreationOptional<string | null>
+  declare tauxFiscal: CreationOptional<number>
+  declare numeroCompte: CreationOptional<string | null>
+  declare banque: CreationOptional<string | null>
   declare matricule?: string | null
   declare nom?: string | null
   declare prenoms?: string | null
@@ -62,6 +71,31 @@ RhEmploye.init({
     allowNull: true,
     defaultValue: 0
   },
+  tauxHoraireNormal: {
+    type: DataTypes.DECIMAL(12, 2),
+    allowNull: false,
+    defaultValue: 0
+  },
+  tauxHoraireSupplementaire: {
+    type: DataTypes.DECIMAL(12, 2),
+    allowNull: false,
+    defaultValue: 0
+  },
+  niveauProfessionnel: { type: DataTypes.STRING(100), allowNull: true },
+  qualification: { type: DataTypes.STRING(150), allowNull: true },
+  grilleSalariale: {
+    type: DataTypes.DECIMAL(12, 2),
+    allowNull: false,
+    defaultValue: 0
+  },
+  numeroFiscal: { type: DataTypes.STRING(100), allowNull: true },
+  tauxFiscal: {
+    type: DataTypes.DECIMAL(5, 4),
+    allowNull: false,
+    defaultValue: 0
+  },
+  numeroCompte: { type: DataTypes.STRING(100), allowNull: true },
+  banque: { type: DataTypes.STRING(150), allowNull: true },
   matricule: {
     type: new DataTypes.STRING(50),
     allowNull: true

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { RhEmploye } from "../models/RhEmploye";
 
-const CHAMPS_AUTORISES = ['matricule', 'nom', 'prenoms', 'dateEmbauche', 'salaireBase', 'statut', 'departementId', 'posteId', 'typeContratId', 'utilisateurId'];
+const CHAMPS_AUTORISES = ['matricule', 'nom', 'prenoms', 'dateEmbauche', 'salaireBase', 'tauxHoraireNormal', 'tauxHoraireSupplementaire', 'niveauProfessionnel', 'qualification', 'grilleSalariale', 'numeroFiscal', 'tauxFiscal', 'numeroCompte', 'banque', 'statut', 'departementId', 'posteId', 'typeContratId', 'utilisateurId'];
 
 const extraireChamps = (o: Record<string, unknown>): any =>
     Object.fromEntries(CHAMPS_AUTORISES.filter(k => o[k] !== undefined).map(k => [k, o[k]]));
