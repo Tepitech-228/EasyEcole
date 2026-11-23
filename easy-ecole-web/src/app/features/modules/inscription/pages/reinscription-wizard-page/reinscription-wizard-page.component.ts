@@ -44,7 +44,6 @@ export class ReinscriptionWizardPageComponent extends BaseComponentClass impleme
   bordereau: File | null = null
   bordereauAReposer: { nom: string; taille: number; type: string } | null = null
   montant?: number
-  referenceBancaire = ''
   modalite = '1x'
 
   // Résultat de la soumission
@@ -85,7 +84,6 @@ export class ReinscriptionWizardPageComponent extends BaseComponentClass impleme
     this._etape = Math.min(5, Math.max(1, Number(etat.etape) || 1))
     this.sessionSelectionneeId = etat.sessionSelectionneeId
     this.montant = etat.montant
-    this.referenceBancaire = etat.referenceBancaire || ''
     this.modalite = etat.modalite || '1x'
     this.infos = { ...this.infos, ...(etat.infos || {}) }
     this.documentsAReposer = etat.documentsAReposer || {}
@@ -99,7 +97,6 @@ export class ReinscriptionWizardPageComponent extends BaseComponentClass impleme
       etape: this._etape,
       sessionSelectionneeId: this.sessionSelectionneeId,
       montant: this.montant,
-      referenceBancaire: this.referenceBancaire,
       modalite: this.modalite,
       infos: { ...this.infos },
       documents: { ...this.documents },
@@ -314,7 +311,6 @@ export class ReinscriptionWizardPageComponent extends BaseComponentClass impleme
     // metadata
     formData.append('sessionId', String(session.id))
     if (this.montant) formData.append('montant', String(this.montant))
-    if (this.referenceBancaire) formData.append('referenceBancaire', this.referenceBancaire)
     formData.append('modalite', this.modalite)
 
     this.submitting = true
@@ -364,7 +360,6 @@ export class ReinscriptionWizardPageComponent extends BaseComponentClass impleme
     this.bordereau = null
     this.bordereauAReposer = null
     this.montant = undefined
-    this.referenceBancaire = ''
     this.modalite = '1x'
     this.errorMessage = ''
     this.successMessage = ''

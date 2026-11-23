@@ -83,7 +83,6 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   itemColumns = [
     { key: 'type', label: 'Type' },
     { key: 'montant', label: 'Montant' },
-    { key: 'referenceBancaire', label: 'Référence' },
     { key: 'dateSoumission', label: 'Date' }
   ];
   /**
@@ -122,7 +121,6 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   ) {
     super()
     this.validationForm = this.fb.group({
-      referenceBancaire: ['', [Validators.required], [this.verificateurUnicite('referenceBancaire')]],
       numeroBordereau: ['', [Validators.required], [this.verificateurUnicite('numeroBordereau')]],
       datePaiement: ['', [Validators.required]],
       commentaire: ['']
@@ -130,7 +128,7 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   }
 
   /** Vérificateur d'unicité asynchrone avec debounce 300ms (inspiré d'ESA-COMPTA) */
-  verificateurUnicite(champ: 'referenceBancaire' | 'numeroBordereau') {
+  verificateurUnicite(champ: 'numeroBordereau') {
     return (control: AbstractControl): Observable<ValidationErrors | null> => {
       const valeur = (control.value || '').trim()
       if (!valeur) return of(null)
@@ -302,7 +300,6 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
 
       const raw = this.validationForm.value
       const payload = {
-        referenceBancaire: raw.referenceBancaire.trim(),
         numeroBordereau: raw.numeroBordereau.trim(),
         datePaiement: raw.datePaiement,
         commentaire: raw.commentaire?.trim() || undefined
@@ -495,7 +492,6 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
         this.error = false
         this.apiErrorMessage = ''
         this.validationForm.reset({
-          referenceBancaire: bordereau.referenceBancaire || '',
           numeroBordereau: bordereau.numeroBordereau || '',
           datePaiement: bordereau.datePaiement ? new Date(bordereau.datePaiement).toISOString().split('T')[0] : '',
           commentaire: bordereau.commentaire || ''

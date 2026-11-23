@@ -102,6 +102,15 @@ jest.mock('../../../modules/inscription/services/BordereauDossierService', () =>
   BordereauDossierService: { getInstance: () => ({}) },
 }))
 
+jest.mock('../../../modules/inscription/services/BordereauAffectationService', () => ({
+  BordereauAffectationService: {
+    actualiserPresenceEtRepartir: jest.fn(),
+    estPrisEnChargePar: jest.fn(() => true),
+    estAffecteA: jest.fn(() => true),
+    effacerAffectation: jest.fn(),
+  },
+}))
+
 jest.mock('../../../core/helpers/DocumentPDFGenerator', () => ({
   DocumentPDFGenerator: { getInstance: () => ({}) },
 }))
@@ -196,6 +205,42 @@ describe('BordereauController.getBordereau', () => {
       where: expect.objectContaining({ id: '99', etablissementId: 42 }),
     }))
     expect(res.status).toHaveBeenCalledWith(404)
+  })
+})
+
+describe('BordereauController.validerBordereau', () => {
+  it('accepts validation without a bank reference and preserves an existing one', async () => {
+    jest.clearAllMocks()
+    const bordereau: any = {
+      id: 33,
+      statut: 'en_attente',
+      type: 'inscription',
+      utilisateurId: 7,
+      referenceBancaire: 'REF-EXISTANTE',
+      save: jest.fn().mockResolvedValue(undefined),
+    }
+    ;(Bordereau.findOne as jest.Mock)
+      .mockResolvedValueOnce(bordereau)
+      .mockResolvedValueOnce(null)
+    ;(DemandeInscription.findOne as jest.Mock).mockResolvedValue(null)
+
+    const req = mockRequest({
+      utilisateurRole: 'cabinet_comptable',
+      utilisateurId: 12,
+      etablissementId: 42,
+      params: { id: '33' },
+      body: {
+        numeroBordereau: 'B-2026-001',
+        datePaiement: '2026-11-23',
+      },
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.validerBordereau(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(bordereau.referenceBancaire).toBe('REF-EXISTANTE')
+    expect(bordereau.save).toHaveBeenCalled()
   })
 })
 

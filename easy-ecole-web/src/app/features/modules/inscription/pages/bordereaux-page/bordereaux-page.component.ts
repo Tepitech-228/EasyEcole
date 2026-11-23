@@ -72,7 +72,6 @@ export class BordereauxPageComponent extends BaseComponentClass implements OnIni
       const matchesSearch = this.searchTerm
         ? [
             bordereau.type,
-            bordereau.referenceBancaire,
             bordereau.statut,
             bordereau.fichier
           ]

@@ -208,7 +208,6 @@ export class PaiementsPageComponent extends BaseComponentClass implements OnInit
         paiement.numero,
         paiement.matriculeInscription,
         studentName,
-        paiement.referenceBancaire,
         this.getPaymentTypeLabel(paiement.type),
         year
       ]

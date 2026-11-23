@@ -551,15 +551,11 @@ export default class BordereauController {
                 return res.status(400).json({ success: false, message: "Échéance associée introuvable" });
             }
 
-            // ── Validation des 3 champs obligatoires (référence bancaire, numéro de bordereau, date de paiement) ──
+            // ── Le numéro de bordereau et la date de paiement restent obligatoires. ──
             const refBancaire = typeof req.body.referenceBancaire === 'string' ? req.body.referenceBancaire.trim() : '';
             const numBordereau = typeof req.body.numeroBordereau === 'string' ? req.body.numeroBordereau.trim() : '';
             const datePaiementStr = typeof req.body.datePaiement === 'string' ? req.body.datePaiement : '';
 
-            if (!refBancaire) {
-                await transaction.rollback();
-                return res.status(400).json({ success: false, message: "referenceBancaire requis" });
-            }
             if (!numBordereau) {
                 await transaction.rollback();
                 return res.status(400).json({ success: false, message: "numeroBordereau requis" });
@@ -574,7 +570,7 @@ export default class BordereauController {
                 return res.status(400).json({ success: false, message: "datePaiement invalide" });
             }
 
-            // ── Contrôle d'unicité (identique à FinanceRouter) : éviter un doublon sur référence/numéro ──
+            // ── Contrôle d'unicité : la référence est vérifiée uniquement si elle est fournie. ──
             const whereClause: any = {
                 id: { [Op.ne]: bordereau.id },
                 deletedAt: null,
@@ -598,8 +594,10 @@ export default class BordereauController {
             bordereau.commentaire = req.body.commentaire ?? null
             BordereauAffectationService.effacerAffectation(bordereau, 'audit')
 
-            // ── Persistance des 3 champs bancaires (pré-remplissage ESA-COMPTA) ──
-            bordereau.referenceBancaire = refBancaire
+            // Conserver une référence existante si l'écran ne la transmet plus.
+            if (typeof req.body.referenceBancaire === 'string') {
+                bordereau.referenceBancaire = refBancaire
+            }
             bordereau.numeroBordereau = numBordereau
             bordereau.datePaiement = datePaiement
 
@@ -979,15 +977,11 @@ export default class BordereauController {
             bordereau.type = typeConstate
             bordereau.montant = montantConstate
 
-            // ── Validation des 3 champs obligatoires pour traiterBordereau ──
+            // ── Le numéro de bordereau et la date de paiement restent obligatoires. ──
             const refBancaire = typeof req.body.referenceBancaire === 'string' ? req.body.referenceBancaire.trim() : '';
             const numBordereau = typeof req.body.numeroBordereau === 'string' ? req.body.numeroBordereau.trim() : '';
             const datePaiementStr = typeof req.body.datePaiement === 'string' ? req.body.datePaiement : '';
 
-            if (!refBancaire) {
-                await transaction.rollback();
-                return res.status(400).json({ success: false, message: "referenceBancaire requis" });
-            }
             if (!numBordereau) {
                 await transaction.rollback();
                 return res.status(400).json({ success: false, message: "numeroBordereau requis" });
@@ -1020,7 +1014,9 @@ export default class BordereauController {
                 }
             }
 
-            bordereau.referenceBancaire = refBancaire;
+            if (typeof req.body.referenceBancaire === 'string') {
+                bordereau.referenceBancaire = refBancaire;
+            }
             bordereau.numeroBordereau = numBordereau;
             bordereau.datePaiement = datePaiement;
             bordereau.statut = 'valide'

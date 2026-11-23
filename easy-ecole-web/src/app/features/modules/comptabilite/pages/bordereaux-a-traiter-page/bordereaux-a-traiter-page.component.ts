@@ -66,7 +66,6 @@ export class BordereauxATraiterPageComponent extends BaseComponentClass implemen
     if (!this.selectedBordereau) return;
     const b = this.selectedBordereau;
     this.bordereauService.valider(b.id!, {
-      referenceBancaire: b.referenceBancaire || '',
       numeroBordereau: b.numeroBordereau || '',
       datePaiement: b.datePaiement ? new Date(b.datePaiement).toISOString().split('T')[0] : '',
     }).subscribe({

@@ -18,7 +18,6 @@ interface ReinscriptionEtatPersiste {
   etape: number;
   sessionSelectionneeId?: number;
   montant?: number;
-  referenceBancaire: string;
   modalite: string;
   infos: ReinscriptionInfos;
   documents: { [code: string]: FichierMeta | null };
@@ -30,7 +29,6 @@ export interface ReinscriptionEtat {
   etape: number;
   sessionSelectionneeId?: number;
   montant?: number;
-  referenceBancaire: string;
   modalite: string;
   infos: ReinscriptionInfos;
   documents: { [code: string]: File | null };
@@ -139,7 +137,6 @@ function serialiser(etat: ReinscriptionEtat): ReinscriptionEtatPersiste {
     etape: etat.etape,
     sessionSelectionneeId: etat.sessionSelectionneeId,
     montant: etat.montant,
-    referenceBancaire: etat.referenceBancaire || '',
     modalite: etat.modalite || '1x',
     infos: { ...(etat.infos || ({} as ReinscriptionInfos)) },
     documents,
@@ -162,7 +159,6 @@ function deserialiser(persistee: ReinscriptionEtatPersiste): ReinscriptionEtat {
     etape: Math.min(5, Math.max(1, Number(persistee.etape) || 1)),
     sessionSelectionneeId: persistee.sessionSelectionneeId,
     montant: persistee.montant,
-    referenceBancaire: persistee.referenceBancaire || '',
     modalite: persistee.modalite || '1x',
     infos: { ...(persistee.infos || ({} as ReinscriptionInfos)) },
     documents,

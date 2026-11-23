@@ -150,7 +150,6 @@
                             <p class="payment-meta">{{ paiement.datePaiement! | date:'dd/MM/yyyy HH:mm' }} • {{ paiement.matriculeInscription }}</p>
                             <div class="payment-tags">
                                 <span class="payment-detail-chip">{{ getPaymentTypeLabel(paiement.type) }}</span>
-                                <span *ngIf="paiement.referenceBancaire" class="payment-detail-chip info">Réf. {{ paiement.referenceBancaire }}</span>
                             </div>
                         </div>
                         <div class="payment-card-right">
@@ -263,11 +262,6 @@
             <div class="col-span-3">
                 <span class="mb-2 block text-sm text-gray-400">Montant</span>
                 <input type="number" min="0" id="montant" readonly [value]="selectedPaiement.montant" 
-                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-            </div>
-            <div class="col-span-full" *ngIf="selectedPaiement.type == typesPaiement.BANCAIRE">
-                <span class="mb-2 block text-sm text-gray-400">Référence bancaire</span>
-                <input type="text" readonly [value]="selectedPaiement.referenceBancaire"
                     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
             </div>
             <div class="col-span-full">

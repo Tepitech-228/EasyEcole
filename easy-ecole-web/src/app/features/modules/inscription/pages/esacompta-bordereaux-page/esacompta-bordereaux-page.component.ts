@@ -200,7 +200,6 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     this.saisieForm = this.fb.group({
       montantPaiement: [null, [Validators.required, Validators.min(1), montantPaiementValide]],
       matriculeEtudiant: [''],
-      referenceBancaire: ['', Validators.required, this.verificateurUnicite('referenceBancaire')],
       numeroBordereau: ['', Validators.required, this.verificateurUnicite('numeroBordereau')],
       moyenPaiement: [''],
       banque: [''],
@@ -212,7 +211,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
 
   private uniciteCheck: any = null
 
-  verificateurUnicite(champ: 'referenceBancaire' | 'numeroBordereau') {
+  verificateurUnicite(champ: 'numeroBordereau') {
     return (control: AbstractControl): Observable<ValidationErrors | null> => {
       const valeur = (control.value || '').trim()
       if (!valeur) return of(null)
@@ -533,7 +532,6 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     this.saisieForm.reset({
       montantPaiement: bordereau.montant || null,
       matriculeEtudiant: matriculeExistant,
-      referenceBancaire: bordereau.referenceBancaire || '',
       numeroBordereau: bordereau.numeroBordereau || '',
       moyenPaiement: bordereau.moyenPaiement || '',
       banque: '',
@@ -698,7 +696,6 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
       ...(this.matriculeEtudiantRequis
         ? { matriculeEtudiant: String(raw.matriculeEtudiant || '').trim() }
         : {}),
-      referenceBancaire: (raw.referenceBancaire || '').trim() || null,
       numeroBordereau: (raw.numeroBordereau || '').trim() || null,
       moyenPaiement: (raw.moyenPaiement || '').trim() || null,
       banque: (raw.banque || '').trim() || null,

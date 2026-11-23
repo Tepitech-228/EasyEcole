@@ -116,10 +116,6 @@
           <input type="number" [(ngModel)]="montant" placeholder="Ex : 450000">
         </div>
         <div class="form-group">
-          <label>Référence bancaire</label>
-          <input type="text" [(ngModel)]="referenceBancaire" placeholder="Numéro de référence du versement">
-        </div>
-        <div class="form-group">
           <label>Modalité</label>
           <select [(ngModel)]="modalite">
             <option value="1x">Unique (1x)</option>
@@ -163,7 +159,6 @@
         <ul class="recap-list">
           <li class="ok">Bordereau — {{ bordereau?.name || '—' }}
             <span *ngIf="montant"> — {{ formatMontant(montant) }}</span>
-            <span *ngIf="referenceBancaire"> — Réf. {{ referenceBancaire }}</span>
             <span *ngIf="modalite"> — {{ modalite }}</span>
           </li>
         </ul>

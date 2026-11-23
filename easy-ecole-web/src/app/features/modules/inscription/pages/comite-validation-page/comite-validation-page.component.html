@@ -222,7 +222,6 @@
           <tr>
             <th class="px-2 py-1.5 text-left text-gray-600">Statut</th>
             <th class="px-2 py-1.5 text-right text-gray-600">Montant</th>
-            <th class="px-2 py-1.5 text-left text-gray-600">Réf. bancaire</th>
             <th class="px-2 py-1.5 text-left text-gray-600">N° bordereau</th>
             <th class="px-2 py-1.5 text-left text-gray-600">Type opération</th>
           </tr>
@@ -231,12 +230,11 @@
           <tr *ngFor="let b of selectedDossier.bordereaux">
             <td class="px-2 py-1.5">{{ b.statut }}</td>
             <td class="px-2 py-1.5 text-right">{{ formatMontant(b.montant) }}</td>
-            <td class="px-2 py-1.5">{{ b.referenceBancaire || '---' }}</td>
             <td class="px-2 py-1.5">{{ b.numeroBordereau || '---' }}</td>
             <td class="px-2 py-1.5">{{ b.typeOperation?.libelle || b.type || '---' }}</td>
           </tr>
           <tr *ngIf="(selectedDossier.bordereaux || []).length === 0">
-            <td colspan="5" class="px-2 py-2 text-center text-gray-400">Aucun bordereau</td>
+            <td colspan="4" class="px-2 py-2 text-center text-gray-400">Aucun bordereau</td>
           </tr>
         </tbody>
       </table>

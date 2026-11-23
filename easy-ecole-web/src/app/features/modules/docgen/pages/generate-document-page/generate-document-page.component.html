@@ -87,7 +87,6 @@
                 <p class="font-medium text-gray-900">
                   {{ etudiantLabel(bordereau.utilisateur) }}
                 </p>
-                <p class="text-xs text-gray-400">{{ bordereau.referenceBancaire || '—' }}</p>
               </td>
               <td class="px-4 py-3 text-gray-600">{{ bordereau.utilisateur?.identifiant || '—' }}</td>
               <td class="px-4 py-3 text-gray-600">{{ bordereau.echeance?.moisConcerne || (bordereau.echeance?.numeroEcheance ? 'Échéance n°' + bordereau.echeance?.numeroEcheance : 'Scolarité') }}</td>
