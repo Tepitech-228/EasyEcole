@@ -8,6 +8,7 @@ jest.mock("../../../core/services/EncryptionService", () => ({
 }));
 
 import HikvisionIsapiService, {
+  buildFaceUploadMultipartArgs,
   buildTerminalUrl,
   getCurlExecutable,
   getTunnelAccessHeaders,
@@ -56,6 +57,13 @@ describe("HikvisionIsapiService", () => {
   it("selects the curl executable available on the current operating system", () => {
     expect(getCurlExecutable("linux")).toBe("curl");
     expect(getCurlExecutable("win32")).toBe("curl.exe");
+  });
+
+  it("uses the ISAPI multipart field names for face metadata and image", () => {
+    expect(buildFaceUploadMultipartArgs("/tmp/person.json", "/tmp/face.jpg", "image/jpeg")).toEqual([
+      "-F", "FaceDataRecord=</tmp/person.json;type=application/json",
+      "-F", "FaceImage=@/tmp/face.jpg;type=image/jpeg"
+    ]);
   });
 
   it("encrypts terminal credentials instead of retaining clear text", () => {

@@ -60,6 +60,8 @@ Après validation de l'inscription par le comité, EasyEcole crée une tâche d'
 
 Sans photo de profil ou terminal actif configuré pour le site au moment de la validation, l'enrôlement automatique n'est pas garanti (la tâche est conservée et reprise si une photo ou un terminal devient disponible). Vérifiez les journaux `[Hikvision]` et le support de `/ISAPI/Intelligent/FDLib/FaceDataRecord` par le firmware du DS-K1T342MFWX-E1 : les API et formats d'image varient avec le firmware. Une réponse positive de la connexion ISAPI ne prouve pas à elle seule que l'enrôlement facial est pris en charge.
 
+La requête d'enrôlement utilise les parties multipart `FaceDataRecord` (JSON, sans nom de fichier) et `FaceImage` (fichier image). Si le terminal continue à refuser la photo après vérification de ces champs, contrôlez le format réellement encodé et les exigences d'image de son firmware.
+
 ## Base légale et information
 
 L'envoi de la photo à un terminal de reconnaissance faciale constitue un traitement de données biométriques. La base légale retenue par l'établissement est **autre que le consentement facultatif** (règlement intérieur / contrat de scolarité / intérêt légitime de sécurité). En conséquence :

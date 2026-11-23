@@ -158,6 +158,13 @@ function runCurl(args: string[], timeoutMs: number): Promise<CurlResponse> {
     });
 }
 
+export function buildFaceUploadMultipartArgs(personPath: string, imagePath: string, imageContentType: string): string[] {
+    return [
+        "-F", `FaceDataRecord=<${personPath};type=application/json`,
+        "-F", `FaceImage=@${imagePath};type=${imageContentType}`
+    ];
+}
+
 async function requestWithDigest(
     terminal: PointageTerminal,
     path: string,
@@ -472,8 +479,7 @@ export default class HikvisionIsapiService {
                         "--digest", "-u", `${username}:${password}`,
                         ...(terminal.hikvisionHttps ? ["-k"] : []),
                         "-X", "POST",
-                        "-F", `person=@${personPath};type=application/json`,
-                        "-F", `image=@${imagePath};type=${contentType}`,
+                        ...buildFaceUploadMultipartArgs(personPath, imagePath, contentType),
                         "--connect-timeout", "10",
                         "--max-time", "25",
                         ...getTunnelAccessHeaders(faceUrl),
