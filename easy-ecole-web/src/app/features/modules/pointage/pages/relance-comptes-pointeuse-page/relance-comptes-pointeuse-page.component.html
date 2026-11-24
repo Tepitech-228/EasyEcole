@@ -235,7 +235,7 @@
           <p class="result-message" *ngIf="row.message">{{ row.message }}</p>
           <p class="result-message" *ngIf="row.result">{{ row.result.message }}</p>
           <div class="terminal-results" *ngIf="row.result?.terminaux?.length">
-            <div class="terminal-result" *ngFor="let terminal of row.result.terminaux">
+            <div class="terminal-result" *ngFor="let terminal of row.result?.terminaux">
               <span>{{ terminal.terminalName }}</span>
               <strong [class.terminal-result__error]="terminal.statut === 'echec'" [class.terminal-result__pending]="terminal.statut === 'en_cours'">
                 {{ terminalResultLabel(terminal.statut) }}
