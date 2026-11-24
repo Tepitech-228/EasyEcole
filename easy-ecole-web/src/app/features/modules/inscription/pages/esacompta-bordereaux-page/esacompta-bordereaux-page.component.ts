@@ -122,6 +122,22 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     return 0
   }
 
+  get montantInscriptionApercu(): number {
+    const montantSession = this.previewResult?.repartitionSession?.montantInscriptionImpute
+    if (montantSession !== undefined) return Number(montantSession)
+    return (this.previewResult?.lignes || [])
+      .filter((ligne: any) => ligne.type === 'inscription')
+      .reduce((total: number, ligne: any) => total + Number(ligne.montantImpute || 0), 0)
+  }
+
+  get montantScolariteApercu(): number {
+    const montantSession = this.previewResult?.repartitionSession?.montantScolariteImpute
+    if (montantSession !== undefined) return Number(montantSession)
+    return (this.previewResult?.lignes || [])
+      .filter((ligne: any) => ligne.type === 'scolarite')
+      .reduce((total: number, ligne: any) => total + Number(ligne.montantImpute || 0), 0)
+  }
+
   readonly BORDEREAUX_PATH: string = (window as any).__env?.MEDIAS_PATH?.INSCRIPTION?.BORDEREAUX || '/media/inscription/bordereaux/'
   readonly PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS
 
@@ -148,6 +164,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     const base: DossierColumn[] = [
       { key: 'etudiant', label: 'Étudiant' },
       { key: 'matricule', label: 'Matricule', width: '130px' },
+      { key: 'numeroSequence', label: 'Bordereau' },
       { key: 'typeOperation', label: 'Type' },
       { key: 'referenceBancaire', label: 'Référence bancaire' },
       { key: 'montantBordereau', label: 'Montant', width: '150px' },
@@ -488,6 +505,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
       statut: this.getStatutLabel(b.statut || ''),
       etudiant: b.utilisateur ? `${b.utilisateur.nom} ${b.utilisateur.prenoms}` : 'Étudiant inconnu',
       matricule: b.echeance?.dossierEtudiant?.matricule || '—',
+      numeroSequence: this.getNumeroSequenceLabel(b.numeroSequence),
       typeOperation: this.getTypeOperationLibelle(b.typeOperationId ?? null),
       referenceBancaire: b.referenceBancaire || '—',
       montantBordereau: this.formatCurrency(b.montant),
@@ -495,6 +513,11 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
       traiteur: b.saisiPar ? `${b.saisiPar.prenoms || ''} ${b.saisiPar.nom || ''}`.trim() || '—' : '—',
       auditeur: b.validePar ? `${b.validePar.prenoms || ''} ${b.validePar.nom || ''}`.trim() || '—' : '—',
     }
+  }
+
+  private getNumeroSequenceLabel(numeroSequence?: number): string {
+    if (!numeroSequence) return 'Bordereau'
+    return `${numeroSequence}${numeroSequence === 1 ? 'er' : 'e'} bordereau`
   }
 
   onItemAction(event: { item: any, action: string }): void {
@@ -618,7 +641,8 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     this.apiErrorMessage = ''
 
     const montant = this.saisieForm.get('montantPaiement')?.value
-    this.bordereauService.imputationPreview(this.selectedBordereau.id!, montant).subscribe({
+    const typeApercu = this.estTypeMixte ? '' : (this.typeSelectionne?.code || '').toLowerCase()
+    this.bordereauService.imputationPreview(this.selectedBordereau.id!, montant, typeApercu).subscribe({
       next: (res: any) => {
         this.previewResult = res.preview || res
         this.showPreviewModal = true
@@ -828,6 +852,14 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   formatCurrency(value: number | undefined | null): string {
     if (value == null) return '---'
     return new Intl.NumberFormat('fr-FR').format(value) + ' FCFA'
+  }
+
+  formatMoisEcheance(value?: string | null): string {
+    if (!value) return 'Mois non précisé'
+    const match = /^(\d{4})-(\d{2})$/.exec(value)
+    if (!match) return value
+    return new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' })
+      .format(new Date(Number(match[1]), Number(match[2]) - 1, 1))
   }
 
   /** Libellé de l'année académique depuis demandeInscription */

@@ -72,4 +72,37 @@ describe("DocumentDossierController.download", () => {
         expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "application/pdf");
         expect(stream.pipe).toHaveBeenCalledWith(res);
     });
+
+    it("serves legacy flat documents from public/dossiers", async () => {
+        const previousCwd = process.cwd();
+        const legacyRoot = fs.mkdtempSync(path.join(os.tmpdir(), "easyecole-legacy-documents-"));
+        process.chdir(legacyRoot);
+        const legacyDirectory = path.resolve(process.cwd(), "public", "dossiers");
+        const legacyFilename = "legacy-document.pdf";
+        const filePath = path.join(legacyDirectory, legacyFilename);
+        fs.mkdirSync(legacyDirectory, { recursive: true });
+        fs.writeFileSync(filePath, "legacy document");
+
+        const stream = { on: jest.fn().mockReturnThis(), pipe: jest.fn() };
+        const createReadStream = fs.createReadStream as jest.MockedFunction<typeof fs.createReadStream>;
+        createReadStream.mockReturnValue(stream as unknown as fs.ReadStream);
+        DemandeInscription.findByPk.mockResolvedValue({ utilisateurId: 12 });
+        DemandeInscriptionDossier.findOne.mockResolvedValue({ nomFichier: legacyFilename });
+
+        const req = mockRequest({
+            query: { demandeId: "7", dossierId: "3" },
+            utilisateurRole: RolesUtilisateur.SECRETAIRE,
+        } as any);
+        const res = Object.assign(mockResponse(), { removeHeader: jest.fn() });
+
+        try {
+            await DocumentDossierController.download(req, res);
+
+            expect(createReadStream).toHaveBeenCalledWith(filePath);
+            expect(stream.pipe).toHaveBeenCalledWith(res);
+        } finally {
+            process.chdir(previousCwd);
+            fs.rmSync(legacyRoot, { recursive: true, force: true });
+        }
+    });
 });

@@ -598,6 +598,19 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
                   <strong>{{ formatCurrency(scannedUser.situationFinanciere.resteAPayer) }}</strong>
                 </div>
               </div>
+              <div *ngIf="scannedUser.situationFinanciere.fraisInscriptionSession !== undefined || scannedUser.situationFinanciere.fraisScolariteSession !== undefined"
+                class="pointage-finance-grid pointage-finance-grid--session">
+                <div class="pointage-finance-tile">
+                  <p>INSCRIPTION : frais de la session</p>
+                  <strong>{{ formatCurrency(scannedUser.situationFinanciere.fraisInscriptionSession || 0) }}</strong>
+                  <small>Payé : {{ formatCurrency(scannedUser.situationFinanciere.montantInscriptionPaye || 0) }} · reste : {{ formatCurrency(scannedUser.situationFinanciere.resteInscriptionSession || 0) }}</small>
+                </div>
+                <div class="pointage-finance-tile">
+                  <p>Scolarité · frais de la session</p>
+                  <strong>{{ formatCurrency(scannedUser.situationFinanciere.fraisScolariteSession || 0) }}</strong>
+                  <small>Payé : {{ formatCurrency(scannedUser.situationFinanciere.montantScolaritePaye || 0) }} · reste : {{ formatCurrency(scannedUser.situationFinanciere.resteScolariteSession || 0) }}</small>
+                </div>
+              </div>
 
               <div *ngIf="scannedUser.situationFinanciere.moisEnCours" class="pointage-finance-current"
                 [ngClass]="scannedUser.situationFinanciere.moisEnCours.estPaye ? 'is-paid' : (scannedUser.situationFinanciere.moisEnCours.statut === 'partiel' || scannedUser.situationFinanciere.moisEnCours.montantPaye > 0 ? 'is-partial' : 'is-unpaid')">
@@ -616,7 +629,7 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
 
               <div *ngIf="scannedUser.situationFinanciere.echeances?.length" class="pointage-finance-echeances">
                 <div class="pointage-finance-echeances-head">
-                  <h6>Échéances</h6>
+                  <h6>Échéancier de scolarité</h6>
                   <span>{{ scannedUser.situationFinanciere.echeancesPayees }}/{{ scannedUser.situationFinanciere.echeancesTotales }} payée(s)</span>
                 </div>
                 <ul>
@@ -957,9 +970,22 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
                 <strong>{{ formatCurrency(situation.resteAPayer) }}</strong>
               </div>
             </div>
+            <div *ngIf="situation.fraisInscriptionSession !== undefined || situation.fraisScolariteSession !== undefined"
+              class="pointage-finance-grid pointage-finance-grid--session">
+              <div class="pointage-finance-tile">
+                <p>INSCRIPTION : frais de la session</p>
+                <strong>{{ formatCurrency(situation.fraisInscriptionSession || 0) }}</strong>
+                <small>Payé : {{ formatCurrency(situation.montantInscriptionPaye || 0) }} · reste : {{ formatCurrency(situation.resteInscriptionSession || 0) }}</small>
+              </div>
+              <div class="pointage-finance-tile">
+                <p>Scolarité · frais de la session</p>
+                <strong>{{ formatCurrency(situation.fraisScolariteSession || 0) }}</strong>
+                <small>Payé : {{ formatCurrency(situation.montantScolaritePaye || 0) }} · reste : {{ formatCurrency(situation.resteScolariteSession || 0) }}</small>
+              </div>
+            </div>
             <div *ngIf="situation.echeances?.length" class="pointage-finance-echeances">
               <div class="pointage-finance-echeances-head">
-                <h6>Mois payés et à payer</h6>
+              <h6>Échéancier de scolarité</h6>
                 <span>{{ situation.echeancesPayees }}/{{ situation.echeancesTotales }} payée(s)</span>
               </div>
               <ul>

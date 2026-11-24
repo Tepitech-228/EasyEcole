@@ -69,12 +69,19 @@ export default class DocumentDossierController {
                 candidat.startsWith(`${publicRoot}${path.sep}`)
                 || candidat.startsWith(`${studentUploadsRoot}${path.sep}`)
 
-            // 1) chemin relatif complet stocké en base (nouvelle structure), 2) ancien dépôt plat
+            // Chemin complet (nouvelle structure ou historique), puis dépôts plats historiques.
             let filePath = path.resolve(process.cwd(), doc.nomFichier)
             if (!estDansRacineAutorisee(filePath) || !fs.existsSync(filePath)) {
-                filePath = path.resolve(process.cwd(), 'public/inscription/dossiers', path.basename(doc.nomFichier))
+                const nomFichier = path.basename(doc.nomFichier)
+                const anciensChemins = [
+                    path.resolve(process.cwd(), 'public/inscription/dossiers', nomFichier),
+                    path.resolve(process.cwd(), 'public/dossiers', nomFichier),
+                ]
+                filePath = anciensChemins.find(candidat =>
+                    estDansRacineAutorisee(candidat) && fs.existsSync(candidat)
+                ) || ''
             }
-            if (!estDansRacineAutorisee(filePath) || !fs.existsSync(filePath)) {
+            if (!filePath) {
                 res.status(404).json({ success: false, message: "Fichier introuvable sur le serveur" })
                 return
             }

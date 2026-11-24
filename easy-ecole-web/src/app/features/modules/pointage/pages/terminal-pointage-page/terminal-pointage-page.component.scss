@@ -1054,6 +1054,11 @@
   text-align: center;
 }
 
+.pointage-finance-grid--session {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 0.5rem;
+}
+
 .pointage-finance-tile {
   border: 1px solid #eef2f8;
   border-radius: 12px;
@@ -1062,6 +1067,7 @@
 
   p { margin: 0 0 0.2rem; color: var(--pt-soft); font-size: 0.62rem; }
   strong { color: var(--pt-ink); font-size: 0.78rem; font-weight: 800; }
+  small { display: block; margin-top: 0.15rem; color: var(--pt-soft); font-size: 0.58rem; }
   &--paid { border-color: #d6f5e6; background: #f0fdf7; }
   &--due { border-color: #fee2e2; background: #fff5f5; }
 }

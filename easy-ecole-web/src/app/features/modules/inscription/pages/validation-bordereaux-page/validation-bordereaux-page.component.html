@@ -118,10 +118,26 @@
         <div class="flex items-end">
             <div class="w-full bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-md p-2.5 text-center">
                 <p class="text-xs text-gray-600 font-semibold">RÉSULTATS</p>
-                <p class="text-lg font-bold text-indigo-600">{{ bordereauxEnAttente.length }}</p>
+                <p class="text-lg font-bold text-indigo-600">{{ totalItems }}</p>
                 <p class="text-xs text-gray-500">bordereau(x)</p>
             </div>
         </div>
+    </div>
+</div>
+
+<div class="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+    <label for="recherche-bordereau" class="mb-2 block text-sm font-medium text-gray-700">
+        Rechercher un étudiant ou un bordereau
+    </label>
+    <div class="relative">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">search</span>
+        <input
+            id="recherche-bordereau"
+            type="search"
+            [ngModel]="searchTerm"
+            (ngModelChange)="onSearchChange($event)"
+            placeholder="Nom, prénom, matricule ou numéro de bordereau..."
+            class="block w-full rounded-md border border-gray-300 py-2.5 pl-10 pr-3 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500">
     </div>
 </div>
 
@@ -296,8 +312,11 @@
                         <p *ngIf="validationForm.get('numeroBordereau')?.hasError('required') && validationForm.get('numeroBordereau')?.touched" class="text-xs text-red-500 mt-1">
                             <span class="material-symbols-outlined text-xs align-middle mr-0.5">error</span> Champ requis
                         </p>
-                        <p *ngIf="validationForm.get('numeroBordereau')?.hasError('unicite') && validationForm.get('numeroBordereau')?.touched" class="text-xs text-red-500 mt-1">
-                            <span class="material-symbols-outlined text-xs align-middle mr-0.5">error</span> Ce numéro de bordereau est déjà utilisé
+                        <p *ngIf="duplicateInfo && validationForm.get('numeroBordereau')?.touched" class="text-xs text-amber-700 mt-1">
+                            <span class="material-symbols-outlined text-xs align-middle mr-0.5">warning</span>
+                            Numéro déjà présent dans la base pour
+                            {{ duplicateInfo.etudiant?.prenoms }} {{ duplicateInfo.etudiant?.nom }}.
+                            La validation déclenchera une alerte.
                         </p>
                     </div>
 
@@ -343,6 +362,32 @@
                 <app-custom-button (click)="rejeterDepuisModal()" text="Rejeter" color="primary"></app-custom-button>
                 <app-custom-button (click)="validerBordereau()" text="Valider" color="green" [disabled]="validationForm.invalid"></app-custom-button>
             </div>
+        </div>
+    </div>
+</div>
+
+<div *ngIf="showDuplicateModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 p-4"
+    role="alertdialog" aria-modal="true" aria-labelledby="duplicate-bordereau-title">
+    <div class="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl">
+        <div class="mb-4 flex items-start gap-3">
+            <span class="material-symbols-outlined text-3xl text-red-600" aria-hidden="true">gpp_bad</span>
+            <div>
+                <h3 id="duplicate-bordereau-title" class="text-lg font-bold text-red-800">{{ duplicateModalTitle }}</h3>
+                <p class="mt-2 text-sm text-gray-700">{{ duplicateModalMessage }}</p>
+            </div>
+        </div>
+        <dl class="mb-6 rounded-lg border border-red-100 bg-red-50 p-4 text-sm">
+            <div class="flex justify-between gap-4">
+                <dt class="font-semibold text-gray-600">Numéro de dépôt</dt>
+                <dd class="break-all text-right font-medium text-gray-900">{{ duplicateNumeroBordereau }}</dd>
+            </div>
+            <div class="mt-2 flex justify-between gap-4">
+                <dt class="font-semibold text-gray-600">Étudiant enregistré</dt>
+                <dd class="text-right font-medium text-gray-900">{{ duplicateStudentName }}</dd>
+            </div>
+        </dl>
+        <div class="flex justify-end">
+            <app-custom-button (click)="closeDuplicateModal()" text="Fermer" color="primary"></app-custom-button>
         </div>
     </div>
 </div>

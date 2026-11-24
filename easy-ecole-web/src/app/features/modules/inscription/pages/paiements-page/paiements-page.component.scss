@@ -343,6 +343,21 @@
   font-size: 14px;
 }
 
+.echeancier-inscription {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px 18px;
+  border: 1px solid #dbe3ff;
+  border-radius: 14px;
+  background: #f5f7ff;
+
+  strong { display: block; margin-top: 4px; color: #1e3a8a; font-size: 18px; }
+  p { margin: 0; color: #475569; font-size: 12px; }
+}
+
 .echeancier-summary {
   display: flex;
   flex-wrap: wrap;

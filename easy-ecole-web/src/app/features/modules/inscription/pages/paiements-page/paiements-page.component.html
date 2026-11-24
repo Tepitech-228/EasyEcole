@@ -14,7 +14,7 @@
         <div class="echeancier-head">
             <div>
                 <h3>Mon échéancier</h3>
-                <p>Échéances de votre dossier d'inscription</p>
+                <p>Frais d'inscription et échéancier de scolarité</p>
             </div>
         </div>
 
@@ -24,8 +24,16 @@
             Impossible de récupérer votre échéancier. Réessayez plus tard.
         </div>
 
+        <div *ngIf="!echeancierLoading && !echeancierError && fraisInscriptionSession > 0" class="echeancier-inscription">
+            <div>
+                <span class="echeancier-stat-label">INSCRIPTION · frais de la session</span>
+                <strong>{{ fraisInscriptionSession | currency:'XAF' }}</strong>
+            </div>
+            <p>Payé : {{ montantInscriptionPaye | currency:'XAF' }} · Reste : {{ resteInscriptionSession | currency:'XAF' }}</p>
+        </div>
+
         <div *ngIf="!echeancierLoading && !echeancierError && echeances.length === 0" class="echeancier-empty">
-            Votre échéancier sera généré après validation de votre bordereau par l'institution.
+            Votre échéancier de scolarité sera généré après validation de votre bordereau par l'institution.
         </div>
 
         <ng-container *ngIf="!echeancierLoading && !echeancierError && echeances.length > 0">
@@ -36,10 +44,10 @@
                     <span class="echeancier-stat-sub" *ngIf="echeanceImpayeeCount > 0">{{ echeanceImpayeeCount }} échéance(s) non réglée(s)</span>
                 </div>
                 <div class="echeancier-stat highlight" *ngIf="prochaineEcheance">
-                    <span class="echeancier-stat-label">Prochaine échéance</span>
+                    <span class="echeancier-stat-label">Prochaine échéance de scolarité</span>
                     <span class="echeancier-stat-value">{{ prochaineEcheance.montant | currency:'XAF' }}</span>
                     <span class="echeancier-stat-sub">
-                        {{ prochaineEcheance.moisConcerne || ('Échéance n°' + prochaineEcheance.numeroEcheance) }}
+                        {{ formatMoisEcheance(prochaineEcheance) }}
                         - {{ prochaineEcheance.dateLimite | date:'dd/MM/yyyy' }}
                     </span>
                 </div>
@@ -60,7 +68,7 @@
                     <tbody>
                         <tr *ngFor="let echeance of echeances">
                             <td>{{ echeance.numeroEcheance }}</td>
-                            <td>{{ echeance.moisConcerne || '---' }}</td>
+                            <td>{{ formatMoisEcheance(echeance) }}</td>
                             <td>{{ (echeance.dateLimite | date:'dd/MM/yyyy') || '---' }}</td>
                             <td class="echeancier-right">{{ echeance.montant | currency:'XAF' }}</td>
                             <td>

@@ -33,6 +33,12 @@ import { DossierStorageService } from "../services/DossierStorageService";
 import { FolderAutoService } from "../../ged/services/FolderAutoService";
 import { GenerateurCarteService } from "../services/GenerateurCarteService";
 import { GenerateurEcheancierService, estModalitePaiement } from "../services/GenerateurEcheancierService";
+import { attribuerNumeroSequenceBordereaux } from "../services/BordereauSequenceService";
+import {
+    creerConflitNumeroBordereau,
+    estConflitUniqueNumeroBordereau,
+    trouverBordereauAvecNumero,
+} from "../services/BordereauNumeroUniciteService";
 import { GenerateurEcheancierScolariteService } from "../services/GenerateurEcheancierScolariteService";
 import { nombreEcheances } from "../services/GenerateurEcheancierSessionService";
 import { ImputationService } from "../services/ImputationService";
@@ -204,6 +210,63 @@ export default class BordereauController {
             options.where = { ...options.where, type: req.query.type as string }
         }
 
+        const recherche = typeof req.query.recherche === 'string'
+            ? req.query.recherche.trim().slice(0, 100)
+            : ''
+        if (recherche) {
+            const motif = `%${recherche}%`
+            const termes = recherche.split(/\s+/).filter(Boolean)
+            let utilisateurs: Utilisateur[]
+            let dossiers: DossierEtudiant[]
+            let demandes: DemandeInscription[]
+            try {
+                [utilisateurs, dossiers, demandes] = await Promise.all([
+                    Utilisateur.findAll({
+                        attributes: ['id'],
+                        where: {
+                            [Op.and]: termes.map(terme => ({
+                                [Op.or]: [
+                                    { nom: { [Op.like]: `%${terme}%` } },
+                                    { prenoms: { [Op.like]: `%${terme}%` } },
+                                    { identifiant: { [Op.like]: `%${terme}%` } },
+                                ],
+                            })),
+                        },
+                    }),
+                    DossierEtudiant.findAll({
+                        attributes: ['utilisateurId'],
+                        where: { matricule: { [Op.like]: motif } },
+                    }),
+                    DemandeInscription.findAll({
+                        attributes: ['utilisateurId'],
+                        where: {
+                            [Op.or]: [
+                                { matricule: { [Op.like]: motif } },
+                                { matriculeEtudiant: { [Op.like]: motif } },
+                            ],
+                        },
+                    }),
+                ])
+            } catch (error) {
+                console.error('Erreur recherche des bordereaux:', error)
+                return res.status(500).json({ success: false, message: 'Erreur interne' })
+            }
+            const utilisateurIds = [...new Set([
+                ...utilisateurs.map(utilisateur => Number(utilisateur.id)),
+                ...dossiers.map(dossier => Number(dossier.utilisateurId)),
+                ...demandes.map(demande => Number(demande.utilisateurId)),
+            ].filter(id => Number.isSafeInteger(id) && id > 0))]
+            const rechercheId = /^\d+$/.test(recherche) ? Number(recherche) : null
+            options.where = {
+                ...options.where,
+                [Op.or]: [
+                    { utilisateurId: { [Op.in]: utilisateurIds } },
+                    { numeroBordereau: { [Op.like]: motif } },
+                    ...(rechercheId ? [{ id: rechercheId }] : []),
+                ],
+            }
+        }
+
         // Filters par année, niveau, parcours
         if (req.query.anneeAcademiqueId || req.query.niveauEtudeId || req.query.parcoursId) {
             const demandeWhere: any = { include: [] as any[] }
@@ -238,6 +301,7 @@ export default class BordereauController {
 
         try {
             const { rows, count: total } = await Bordereau.findAndCountAll({ ...options, limit, offset });
+            await attribuerNumeroSequenceBordereaux(rows)
             await enrichirBordereauxAvecDemandes(rows);
 
             return res.status(200).json({
@@ -501,6 +565,8 @@ export default class BordereauController {
         // propre. Le commit intervient APRÈS le bordereau.save() final ; toute exception
         // pendant le traitement provoque un rollback global.
         const transaction = await DatabaseConnection.getInstance().sequelize.transaction();
+        let numeroBordereauEnCours = '';
+        let utilisateurIdEnCours = 0;
 
         try {
             let bordereau: Bordereau | null = await Bordereau.findOne({
@@ -554,6 +620,8 @@ export default class BordereauController {
             // ── Le numéro de bordereau et la date de paiement restent obligatoires. ──
             const refBancaire = typeof req.body.referenceBancaire === 'string' ? req.body.referenceBancaire.trim() : '';
             const numBordereau = typeof req.body.numeroBordereau === 'string' ? req.body.numeroBordereau.trim() : '';
+            numeroBordereauEnCours = numBordereau;
+            utilisateurIdEnCours = Number(bordereau.utilisateurId);
             const datePaiementStr = typeof req.body.datePaiement === 'string' ? req.body.datePaiement : '';
 
             if (!bordereauBankReferenceSet.has(refBancaire)) {
@@ -575,18 +643,17 @@ export default class BordereauController {
             }
 
             // Une référence bancaire peut être réutilisée ; seul le numéro est unique.
-            const whereClause: any = {
-                id: { [Op.ne]: bordereau.id },
-                deletedAt: null,
-                ...cabinetSiteWhere,
-            };
-            if (numBordereau) {
-                whereClause.numeroBordereau = numBordereau;
-                const doublon = await Bordereau.findOne({ where: whereClause, transaction });
-                if (doublon) {
-                    await transaction.rollback();
-                    return res.status(400).json({ success: false, message: "Ce numéro de bordereau est déjà utilisé", details: { numeroBordereau: numBordereau } });
-                }
+            const doublon = await trouverBordereauAvecNumero(numBordereau, {
+                excludeId: Number(bordereau.id),
+                transaction,
+            });
+            if (doublon) {
+                await transaction.rollback();
+                return res.status(409).json(creerConflitNumeroBordereau(
+                    doublon,
+                    utilisateurIdEnCours,
+                    numBordereau,
+                ));
             }
 
             bordereau.statut = 'valide'
@@ -633,6 +700,20 @@ export default class BordereauController {
             // c'est une alerte opérationnelle qui doit être visible immédiatement.
             await transaction.rollback().catch(rbErr => console.error('[BORDEREAU][validation] ROLLBACK EN ÉCHEC — transaction possiblement orpheline:', rbErr));
             console.error("Erreur validation bordereau:", error);
+            if (numeroBordereauEnCours && estConflitUniqueNumeroBordereau(error)) {
+                try {
+                    const doublon = await trouverBordereauAvecNumero(numeroBordereauEnCours);
+                    if (doublon) {
+                        return res.status(409).json(creerConflitNumeroBordereau(
+                            doublon,
+                            utilisateurIdEnCours,
+                            numeroBordereauEnCours,
+                        ));
+                    }
+                } catch (lookupError) {
+                    console.error('[BORDEREAU][validation] Impossible de charger le propriétaire du numéro en conflit:', lookupError);
+                }
+            }
             return res.status(400).json({ success: false, message: (error as Error).message || "Erreur inconnue" });
         }
     }

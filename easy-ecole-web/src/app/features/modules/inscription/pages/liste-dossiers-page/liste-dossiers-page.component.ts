@@ -13,6 +13,8 @@ import {
 } from 'src/app/data/modules/inscription/services/dossier-etudiant.service';
 import { environment } from 'src/environments/environment';
 import { DossierNode, DossierColumn, BatchAction } from 'src/app/shared/components/dossier-view/dossier-view.component';
+import { BordereauService } from 'src/app/data/modules/inscription/services/bordereau.service';
+import { ToastService } from 'src/app/core/services/toast.service';
 
 @Component({
   selector: 'app-liste-dossiers-page',
@@ -32,8 +34,6 @@ export class ListeDossiersPageComponent extends BaseComponentClass implements On
   selectedStatut: string = ''
 
   readonly PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS
-  readonly DOSSIERS_PATH: string = environment.MEDIAS_PATH.INSCRIPTION.DOSSIERS
-  readonly BORDEREAUX_PATH: string = environment.MEDIAS_PATH.INSCRIPTION.BORDEREAUX
 
   readonly columns: DossierColumn[] = [
     { key: 'matricule', label: 'Matricule', width: '120px' },
@@ -68,6 +68,8 @@ export class ListeDossiersPageComponent extends BaseComponentClass implements On
     private http: HttpClient,
     private apprenantService: ApprenantService,
     private dossierEtudiantService: DossierEtudiantService,
+    private bordereauService: BordereauService,
+    private toastService: ToastService,
   ) {
     super()
   }
@@ -343,18 +345,59 @@ export class ListeDossiersPageComponent extends BaseComponentClass implements On
     window.open(url, '_blank')
   }
 
-  /** Télécharge un fichier via HttpClient (avec token) et l'ouvre dans un nouvel onglet */
-  telechargerFichier(basePath: string, nomFichier: string): void {
-    const url = `${basePath}${nomFichier}`;
-    this.http.get(url, { responseType: 'blob' }).subscribe({
+  telechargerDocument(doc: any): void {
+    const demandeId = Number(doc?.demandeId || this.detailData?.demande?.id)
+    const dossierId = Number(doc?.dossierId)
+    if (!Number.isSafeInteger(demandeId) || demandeId <= 0 || !Number.isSafeInteger(dossierId) || dossierId <= 0) {
+      this.toastService.error('Les informations de ce document sont incomplètes.')
+      return
+    }
+    const openedWindow = this.ouvrirNouvelOnglet()
+    if (!openedWindow) return
+
+    this.http.get(`${environment.API_MODULES.INSCRIPTION}/documents/download`, {
+      params: { demandeId: demandeId.toString(), dossierId: dossierId.toString() },
+      responseType: 'blob'
+    }).subscribe({
       next: (blob) => {
-        const blobUrl = URL.createObjectURL(blob);
-        window.open(blobUrl, '_blank');
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+        this.ouvrirFichier(blob, openedWindow)
       },
       error: (err) => {
-        console.error('❌ Erreur téléchargement fichier:', err);
+        openedWindow.close()
+        console.error('Erreur téléchargement document du dossier:', err)
+        this.toastService.error(err?.error?.message || 'Ce document est introuvable ou inaccessible.')
       }
-    });
+    })
+  }
+
+  telechargerBordereau(bordereau: any): void {
+    if (!bordereau?.id) {
+      this.toastService.error('Le bordereau à télécharger est invalide.')
+      return
+    }
+    const openedWindow = this.ouvrirNouvelOnglet()
+    if (!openedWindow) return
+    this.bordereauService.downloadBordereau(String(bordereau.id)).subscribe({
+      next: blob => this.ouvrirFichier(blob, openedWindow),
+      error: err => {
+        openedWindow.close()
+        console.error('Erreur téléchargement bordereau du dossier:', err)
+        this.toastService.error(err?.error?.message || 'Ce bordereau est introuvable ou inaccessible.')
+      }
+    })
+  }
+
+  private ouvrirNouvelOnglet(): Window | null {
+    const openedWindow = window.open('', '_blank')
+    if (!openedWindow) {
+      this.toastService.error('Le navigateur a bloqué l’ouverture du document. Autorisez les fenêtres contextuelles puis réessayez.')
+    }
+    return openedWindow
+  }
+
+  private ouvrirFichier(blob: Blob, openedWindow: Window): void {
+    const blobUrl = URL.createObjectURL(blob)
+    openedWindow.location.href = blobUrl
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000)
   }
 }

@@ -2,7 +2,6 @@ import express, { Request, Response } from "express"
 import multer from "multer"
 import path from "path"
 
-import { Op } from "sequelize";
 import BordereauController from "../controllers/BordereauController"
 import { AuthCabinetComptable } from "../../../core/middlewares/AuthCabinetComptable";
 import CheckPermission from "../../../core/middlewares/CheckPermission";
@@ -10,6 +9,7 @@ import { Bordereau } from "../models/Bordereau";
 import { normaliserImages } from "../../../core/helpers/NormaliserImage";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { creerHandlersAffectationBordereau } from "../controllers/BordereauAffectationController";
+import { trouverBordereauAvecNumero } from "../services/BordereauNumeroUniciteService";
 
 const affectationAuditHandlers = creerHandlersAffectationBordereau(
   "audit",
@@ -113,19 +113,26 @@ router
            return res.status(400).json({ success: false, message: 'Renseignez un numéro de bordereau.' });
          }
 
-         const whereClause: any = { deletedAt: null };
-         if ((req as any).utilisateurRole === RolesUtilisateur.CABINET_COMPTABLE) {
-           whereClause.etablissementId = Number((req as any).etablissementId);
-         }
-         if (excludeId && !isNaN(excludeId)) whereClause.id = { [Op.ne]: excludeId };
-         whereClause.numeroBordereau = numeroBordereau;
-
-         const existant = await Bordereau.findOne({ where: whereClause, attributes: ['id', 'numeroBordereau'] });
+         const existant = await trouverBordereauAvecNumero(numeroBordereau, {
+           ...(excludeId && !isNaN(excludeId) ? { excludeId } : {}),
+         });
          if (!existant) {
            return res.json({ success: true, unique: true });
          }
 
-         return res.json({ success: true, unique: false, conflit: { champ: 'numeroBordereau', valeur: existant.numeroBordereau } });
+         return res.json({
+           success: true,
+           unique: false,
+           conflit: {
+             champ: 'numeroBordereau',
+             valeur: existant.numeroBordereau,
+             etudiant: {
+               id: Number(existant.utilisateurId),
+               nom: existant.utilisateur?.nom || '',
+               prenoms: existant.utilisateur?.prenoms || '',
+             },
+           },
+         });
        } catch (error: any) {
          console.error('[Bordereau] verifier-unicite ERREUR:', error?.message);
          return res.status(500).json({ success: false, message: "Erreur de vérification d'unicité." });

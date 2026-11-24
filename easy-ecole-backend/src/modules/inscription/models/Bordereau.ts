@@ -53,6 +53,7 @@ export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAt
   declare quitusId: CreationOptional<ForeignKey<Quitus['id']>>
   declare typeOperationId: CreationOptional<ForeignKey<TypeOperationBordereau['id']> | null>
   declare numeroBordereau: CreationOptional<string | null>
+  declare numeroSequence: CreationOptional<number>
   declare moyenPaiement: CreationOptional<'virement' | 'especes' | 'mobile_money' | 'cheque' | 'autre' | 'depot_banque' | null>
   declare banque: CreationOptional<'ib_bank' | 'ecobank' | 'orabank' | null>
   declare echeance?: NonAttribute<Echeance>
@@ -214,6 +215,9 @@ Bordereau.init({
     type: new DataTypes.STRING(100),
     allowNull: true,
     defaultValue: null
+  },
+  numeroSequence: {
+    type: DataTypes.VIRTUAL(DataTypes.INTEGER),
   },
   moyenPaiement: {
     type: DataTypes.ENUM('virement', 'especes', 'mobile_money', 'cheque', 'autre', 'depot_banque'),

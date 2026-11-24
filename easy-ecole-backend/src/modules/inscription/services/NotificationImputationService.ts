@@ -1,7 +1,13 @@
 import { Bordereau } from "../models/Bordereau";
 import { ResultatImputation } from "../services/ImputationService";
 import { EmailSender } from "../../../core/helpers/EmailSender";
-import { Echeance } from "../models/Echeance";
+
+const formaterMois = (mois?: string | null): string => {
+  const match = mois ? /^(\d{4})-(\d{2})$/.exec(mois) : null
+  if (!match) return mois || 'mois non précisé'
+  return new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' })
+    .format(new Date(Number(match[1]), Number(match[2]) - 1, 1))
+}
 
 export class GenererNotificationImputation {
 
@@ -22,9 +28,9 @@ export class GenererNotificationImputation {
       html += `<h3 style="color:#4f46e5;margin-top:16px;">Frais d'inscription</h3><ul>`
       for (const ligne of lignesInscription) {
         if (ligne.statutApres === 'paye') {
-          html += `<li>Échéance ${ligne.numeroEcheance} : <strong>${ligne.montantImpute.toLocaleString('fr-FR')} FCFA → SOLDÉ</strong></li>`
+          html += `<li>Frais d'inscription imputés : <strong>${ligne.montantImpute.toLocaleString('fr-FR')} FCFA → SOLDÉS</strong></li>`
         } else if (ligne.statutApres === 'partiel') {
-          html += `<li>Échéance ${ligne.numeroEcheance} : <strong>${ligne.montantImpute.toLocaleString('fr-FR')} FCFA → PARTIEL</strong> (reste : ${ligne.resteApres.toLocaleString('fr-FR')} FCFA)</li>`
+          html += `<li>Frais d'inscription imputés : <strong>${ligne.montantImpute.toLocaleString('fr-FR')} FCFA → PARTIEL</strong> (reste : ${ligne.resteApres.toLocaleString('fr-FR')} FCFA)</li>`
         }
       }
       html += `</ul>`
@@ -33,10 +39,11 @@ export class GenererNotificationImputation {
     if (lignesScolarite.length > 0) {
       html += `<h3 style="color:#4f46e5;margin-top:16px;">Frais de scolarité</h3><ul>`
       for (const ligne of lignesScolarite) {
+        const libelleEcheance = `Échéance ${ligne.numeroEcheance} · ${formaterMois(ligne.moisConcerne)}`
         if (ligne.statutApres === 'paye') {
-          html += `<li>Mois ${ligne.numeroEcheance} : <strong>${ligne.montantImpute.toLocaleString('fr-FR')} FCFA → SOLDÉ</strong></li>`
+          html += `<li>${libelleEcheance} : <strong>${ligne.montantImpute.toLocaleString('fr-FR')} FCFA → SOLDÉE</strong></li>`
         } else if (ligne.statutApres === 'partiel') {
-          html += `<li>Mois ${ligne.numeroEcheance} : <strong>${ligne.montantImpute.toLocaleString('fr-FR')} FCFA → PARTIEL</strong> (reste : ${ligne.resteApres.toLocaleString('fr-FR')} FCFA)</li>`
+          html += `<li>${libelleEcheance} : <strong>${ligne.montantImpute.toLocaleString('fr-FR')} FCFA → PARTIEL</strong> (reste : ${ligne.resteApres.toLocaleString('fr-FR')} FCFA)</li>`
         }
       }
       html += `</ul>`

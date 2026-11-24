@@ -1,5 +1,6 @@
 import { DossierEtudiant } from "../models/DossierEtudiant"
 import { Echeance } from "../models/Echeance"
+import { SnapshotService } from "./SnapshotService"
 
 export interface EcheanceSituationFinanciere {
     id?: number
@@ -20,6 +21,12 @@ export interface SituationFinanciere {
     sommeGlobale: number
     montantPaye: number
     resteAPayer: number
+    fraisInscriptionSession: number
+    fraisScolariteSession: number
+    montantInscriptionPaye: number
+    montantScolaritePaye: number
+    resteInscriptionSession: number
+    resteScolariteSession: number
     estAJour: boolean
     echeancesEnRetard: number
     echeancesPayees: number
@@ -35,7 +42,20 @@ export default class SituationFinanciereService {
         now.setHours(0, 0, 0, 0)
 
         const totalEcheances = echeances.reduce((sum, echeance) => sum + (echeance.montant || 0), 0)
-        const sommeGlobale = totalEcheances > 0 ? totalEcheances : (dossier.fraisScolarite || 0)
+        const echeancesInscription = echeances.filter(echeance => echeance.type === "inscription")
+        const echeancesScolarite = echeances.filter(echeance => echeance.type === "scolarite")
+        const snapshot = SnapshotService.deserialiser(dossier.fraisScolariteSnapshot)
+        const fraisInscriptionSession = snapshot
+            ? snapshot.montantInscription
+            : echeancesInscription.reduce((sum, echeance) => sum + (echeance.montant || 0), 0)
+        const fraisScolariteSession = snapshot
+            ? snapshot.montantScolarite
+            : dossier.fraisScolarite || echeancesScolarite.reduce((sum, echeance) => sum + (echeance.montant || 0), 0)
+        const montantInscriptionPaye = echeancesInscription.reduce((sum, echeance) => sum + (echeance.montantPaye || 0), 0)
+        const montantScolaritePaye = echeancesScolarite.reduce((sum, echeance) => sum + (echeance.montantPaye || 0), 0)
+        const sommeGlobale = totalEcheances > 0
+            ? totalEcheances + (echeancesInscription.length === 0 ? fraisInscriptionSession : 0)
+            : fraisInscriptionSession + fraisScolariteSession
         const montantPaye = echeances.reduce((sum, echeance) => sum + (echeance.montantPaye || 0), 0)
         const resteAPayer = Math.max(0, sommeGlobale - montantPaye)
 
@@ -47,7 +67,7 @@ export default class SituationFinanciereService {
         }
         const moisActuel = moisDe(now)
 
-        const lignes: EcheanceSituationFinanciere[] = [...echeances]
+        const toutesLesLignes: EcheanceSituationFinanciere[] = [...echeances]
             .sort((a, b) => asDate(a.dateLimite).getTime() - asDate(b.dateLimite).getTime())
             .map(echeance => {
                 const montant = echeance.montant || 0
@@ -73,19 +93,26 @@ export default class SituationFinanciereService {
                 }
             })
 
-        const echeancesEnRetard = lignes.filter(ligne => ligne.enRetard)
-        const moisEnCours = lignes.find(ligne => moisDe(new Date(ligne.dateLimite)) === moisActuel) || null
+        const lignesScolarite = toutesLesLignes.filter(ligne => ligne.type === "scolarite")
+        const echeancesEnRetard = lignesScolarite.filter(ligne => ligne.enRetard)
+        const moisEnCours = lignesScolarite.find(ligne => moisDe(new Date(ligne.dateLimite)) === moisActuel) || null
 
         return {
             sommeGlobale,
             montantPaye,
             resteAPayer,
+            fraisInscriptionSession,
+            fraisScolariteSession,
+            montantInscriptionPaye,
+            montantScolaritePaye,
+            resteInscriptionSession: Math.max(0, fraisInscriptionSession - montantInscriptionPaye),
+            resteScolariteSession: Math.max(0, fraisScolariteSession - montantScolaritePaye),
             estAJour: echeancesEnRetard.length === 0,
             echeancesEnRetard: echeancesEnRetard.length,
-            echeancesPayees: lignes.filter(ligne => ligne.estPaye).length,
-            echeancesTotales: lignes.length,
+            echeancesPayees: lignesScolarite.filter(ligne => ligne.estPaye).length,
+            echeancesTotales: lignesScolarite.length,
             moisEnCours,
-            echeances: lignes
+            echeances: lignesScolarite
         }
     }
 }

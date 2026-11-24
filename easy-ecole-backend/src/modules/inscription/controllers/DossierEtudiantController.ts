@@ -27,6 +27,7 @@ import { Classe } from "../models/Classe";
 import { SalleDeClasse } from "../models/SalleDeClasse";
 import { Bordereau } from "../models/Bordereau";
 import { GenerateurCarteService } from "../services/GenerateurCarteService";
+import { SnapshotService } from "../services/SnapshotService";
 import { resolveStoredDocumentPath } from "../../../core/services/DocumentStorageService";
 import fs from "fs";
 import path from "path";
@@ -440,6 +441,29 @@ export default class DossierEtudiantController {
 
             if (dossier == null)
                 return res.status(404).json({ success: false, message: "Dossier étudiant non trouvé" });
+
+            const echeances = dossier.echeances || [];
+            const echeancesInscription = echeances.filter(echeance => echeance.type === 'inscription');
+            const echeancesScolarite = echeances.filter(echeance => echeance.type === 'scolarite');
+            const snapshot = SnapshotService.deserialiser(dossier.fraisScolariteSnapshot);
+            (dossier as any).setDataValue(
+                'fraisInscriptionSession',
+                snapshot
+                    ? snapshot.montantInscription
+                    : echeancesInscription.reduce((sum, echeance) => sum + Number(echeance.montant || 0), 0),
+            );
+            (dossier as any).setDataValue(
+                'fraisScolariteSession',
+                snapshot?.montantScolarite ?? dossier.fraisScolarite,
+            );
+            (dossier as any).setDataValue(
+                'montantInscriptionPaye',
+                echeancesInscription.reduce((sum, echeance) => sum + Number(echeance.montantPaye || 0), 0),
+            );
+            (dossier as any).setDataValue(
+                'montantScolaritePaye',
+                echeancesScolarite.reduce((sum, echeance) => sum + Number(echeance.montantPaye || 0), 0),
+            );
 
             // Chantier modalités 1x/3x/10x : expose la modalité de paiement du
             // bordereau d'inscription choisi. Le DossierEtudiant n'a pas de lien

@@ -2,17 +2,15 @@ import { Transaction } from "sequelize";
 import { DossierEtudiant } from "../models/DossierEtudiant";
 import { Echeance } from "../models/Echeance";
 import { FraisScolarite } from "../models/FraisScolarite";
-import { nombreEcheances, ajouterMois, calculerEcheancier } from "./GenerateurEcheancierSessionService";
+import { genererEcheancesSession } from "./GenerateurEcheancierSessionService";
 
 /**
  * Génère (et enregistre) l'échéancier de SCOLARITÉ d'un dossier étudiant à partir
  * du paramétrage de l'administration (FraisScolarite lié à la session) :
  *
- *   - modalité '1x'  : 1 échéance du montant total, 1ère échéance au mois suivant
- *   - modalité '3x'  : 3 échéances quasi-égales (la dernière absorbe le reste pour
- *                      que la somme corresponde exactement au total), mois suivants
- *                      J+1, J+2, J+3
- *   - modalité '10x' : 10 échéances mensuelles (J+1 à J+10), moisConcerne = 'AAAA-MM'
+ *   - session avec date de fin : une échéance mensuelle, du mois suivant le début
+ *     jusqu'au mois de fin inclus ;
+ *   - sans date de fin : nombre d'échéances selon la modalité configurée.
  *
  * Chaque échéance est de type 'scolarite', statut 'impaye', devise 'XAF'.
  * Le montant de référence est le `montant` du FraisScolarite (source de vérité).
@@ -27,28 +25,34 @@ export class GenerateurEcheancierScolariteService {
         dossier: DossierEtudiant,
         fraisScolarite: FraisScolarite,
         transaction?: Transaction,
+        dateDebutSession?: Date | string,
+        dateFinSession?: Date | string,
     ): Promise<Echeance[]> {
         const montantTotal = fraisScolarite.montant;
         if (!Number.isFinite(montantTotal) || montantTotal <= 0) {
             throw new Error("Montant de scolarité introuvable ou invalide pour générer l'échéancier de scolarité");
         }
 
-        const { nb: nbEcheances, montantStandard, montantDerniere } = calculerEcheancier(montantTotal, fraisScolarite.modalite)
-        const jourReference = new Date();
+        const echeancesSession = genererEcheancesSession({
+            dateDebut: dateDebutSession ?? dossier.demarrageParcours ?? new Date(),
+            dateFin: dateFinSession,
+            montantTotal,
+            modalite: fraisScolarite.modalite,
+            type: 'scolarite',
+        });
         const echeances: Echeance[] = [];
 
-        for (let i = 0; i < nbEcheances; i++) {
-            const dateLimite = ajouterMois(jourReference, i + 1);
-
+        for (const echeanceSession of echeancesSession) {
             const echeance = new Echeance();
             echeance.dossierEtudiantId = dossier.id;
-            echeance.type = 'scolarite';
-            echeance.numeroEcheance = i + 1;
-            echeance.montant = i === nbEcheances - 1 ? montantDerniere : montantStandard;
+            echeance.type = echeanceSession.type;
+            echeance.numeroEcheance = echeanceSession.numeroEcheance;
+            echeance.montant = echeanceSession.montant;
             echeance.devise = 'XAF';
-            echeance.dateLimite = dateLimite;
-            echeance.statut = 'impaye';
-            echeance.moisConcerne = `${dateLimite.getFullYear()}-${String(dateLimite.getMonth() + 1).padStart(2, '0')}`;
+            echeance.dateLimite = echeanceSession.dateLimite;
+            echeance.statut = echeanceSession.statut;
+            echeance.moisConcerne = echeanceSession.moisConcerne
+                ?? `${echeanceSession.dateLimite.getFullYear()}-${String(echeanceSession.dateLimite.getMonth() + 1).padStart(2, '0')}`;
 
             await echeance.save({ transaction });
             echeances.push(echeance);

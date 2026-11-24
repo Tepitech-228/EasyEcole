@@ -11,6 +11,10 @@ export class DossierEtudiant {
   declare statut?: 'actif' | 'suspendu' | 'archive'
   declare dateCreation?: Date
   declare fraisScolarite?: number
+  declare fraisInscriptionSession?: number
+  declare fraisScolariteSession?: number
+  declare montantInscriptionPaye?: number
+  declare montantScolaritePaye?: number
   declare modePaiement?: 'unique' | 'mensuel'
   declare nbMensualites?: number
   declare demarrageParcours?: Date

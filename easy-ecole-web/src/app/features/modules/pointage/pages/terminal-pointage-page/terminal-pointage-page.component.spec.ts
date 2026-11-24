@@ -655,23 +655,22 @@ describe('TerminalPointagePageComponent', () => {
         sommeGlobale: 3000,
         montantPaye: 1500,
         resteAPayer: 1500,
+        fraisInscriptionSession: 1000,
+        fraisScolariteSession: 2000,
+        montantInscriptionPaye: 1000,
+        montantScolaritePaye: 500,
+        resteInscriptionSession: 0,
+        resteScolariteSession: 1500,
         estAJour: true,
         echeancesEnRetard: 0,
-        echeancesPayees: 1,
-        echeancesTotales: 2,
+        echeancesPayees: 0,
+        echeancesTotales: 1,
         moisEnCours: null,
-        echeances: [
-          {
-            id: 1, numeroEcheance: 1, type: 'inscription', mois: '2026-09',
-            montant: 1000, montantPaye: 1000, resteAPayer: 0, devise: 'XAF',
-            dateLimite: '2026-09-01', statut: 'paye', estPaye: true, enRetard: false
-          },
-          {
-            id: 2, numeroEcheance: 2, type: 'scolarite', mois: '2026-11',
-            montant: 2000, montantPaye: 500, resteAPayer: 1500, devise: 'XAF',
-            dateLimite: '2026-11-01', statut: 'partiel', estPaye: false, enRetard: false
-          }
-        ]
+        echeances: [{
+          id: 2, numeroEcheance: 2, type: 'scolarite', mois: '2026-11',
+          montant: 2000, montantPaye: 500, resteAPayer: 1500, devise: 'XAF',
+          dateLimite: '2026-11-01', statut: 'partiel', estPaye: false, enRetard: false
+        }]
       }
     });
     expect(pointageService.pointerDepartByScan).not.toHaveBeenCalled();
@@ -681,11 +680,11 @@ describe('TerminalPointagePageComponent', () => {
     expect(summary.textContent).toContain('Total inscription + scolarité');
     expect(summary.textContent).toContain('Total payé');
     expect(summary.textContent).toContain('Reste à payer');
-    expect(summary.textContent).toContain('Inscription');
+    expect(summary.textContent).toContain('INSCRIPTION');
     expect(summary.textContent).toContain('Scolarité');
     const installments = summary.querySelectorAll('.pointage-finance-echeances li');
-    expect(installments[0].classList.contains('is-paid')).toBeTrue();
-    expect(installments[1].classList.contains('is-partial')).toBeTrue();
+    expect(installments.length).toBe(1);
+    expect(installments[0].classList.contains('is-partial')).toBeTrue();
   });
 
   it('uses green, orange, and red frames for paid, partial, and unpaid installments', () => {

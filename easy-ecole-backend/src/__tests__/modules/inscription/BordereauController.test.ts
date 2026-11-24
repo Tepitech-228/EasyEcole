@@ -20,16 +20,17 @@ jest.mock('../../../modules/inscription/models/Bordereau', () => {
 jest.mock('../../../modules/inscription/models/DemandeInscription', () => {
   const DemandeInscription: any = jest.fn()
   DemandeInscription.findOne = jest.fn()
+  DemandeInscription.findAll = jest.fn()
   DemandeInscription.associations = {}
   return { DemandeInscription }
 })
 
 jest.mock('../../../modules/inscription/models/DossierEtudiant', () => ({
-  DossierEtudiant: { findOne: jest.fn() },
+  DossierEtudiant: { findOne: jest.fn(), findAll: jest.fn() },
 }))
 
 jest.mock('../../../modules/auth/models/Utilisateur', () => ({
-  Utilisateur: { findByPk: jest.fn() },
+  Utilisateur: { findByPk: jest.fn(), findAll: jest.fn() },
 }))
 
 jest.mock('../../../modules/inscription/services/EtudiantUploadStorageService', () => ({
@@ -152,6 +153,7 @@ const { DemandeInscription } = require('../../../modules/inscription/models/Dema
 const { DossierEtudiant } = require('../../../modules/inscription/models/DossierEtudiant')
 const { Utilisateur } = require('../../../modules/auth/models/Utilisateur')
 const { DatabaseConnection } = require('../../../core/helpers/DatabaseConnection')
+const { Op } = require('sequelize')
 
 import Ctrl from '../../../modules/inscription/controllers/BordereauController'
 
@@ -187,6 +189,56 @@ describe('BordereauController.getAllBordereaux', () => {
     await Ctrl.getAllBordereaux(req, res)
 
     expect(Bordereau.findAndCountAll).toHaveBeenCalledTimes(1)
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('searches student names before applying pagination', async () => {
+    const req = mockRequest({
+      utilisateurRole: 'cabinet_comptable',
+      utilisateurId: 12,
+      etablissementId: 42,
+      query: { statut: 'en_attente', recherche: 'Amina' },
+    } as any)
+    const res = mockResponse()
+    Utilisateur.findAll.mockResolvedValue([{ id: 21 }])
+    DossierEtudiant.findAll.mockResolvedValue([])
+    DemandeInscription.findAll.mockResolvedValue([])
+    Bordereau.findAndCountAll.mockResolvedValue({ rows: [], count: 0 })
+
+    await Ctrl.getAllBordereaux(req, res)
+
+    const calls = Bordereau.findAndCountAll.mock.calls
+    const query = calls[calls.length - 1][0]
+    expect(query.where[Op.or]).toEqual(expect.arrayContaining([
+      { utilisateurId: { [Op.in]: [21] } },
+      { numeroBordereau: { [Op.like]: '%Amina%' } },
+    ]))
+    expect(query.limit).toBe(20)
+    expect(query.offset).toBe(0)
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('searches student matricules before applying pagination', async () => {
+    const req = mockRequest({
+      utilisateurRole: 'cabinet_comptable',
+      utilisateurId: 12,
+      etablissementId: 42,
+      query: { statut: 'en_attente', recherche: '2026-ST' },
+    } as any)
+    const res = mockResponse()
+    Utilisateur.findAll.mockResolvedValue([])
+    DossierEtudiant.findAll.mockResolvedValue([{ utilisateurId: 22 }])
+    DemandeInscription.findAll.mockResolvedValue([{ utilisateurId: 23 }])
+    Bordereau.findAndCountAll.mockResolvedValue({ rows: [], count: 0 })
+
+    await Ctrl.getAllBordereaux(req, res)
+
+    const calls = Bordereau.findAndCountAll.mock.calls
+    const query = calls[calls.length - 1][0]
+    expect(query.where[Op.or]).toEqual(expect.arrayContaining([
+      { utilisateurId: { [Op.in]: [22, 23] } },
+      { numeroBordereau: { [Op.like]: '%2026-ST%' } },
+    ]))
     expect(res.status).toHaveBeenCalledWith(200)
   })
 })
@@ -248,6 +300,65 @@ describe('BordereauController.validerBordereau', () => {
     const duplicateCheckWhere = (Bordereau.findOne as jest.Mock).mock.calls[1][0].where
     expect(duplicateCheckWhere.numeroBordereau).toBe('B-2026-001')
     expect(duplicateCheckWhere).not.toHaveProperty('referenceBancaire')
+  })
+
+  it.each([
+    {
+      existingUtilisateurId: 7,
+      expectedCode: 'BORDEREAU_NUMERO_DEJA_UTILISE_PAR_MEME_ETUDIANT',
+      expectedMessage: 'Alerte fraude : ce compte a déjà envoyé ce bordereau.',
+    },
+    {
+      existingUtilisateurId: 8,
+      expectedCode: 'BORDEREAU_NUMERO_DEJA_UTILISE_PAR_AUTRE_ETUDIANT',
+      expectedMessage: "Alerte fraude : ce numéro de dépôt est déjà associé à l'étudiant Alex Dupont. Ne validez pas ce bordereau avant vérification.",
+    },
+  ])('returns an identity-aware conflict for an already-used receipt number', async ({
+    existingUtilisateurId,
+    expectedCode,
+    expectedMessage,
+  }) => {
+    jest.clearAllMocks()
+    const bordereau: any = {
+      id: 33,
+      statut: 'en_attente',
+      type: 'inscription',
+      utilisateurId: 7,
+      save: jest.fn().mockResolvedValue(undefined),
+    }
+    ;(Bordereau.findOne as jest.Mock)
+      .mockResolvedValueOnce(bordereau)
+      .mockResolvedValueOnce({
+        id: 42,
+        utilisateurId: existingUtilisateurId,
+        numeroBordereau: 'B-2026-001',
+        utilisateur: { id: existingUtilisateurId, nom: 'Dupont', prenoms: 'Alex' },
+      })
+
+    const req = mockRequest({
+      utilisateurRole: 'cabinet_comptable',
+      utilisateurId: 12,
+      etablissementId: 42,
+      params: { id: '33' },
+      body: {
+        referenceBancaire: 'ORABANK-TG116',
+        numeroBordereau: 'B-2026-001',
+        datePaiement: '2026-11-23',
+      },
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.validerBordereau(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(409)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      code: expectedCode,
+      message: expectedMessage,
+      details: expect.objectContaining({
+        numeroBordereau: 'B-2026-001',
+        etudiant: { id: existingUtilisateurId, nom: 'Dupont', prenoms: 'Alex' },
+      }),
+    }))
   })
 })
 

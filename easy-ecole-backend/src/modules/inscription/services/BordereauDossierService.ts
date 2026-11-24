@@ -585,13 +585,8 @@ export class BordereauDossierService {
             where: { dossierEtudiantId: dossier.id, type: 'inscription', statut: ['impaye', 'en_retard'] },
             transaction
         })
-        // Échéancier d'inscription basé sur les VRAIS frais de la session
-        // (fraisInscription), JAMAIS sur le montant du bordereau : le montant saisi
-        // peut déborder des frais (ex : 480 000 versés pour 450 000 de frais) et
-        // l'excédent doit rester imputable sur la scolarité par l'imputation FIFO
-        // appelée juste après (FinanceRouter.saisir).
-        // Aucun statut 'paye' n'est posé ici : c'est le lettrage FIFO qui solde
-        // l'échéance avec le bon montantPaye (traçabilité BordereauEcheance).
+        // Ligne de suivi comptable interne des frais d'inscription. Elle sert au
+        // lettrage des bordereaux mais n'est pas présentée comme une échéance étudiant.
         if (fraisTotal > 0) {
             await GenerateurEcheancierService.generer(
                 dossier,
@@ -654,7 +649,13 @@ export class BordereauDossierService {
             dossier.modePaiement = fraisScolariteSession.modalite === '1x' ? 'unique' : 'mensuel'
             dossier.nbMensualites = nombreEcheances(fraisScolariteSession.modalite)
             await dossier.save({ transaction })
-            await GenerateurEcheancierScolariteService.generer(dossier, fraisScolariteSession, transaction)
+            await GenerateurEcheancierScolariteService.generer(
+                dossier,
+                fraisScolariteSession,
+                transaction,
+                demande.session?.dateDebut ?? dossier.demarrageParcours,
+                demande.session?.dateFin,
+            )
         }
 
         // Grille tarifaire résolue (FraisParcours en priorité, fallback FraisScolarite session).
@@ -677,7 +678,9 @@ export class BordereauDossierService {
             await GenerateurEcheancierScolariteService.generer(
                 dossier,
                 { montant: grille.montantScolarite, modalite: grille.modaliteScolarite } as any,
-                transaction
+                transaction,
+                demande.session?.dateDebut ?? dossier.demarrageParcours,
+                demande.session?.dateFin
             )
         }
 

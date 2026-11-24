@@ -22,7 +22,7 @@ export interface StatutPaiementDetail extends VerificationPaiementResult {
  * Vérification de paiement partagée entre le scan de présence
  * (PresenceController.scanPresence) et le scan de pointage
  * (PointageController.verifierStatutByQR).
- * Règle de référence : une échéance est considérée en retard si son statut
+ * Règle de référence : une échéance de scolarité est considérée en retard si son statut
  * est 'impaye' | 'en_retard' ET que sa dateLimite est passée (dateLimite <= now).
  */
 export class VerificationPaiementService {
@@ -42,7 +42,8 @@ export class VerificationPaiementService {
         }
 
         const now = new Date()
-        const echeancesImpayees = (dossier.echeances || []).filter(
+        const echeancesScolarite = (dossier.echeances || []).filter(e => e.type === 'scolarite')
+        const echeancesImpayees = echeancesScolarite.filter(
             e => (e.statut == 'impaye' || e.statut == 'en_retard') && new Date(e.dateLimite) <= now
         )
 
@@ -57,7 +58,7 @@ export class VerificationPaiementService {
             }
         }
 
-        const echeancesPartiellementPayees = (dossier.echeances || []).filter(e => e.statut == 'partiel')
+        const echeancesPartiellementPayees = echeancesScolarite.filter(e => e.statut == 'partiel')
         const avertissementPaiement = echeancesPartiellementPayees.length === 1
             ? `Échéance mois ${echeancesPartiellementPayees[0].numeroEcheance} partiellement payée.`
             : echeancesPartiellementPayees.length > 1
@@ -130,7 +131,7 @@ export class VerificationPaiementService {
         const resultat = VerificationPaiementService.verifierDossier(dossier)
 
         const impayees = (dossier.echeances || []).filter(
-            e => e.statut == 'impaye' || e.statut == 'en_retard'
+            e => e.type === 'scolarite' && (e.statut == 'impaye' || e.statut == 'en_retard')
         )
         const montantRestant = impayees.reduce((somme, e) => somme + (e.montant || 0), 0)
 

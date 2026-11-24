@@ -1,7 +1,7 @@
 import express from "express"
 import { Request, Response } from "express";
 import path from "path";
-import { FindOptions, InferAttributes, Op } from "sequelize";
+import { FindOptions, InferAttributes, Op, Transaction } from "sequelize";
 import { BORDEREAU_BANK_REFERENCES, Bordereau } from "../models/Bordereau";
 import { MODULE_MODEL_PREFIX } from "../InscriptionModule";
 import { Echeance } from "../models/Echeance";
@@ -33,7 +33,13 @@ import { NiveauEtude } from "../models/NiveauEtude";
 import { Parcours } from "../models/Parcours";
 import { ParcoursChoisi } from "../models/ParcoursChoisi";
 import { BordereauDossierService } from "../services/BordereauDossierService";
+import { SnapshotService } from "../services/SnapshotService";
 import { BordereauAffectationService } from "../services/BordereauAffectationService";
+import { attribuerNumeroSequenceBordereaux } from "../services/BordereauSequenceService";
+import {
+  creerConflitNumeroBordereau,
+  trouverBordereauAvecNumero,
+} from "../services/BordereauNumeroUniciteService";
 import { creerHandlersAffectationBordereau } from "../controllers/BordereauAffectationController";
 import HikvisionEnrollmentService from "../services/HikvisionEnrollmentService";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
@@ -62,6 +68,73 @@ const getFinanceSiteScopeId = (
     : (req as any).etablissementId;
   const numericSiteId = Number(siteId);
   return Number.isSafeInteger(numericSiteId) && numericSiteId > 0 ? numericSiteId : undefined;
+};
+
+const chargerDemandeAvecFraisSession = (utilisateurId: number, etablissementId?: number, transaction?: Transaction) =>
+  DemandeInscription.findOne({
+    where: { utilisateurId, ...(etablissementId ? { etablissementId } : {}) },
+    include: [{
+      association: DemandeInscription.associations.session,
+      include: [Session.associations.fraisInscription, Session.associations.fraisScolarite],
+    }],
+    order: [['createdAt', 'DESC']],
+    transaction,
+  });
+
+const obtenirFraisSession = (demande: DemandeInscription | null) => {
+  const fraisInscription = (demande?.session?.fraisInscription || [])
+    .reduce((sum, frais) => sum + Number(frais.montant || 0), 0);
+  const fraisScolarite = (demande?.session?.fraisScolarite || []).find(frais => frais.actif) ?? null;
+  return {
+    fraisInscription,
+    fraisScolarite: Number(fraisScolarite?.montant || 0),
+    modaliteScolarite: fraisScolarite?.modalite ?? null,
+  };
+};
+
+const chargerContexteFraisSession = async (
+  utilisateurId: number,
+  etablissementId?: number,
+  transaction?: Transaction,
+) => {
+  const demande = await chargerDemandeAvecFraisSession(utilisateurId, etablissementId, transaction);
+  const dossiers = await DossierEtudiant.findAll({
+    where: { utilisateurId, ...(etablissementId ? { etablissementId } : {}) },
+    order: [['id', 'DESC']],
+    transaction,
+  });
+  const dossierCible = dossiers.find(dossier => dossier.statut === 'actif') ?? dossiers[0];
+  const snapshot = dossierCible
+    ? SnapshotService.deserialiser(dossierCible.fraisScolariteSnapshot)
+    : null;
+  const frais = snapshot
+    ? {
+      fraisInscription: snapshot.montantInscription,
+      fraisScolarite: snapshot.montantScolarite,
+      modaliteScolarite: snapshot.modaliteScolarite,
+    }
+    : obtenirFraisSession(demande);
+  const echeances = dossiers.length > 0
+    ? await Echeance.findAll({
+      where: { dossierEtudiantId: dossiers.map(dossier => dossier.id), type: ['inscription', 'scolarite'] },
+      transaction,
+    })
+    : [];
+  const dejaPayeInscription = echeances
+    .filter(echeance => echeance.type === 'inscription')
+    .reduce((sum, echeance) => sum + Number(echeance.montantPaye || 0), 0);
+  const dejaPayeScolarite = echeances
+    .filter(echeance => echeance.type === 'scolarite')
+    .reduce((sum, echeance) => sum + Number(echeance.montantPaye || 0), 0);
+
+  return {
+    frais,
+    dossiers,
+    dejaPayeInscription,
+    resteInscription: Math.max(0, Math.round((frais.fraisInscription - dejaPayeInscription) * 100) / 100),
+    dejaPayeScolarite,
+    resteScolarite: Math.max(0, Math.round((frais.fraisScolarite - dejaPayeScolarite) * 100) / 100),
+  };
 };
 
 const canAccessFinanceWithoutSite = (req: Request): boolean => {
@@ -432,6 +505,7 @@ router.get('/bordereaux-a-traiter', [AuthEsacompta, CheckPermission('action.fina
     }
 
     const { rows, count: total } = await Bordereau.findAndCountAll({ ...options, limit, offset });
+    await attribuerNumeroSequenceBordereaux(rows)
 
     // Enrichissement : ajouter le contexte DemandeInscription pour chaque bordereau
     const utilisateurIds: number[] = [...new Set(rows.map(b => b.utilisateurId as number))];
@@ -523,16 +597,26 @@ router.get('/bordereaux/verifier-unicite', [AuthEsacompta, CheckPermission('acti
       return res.status(400).json({ success: false, message: 'Renseignez un numéro de bordereau.' })
     }
 
-    const whereClause: any = { deletedAt: null }
-    if (excludeId && !isNaN(excludeId)) whereClause.id = { [Op.ne]: excludeId }
-    whereClause.numeroBordereau = numeroBordereau
-
-    const existant = await Bordereau.findOne({ where: whereClause, attributes: ['id', 'numeroBordereau'] })
+    const existant = await trouverBordereauAvecNumero(numeroBordereau, {
+      ...(excludeId && !isNaN(excludeId) ? { excludeId } : {}),
+    })
     if (!existant) {
       return res.json({ success: true, unique: true })
     }
 
-    return res.json({ success: true, unique: false, conflit: { champ: 'numeroBordereau', valeur: existant.numeroBordereau } })
+    return res.json({
+      success: true,
+      unique: false,
+      conflit: {
+        champ: 'numeroBordereau',
+        valeur: existant.numeroBordereau,
+        etudiant: {
+          id: Number(existant.utilisateurId),
+          nom: existant.utilisateur?.nom || '',
+          prenoms: existant.utilisateur?.prenoms || '',
+        },
+      },
+    })
   } catch (error: any) {
     console.error('[Finance] verifier-unicite ERREUR:', error?.message)
     return res.status(500).json({ success: false, message: "Erreur de vérification d'unicité." })
@@ -588,15 +672,71 @@ router.post('/bordereaux/:id/imputation-preview', [AuthEsacompta, CheckPermissio
       : typeRequested === 'scolarite' || typeRequested === 'frais de scolarité' ? 'scolarite'
       : undefined
 
-    const resultat = await ImputationService.simulerPourUtilisateur(
+    const contexteFrais = await chargerContexteFraisSession(
       bordereau.utilisateurId,
-      montant,
-      undefined,
-      imputationType,
-      bordereauSiteScopeId
+      bordereauSiteScopeId,
     )
+    const montantInscriptionSession = imputationType === 'scolarite'
+      ? 0
+      : Math.min(montant, contexteFrais.resteInscription)
+    const montantScolariteSession = imputationType === 'inscription'
+      ? 0
+      : Math.max(0, montant - montantInscriptionSession)
+    let resultat
+    if (imputationType) {
+      resultat = await ImputationService.simulerPourUtilisateur(
+        bordereau.utilisateurId,
+        montant,
+        undefined,
+        imputationType,
+        bordereauSiteScopeId
+      )
+    } else {
+      const [inscriptionPreview, scolaritePreview] = await Promise.all([
+        montantInscriptionSession > 0
+          ? ImputationService.simulerPourUtilisateur(
+              bordereau.utilisateurId,
+              montantInscriptionSession,
+              undefined,
+              'inscription',
+              bordereauSiteScopeId
+            )
+          : Promise.resolve({ lignes: [], surplus: 0 }),
+        montantScolariteSession > 0
+          ? ImputationService.simulerPourUtilisateur(
+              bordereau.utilisateurId,
+              montantScolariteSession,
+              undefined,
+              'scolarite',
+              bordereauSiteScopeId
+            )
+          : Promise.resolve({ lignes: [], surplus: 0 }),
+      ])
+      resultat = {
+        bordereauId: 0,
+        montantDisponible: montant,
+        lignes: [...inscriptionPreview.lignes, ...scolaritePreview.lignes],
+        surplus: inscriptionPreview.surplus + scolaritePreview.surplus,
+      }
+    }
 
-    return res.status(200).json({ success: true, preview: resultat })
+    return res.status(200).json({
+      success: true,
+      preview: {
+        ...resultat,
+        repartitionSession: {
+          fraisInscription: contexteFrais.frais.fraisInscription,
+          inscriptionDejaPayee: contexteFrais.dejaPayeInscription,
+          inscriptionRestante: contexteFrais.resteInscription,
+          montantInscriptionImpute: montantInscriptionSession,
+          fraisScolarite: contexteFrais.frais.fraisScolarite,
+          modaliteScolarite: contexteFrais.frais.modaliteScolarite,
+          scolariteDejaPayee: contexteFrais.dejaPayeScolarite,
+          scolariteRestante: contexteFrais.resteScolarite,
+          montantScolariteImpute: montantScolariteSession,
+        },
+      },
+    })
   } catch (error: any) {
     console.error('Erreur preview imputation:', error)
     return res.status(500).json({ success: false, message: error.message || 'Erreur interne' })
@@ -633,41 +773,18 @@ router.post('/bordereaux/:id/composition-preview', [AuthEsacompta, CheckPermissi
       return res.status(400).json({ success: false, message: "Montant de paiement invalide" })
     }
 
-    // Frais inscription de la session
-    const demande = await DemandeInscription.findOne({
-      where: { utilisateurId: bordereau.utilisateurId },
-      include: [{ association: DemandeInscription.associations.session, include: [Session.associations.fraisInscription] }],
-    })
-    const fraisInscriptionSession = (demande?.session?.fraisInscription || [])
-      .reduce((sum: number, f: any) => sum + (f.montant || 0), 0)
-
-    // Montant déjà payé en inscription
-    const dossiers = await DossierEtudiant.findAll({
-      where: {
-        utilisateurId: bordereau.utilisateurId,
-        ...(bordereauSiteScopeId ? { etablissementId: bordereauSiteScopeId } : {})
-      }
-    })
-    let dejaPayeInscription = 0
-    if (dossiers.length > 0) {
-      const echeancesInscription = await Echeance.findAll({
-        where: { dossierEtudiantId: dossiers.map(d => d.id), type: 'inscription' },
-      })
-      dejaPayeInscription = echeancesInscription.reduce((sum, e) => sum + (e.montantPaye || 0), 0)
-    }
-
-    const resteInscription = Math.max(0, fraisInscriptionSession - dejaPayeInscription)
-    const montantInscription = Math.min(montant, resteInscription)
+    const contexteFrais = await chargerContexteFraisSession(bordereau.utilisateurId, bordereauSiteScopeId);
+    const montantInscription = Math.min(montant, contexteFrais.resteInscription)
     const montantScolarite = Math.round((montant - montantInscription) * 100) / 100
 
     // Bourse de l'étudiant
     let bourse: any = null
-    if (dossiers.length > 0) {
+    if (contexteFrais.dossiers.length > 0) {
       try {
         const { BourseAttribution } = await import('../../bourse/models/BourseAttribution')
         const { BourseConfiguration } = await import('../../bourse/models/BourseConfiguration')
         const attribution = await BourseAttribution.findOne({
-          where: { dossierEtudiantId: dossiers.map(d => d.id), statut: 'ACTIVE' },
+          where: { dossierEtudiantId: contexteFrais.dossiers.map(d => d.id), statut: 'ACTIVE' },
           include: [{ model: BourseConfiguration, as: 'configuration' }],
         })
         if (attribution) {
@@ -696,9 +813,16 @@ router.post('/bordereaux/:id/composition-preview', [AuthEsacompta, CheckPermissi
         scolarite: montantScolarite,
         scolariteApresBourse: montantScolariteApresBourse,
       },
-      fraisInscriptionSession,
-      dejaPayeInscription,
-      resteInscription,
+      fraisSession: {
+        inscription: contexteFrais.frais.fraisInscription,
+        scolarite: contexteFrais.frais.fraisScolarite,
+        modaliteScolarite: contexteFrais.frais.modaliteScolarite,
+      },
+      dejaPayeInscription: contexteFrais.dejaPayeInscription,
+      resteInscription: contexteFrais.resteInscription,
+      dejaPayeScolarite: contexteFrais.dejaPayeScolarite,
+      resteScolariteSession: contexteFrais.resteScolarite,
+      fraisInscriptionSession: contexteFrais.frais.fraisInscription,
       bourse,
     })
   } catch (error: any) {
@@ -955,33 +1079,12 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       } else {
         // ── AUTO-COMPOSITION : inscription d'abord, puis scolarité ──
         // Récupérer les frais d'inscription de la session
-        const demande = await DemandeInscription.findOne({
-          where: { utilisateurId: bordereau.utilisateurId },
-          include: [{ association: DemandeInscription.associations.session, include: [Session.associations.fraisInscription] }],
+        const contexteFrais = await chargerContexteFraisSession(
+          bordereau.utilisateurId,
+          hasBordereauSiteScope ? bordereauSiteScopeId : undefined,
           transaction,
-        })
-        const fraisInscriptionSession = (demande?.session?.fraisInscription || [])
-          .reduce((sum: number, f: any) => sum + (f.montant || 0), 0)
-
-        // Calculer le montant déjà payé en inscription
-        const dossiers = await DossierEtudiant.findAll({
-          where: {
-            utilisateurId: bordereau.utilisateurId,
-            ...(hasBordereauSiteScope ? { etablissementId: bordereauSiteScopeId } : {})
-          },
-          transaction,
-        })
-        let dejaPayeInscription = 0
-        if (dossiers.length > 0) {
-          const echeancesInscription = await Echeance.findAll({
-            where: { dossierEtudiantId: dossiers.map((d: any) => d.id), type: 'inscription' },
-            transaction,
-          })
-          dejaPayeInscription = echeancesInscription.reduce((sum: number, e: any) => sum + (e.montantPaye || 0), 0)
-        }
-
-        const resteInscription = Math.max(0, fraisInscriptionSession - dejaPayeInscription)
-        const montantInscription = Math.min(montantPaiement, resteInscription)
+        )
+        const montantInscription = Math.min(montantPaiement, contexteFrais.resteInscription)
         const montantScolarite = Math.round((montantPaiement - montantInscription) * 100) / 100
 
         composition = []
@@ -997,13 +1100,12 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
     // Un paiement d'inscription peut être partiel. Pour une première opération
     // mixte ou scolarité, le montant doit toutefois couvrir les frais d'inscription.
     if (estPremierBordereau && (estMixte || estScolarite)) {
-      const demandeGuard = await DemandeInscription.findOne({
-        where: { utilisateurId: bordereau.utilisateurId },
-        include: [{ association: DemandeInscription.associations.session, include: [Session.associations.fraisInscription] }],
+      const contexteGuard = await chargerContexteFraisSession(
+        bordereau.utilisateurId,
+        hasBordereauSiteScope ? bordereauSiteScopeId : undefined,
         transaction,
-      })
-      const fraisInscriptionSessionGuard = (demandeGuard?.session?.fraisInscription || [])
-        .reduce((sum, f) => sum + (f.montant || 0), 0)
+      )
+      const fraisInscriptionSessionGuard = contexteGuard.frais.fraisInscription
       if (montantPaiement < fraisInscriptionSessionGuard) {
         await transaction.rollback()
         console.log(_rid, 'ERREUR 400: Montant du premier paiement', montantPaiement, '< frais inscription session', fraisInscriptionSessionGuard)
@@ -1125,13 +1227,18 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
 
     // Les références bancaires sont réutilisables ; seul le numéro de bordereau reste unique.
     if (numBordereau !== null) {
-      const whereClause: any = { id: { [Op.ne]: bordereau.id }, deletedAt: null };
-      whereClause.numeroBordereau = numBordereau;
-      const doublon = await Bordereau.findOne({ where: whereClause, transaction });
+      const doublon = await trouverBordereauAvecNumero(numBordereau, {
+        excludeId: Number(bordereau.id),
+        transaction,
+      });
       if (doublon) {
         await transaction.rollback();
         console.log(_rid, 'ERREUR 400: Numéro de bordereau déjà utilisé');
-        return res.status(400).json({ success: false, message: "Ce numéro de bordereau est déjà utilisé", details: { numeroBordereau: numBordereau } });
+        return res.status(409).json(creerConflitNumeroBordereau(
+          doublon,
+          Number(bordereau.utilisateurId),
+          numBordereau,
+        ));
       }
     }
 

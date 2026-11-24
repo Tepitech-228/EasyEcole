@@ -95,6 +95,7 @@ export const UNIQUE_INDEX_DEFS: readonly UniqueIndexDef[] = [
     { table: 'ins_etapes_inscription', column: 'ordre' },
     { table: 'ins_dossiers_etudiants', column: 'matricule' },
     { table: 'ins_demandes_inscription', column: 'matricule' },
+    { table: 'ins_bordereaux', column: 'numeroBordereau' },
     { table: 'ins_classes', column: 'libelle' },
     { table: 'ins_annees_academiques', column: 'libelle' },
     { table: 'ins_absences', column: 'noteEvaluationId' },
@@ -250,7 +251,7 @@ export async function ensureUniqueIndexes(sequelize: Sequelize): Promise<EnsureU
             );
             result.created.push(`${def.table}.${def.column} (${indexName})`);
         } catch (err: any) {
-            if (err?.parent?.code === 'ER_DUP_KEYNAME' || err?.parent?.code === 'ER_DUP_ENTRY') {
+            if (err?.parent?.code === 'ER_DUP_KEYNAME') {
                 // Course au boot concurrent ou contrainte créée entre-temps : OK.
                 result.alreadyPresent.push(`${def.table}.${def.column} (${indexName})`);
             } else {

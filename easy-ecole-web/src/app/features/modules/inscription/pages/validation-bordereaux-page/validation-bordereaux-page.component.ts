@@ -39,6 +39,12 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   private previewSubscription?: Subscription
   successResult: { type: 'inscription' | 'scolarite' | 'rattrapage', matricule?: string, codeQuitus?: string } | null = null
   showSuccessModal: boolean = false
+  showDuplicateModal: boolean = false
+  duplicateModalTitle = ''
+  duplicateModalMessage = ''
+  duplicateStudentName = ''
+  duplicateNumeroBordereau = ''
+  duplicateInfo: { etudiant?: { nom?: string; prenoms?: string } } | null = null
 
   validationForm: FormGroup
   private uniciteCheck: any = null
@@ -61,12 +67,14 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   selectedAnneeId: string = ''
   selectedNiveauId: string = ''
   selectedParcoursId: string = ''
+  searchTerm: string = ''
 
   niveauxFiltres: NiveauEtude[] = []
   parcoursFiltres: Parcours[] = []
   dataLoaded: boolean = false
   private presenceHeartbeat?: ReturnType<typeof setInterval>
   private bordereauxRequest?: Subscription
+  private searchDebounce?: ReturnType<typeof setTimeout>
 
   // Pagination
   currentPage: number = 1;
@@ -81,6 +89,7 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   // Dossier tree
   treeNodes: DossierNode[] = [];
   itemColumns = [
+    { key: 'numeroSequenceLabel', label: 'Bordereau' },
     { key: 'type', label: 'Type' },
     { key: 'montant', label: 'Montant' },
     { key: 'referenceBancaire', label: 'Référence bancaire' },
@@ -134,6 +143,7 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   verificateurUnicite(champ: 'numeroBordereau') {
     return (control: AbstractControl): Observable<ValidationErrors | null> => {
       const valeur = (control.value || '').trim()
+      this.duplicateInfo = null
       if (!valeur) return of(null)
       if (this.uniciteCheck) clearTimeout(this.uniciteCheck)
       return new Observable<ValidationErrors | null>((subscriber) => {
@@ -141,7 +151,11 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
           const params: any = { [champ]: valeur, excludeId: this.selectedBordereau?.id }
           this.bordereauService.verifierUniciteCabinet(params).subscribe({
             next: (res: any) => {
-              subscriber.next(res?.unique ? null : { unicite: true })
+              const valeurActuelle = String(control.value || '').trim()
+              if (valeurActuelle === valeur) {
+                this.duplicateInfo = res?.unique ? null : res?.conflit || null
+              }
+              subscriber.next(null)
               subscriber.complete()
             },
             error: () => {
@@ -268,6 +282,7 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
       page: this.currentPage,
       limit: this.pageSize
     }
+    if (this.searchTerm.trim()) params.recherche = this.searchTerm.trim()
     if (this.selectedAnneeId) params.anneeAcademiqueId = this.selectedAnneeId
     if (this.selectedNiveauId) params.niveauEtudeId = this.selectedNiveauId
     if (this.selectedParcoursId) params.parcoursId = this.selectedParcoursId
@@ -286,6 +301,16 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
         console.error('Erreur chargement des bordereaux à auditer:', err)
       }
     })
+  }
+
+  onSearchChange(value: string): void {
+    this.searchTerm = value
+    this.currentPage = 1
+    if (this.searchDebounce) clearTimeout(this.searchDebounce)
+    this.searchDebounce = setTimeout(() => {
+      this.getBordereauxEnAttente()
+      this.searchDebounce = undefined
+    }, 300)
   }
 
   validerBordereau(): void {
@@ -320,6 +345,20 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
         },
         error: (err) => {
           console.error('Erreur validation bordereau:', err)
+          const code = err?.error?.code
+          if (code === 'BORDEREAU_NUMERO_DEJA_UTILISE_PAR_MEME_ETUDIANT'
+            || code === 'BORDEREAU_NUMERO_DEJA_UTILISE_PAR_AUTRE_ETUDIANT') {
+            const details = err?.error?.details
+            const etudiant = details?.etudiant
+            this.duplicateModalTitle = code === 'BORDEREAU_NUMERO_DEJA_UTILISE_PAR_MEME_ETUDIANT'
+              ? 'Alerte fraude — bordereau déjà soumis'
+              : 'Alerte fraude — numéro associé à un autre étudiant'
+            this.duplicateModalMessage = err?.error?.message || 'Ce numéro de dépôt est déjà utilisé.'
+            this.duplicateStudentName = [etudiant?.prenoms, etudiant?.nom].filter(Boolean).join(' ') || 'Nom indisponible'
+            this.duplicateNumeroBordereau = details?.numeroBordereau || payload.numeroBordereau
+            this.showDuplicateModal = true
+            return
+          }
           this.apiErrorMessage = err?.error?.message || err?.error?.error?.message || 'Une erreur est survenue lors de la validation du bordereau.'
           this.error = true
           setTimeout(() => { this.error = false; this.apiErrorMessage = ''; }, 5000)
@@ -449,11 +488,19 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
             label: etudiant.label,
             id: etudiantKey,
             expanded: true,
-            items: etudiant.items
+            items: etudiant.items.map((bordereau: Bordereau) => ({
+              ...bordereau,
+              numeroSequenceLabel: this.getNumeroSequenceLabel(bordereau.numeroSequence)
+            }))
           }))
         }))
       }))
     }));
+  }
+
+  private getNumeroSequenceLabel(numeroSequence?: number): string {
+    if (!numeroSequence) return 'Bordereau'
+    return `${numeroSequence}${numeroSequence === 1 ? 'er' : 'e'} bordereau`
   }
 
   onSelectionChange(event: { ids: number[] }): void {
@@ -581,12 +628,18 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
     this.showPdfModal = false
     this.pdfBordereau = undefined
     this.selectedBordereau = undefined
+    this.duplicateInfo = null
     this.validationForm.reset()
     this.clearPdfPreview()
   }
 
+  closeDuplicateModal(): void {
+    this.showDuplicateModal = false
+  }
+
   ngOnDestroy(): void {
     if (this.presenceHeartbeat) clearInterval(this.presenceHeartbeat)
+    if (this.searchDebounce) clearTimeout(this.searchDebounce)
     this.bordereauxRequest?.unsubscribe()
     if (this.showPdfModal && this.selectedBordereau?.id) {
       this.bordereauService.libererAudit(String(this.selectedBordereau.id)).subscribe({

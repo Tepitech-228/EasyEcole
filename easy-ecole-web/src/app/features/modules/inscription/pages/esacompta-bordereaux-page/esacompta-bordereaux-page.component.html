@@ -410,12 +410,16 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div class="bg-white rounded-lg p-3 border border-indigo-100">
                 <p class="text-xs text-gray-500 uppercase font-semibold mb-1">Inscription (d'abord)</p>
-                <p class="text-lg font-bold text-indigo-700">{{ compositionPreviewResult.composition.inscription | number:'1.0-0' }} FCFA</p>
+                <p class="text-lg font-bold text-indigo-700">{{ formatCurrency(compositionPreviewResult.composition.inscription) }}</p>
               </div>
               <div class="bg-white rounded-lg p-3 border border-indigo-100">
                 <p class="text-xs text-gray-500 uppercase font-semibold mb-1">Scolarité (reste)</p>
-                <p class="text-lg font-bold text-indigo-700">{{ compositionPreviewResult.composition.scolarite | number:'1.0-0' }} FCFA</p>
+                <p class="text-lg font-bold text-indigo-700">{{ formatCurrency(compositionPreviewResult.composition.scolarite) }}</p>
               </div>
+            </div>
+            <div *ngIf="compositionPreviewResult.fraisSession" class="rounded-lg border border-indigo-100 bg-white px-3 py-2 text-xs text-gray-600">
+              <p>Paramètres de la session : inscription {{ formatCurrency(compositionPreviewResult.fraisSession.inscription) }} · scolarité {{ formatCurrency(compositionPreviewResult.fraisSession.scolarite) }}.</p>
+              <p class="mt-1">Avant ce paiement : inscription déjà payée {{ formatCurrency(compositionPreviewResult.dejaPayeInscription || 0) }}, reste {{ formatCurrency(compositionPreviewResult.resteInscription || 0) }} · scolarité déjà payée {{ formatCurrency(compositionPreviewResult.dejaPayeScolarite || 0) }}, reste {{ formatCurrency(compositionPreviewResult.resteScolariteSession || 0) }}.</p>
             </div>
           </div>
         </div>
@@ -493,12 +497,36 @@
     </div>
   </section>
   <div *ngIf="previewResult" class="mb-6">
-    <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+      <div class="bg-green-50 border border-green-200 rounded-lg p-4">
       <p class="text-sm font-medium text-green-800">Montant disponible : {{ formatCurrency(previewResult.montantDisponible) }}</p>
+      </div>
+      <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+      <p class="text-sm font-medium text-indigo-800">Frais d'inscription imputés : {{ formatCurrency(montantInscriptionApercu) }}</p>
+      </div>
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <p class="text-sm font-medium text-blue-800">Scolarité imputée : {{ formatCurrency(montantScolariteApercu) }}</p>
+      </div>
     </div>
+    <div *ngIf="previewResult.repartitionSession as session" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+      <div class="rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm">
+        <p class="font-semibold text-indigo-900">Frais d'inscription de la session</p>
+        <p class="mt-1">Configurés : {{ formatCurrency(session.fraisInscription) }}</p>
+        <p>Déjà payés : {{ formatCurrency(session.inscriptionDejaPayee) }} · restant avant paiement : {{ formatCurrency(session.inscriptionRestante) }}</p>
+      </div>
+      <div class="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm">
+        <p class="font-semibold text-blue-900">Frais de scolarité de la session</p>
+        <p class="mt-1">Configurés : {{ formatCurrency(session.fraisScolarite) }} · échéances mensuelles jusqu'à la fin de la session</p>
+        <p>Déjà payés : {{ formatCurrency(session.scolariteDejaPayee) }} · restant avant paiement : {{ formatCurrency(session.scolariteRestante) }}</p>
+      </div>
+    </div>
+    <p class="text-xs text-gray-500 mb-3">La répartition suit les montants de la session : inscription d'abord, puis le reste sur les échéances de scolarité dans l'ordre croissant.</p>
     <div *ngIf="previewResult.lignes && previewResult.lignes.length > 0" class="space-y-2">
       <div *ngFor="let ligne of previewResult.lignes" class="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-2">
-        <span class="text-sm text-gray-700">{{ ligne.type === 'inscription' ? 'Inscription' : 'Scolarité' }} - Échéance {{ ligne.numeroEcheance }}</span>
+        <span class="text-sm text-gray-700">
+          <ng-container *ngIf="ligne.type === 'inscription'; else echeanceScolarite">INSCRIPTION</ng-container>
+          <ng-template #echeanceScolarite>Scolarité - Échéance {{ ligne.numeroEcheance }} · {{ formatMoisEcheance(ligne.moisConcerne) }}</ng-template>
+        </span>
         <span class="text-sm font-medium" [class.text-green-600]="ligne.statutApres === 'paye'" [class.text-orange-600]="ligne.statutApres === 'partiel'">
           {{ formatCurrency(ligne.montantImpute) }} → {{ ligne.statutApres === 'paye' ? 'SOLDÉ' : 'PARTIEL' }}
         </span>

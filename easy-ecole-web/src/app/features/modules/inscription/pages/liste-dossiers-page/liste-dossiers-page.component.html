@@ -223,7 +223,7 @@
                   <span class="doc-name">{{ doc.dossierInscription?.titre || 'Document' }}</span>
                   <span class="doc-file">{{ doc.nomFichier }}</span>
                 </div>
-                <button class="doc-download" (click)="telechargerFichier(DOSSIERS_PATH, doc.nomFichier)" title="Voir le PDF">
+                <button class="doc-download" (click)="telechargerDocument(doc)" title="Voir le document">
                   <span class="material-symbols-outlined">open_in_new</span>
                 </button>
               </div>
@@ -280,7 +280,7 @@
                 <span class="badge-sm" [ngClass]="bord.statut === 'valide' ? 'badge-green' : bord.statut === 'rejete' ? 'badge-red' : 'badge-yellow'">
                   {{ bord.statut }}
                 </span>
-                <button class="doc-download" (click)="telechargerFichier(BORDEREAUX_PATH, bord.fichier)" title="Voir le bordereau">
+                <button class="doc-download" (click)="telechargerBordereau(bord)" title="Voir le bordereau">
                   <span class="material-symbols-outlined">open_in_new</span>
                 </button>
               </div>

@@ -24,7 +24,7 @@ describe("ImputationService — priorisation inscription avant scolarite", () =>
       const statuts = where.statut || []
       const dossierId = where.dossierEtudiantId
       
-      return mockEcheances.filter(e => {
+      const echeances = mockEcheances.filter(e => {
         if (type && e.type !== type) return false
         if (statuts.length > 0 && !statuts.includes(e.statut)) return false
         if (dossierId) {
@@ -35,6 +35,17 @@ describe("ImputationService — priorisation inscription avant scolarite", () =>
           }
         }
         return true
+      })
+      const order = options?.order || []
+      return echeances.sort((a, b) => {
+        for (const [field, direction] of order) {
+          const valeurA = (a as any)[field]
+          const valeurB = (b as any)[field]
+          if (valeurA === valeurB) continue
+          const comparaison = valeurA < valeurB ? -1 : 1
+          return direction === 'DESC' ? -comparaison : comparaison
+        }
+        return 0
       }) as Echeance[]
     })
 
@@ -221,6 +232,65 @@ describe("ImputationService — priorisation inscription avant scolarite", () =>
     expect(resultat.lignes[1].statutApres).toBe('partiel')
     expect(resultat.lignes[1].montantImpute).toBeCloseTo(30000, 2)
     expect(resultat.surplus).toBeCloseTo(0, 2)
+  })
+
+  it("impute 200 000 FCFA aux frais d'inscription puis aux échéances croissantes", async () => {
+    const inscription = creerEcheance({
+      id: 10,
+      type: 'inscription',
+      numeroEcheance: 1,
+      montant: 50000,
+    })
+    const echeance1 = creerEcheance({
+      id: 20,
+      type: 'scolarite',
+      numeroEcheance: 1,
+      montant: 54999.9,
+      dateLimite: new Date('2025-01-01'),
+    })
+    const echeance2 = creerEcheance({
+      id: 30,
+      type: 'scolarite',
+      numeroEcheance: 2,
+      montant: 54999.9,
+      dateLimite: new Date('2025-02-01'),
+    })
+    const echeance3 = creerEcheance({
+      id: 40,
+      type: 'scolarite',
+      numeroEcheance: 3,
+      montant: 40000.2,
+      dateLimite: new Date('2025-03-01'),
+    })
+    mockEcheances = [echeance3, echeance2, echeance1, inscription]
+
+    const resultat = await ImputationService.simulerPourUtilisateur(1, 200000)
+
+    expect(resultat.lignes.map(ligne => ligne.echeanceId)).toEqual([10, 20, 30, 40])
+    expect(resultat.lignes.map(ligne => ligne.montantImpute)).toEqual([50000, 54999.9, 54999.9, 40000.2])
+    expect(resultat.lignes.reduce((total, ligne) => total + ligne.montantImpute, 0)).toBe(200000)
+    expect(resultat.surplus).toBe(0)
+  })
+
+  it('conserve les centimes des échéances dans le montant payé et le surplus', async () => {
+    const echeance = creerEcheance({
+      id: 50,
+      type: 'scolarite',
+      numeroEcheance: 1,
+      montant: 54999.9,
+    })
+    mockEcheances = [echeance]
+
+    const resultat = await ImputationService.imputer(
+      7,
+      1,
+      55000,
+      mockTransaction as Transaction
+    )
+
+    expect(echeance.montantPaye).toBe(54999.9)
+    expect(resultat.lignes[0].montantImpute).toBe(54999.9)
+    expect(resultat.surplus).toBeCloseTo(0.1, 2)
   })
 
   it("type 'inscription' : n'impute QUE sur les échéances d'inscription (la scolarité reste intacte)", async () => {

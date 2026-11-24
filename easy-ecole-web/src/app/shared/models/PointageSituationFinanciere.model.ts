@@ -17,6 +17,12 @@ export interface PointageSituationFinanciere {
   sommeGlobale: number;
   montantPaye: number;
   resteAPayer: number;
+  fraisInscriptionSession?: number;
+  fraisScolariteSession?: number;
+  montantInscriptionPaye?: number;
+  montantScolaritePaye?: number;
+  resteInscriptionSession?: number;
+  resteScolariteSession?: number;
   estAJour: boolean;
   echeancesEnRetard: number;
   echeancesPayees: number;

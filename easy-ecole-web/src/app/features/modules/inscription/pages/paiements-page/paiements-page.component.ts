@@ -92,7 +92,19 @@ export class PaiementsPageComponent extends BaseComponentClass implements OnInit
   }
 
   get echeances(): Echeance[] {
-    return this.dossier?.echeances || []
+    return (this.dossier?.echeances || []).filter(echeance => echeance.type === 'scolarite')
+  }
+
+  get fraisInscriptionSession(): number {
+    return Number(this.dossier?.fraisInscriptionSession || 0)
+  }
+
+  get montantInscriptionPaye(): number {
+    return Number(this.dossier?.montantInscriptionPaye || 0)
+  }
+
+  get resteInscriptionSession(): number {
+    return Math.max(0, this.fraisInscriptionSession - this.montantInscriptionPaye)
   }
 
   get totalRestant(): number {
@@ -115,6 +127,16 @@ export class PaiementsPageComponent extends BaseComponentClass implements OnInit
       if (dateA !== dateB) return dateA - dateB
       return (a.numeroEcheance || 0) - (b.numeroEcheance || 0)
     })[0]
+  }
+
+  formatMoisEcheance(echeance: Echeance): string {
+    const mois = echeance.moisConcerne
+    const match = mois ? /^(\d{4})-(\d{2})$/.exec(mois) : null
+    const date = match
+      ? new Date(Number(match[1]), Number(match[2]) - 1, 1)
+      : echeance.dateLimite ? new Date(echeance.dateLimite) : null
+    if (!date || Number.isNaN(date.getTime())) return mois || '---'
+    return new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }).format(date)
   }
 
   estEcheanceImpayee(echeance: Echeance): boolean {

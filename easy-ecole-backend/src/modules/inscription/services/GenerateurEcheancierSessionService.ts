@@ -18,6 +18,7 @@ export interface EcheanceSession {
 
 export interface SessionPaiementConfig {
   dateDebut: Date | string;
+  dateFin?: Date | string;
   montantTotal: number;
   modalite: ModalitePaiement;
   type: TypeFraisPaiement;
@@ -56,10 +57,27 @@ export function genererEcheancesSession(config: SessionPaiementConfig): Echeance
     throw new Error('Montant total invalide pour la génération de l’échéancier');
   }
 
-  const nb = nombreEcheances(modalite);
+  const dateReference = new Date(config.dateDebut);
+  if (Number.isNaN(dateReference.getTime())) {
+    throw new Error('Date de début de session invalide pour la génération de l’échéancier');
+  }
+
+  let nb = nombreEcheances(modalite);
+  if (config.dateFin !== undefined) {
+    const dateFin = new Date(config.dateFin);
+    if (Number.isNaN(dateFin.getTime()) || dateFin < dateReference) {
+      throw new Error('Date de fin de session invalide pour la génération de l’échéancier');
+    }
+
+    nb = (dateFin.getFullYear() - dateReference.getFullYear()) * 12
+      + dateFin.getMonth() - dateReference.getMonth();
+    if (nb <= 0) {
+      throw new Error('La période de session doit couvrir au moins un mois d’échéancier');
+    }
+  }
+
   const montantStandard = arrondir(montantTotal / nb);
   const montantDerniere = arrondir(montantTotal - montantStandard * (nb - 1));
-  const dateReference = new Date(config.dateDebut);
 
   const echeances: EcheanceSession[] = [];
 
