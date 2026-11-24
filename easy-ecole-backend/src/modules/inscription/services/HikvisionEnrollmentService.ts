@@ -13,6 +13,33 @@ import HikvisionIsapiService from "./HikvisionIsapiService";
 
 type EnrollmentQueueOutcome = "created" | "requeued" | "already_pending" | "already_completed";
 
+export interface StaffEnrollmentTerminalResult {
+  terminalId: number;
+  terminalName: string;
+  etablissementId: number;
+  compteCree: boolean;
+  statut: "cree" | "deja_present" | "echec" | "en_cours";
+  message: string;
+}
+
+export interface StaffEnrollmentRetryResult {
+  utilisateurId: number;
+  nomComplet: string;
+  employeeNo: string | null;
+  compteCree: boolean;
+  message: string;
+  terminaux: StaffEnrollmentTerminalResult[];
+}
+
+interface StaffEnrollmentTarget {
+  utilisateur: Utilisateur;
+  employeeNo: string | null;
+  photoFilename: string | null;
+  photoCategory: "enseignant" | "personnel";
+  sites: number[];
+  eligibleRole: boolean;
+}
+
 export default class HikvisionEnrollmentService {
   private static running = false;
   private static studentReconciliationRunning = false;
@@ -320,19 +347,22 @@ export default class HikvisionEnrollmentService {
     }
   }
 
-  static async enqueueStaffProfile(utilisateurId: number): Promise<number> {
+  private static async resolveStaffTarget(utilisateurId: number): Promise<StaffEnrollmentTarget> {
     const utilisateur = await Utilisateur.findByPk(utilisateurId);
     if (!utilisateur) throw new Error(`Le compte ${utilisateurId} est introuvable pour l’enrôlement Hikvision.`);
 
     const sites: number[] = [];
     let employeeNo: string | null = null;
-    let hasPhoto = false;
+    let photoFilename: string | null = null;
+    let photoCategory: "enseignant" | "personnel" = "personnel";
+    let eligibleRole = true;
 
     if (utilisateur.role === RolesUtilisateur.ENSEIGNANT) {
       const enseignant = await Enseignant.findOne({ where: { utilisateurId } });
       if (!enseignant) throw new Error(`Le profil enseignant ${utilisateurId} est introuvable.`);
       employeeNo = enseignant.matricule || null;
-      hasPhoto = Boolean(enseignant.photo);
+      photoFilename = enseignant.photo || null;
+      photoCategory = "enseignant";
       const affectations = await SiteUtilisateur.findAll({
         where: { utilisateurId },
         attributes: ["etablissementId"]
@@ -342,7 +372,7 @@ export default class HikvisionEnrollmentService {
       const personnel = await PersonnelAdministratif.findOne({ where: { utilisateurId } });
       if (!personnel) throw new Error(`Le profil du personnel ${utilisateurId} est introuvable.`);
       employeeNo = personnel.matricule || null;
-      hasPhoto = Boolean(utilisateur.photoDeProfil);
+      photoFilename = utilisateur.photoDeProfil || null;
       const affectations = await SiteUtilisateur.findAll({
         where: { utilisateurId },
         attributes: ["etablissementId"]
@@ -351,7 +381,7 @@ export default class HikvisionEnrollmentService {
       if (sites.length === 0 && personnel.etablissementId) sites.push(Number(personnel.etablissementId));
     } else if (utilisateur.role === RolesUtilisateur.ADMIN) {
       employeeNo = utilisateur.identifiant || null;
-      hasPhoto = Boolean(utilisateur.photoDeProfil);
+      photoFilename = utilisateur.photoDeProfil || null;
       const affectations = await SiteUtilisateur.findAll({
         where: { utilisateurId },
         attributes: ["etablissementId"]
@@ -359,30 +389,279 @@ export default class HikvisionEnrollmentService {
       sites.push(...affectations.map(affectation => Number(affectation.etablissementId)));
       if (sites.length === 0 && utilisateur.etablissementId) sites.push(Number(utilisateur.etablissementId));
     } else {
-      return 0;
+      eligibleRole = false;
     }
 
-    if (!hasPhoto) {
+    return {
+      utilisateur,
+      employeeNo,
+      photoFilename,
+      photoCategory,
+      sites,
+      eligibleRole
+    };
+  }
+
+  static async enqueueStaffProfile(utilisateurId: number): Promise<number> {
+    const target = await HikvisionEnrollmentService.resolveStaffTarget(utilisateurId);
+    if (!target.eligibleRole) return 0;
+
+    if (!target.photoFilename) {
       console.warn(`[Hikvision] Enrôlement différé pour le compte ${utilisateurId}: aucune photo de profil n’est enregistrée.`);
       return 0;
     }
-    if (!employeeNo || !/^[A-Za-z0-9._-]{1,64}$/.test(employeeNo)) {
+    if (!target.employeeNo || !/^[A-Za-z0-9._-]{1,64}$/.test(target.employeeNo)) {
       console.warn(`[Hikvision] Enrôlement différé pour le compte ${utilisateurId}: matricule absent ou invalide.`);
       return 0;
     }
 
-    const uniqueSites = [...new Set(sites.filter(siteId => Number.isSafeInteger(siteId) && siteId > 0))];
+    const uniqueSites = [...new Set(target.sites.filter(siteId => Number.isSafeInteger(siteId) && siteId > 0))];
     let queued = 0;
     for (const etablissementId of uniqueSites) {
       const terminals = await PointageTerminal.findAll({
         where: { etablissementId, protocol: "hikvision_isapi", population: "personnel", actif: true }
       });
       for (const terminal of terminals) {
-        await HikvisionEnrollmentService.enqueueForTerminal(terminal, utilisateurId, employeeNo);
+        await HikvisionEnrollmentService.enqueueForTerminal(terminal, utilisateurId, target.employeeNo);
         queued++;
       }
     }
     return queued;
+  }
+
+  private static async relancerSurTerminaux(
+    utilisateurId: number,
+    employeeNo: string,
+    terminals: PointageTerminal[]
+  ): Promise<StaffEnrollmentTerminalResult[]> {
+    const terminalResults: StaffEnrollmentTerminalResult[] = [];
+    for (const terminal of terminals) {
+      const terminalId = Number(terminal.id);
+      const etablissementId = Number(terminal.etablissementId);
+      let enrollment = await HikvisionEnrollment.findOne({
+        where: { terminalId, utilisateurId }
+      });
+
+      if (enrollment?.statut === "termine" && enrollment.employeeNo === employeeNo) {
+        terminalResults.push({
+          terminalId,
+          terminalName: terminal.nom,
+          etablissementId,
+          compteCree: true,
+          statut: "deja_present",
+          message: "Le compte est déjà créé sur cette pointeuse."
+        });
+        continue;
+      }
+
+      await HikvisionEnrollmentService.enqueueForTerminal(terminal, utilisateurId, employeeNo, true);
+      enrollment = await HikvisionEnrollment.findOne({
+        where: { terminalId, utilisateurId }
+      });
+      if (!enrollment) {
+        terminalResults.push({
+          terminalId,
+          terminalName: terminal.nom,
+          etablissementId,
+          compteCree: false,
+          statut: "echec",
+          message: "L’enrôlement n’a pas pu être préparé dans la file."
+        });
+        continue;
+      }
+
+      let [claimed] = await HikvisionEnrollment.update(
+        {
+          statut: "en_cours",
+          tentatives: 0,
+          prochaineTentativeAt: new Date(),
+          derniereErreur: null
+        },
+        { where: { id: enrollment.id, statut: "en_attente" } }
+      );
+
+      if (claimed > 0) {
+        enrollment.statut = "en_cours";
+        await HikvisionEnrollmentService.processOne(enrollment);
+      }
+
+      let completedEnrollment = await HikvisionEnrollment.findByPk(enrollment.id);
+      if (claimed === 0 && completedEnrollment?.statut === "en_cours") {
+        const deadline = Date.now() + 120_000;
+        while (Date.now() < deadline && completedEnrollment?.statut === "en_cours") {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          completedEnrollment = await HikvisionEnrollment.findByPk(enrollment.id);
+        }
+      } else if (claimed === 0 && completedEnrollment?.statut === "en_attente") {
+        [claimed] = await HikvisionEnrollment.update(
+          {
+            statut: "en_cours",
+            tentatives: 0,
+            prochaineTentativeAt: new Date(),
+            derniereErreur: null
+          },
+          { where: { id: enrollment.id, statut: "en_attente" } }
+        );
+        if (claimed > 0) {
+          completedEnrollment.statut = "en_cours";
+          await HikvisionEnrollmentService.processOne(completedEnrollment);
+          completedEnrollment = await HikvisionEnrollment.findByPk(enrollment.id);
+        }
+      }
+
+      const compteCree = completedEnrollment?.statut === "termine";
+      terminalResults.push({
+        terminalId,
+        terminalName: terminal.nom,
+        etablissementId,
+        compteCree,
+        statut: compteCree
+          ? "cree"
+          : completedEnrollment?.statut === "en_cours" ? "en_cours" : "echec",
+        message: compteCree
+          ? "Compte créé ou mis à jour sur la pointeuse."
+          : completedEnrollment?.statut === "en_cours"
+            ? "Le traitement est toujours en cours; le résultat final n’est pas encore confirmé."
+            : completedEnrollment?.derniereErreur || "La pointeuse n’a pas confirmé la création du compte."
+      });
+    }
+    return terminalResults;
+  }
+
+  private static resultSummary(terminaux: StaffEnrollmentTerminalResult[]): {
+    compteCree: boolean;
+    message: string;
+  } {
+    const comptesCrees = terminaux.filter(item => item.compteCree).length;
+    return {
+      compteCree: comptesCrees === terminaux.length,
+      message: comptesCrees === terminaux.length
+        ? "Le compte est présent sur toutes les pointeuses actives concernées."
+        : `${comptesCrees} compte(s) créé(s) ou déjà présent(s) sur ${terminaux.length} pointeuse(s).`
+    };
+  }
+
+  static async relancerComptePersonnel(
+    utilisateurId: number,
+    etablissementId?: number
+  ): Promise<StaffEnrollmentRetryResult> {
+    const target = await HikvisionEnrollmentService.resolveStaffTarget(utilisateurId);
+    const utilisateur = target.utilisateur;
+    const nomComplet = `${utilisateur.prenoms} ${utilisateur.nom}`.trim();
+    const result = (
+      compteCree: boolean,
+      message: string,
+      terminaux: StaffEnrollmentTerminalResult[] = [],
+    ): StaffEnrollmentRetryResult => ({
+      utilisateurId,
+      nomComplet,
+      employeeNo: target.employeeNo,
+      compteCree,
+      message,
+      terminaux
+    });
+
+    if (!target.eligibleRole) {
+      return result(false, "Ce compte n’est pas un profil de personnel pris en charge.");
+    }
+    if (!target.photoFilename) {
+      return result(false, "Aucune photo de profil n’est disponible pour créer le compte sur la pointeuse.");
+    }
+    if (!target.employeeNo || !/^[A-Za-z0-9._-]{1,64}$/.test(target.employeeNo)) {
+      return result(false, "Le matricule ou identifiant du compte est absent ou invalide.");
+    }
+
+    const uniqueSites = [...new Set(target.sites.filter(siteId => Number.isSafeInteger(siteId) && siteId > 0))];
+    if (etablissementId !== undefined && !uniqueSites.includes(etablissementId)) {
+      return result(false, "Ce compte n’est pas affecté au site demandé.");
+    }
+    const sitesToProcess = etablissementId === undefined
+      ? uniqueSites
+      : uniqueSites.filter(siteId => siteId === etablissementId);
+    const terminals: PointageTerminal[] = [];
+    for (const siteId of sitesToProcess) {
+      const siteTerminals = await PointageTerminal.findAll({
+        where: { etablissementId: siteId, protocol: "hikvision_isapi", population: "personnel", actif: true },
+        order: [["id", "ASC"]]
+      });
+      terminals.push(...siteTerminals);
+    }
+    if (terminals.length === 0) {
+      return result(false, "Aucune pointeuse Hikvision active n’est disponible sur les sites de ce compte.");
+    }
+
+    const terminalResults = await HikvisionEnrollmentService.relancerSurTerminaux(
+      utilisateurId,
+      target.employeeNo,
+      terminals
+    );
+    const summary = HikvisionEnrollmentService.resultSummary(terminalResults);
+    return result(summary.compteCree, summary.message, terminalResults);
+  }
+
+  static async relancerCompteEtudiant(
+    utilisateurId: number,
+    etablissementId: number
+  ): Promise<StaffEnrollmentRetryResult> {
+    const utilisateur = await Utilisateur.findByPk(utilisateurId);
+    if (!utilisateur) throw new Error(`Le compte ${utilisateurId} est introuvable pour l’enrôlement Hikvision.`);
+    const baseResult = (
+      employeeNo: string | null,
+      compteCree: boolean,
+      message: string,
+      terminaux: StaffEnrollmentTerminalResult[] = []
+    ): StaffEnrollmentRetryResult => ({
+      utilisateurId,
+      nomComplet: `${utilisateur.prenoms} ${utilisateur.nom}`.trim(),
+      employeeNo,
+      compteCree,
+      message,
+      terminaux
+    });
+
+    if (utilisateur.role !== RolesUtilisateur.APPRENANT) {
+      return baseResult(null, false, "Ce compte n’est pas un profil étudiant.");
+    }
+    const demande = await DemandeInscription.findOne({
+      where: {
+        utilisateurId,
+        etablissementId,
+        matriculeEtudiant: { [Op.ne]: null },
+        [Op.or]: [
+          { statutPipeline: null },
+          { statutPipeline: { [Op.ne]: null } },
+          { soumissionComite: true },
+          { dateValidation: { [Op.ne]: null } }
+        ]
+      },
+      attributes: ["matriculeEtudiant"],
+      order: [["updatedAt", "DESC"]]
+    });
+    const employeeNo = demande?.matriculeEtudiant || null;
+    if (!employeeNo || !/^[A-Za-z0-9._-]{1,64}$/.test(employeeNo)) {
+      return baseResult(employeeNo, false, "Aucune demande d’inscription avec matricule étudiant valide n’est disponible pour ce site.");
+    }
+
+    const terminals = await PointageTerminal.findAll({
+      where: {
+        etablissementId,
+        protocol: "hikvision_isapi",
+        population: "etudiant",
+        actif: true
+      },
+      order: [["id", "ASC"]]
+    });
+    if (terminals.length === 0) {
+      return baseResult(employeeNo, false, "Aucune pointeuse étudiant active n’est disponible sur ce site.");
+    }
+
+    const terminalResults = await HikvisionEnrollmentService.relancerSurTerminaux(
+      utilisateurId,
+      employeeNo,
+      terminals
+    );
+    const summary = HikvisionEnrollmentService.resultSummary(terminalResults);
+    return baseResult(employeeNo, summary.compteCree, summary.message, terminalResults);
   }
 
   private static isPersonnelRole(role: RolesUtilisateur): boolean {

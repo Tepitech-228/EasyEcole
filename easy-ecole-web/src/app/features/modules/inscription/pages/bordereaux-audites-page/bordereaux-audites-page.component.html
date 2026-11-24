@@ -1,0 +1,196 @@
+<div class="dashboard-surface cabinet-workspace min-h-screen p-4 sm:p-6 lg:p-8">
+  <div class="cabinet-workspace-hero mb-8 flex items-start justify-between">
+    <div>
+      <p class="dashboard-kicker">
+        <span class="material-symbols-outlined">edit_document</span>
+        Cabinet comptable
+      </p>
+      <app-header-title
+        title="Bordereaux audités"
+        subtitle="Consulter les bordereaux validés et corriger leur numéro ou leur date de paiement">
+      </app-header-title>
+    </div>
+    <div class="rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700">
+      {{ totalItems }} bordereau(x)
+    </div>
+  </div>
+
+  <div *ngIf="successMessage" class="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800" role="status">
+    {{ successMessage }}
+  </div>
+  <div *ngIf="errorMessage && !showEditModal" class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+    {{ errorMessage }}
+  </div>
+
+  <div class="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+    Seuls le numéro du bordereau et la date de paiement sont modifiables. Le montant, le fichier et la validation d’audit restent inchangés.
+  </div>
+
+  <div class="dashboard-surface-card mb-5 rounded-xl border border-gray-200 bg-white p-4">
+    <label for="recherche-bordereaux-audites" class="mb-2 block text-sm font-medium text-gray-700">
+      Rechercher un étudiant ou un numéro de bordereau
+    </label>
+    <input
+      id="recherche-bordereaux-audites"
+      type="search"
+      [(ngModel)]="searchTerm"
+      placeholder="Nom, prénom, numéro ou référence bancaire..."
+      class="block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500">
+  </div>
+
+  <div *ngIf="loading" class="flex justify-center py-12">
+    <span class="material-symbols-outlined animate-spin text-3xl text-indigo-500">progress_activity</span>
+  </div>
+
+  <div *ngIf="!loading && bordereauxFiltres.length === 0" class="rounded-xl border border-gray-200 bg-white p-10 text-center text-sm text-gray-500">
+    Aucun bordereau audité trouvé.
+  </div>
+
+  <div *ngIf="!loading && bordereauxFiltres.length > 0" class="dashboard-surface-card overflow-x-auto rounded-xl border border-gray-200 bg-white">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Étudiant</th>
+          <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Numéro de bordereau</th>
+          <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Date de paiement</th>
+          <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Date d’audit</th>
+          <th class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Montant</th>
+          <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">Statut</th>
+          <th class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Action</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <tr *ngFor="let bordereau of bordereauxFiltres" class="hover:bg-gray-50">
+          <td class="whitespace-nowrap px-5 py-4 text-sm font-medium text-gray-900">
+            {{ bordereau.utilisateur?.nom }} {{ bordereau.utilisateur?.prenoms }}
+          </td>
+          <td class="whitespace-nowrap px-5 py-4 font-mono text-sm text-indigo-700">
+            {{ bordereau.numeroBordereau || '—' }}
+          </td>
+          <td class="whitespace-nowrap px-5 py-4 text-sm text-gray-700">
+            {{ bordereau.datePaiement ? (bordereau.datePaiement | date:'dd/MM/yyyy') : '—' }}
+          </td>
+          <td class="whitespace-nowrap px-5 py-4 text-sm text-gray-700">
+            {{ bordereau.dateValidation ? (bordereau.dateValidation | date:'dd/MM/yyyy') : '—' }}
+          </td>
+          <td class="whitespace-nowrap px-5 py-4 text-right text-sm text-gray-700">
+            {{ formatCurrency(bordereau.montant) }}
+          </td>
+          <td class="whitespace-nowrap px-5 py-4 text-center">
+            <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+              {{ libelleStatut(bordereau.statut) }}
+            </span>
+          </td>
+          <td class="whitespace-nowrap px-5 py-4 text-right">
+            <button type="button" (click)="ouvrirCorrection(bordereau)"
+              class="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
+              <span class="material-symbols-outlined text-base">visibility</span>
+              Voir
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="flex items-center justify-between border-t border-gray-200 px-5 py-3 text-sm text-gray-600">
+      <span>Page {{ currentPage }} sur {{ totalPages }}</span>
+      <div class="flex gap-2">
+        <button type="button" (click)="chargerBordereaux(currentPage - 1)" [disabled]="currentPage <= 1 || loading"
+          class="rounded-md border border-gray-300 px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-50">
+          Précédent
+        </button>
+        <button type="button" (click)="chargerBordereaux(currentPage + 1)" [disabled]="currentPage >= totalPages || loading"
+          class="rounded-md border border-gray-300 px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-50">
+          Suivant
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 p-3 sm:p-6"
+  role="dialog" aria-modal="true" aria-labelledby="bordereau-audite-title">
+  <div class="flex max-h-[95vh] w-full max-w-7xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+    <div class="flex items-center justify-between border-b border-gray-200 px-5 py-4 sm:px-7">
+      <div>
+        <h2 id="bordereau-audite-title" class="text-lg font-bold text-gray-900">Correction d’un bordereau audité</h2>
+        <p class="mt-1 text-sm text-gray-500">
+          {{ selectedBordereau?.utilisateur?.nom }} {{ selectedBordereau?.utilisateur?.prenoms }}
+          · {{ formatCurrency(selectedBordereau?.montant) }}
+        </p>
+      </div>
+      <button type="button" (click)="fermerCorrection()" aria-label="Fermer"
+        class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
+        <span class="material-symbols-outlined text-3xl">close</span>
+      </button>
+    </div>
+
+    <div class="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto lg:grid-cols-2 lg:overflow-hidden">
+      <section class="flex min-h-[300px] flex-col border-b border-gray-200 lg:min-h-0 lg:border-b-0 lg:border-r">
+        <div class="border-b border-gray-200 bg-gray-50 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-gray-600">
+          Bordereau déposé
+        </div>
+        <div class="flex flex-1 items-center justify-center overflow-auto bg-gray-100 p-4">
+          <p *ngIf="previewLoading" class="text-sm text-gray-500">Chargement du bordereau…</p>
+          <p *ngIf="!previewLoading && previewError" class="text-sm text-red-700" role="alert">{{ previewError }}</p>
+          <img *ngIf="!previewLoading && !previewError && previewObjectUrl && estImage(selectedBordereau?.fichier)"
+            [src]="previewObjectUrl" alt="Bordereau déposé" class="max-h-full max-w-full rounded object-contain shadow">
+          <iframe *ngIf="!previewLoading && !previewError && previewUrl && !estImage(selectedBordereau?.fichier)"
+            [src]="previewUrl" title="Bordereau déposé" class="h-[65vh] w-full border-0 bg-white"></iframe>
+          <p *ngIf="!previewLoading && !previewError && !selectedBordereau?.fichier" class="text-sm text-gray-500">
+            Aucun fichier associé à ce bordereau.
+          </p>
+        </div>
+      </section>
+
+      <section class="overflow-y-auto p-5 sm:p-7">
+        <div class="mb-5 rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
+          Corrigez uniquement les informations ci-dessous. Le fichier, le montant et la décision d’audit ne seront pas modifiés.
+        </div>
+
+        <div *ngIf="errorMessage" class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+          {{ errorMessage }}
+        </div>
+
+        <form [formGroup]="correctionForm" (ngSubmit)="enregistrerCorrection()" class="space-y-5">
+          <div>
+            <label for="numero-bordereau-audite" class="mb-1 block text-sm font-semibold text-gray-700">
+              Numéro de bordereau <span class="text-red-500">*</span>
+            </label>
+            <input id="numero-bordereau-audite" type="text" formControlName="numeroBordereau" maxlength="100"
+              class="block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500">
+            <p *ngIf="correctionForm.get('numeroBordereau')?.hasError('required') && correctionForm.get('numeroBordereau')?.touched"
+              class="mt-1 text-xs text-red-600">Le numéro de bordereau est obligatoire.</p>
+            <p *ngIf="correctionForm.get('numeroBordereau')?.hasError('maxlength') && correctionForm.get('numeroBordereau')?.touched"
+              class="mt-1 text-xs text-red-600">Le numéro ne peut pas dépasser 100 caractères.</p>
+          </div>
+
+          <div>
+            <label for="date-paiement-audite" class="mb-1 block text-sm font-semibold text-gray-700">
+              Date de paiement <span class="text-red-500">*</span>
+            </label>
+            <input id="date-paiement-audite" type="date" formControlName="datePaiement"
+              class="block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500">
+          </div>
+
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-gray-700">Référence bancaire</label>
+            <input type="text" readonly [value]="selectedBordereau?.referenceBancaire || '—'"
+              class="block w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-600">
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <div class="flex justify-end gap-3 border-t border-gray-200 bg-white px-5 py-4 sm:px-7">
+      <button type="button" (click)="fermerCorrection()" [disabled]="saving"
+        class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+        Annuler
+      </button>
+      <button type="button" (click)="enregistrerCorrection()" [disabled]="correctionForm.invalid || saving"
+        class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50">
+        <span class="material-symbols-outlined text-base">{{ saving ? 'progress_activity' : 'save' }}</span>
+        {{ saving ? 'Enregistrement…' : 'Enregistrer les corrections' }}
+      </button>
+    </div>
+  </div>
+</div>

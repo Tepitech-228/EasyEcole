@@ -17,6 +17,7 @@ import QRCode from "qrcode";
 import * as path from "path";
 import * as fs from "fs";
 import { EnseignantBadgeService } from "../services/EnseignantBadgeService";
+import { PersonnelMatriculeService } from "../services/PersonnelMatriculeService";
 import { SiteUtilisateur } from "../models/SiteUtilisateur";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../../../core/config/jwt";
@@ -544,14 +545,20 @@ export default class UtilisateurController {
                     const etabCode = IDGenerator.deriveEtablissementCode(etablissement);
                     const siteCode = IDGenerator.deriveSiteCode(etablissement);
                     const matiereCode = IDGenerator.deriveMatiereCode(String(req.body.specialite || ''));
-                    const prefix = `${etabCode}-${matiereCode}-${siteCode}-`;
-                    const count = await Enseignant.count({ where: { matricule: { [Op.like]: `${prefix}%` } } as any, transaction });
+                    const matricule = await PersonnelMatriculeService.generer(
+                        etabCode,
+                        matiereCode,
+                        siteCode,
+                        Number(utilisateur.id),
+                        'enseignant',
+                        transaction,
+                    );
                     await Enseignant.create({
                         utilisateurId: utilisateur.id,
                         ...((req.file?.filename || utilisateur.photoDeProfil)
                             ? { photo: req.file?.filename || utilisateur.photoDeProfil }
                             : {}),
-                        matricule: IDGenerator.generateMatricule(etabCode, matiereCode, siteCode, count + 1),
+                        matricule,
                         specialite: req.body.specialite || null,
                         gradeAcademique: req.body.gradeAcademique || null,
                         statut: req.body.statut || 'Permanent',
@@ -848,7 +855,8 @@ export default class UtilisateurController {
                         periode: req.body.periode || 'matin',
                     }, { transaction });
                 } else if (userRole === RolesUtilisateur.ENSEIGNANT) {
-                    let matricule = req.body.matricule || null
+                    const matriculeSaisi = String(req.body.matricule || '').trim()
+                    let matricule = matriculeSaisi || null
 
                     if (!matricule) {
                         const etabId = (req as any).etablissementId || req.body.etablissementId || null
@@ -859,9 +867,21 @@ export default class UtilisateurController {
                         const etabCode = IDGenerator.deriveEtablissementCode(etablissement)
                         const siteCode = IDGenerator.deriveSiteCode(etablissement)
                         const matiereCode = IDGenerator.deriveMatiereCode(req.body.specialite)
-                        const prefix = `${etabCode}-${matiereCode}-${siteCode}-`
-                        const count = await Enseignant.count({ where: { matricule: { [Op.like]: prefix + '%' } } as any })
-                        matricule = IDGenerator.generateMatricule(etabCode, matiereCode, siteCode, count + 1)
+                        matricule = await PersonnelMatriculeService.generer(
+                            etabCode,
+                            matiereCode,
+                            siteCode,
+                            Number(utilisateur.id),
+                            'enseignant',
+                            transaction,
+                        )
+                    } else {
+                        await PersonnelMatriculeService.reserver(
+                            matricule,
+                            Number(utilisateur.id),
+                            'enseignant',
+                            transaction,
+                        )
                     }
 
                     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
@@ -887,6 +907,7 @@ export default class UtilisateurController {
                         } catch (createErr: any) {
                             if (UtilisateurController.isUniqueViolation(createErr)
                                 && UtilisateurController.isMatriculeConflict(createErr)
+                                && !matriculeSaisi
                                 && attempt < MAX_RETRIES - 1) {
                                 const etabId = (req as any).etablissementId || req.body.etablissementId || null
                                 let etablissement: Etablissement | null = null
@@ -896,9 +917,14 @@ export default class UtilisateurController {
                                 const etabCode = IDGenerator.deriveEtablissementCode(etablissement)
                                 const siteCode = IDGenerator.deriveSiteCode(etablissement)
                                 const matiereCode = IDGenerator.deriveMatiereCode(req.body.specialite)
-                                const prefix = `${etabCode}-${matiereCode}-${siteCode}-`
-                                const cnt = await Enseignant.count({ where: { matricule: { [Op.like]: prefix + '%' } } as any })
-                                matricule = IDGenerator.generateMatricule(etabCode, matiereCode, siteCode, cnt + 1)
+                                matricule = await PersonnelMatriculeService.generer(
+                                    etabCode,
+                                    matiereCode,
+                                    siteCode,
+                                    Number(utilisateur.id),
+                                    'enseignant',
+                                    transaction,
+                                )
                                 continue
                             }
                             throw createErr
@@ -910,7 +936,8 @@ export default class UtilisateurController {
                     }
 
                 } else if (isStaff) {
-                    let matricule = req.body.matricule || null
+                    const matriculeSaisi = String(req.body.matricule || '').trim()
+                    let matricule = matriculeSaisi || null
 
                     if (!matricule) {
                         const etabId = (req as any).etablissementId || req.body.etablissementId || null
@@ -921,9 +948,21 @@ export default class UtilisateurController {
                         const etabCode = IDGenerator.deriveEtablissementCode(etablissement)
                         const siteCode = IDGenerator.deriveSiteCode(etablissement)
                         const serviceCode = IDGenerator.deriveServiceCode(req.body.directionService, userRole)
-                        const prefix = `${etabCode}-${serviceCode}-${siteCode}-`
-                        const count = await PersonnelAdministratif.count({ where: { matricule: { [Op.like]: prefix + '%' } } as any })
-                        matricule = IDGenerator.generateMatricule(etabCode, serviceCode, siteCode, count + 1)
+                        matricule = await PersonnelMatriculeService.generer(
+                            etabCode,
+                            serviceCode,
+                            siteCode,
+                            Number(utilisateur.id),
+                            'personnel_administratif',
+                            transaction,
+                        )
+                    } else {
+                        await PersonnelMatriculeService.reserver(
+                            matricule,
+                            Number(utilisateur.id),
+                            'personnel_administratif',
+                            transaction,
+                        )
                     }
 
                     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
@@ -944,6 +983,7 @@ export default class UtilisateurController {
                         } catch (createErr: any) {
                             if (UtilisateurController.isUniqueViolation(createErr)
                                 && UtilisateurController.isMatriculeConflict(createErr)
+                                && !matriculeSaisi
                                 && attempt < MAX_RETRIES - 1) {
                                 const etabId = (req as any).etablissementId || req.body.etablissementId || null
                                 let etablissement: Etablissement | null = null
@@ -953,9 +993,14 @@ export default class UtilisateurController {
                                 const etabCode = IDGenerator.deriveEtablissementCode(etablissement)
                                 const siteCode = IDGenerator.deriveSiteCode(etablissement)
                                 const serviceCode = IDGenerator.deriveServiceCode(req.body.directionService, userRole)
-                                const prefix = `${etabCode}-${serviceCode}-${siteCode}-`
-                                const cnt = await PersonnelAdministratif.count({ where: { matricule: { [Op.like]: prefix + '%' } } as any })
-                                matricule = IDGenerator.generateMatricule(etabCode, serviceCode, siteCode, cnt + 1)
+                                matricule = await PersonnelMatriculeService.generer(
+                                    etabCode,
+                                    serviceCode,
+                                    siteCode,
+                                    Number(utilisateur.id),
+                                    'personnel_administratif',
+                                    transaction,
+                                )
                                 continue
                             }
                             throw createErr

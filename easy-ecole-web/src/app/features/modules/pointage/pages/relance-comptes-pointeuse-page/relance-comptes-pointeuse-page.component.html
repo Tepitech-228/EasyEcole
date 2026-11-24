@@ -1,0 +1,256 @@
+<div class="enrollment-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Pointage · Administration</span>
+      <h1>Relance des comptes pointeuses</h1>
+      <p>Repérez les comptes du personnel et des étudiants absents des pointeuses, puis relancez leur création individuellement ou en lot.</p>
+    </div>
+    <button type="button" class="button button--secondary" (click)="loadCandidates()" [disabled]="loading || processing">
+      <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
+      Actualiser
+    </button>
+  </header>
+
+  <div class="notice notice--error" *ngIf="!loading && loadError" role="alert">
+    <span class="material-symbols-outlined" aria-hidden="true">error</span>
+    <span>{{ loadError }}</span>
+    <button type="button" class="button button--secondary" (click)="loadCandidates()">Réessayer</button>
+  </div>
+
+  <section class="summary" *ngIf="!loading && !loadError">
+    <div class="summary__icon material-symbols-outlined" aria-hidden="true">fingerprint</div>
+    <div>
+      <strong>{{ candidats.length }} compte(s) du personnel · {{ etudiants.length }} étudiant(s) à vérifier</strong>
+      <span>Les comptes déjà créés sur toutes les pointeuses actives ne sont pas affichés.</span>
+    </div>
+  </section>
+
+  <section class="filters" *ngIf="!loading && !loadError" aria-label="Filtres">
+    <label class="filter-field">
+      <span>Site</span>
+      <select [(ngModel)]="selectedSiteId" (ngModelChange)="onSiteChange()">
+        <option value="">Tous les sites</option>
+        <option *ngFor="let site of sites" [value]="site.id">{{ site.nom }}</option>
+      </select>
+    </label>
+    <label class="filter-field filter-field--search">
+      <span>Recherche</span>
+      <input type="search" [(ngModel)]="searchTerm" placeholder="Nom, matricule ou identifiant">
+    </label>
+    <div class="selection-count">
+      Personnel : {{ selectedIds.length }} · Étudiants : {{ selectedStudentKeys.length }}
+    </div>
+    <button
+      type="button"
+      class="button button--primary"
+      (click)="relancerSelection()"
+      [disabled]="selectedIds.length === 0 || processing">
+      <span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>
+      Relancer le personnel
+    </button>
+    <button
+      type="button"
+      class="button button--primary"
+      (click)="relancerSelectionEtudiants()"
+      [disabled]="selectedStudentKeys.length === 0 || processing">
+      <span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>
+      Relancer les étudiants
+    </button>
+  </section>
+
+  <div class="loading" *ngIf="loading" role="status">Chargement des comptes…</div>
+
+  <section class="table-wrap" *ngIf="!loading && !loadError">
+    <table *ngIf="filteredCandidates.length > 0; else noCandidates">
+      <thead>
+        <tr>
+          <th class="check-cell">
+            <input
+              type="checkbox"
+              [checked]="allVisibleSelected"
+              [indeterminate]="selectedIds.length > 0 && !allVisibleSelected"
+              (change)="toggleVisibleSelection($any($event.target).checked)"
+              aria-label="Sélectionner tous les comptes affichés">
+          </th>
+          <th>Personnel</th>
+          <th>Matricule / identifiant</th>
+          <th>Site(s)</th>
+          <th>État pointeuse</th>
+          <th>Photo</th>
+          <th class="action-cell">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let candidate of filteredCandidates">
+          <td class="check-cell">
+            <input
+              type="checkbox"
+              [checked]="selectedIds.includes(candidate.utilisateurId)"
+              (change)="toggleCandidateSelection(candidate.utilisateurId, $any($event.target).checked)"
+              [attr.aria-label]="'Sélectionner ' + candidate.prenoms + ' ' + candidate.nom">
+          </td>
+          <td>
+            <strong>{{ candidate.prenoms }} {{ candidate.nom }}</strong>
+            <span class="secondary-text">{{ roleLabel(candidate.role) }}</span>
+          </td>
+          <td>{{ candidate.employeeNo || 'Non renseigné' }}</td>
+          <td>
+            <span *ngIf="candidate.sites.length; else noSite">
+              <ng-container *ngFor="let site of candidate.sites; let last = last">
+                {{ site.nom }}<span *ngIf="!last">, </span>
+              </ng-container>
+            </span>
+            <ng-template #noSite>—</ng-template>
+          </td>
+          <td>
+            <span
+              class="status"
+              [class.status--warning]="terminalsForCandidate(candidate).length === 0 || missingCount(candidate) > 0"
+              [class.status--partial]="missingCount(candidate) < terminalsForCandidate(candidate).length">
+              {{ candidateStatus(candidate) }}
+            </span>
+            <span class="secondary-text" *ngIf="terminalsForCandidate(candidate).length > 0">
+              {{ terminalsForCandidate(candidate).length - missingCount(candidate) }}/{{ terminalsForCandidate(candidate).length }} créé(s)
+            </span>
+          </td>
+          <td>
+            <span class="photo-state" [class.photo-state--missing]="!candidate.photoDisponible">
+              {{ candidate.photoDisponible ? 'Disponible' : 'Manquante' }}
+            </span>
+          </td>
+          <td class="action-cell">
+            <button type="button" class="button button--small" (click)="relancerUnCompte(candidate.utilisateurId)" [disabled]="processing">
+              Relancer
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <ng-template #noCandidates>
+      <div class="empty-state">
+        <span class="material-symbols-outlined" aria-hidden="true">task_alt</span>
+        <strong>Aucun compte manquant pour ces critères</strong>
+        <span>Essayez un autre site ou actualisez la liste.</span>
+      </div>
+    </ng-template>
+  </section>
+
+  <section class="list-section" *ngIf="!loading && !loadError">
+    <header class="list-section__header">
+      <div>
+        <h2>Étudiants avec demande d’inscription</h2>
+        <p>Demandes déjà soumises dont le compte photo n’est pas confirmé sur une pointeuse étudiant active.</p>
+      </div>
+      <span class="section-count">{{ filteredStudents.length }} étudiant(s)</span>
+    </header>
+    <div class="table-wrap">
+      <table *ngIf="filteredStudents.length > 0; else noStudents">
+        <thead>
+          <tr>
+            <th class="check-cell">
+              <input
+                type="checkbox"
+                [checked]="allVisibleStudentsSelected"
+                [indeterminate]="selectedStudentKeys.length > 0 && !allVisibleStudentsSelected"
+                (change)="toggleVisibleStudentSelection($any($event.target).checked)"
+                aria-label="Sélectionner tous les étudiants affichés">
+            </th>
+            <th>Étudiant</th>
+            <th>Matricule de demande</th>
+            <th>Site</th>
+            <th>État pointeuse</th>
+            <th>Photo</th>
+            <th class="action-cell">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let student of filteredStudents">
+            <td class="check-cell">
+              <input
+                type="checkbox"
+                [checked]="selectedStudentKeys.includes(student.key)"
+                (change)="toggleStudentSelection(student.key, $any($event.target).checked)"
+                [attr.aria-label]="'Sélectionner ' + student.prenoms + ' ' + student.nom">
+            </td>
+            <td>
+              <strong>{{ student.prenoms }} {{ student.nom }}</strong>
+              <span class="secondary-text">{{ student.identifiant }}</span>
+            </td>
+            <td>{{ student.employeeNo }}</td>
+            <td>{{ student.siteNom }}</td>
+            <td>
+              <span
+                class="status"
+                [class.status--warning]="student.terminaux.length === 0 || student.missingTerminalCount > 0">
+                {{ student.terminaux.length === 0 ? 'Aucune pointeuse active' : student.missingTerminalCount === student.terminaux.length ? 'Compte absent' : 'Présence partielle' }}
+              </span>
+              <span class="secondary-text" *ngIf="student.terminaux.length > 0">
+                {{ student.terminaux.length - student.missingTerminalCount }}/{{ student.terminaux.length }} créé(s)
+              </span>
+            </td>
+            <td>
+              <span class="photo-state" [class.photo-state--missing]="!student.photoDisponible">
+                {{ student.photoDisponible ? 'Disponible' : 'Manquante' }}
+              </span>
+            </td>
+            <td class="action-cell">
+              <button type="button" class="button button--small" (click)="relancerUnEtudiant(student)" [disabled]="processing">
+                Relancer
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <ng-template #noStudents>
+        <div class="empty-state">
+          <span class="material-symbols-outlined" aria-hidden="true">task_alt</span>
+          <strong>Aucun étudiant manquant pour ces critères</strong>
+          <span>Seules les demandes d’inscription déjà soumises sont affichées.</span>
+        </div>
+      </ng-template>
+    </div>
+  </section>
+
+  <div class="modal-backdrop" *ngIf="showResults" (click)="closeResults()">
+    <section class="result-modal" role="dialog" aria-modal="true" aria-labelledby="results-title" (click)="$event.stopPropagation()">
+      <header class="result-modal__header">
+        <div>
+          <span class="eyebrow">Relance Hikvision</span>
+          <h2 id="results-title">{{ processing ? 'Création des comptes en cours' : 'Résultat des relances' }}</h2>
+          <p *ngIf="processing">Réponses reçues : {{ completedCount }} / {{ resultRows.length }}</p>
+        </div>
+        <button type="button" class="icon-button" (click)="closeResults()" [disabled]="processing" aria-label="Fermer">
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+
+      <div class="result-list">
+        <article class="result-card" *ngFor="let row of resultRows">
+          <div class="result-card__title">
+            <strong>{{ row.nomComplet }}</strong>
+            <span class="result-state" [class.result-state--pending]="row.statut === 'pending'" [class.result-state--error]="row.statut === 'error'">
+              {{ resultStatusLabel(row) }}
+            </span>
+          </div>
+          <p class="result-message" *ngIf="row.message">{{ row.message }}</p>
+          <p class="result-message" *ngIf="row.result">{{ row.result.message }}</p>
+          <div class="terminal-results" *ngIf="row.result?.terminaux?.length">
+            <div class="terminal-result" *ngFor="let terminal of row.result.terminaux">
+              <span>{{ terminal.terminalName }}</span>
+              <strong [class.terminal-result__error]="terminal.statut === 'echec'" [class.terminal-result__pending]="terminal.statut === 'en_cours'">
+                {{ terminalResultLabel(terminal.statut) }}
+              </strong>
+              <small>{{ terminal.message }}</small>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <footer class="result-modal__footer">
+        <button type="button" class="button button--primary" (click)="closeResults()" [disabled]="processing">
+          {{ processing ? 'Veuillez patienter…' : 'Fermer' }}
+        </button>
+      </footer>
+    </section>
+  </div>
+</div>

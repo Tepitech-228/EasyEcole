@@ -32,6 +32,7 @@ export interface SituationFinanciere {
     echeancesPayees: number
     echeancesTotales: number
     moisEnCours: EcheanceSituationFinanciere | null
+    echeancesInscription: EcheanceSituationFinanciere[]
     echeances: EcheanceSituationFinanciere[]
 }
 
@@ -93,6 +94,7 @@ export default class SituationFinanciereService {
                 }
             })
 
+        const lignesInscription = toutesLesLignes.filter(ligne => ligne.type === "inscription")
         const lignesScolarite = toutesLesLignes.filter(ligne => ligne.type === "scolarite")
         const echeancesEnRetard = lignesScolarite.filter(ligne => ligne.enRetard)
         const moisEnCours = lignesScolarite.find(ligne => moisDe(new Date(ligne.dateLimite)) === moisActuel) || null
@@ -112,6 +114,7 @@ export default class SituationFinanciereService {
             echeancesPayees: lignesScolarite.filter(ligne => ligne.estPaye).length,
             echeancesTotales: lignesScolarite.length,
             moisEnCours,
+            echeancesInscription: lignesInscription,
             echeances: lignesScolarite
         }
     }

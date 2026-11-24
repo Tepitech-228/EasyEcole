@@ -125,6 +125,30 @@ describe("ImputationService — priorisation inscription avant scolarite", () =>
     expect(resultat.surplus).toBeCloseTo(0, 2)
   })
 
+  it("limits a session allocation to the selected dossier", async () => {
+    const targetDossier = { id: 2, statut: 'actif' } as any
+    (DossierEtudiant.findAll as jest.Mock).mockResolvedValue([targetDossier])
+    mockEcheances = [
+      creerEcheance({ id: 10, dossierEtudiantId: 1, type: 'scolarite', montant: 50000 }),
+      creerEcheance({ id: 20, dossierEtudiantId: 2, type: 'scolarite', montant: 50000 }),
+    ]
+
+    const resultat = await ImputationService.imputerPourUtilisateurParComposition(
+      7,
+      1,
+      [{ type: 'scolarite', montant: 50000 }],
+      mockTransaction as Transaction,
+      4,
+      2
+    )
+
+    expect(DossierEtudiant.findAll).toHaveBeenCalledWith({
+      where: { utilisateurId: 1, etablissementId: 4, id: 2 },
+      transaction: mockTransaction
+    })
+    expect(resultat.lignes.map(ligne => ligne.echeanceId)).toEqual([20])
+  })
+
   it("limite l'imputation aux dossiers du site actif", async () => {
     const dossierSite = { id: 17, utilisateurId: 1, etablissementId: 4, statut: 'actif' } as DossierEtudiant
     const dossierFindAll = jest.spyOn(DossierEtudiant, 'findAll').mockResolvedValue([dossierSite])

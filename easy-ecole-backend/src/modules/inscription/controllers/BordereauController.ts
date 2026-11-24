@@ -718,6 +718,116 @@ export default class BordereauController {
         }
     }
 
+    static async corrigerBordereauAudite(req: Request, res: Response): Promise<Response | null> {
+        const role = (req as any).utilisateurRole;
+        if (role !== RolesUtilisateur.CABINET_COMPTABLE && role !== RolesUtilisateur.ADMIN) {
+            return res.status(403).json({ success: false, message: "Accès réservé au cabinet comptable" });
+        }
+        const cabinetSiteWhere = getCabinetSiteWhere(req);
+        if (!cabinetSiteWhere) {
+            return res.status(403).json({ success: false, message: "Aucun site actif sélectionné" });
+        }
+
+        const transaction = await DatabaseConnection.getInstance().sequelize.transaction();
+        let numeroBordereauEnCours = '';
+        let utilisateurIdEnCours = 0;
+
+        try {
+            const bordereau = await Bordereau.findOne({
+                where: { id: req.params.id, ...cabinetSiteWhere },
+                transaction,
+                lock: transaction.LOCK.UPDATE,
+                include: [Bordereau.associations.utilisateur],
+            });
+            if (!bordereau) {
+                await transaction.rollback();
+                return res.status(404).json({ success: false, message: "Bordereau introuvable" });
+            }
+
+            if (!['valide', 'en_saisie_comptable', 'traite'].includes(bordereau.statut)) {
+                await transaction.rollback();
+                return res.status(409).json({
+                    success: false,
+                    message: "Seuls les bordereaux déjà audités peuvent être corrigés.",
+                });
+            }
+
+            const numeroBordereau = typeof req.body.numeroBordereau === 'string'
+                ? req.body.numeroBordereau.trim()
+                : '';
+            const datePaiementSaisie = typeof req.body.datePaiement === 'string'
+                ? req.body.datePaiement.trim()
+                : '';
+            numeroBordereauEnCours = numeroBordereau;
+            utilisateurIdEnCours = Number(bordereau.utilisateurId);
+
+            if (!numeroBordereau || numeroBordereau.length > 100) {
+                await transaction.rollback();
+                return res.status(400).json({
+                    success: false,
+                    message: "Le numéro de bordereau est obligatoire et limité à 100 caractères.",
+                });
+            }
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(datePaiementSaisie)) {
+                await transaction.rollback();
+                return res.status(400).json({ success: false, message: "Date de paiement invalide." });
+            }
+            const datePaiement = new Date(`${datePaiementSaisie}T00:00:00.000Z`);
+            if (Number.isNaN(datePaiement.getTime()) || datePaiement.toISOString().slice(0, 10) !== datePaiementSaisie) {
+                await transaction.rollback();
+                return res.status(400).json({ success: false, message: "Date de paiement invalide." });
+            }
+
+            if (numeroBordereau !== String(bordereau.numeroBordereau || '').trim()) {
+                const doublon = await trouverBordereauAvecNumero(numeroBordereau, {
+                    excludeId: Number(bordereau.id),
+                    transaction,
+                });
+                if (doublon) {
+                    await transaction.rollback();
+                    return res.status(409).json(creerConflitNumeroBordereau(
+                        doublon,
+                        utilisateurIdEnCours,
+                        numeroBordereau,
+                    ));
+                }
+            }
+
+            bordereau.numeroBordereau = numeroBordereau;
+            bordereau.datePaiement = datePaiement;
+            await bordereau.save({ transaction });
+            await transaction.commit();
+
+            return res.status(200).json({ success: true, data: bordereau });
+        } catch (error) {
+            await transaction.rollback().catch(rbErr => console.error(
+                '[BORDEREAU][correction audit] ROLLBACK EN ÉCHEC — transaction possiblement orpheline:',
+                rbErr,
+            ));
+            console.error('[BORDEREAU][correction audit] Erreur:', error);
+
+            if (numeroBordereauEnCours && estConflitUniqueNumeroBordereau(error)) {
+                try {
+                    const doublon = await trouverBordereauAvecNumero(numeroBordereauEnCours);
+                    if (doublon) {
+                        return res.status(409).json(creerConflitNumeroBordereau(
+                            doublon,
+                            utilisateurIdEnCours,
+                            numeroBordereauEnCours,
+                        ));
+                    }
+                } catch (lookupError) {
+                    console.error('[BORDEREAU][correction audit] Impossible de charger le propriétaire du numéro en conflit:', lookupError);
+                }
+            }
+
+            return res.status(500).json({
+                success: false,
+                message: "Impossible d'enregistrer la correction du bordereau.",
+            });
+        }
+    }
+
     static async rejeterBordereau(req: Request, res: Response): Promise<Response | null> {
         const role = (req as any).utilisateurRole;
         if (role != RolesUtilisateur.CABINET_COMPTABLE && role != RolesUtilisateur.ADMIN) {

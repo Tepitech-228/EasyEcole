@@ -11,6 +11,7 @@ import { NouveauParcoursPageComponent } from './pages/nouveau-parcours-page/nouv
 import { PaiementsPageComponent } from './pages/paiements-page/paiements-page.component';
 import { BordereauxPageComponent } from './pages/bordereaux-page/bordereaux-page.component';
 import { ValidationBordereauxPageComponent } from './pages/validation-bordereaux-page/validation-bordereaux-page.component';
+import { BordereauxAuditesPageComponent } from './pages/bordereaux-audites-page/bordereaux-audites-page.component';
 import { MonDossierPageComponent } from './pages/mon-dossier-page/mon-dossier-page.component';
 import { GestionEcheancesPageComponent } from './pages/gestion-echeances-page/gestion-echeances-page.component';
 import { ComiteDetailsPageComponent } from './pages/comite-details-page/comite-details-page.component';
@@ -166,6 +167,11 @@ const routes: Routes = [
   {
     path: 'validation-bordereaux',
     component: ValidationBordereauxPageComponent,
+    pathMatch: 'full'
+  },
+  {
+    path: 'finance/bordereaux-audites',
+    component: BordereauxAuditesPageComponent,
     pathMatch: 'full'
   },
 

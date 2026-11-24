@@ -387,13 +387,18 @@ export class ImputationService {
         transaction: Transaction,
         type?: 'inscription' | 'scolarite',
         etablissementId?: number,
+        dossierId?: number,
     ): Promise<ResultatImputation> {
         if (!Number.isFinite(montantConstate) || montantConstate <= 0) {
             throw new MontantConstateInvalideError(montantConstate)
         }
 
         const dossiers = await DossierEtudiant.findAll({
-            where: { utilisateurId, ...(etablissementId ? { etablissementId } : {}) },
+            where: {
+                utilisateurId,
+                ...(etablissementId ? { etablissementId } : {}),
+                ...(dossierId ? { id: dossierId } : {})
+            },
             transaction,
         })
 
@@ -489,6 +494,7 @@ export class ImputationService {
         composition: CompositionImputation[],
         transaction: Transaction,
         etablissementId?: number,
+        dossierId?: number,
     ): Promise<ResultatImputation> {
         const montantTotal = Math.round(composition.reduce((s, c) => s + Number(c.montant || 0), 0) * 100) / 100
         if (!composition.length || !Number.isFinite(montantTotal) || montantTotal <= 0) {
@@ -496,7 +502,11 @@ export class ImputationService {
         }
 
         const dossiers = await DossierEtudiant.findAll({
-            where: { utilisateurId, ...(etablissementId ? { etablissementId } : {}) },
+            where: {
+                utilisateurId,
+                ...(etablissementId ? { etablissementId } : {}),
+                ...(dossierId ? { id: dossierId } : {})
+            },
             transaction,
         })
 
@@ -682,13 +692,18 @@ export class ImputationService {
         transaction?: Transaction,
         type?: 'inscription' | 'scolarite',
         etablissementId?: number,
+        dossierId?: number,
     ): Promise<ResultatImputation> {
         if (!Number.isFinite(montantConstate) || montantConstate <= 0) {
             throw new MontantConstateInvalideError(montantConstate)
         }
 
         const dossiers = await DossierEtudiant.findAll({
-            where: { utilisateurId, ...(etablissementId ? { etablissementId } : {}) },
+            where: {
+                utilisateurId,
+                ...(etablissementId ? { etablissementId } : {}),
+                ...(dossierId ? { id: dossierId } : {})
+            },
             transaction,
         })
 

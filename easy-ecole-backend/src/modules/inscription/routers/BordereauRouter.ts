@@ -231,6 +231,39 @@ router
       *         description: Bordereau validé
       */
      .put('/:id/valider', [AuthCabinetComptable, CheckPermission('action.inscription.bordereau.valider')], BordereauController.validerBordereau)
+     /**
+      * @openapi
+      * /inscription/bordereaux/{id}/corriger-apres-audit:
+      *   put:
+      *     tags: [Bordereaux]
+      *     summary: Corrige le numéro et la date de paiement d'un bordereau audité
+      *     security: [{ bearerAuth: [] }]
+      *     parameters:
+      *       - in: path
+      *         name: id
+      *         required: true
+      *         schema: { type: integer }
+      *     requestBody:
+      *       required: true
+      *       content:
+      *         application/json:
+      *           schema:
+      *             type: object
+      *             required: [numeroBordereau, datePaiement]
+      *             properties:
+      *               numeroBordereau: { type: string, maxLength: 100 }
+      *               datePaiement: { type: string, format: date }
+      *     responses:
+      *       200:
+      *         description: Correction enregistrée
+      *       409:
+      *         description: Bordereau non audité ou numéro déjà utilisé
+      */
+     .put(
+       '/:id/corriger-apres-audit',
+       [AuthCabinetComptable, CheckPermission('action.inscription.bordereau.valider')],
+       BordereauController.corrigerBordereauAudite,
+     )
     /**
      * @openapi
      * /inscription/bordereaux/{id}/rejeter:

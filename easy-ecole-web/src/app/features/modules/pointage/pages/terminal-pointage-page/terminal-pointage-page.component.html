@@ -627,6 +627,29 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
                 </div>
               </div>
 
+              <div *ngIf="scannedUser.situationFinanciere.echeancesInscription?.length" class="pointage-finance-echeances">
+                <div class="pointage-finance-echeances-head">
+                  <h6>INSCRIPTION</h6>
+                </div>
+                <ul>
+                  <li *ngFor="let ech of scannedUser.situationFinanciere.echeancesInscription"
+                    [ngClass]="ech.estPaye ? 'is-paid' : (ech.statut === 'partiel' || ech.montantPaye > 0 ? 'is-partial' : 'is-unpaid')">
+                    <div class="pointage-echeance-copy">
+                      <span class="material-symbols-outlined">{{ ech.estPaye ? 'check_circle' : (ech.statut === 'partiel' || ech.montantPaye > 0 ? 'warning' : 'error') }}</span>
+                      <div>
+                        <p>INSCRIPTION</p>
+                        <small>{{ ech.estPaye ? 'Payée' : (ech.statut === 'partiel' || ech.montantPaye > 0 ? 'Partiellement payée' : (ech.enRetard ? 'En retard' : 'À payer')) }}</small>
+                      </div>
+                    </div>
+                    <div class="pointage-echeance-amount">
+                      <p>{{ formatCurrency(ech.montant) }}</p>
+                      <small *ngIf="ech.montantPaye > 0">payé {{ formatCurrency(ech.montantPaye) }}</small>
+                      <small *ngIf="!ech.estPaye">reste {{ formatCurrency(ech.resteAPayer) }}</small>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+
               <div *ngIf="scannedUser.situationFinanciere.echeances?.length" class="pointage-finance-echeances">
                 <div class="pointage-finance-echeances-head">
                   <h6>Échéancier de scolarité</h6>
@@ -982,6 +1005,28 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
                 <strong>{{ formatCurrency(situation.fraisScolariteSession || 0) }}</strong>
                 <small>Payé : {{ formatCurrency(situation.montantScolaritePaye || 0) }} · reste : {{ formatCurrency(situation.resteScolariteSession || 0) }}</small>
               </div>
+            </div>
+            <div *ngIf="situation.echeancesInscription?.length" class="pointage-finance-echeances">
+              <div class="pointage-finance-echeances-head">
+                <h6>INSCRIPTION</h6>
+              </div>
+              <ul>
+                <li *ngFor="let ech of situation.echeancesInscription"
+                  [ngClass]="ech.estPaye ? 'is-paid' : (ech.statut === 'partiel' || ech.montantPaye > 0 ? 'is-partial' : 'is-unpaid')">
+                  <div class="pointage-echeance-copy">
+                    <span class="material-symbols-outlined">{{ ech.estPaye ? 'check_circle' : (ech.statut === 'partiel' || ech.montantPaye > 0 ? 'warning' : 'error') }}</span>
+                    <div>
+                      <p>INSCRIPTION</p>
+                      <small>{{ ech.estPaye ? 'Payée' : (ech.statut === 'partiel' || ech.montantPaye > 0 ? 'Partiellement payée' : (ech.enRetard ? 'En retard' : 'À payer')) }}</small>
+                    </div>
+                  </div>
+                  <div class="pointage-echeance-amount">
+                    <p>{{ formatCurrency(ech.montant) }}</p>
+                    <small *ngIf="ech.montantPaye > 0">payé {{ formatCurrency(ech.montantPaye) }}</small>
+                    <small *ngIf="!ech.estPaye">reste {{ formatCurrency(ech.resteAPayer) }}</small>
+                  </div>
+                </li>
+              </ul>
             </div>
             <div *ngIf="situation.echeances?.length" class="pointage-finance-echeances">
               <div class="pointage-finance-echeances-head">

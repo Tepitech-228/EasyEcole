@@ -14,6 +14,7 @@ import { DetailsSessionPageComponent } from './pages/details-session-page/detail
 import { NouveauParcoursPageComponent } from './pages/nouveau-parcours-page/nouveau-parcours-page.component';
 import { BordereauxPageComponent } from './pages/bordereaux-page/bordereaux-page.component';
 import { ValidationBordereauxPageComponent } from './pages/validation-bordereaux-page/validation-bordereaux-page.component';
+import { BordereauxAuditesPageComponent } from './pages/bordereaux-audites-page/bordereaux-audites-page.component';
 import { MonDossierPageComponent } from './pages/mon-dossier-page/mon-dossier-page.component';
 import { GestionEcheancesPageComponent } from './pages/gestion-echeances-page/gestion-echeances-page.component';
 import { FormsModule } from '@angular/forms';
@@ -59,6 +60,7 @@ import { NgChartsModule } from 'ng2-charts';
     DetailsSessionPageComponent,
     BordereauxPageComponent,
     ValidationBordereauxPageComponent,
+    BordereauxAuditesPageComponent,
     MonDossierPageComponent,
     GestionEcheancesPageComponent,
     ComiteDetailsPageComponent,

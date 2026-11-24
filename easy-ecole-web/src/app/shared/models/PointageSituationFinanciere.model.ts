@@ -28,5 +28,6 @@ export interface PointageSituationFinanciere {
   echeancesPayees: number;
   echeancesTotales: number;
   moisEnCours: PointageEcheanceFinanciere | null;
+  echeancesInscription?: PointageEcheanceFinanciere[];
   echeances: PointageEcheanceFinanciere[];
 }

@@ -7,6 +7,7 @@ import { Cours } from "../../inscription/models/Cours";
 import * as path from "path";
 import * as fs from "fs";
 import { EnseignantBadgeService } from "../services/EnseignantBadgeService";
+import { PersonnelMatriculeService } from "../services/PersonnelMatriculeService";
 import { SiteUtilisateur } from "../models/SiteUtilisateur";
 
 export default class EnseignantController {
@@ -98,6 +99,18 @@ export default class EnseignantController {
         // console.log((req as any).utilisateurId)
 
         if (enseignant != null) {
+            const matriculeSaisi = typeof req.body.matricule === "string" ? req.body.matricule.trim() : "";
+            if (matriculeSaisi && matriculeSaisi !== enseignant.matricule) {
+                try {
+                    await PersonnelMatriculeService.reserver(
+                        matriculeSaisi,
+                        Number(enseignant.utilisateurId),
+                        "enseignant",
+                    );
+                } catch (error) {
+                    return res.status(400).json({ success: false, error });
+                }
+            }
             await enseignant.update({
                 matricule: req.body.matricule,
                 gradeAcademique: req.body.gradeAcademique,

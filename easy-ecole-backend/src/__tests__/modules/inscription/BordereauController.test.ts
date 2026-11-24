@@ -362,6 +362,71 @@ describe('BordereauController.validerBordereau', () => {
   })
 })
 
+describe('BordereauController.corrigerBordereauAudite', () => {
+  it('updates only the number and payment date of an audited bordereau', async () => {
+    jest.clearAllMocks()
+    const bordereau: any = {
+      id: 33,
+      utilisateurId: 7,
+      statut: 'valide',
+      numeroBordereau: 'B-OLD',
+      datePaiement: new Date('2026-11-20T00:00:00.000Z'),
+      save: jest.fn().mockResolvedValue(undefined),
+    }
+    ;(Bordereau.findOne as jest.Mock)
+      .mockResolvedValueOnce(bordereau)
+      .mockResolvedValueOnce(null)
+
+    const req = mockRequest({
+      utilisateurRole: 'cabinet_comptable',
+      utilisateurId: 12,
+      etablissementId: 42,
+      params: { id: '33' },
+      body: {
+        numeroBordereau: 'B-CORRIGE',
+        datePaiement: '2026-11-24',
+      },
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.corrigerBordereauAudite(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(bordereau.numeroBordereau).toBe('B-CORRIGE')
+    expect(bordereau.datePaiement.toISOString()).toBe('2026-11-24T00:00:00.000Z')
+    expect(bordereau.save).toHaveBeenCalledWith({ transaction: expect.any(Object) })
+  })
+
+  it('refuses to modify a bordereau that has not been audited', async () => {
+    jest.clearAllMocks()
+    ;(Bordereau.findOne as jest.Mock).mockResolvedValueOnce({
+      id: 33,
+      utilisateurId: 7,
+      statut: 'en_attente',
+      save: jest.fn(),
+    })
+
+    const req = mockRequest({
+      utilisateurRole: 'cabinet_comptable',
+      utilisateurId: 12,
+      etablissementId: 42,
+      params: { id: '33' },
+      body: {
+        numeroBordereau: 'B-CORRIGE',
+        datePaiement: '2026-11-24',
+      },
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.corrigerBordereauAudite(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(409)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      message: "Seuls les bordereaux déjà audités peuvent être corrigés.",
+    }))
+  })
+})
+
 describe('BordereauController.createBordereau', () => {
   beforeEach(() => {
     jest.clearAllMocks()

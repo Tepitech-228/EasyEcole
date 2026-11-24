@@ -114,9 +114,9 @@ const chargerContexteFraisSession = async (
       modaliteScolarite: snapshot.modaliteScolarite,
     }
     : obtenirFraisSession(demande);
-  const echeances = dossiers.length > 0
+  const echeances = dossierCible
     ? await Echeance.findAll({
-      where: { dossierEtudiantId: dossiers.map(dossier => dossier.id), type: ['inscription', 'scolarite'] },
+      where: { dossierEtudiantId: dossierCible.id, type: ['inscription', 'scolarite'] },
       transaction,
     })
     : [];
@@ -130,6 +130,7 @@ const chargerContexteFraisSession = async (
   return {
     frais,
     dossiers,
+    dossierCible,
     dejaPayeInscription,
     resteInscription: Math.max(0, Math.round((frais.fraisInscription - dejaPayeInscription) * 100) / 100),
     dejaPayeScolarite,
@@ -689,7 +690,8 @@ router.post('/bordereaux/:id/imputation-preview', [AuthEsacompta, CheckPermissio
         montant,
         undefined,
         imputationType,
-        bordereauSiteScopeId
+        bordereauSiteScopeId,
+        contexteFrais.dossierCible?.id
       )
     } else {
       const [inscriptionPreview, scolaritePreview] = await Promise.all([
@@ -699,7 +701,8 @@ router.post('/bordereaux/:id/imputation-preview', [AuthEsacompta, CheckPermissio
               montantInscriptionSession,
               undefined,
               'inscription',
-              bordereauSiteScopeId
+              bordereauSiteScopeId,
+              contexteFrais.dossierCible?.id
             )
           : Promise.resolve({ lignes: [], surplus: 0 }),
         montantScolariteSession > 0
@@ -708,7 +711,8 @@ router.post('/bordereaux/:id/imputation-preview', [AuthEsacompta, CheckPermissio
               montantScolariteSession,
               undefined,
               'scolarite',
-              bordereauSiteScopeId
+              bordereauSiteScopeId,
+              contexteFrais.dossierCible?.id
             )
           : Promise.resolve({ lignes: [], surplus: 0 }),
       ])
@@ -1305,13 +1309,23 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       : bordereauType === 'scolarite' ? 'scolarite'
       : undefined
 
+    const contexteImputation = await chargerContexteFraisSession(
+      bordereau.utilisateurId,
+      bordereauSiteScopeId,
+      transaction,
+    )
+    const dossierIdCibleImputation = contexteImputation.dossierCible
+      ? Number(contexteImputation.dossierCible.id)
+      : undefined
+
     const resultatImputation = (bordereauType === 'mixte' && composition)
       ? await ImputationService.imputerPourUtilisateurParComposition(
           bordereau.id,
           bordereau.utilisateurId,
           composition!,
           transaction,
-          bordereauSiteScopeId
+          bordereauSiteScopeId,
+          dossierIdCibleImputation
         )
       : await ImputationService.imputerPourUtilisateur(
           bordereau.id,
@@ -1319,7 +1333,8 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
           montantPaiement,
           transaction,
           imputationType,
-          bordereauSiteScopeId
+          bordereauSiteScopeId,
+          dossierIdCibleImputation
         )
 
     // Consommation automatique du crédit de portefeuille : le solde soldera

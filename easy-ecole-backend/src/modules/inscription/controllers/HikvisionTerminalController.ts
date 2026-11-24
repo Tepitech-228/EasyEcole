@@ -2,6 +2,9 @@ import { Request, Response } from "express";
 import { Op } from "sequelize";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { Etablissement } from "../../etablissement/models/Etablissement";
+import { Utilisateur } from "../../auth/models/Utilisateur";
+import { DemandeInscription } from "../models/DemandeInscription";
+import { DossierEtudiant } from "../models/DossierEtudiant";
 import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
 import { PointageTerminal } from "../models/PointageTerminal";
 import { PointageTerminalEvent } from "../models/PointageTerminalEvent";
@@ -69,6 +72,338 @@ export default class HikvisionTerminalController {
         } catch (error) {
             console.error("[Hikvision] configuration loading failed:", error);
             return res.status(500).json({ success: false, message: "Les terminaux Hikvision n’ont pas pu être chargés." });
+        }
+    }
+
+    static async getStaffAccountsToEnroll(req: Request, res: Response): Promise<Response> {
+        if (!HikvisionTerminalController.adminOnly(req, res)) return res;
+        try {
+            const staffRoles = [
+                RolesUtilisateur.ENSEIGNANT,
+                RolesUtilisateur.PERSONNEL_ADMINISTRATIF,
+                RolesUtilisateur.SURVEILLANT,
+                RolesUtilisateur.SECRETAIRE,
+                RolesUtilisateur.RESSOURCES_HUMAINES,
+                RolesUtilisateur.CABINET_COMPTABLE,
+                RolesUtilisateur.ESA_COMPTA,
+                RolesUtilisateur.COMITE_ORIENTATION,
+                RolesUtilisateur.SUPERVISEUR_GENERAL,
+                RolesUtilisateur.ADMIN
+            ];
+            const utilisateurs = await Utilisateur.findAll({
+                where: { role: { [Op.in]: staffRoles } },
+                attributes: ["id", "nom", "prenoms", "identifiant", "role", "photoDeProfil", "etablissementId"],
+                include: [
+                    {
+                        association: Utilisateur.associations.enseignant,
+                        attributes: ["matricule", "photo"],
+                        required: false
+                    },
+                    {
+                        association: Utilisateur.associations.personnelAdministratif,
+                        attributes: ["matricule", "etablissementId"],
+                        required: false
+                    },
+                    {
+                        association: Utilisateur.associations.affectationsSites,
+                        attributes: ["etablissementId"],
+                        required: false
+                    }
+                ],
+                order: [["nom", "ASC"], ["prenoms", "ASC"]]
+            });
+
+            const demandesEtudiants = await DemandeInscription.findAll({
+                where: {
+                    etablissementId: { [Op.ne]: null },
+                    matriculeEtudiant: { [Op.ne]: null },
+                    [Op.or]: [
+                        { statutPipeline: null },
+                        { statutPipeline: { [Op.ne]: null } },
+                        { soumissionComite: true },
+                        { dateValidation: { [Op.ne]: null } }
+                    ]
+                },
+                attributes: ["utilisateurId", "etablissementId", "matriculeEtudiant", "updatedAt"],
+                order: [["updatedAt", "DESC"]]
+            });
+            const demandeEtudiantByKey = new Map<string, typeof demandesEtudiants[number]>();
+            for (const demande of demandesEtudiants) {
+                if (!demande.matriculeEtudiant || !demande.etablissementId) continue;
+                const key = `${Number(demande.utilisateurId)}:${Number(demande.etablissementId)}`;
+                if (!demandeEtudiantByKey.has(key)) demandeEtudiantByKey.set(key, demande);
+            }
+            const studentUserIds = [...new Set(
+                Array.from(demandeEtudiantByKey.values()).map(demande => Number(demande.utilisateurId))
+            )];
+            const comptesEtudiants = studentUserIds.length > 0
+                ? await Utilisateur.findAll({
+                    where: {
+                        id: { [Op.in]: studentUserIds },
+                        role: RolesUtilisateur.APPRENANT
+                    },
+                    attributes: ["id", "nom", "prenoms", "identifiant", "photoDeProfil"],
+                    include: [{
+                        association: Utilisateur.associations.apprenant,
+                        attributes: ["photo"],
+                        required: false
+                    }]
+                })
+                : [];
+            const compteEtudiantById = new Map(
+                comptesEtudiants.map(utilisateur => [Number(utilisateur.id), utilisateur])
+            );
+            const studentSiteIds = [...new Set(
+                Array.from(demandeEtudiantByKey.values())
+                    .map(demande => Number(demande.etablissementId))
+                    .filter(siteId => Number.isSafeInteger(siteId) && siteId > 0)
+            )];
+
+            const siteIdsByUser = new Map<number, number[]>();
+            for (const utilisateur of utilisateurs) {
+                const siteIds = (utilisateur.affectationsSites || [])
+                    .map(affectation => Number(affectation.etablissementId));
+                if (
+                    siteIds.length === 0 &&
+                    utilisateur.role !== RolesUtilisateur.ENSEIGNANT &&
+                    utilisateur.role !== RolesUtilisateur.ADMIN &&
+                    utilisateur.personnelAdministratif?.etablissementId
+                ) {
+                    siteIds.push(Number(utilisateur.personnelAdministratif.etablissementId));
+                } else if (
+                    siteIds.length === 0 &&
+                    utilisateur.role !== RolesUtilisateur.ENSEIGNANT &&
+                    utilisateur.etablissementId
+                ) {
+                    siteIds.push(Number(utilisateur.etablissementId));
+                }
+                siteIdsByUser.set(Number(utilisateur.id), [...new Set(siteIds)]);
+            }
+
+            const assignedSiteIds = [...new Set(
+                Array.from(siteIdsByUser.values()).flat().filter(siteId => Number.isSafeInteger(siteId) && siteId > 0)
+            )];
+            const activeTerminals = assignedSiteIds.length > 0
+                ? await PointageTerminal.findAll({
+                    where: {
+                        etablissementId: { [Op.in]: assignedSiteIds },
+                        protocol: "hikvision_isapi",
+                        population: "personnel",
+                        actif: true
+                    },
+                    attributes: ["id", "nom", "etablissementId"]
+                })
+                : [];
+            const activeStudentTerminals = studentSiteIds.length > 0
+                ? await PointageTerminal.findAll({
+                    where: {
+                        etablissementId: { [Op.in]: studentSiteIds },
+                        protocol: "hikvision_isapi",
+                        population: "etudiant",
+                        actif: true
+                    },
+                    attributes: ["id", "nom", "etablissementId"]
+                })
+                : [];
+            const allUserIds = [...new Set([
+                ...utilisateurs.map(utilisateur => Number(utilisateur.id)),
+                ...studentUserIds
+            ])];
+            const terminalIds = [...new Set([
+                ...activeTerminals.map(terminal => Number(terminal.id)),
+                ...activeStudentTerminals.map(terminal => Number(terminal.id))
+            ])];
+            const enrollments = allUserIds.length > 0 && terminalIds.length > 0
+                ? await HikvisionEnrollment.findAll({
+                    where: {
+                        utilisateurId: { [Op.in]: allUserIds },
+                        terminalId: { [Op.in]: terminalIds }
+                    },
+                    attributes: ["utilisateurId", "terminalId", "employeeNo", "statut", "derniereErreur"]
+                })
+                : [];
+
+            const enrollmentByKey = new Map(
+                enrollments.map(enrollment => [
+                    `${Number(enrollment.utilisateurId)}:${Number(enrollment.terminalId)}`,
+                    enrollment
+                ])
+            );
+            const sitesPourFiltre = [...new Set([
+                ...assignedSiteIds,
+                ...studentSiteIds,
+                ...activeTerminals.map(terminal => Number(terminal.etablissementId))
+            ])];
+            const sites = sitesPourFiltre.length > 0
+                ? await Etablissement.findAll({
+                    where: { id: { [Op.in]: sitesPourFiltre } },
+                    attributes: ["id", "nom"],
+                    order: [["nom", "ASC"]]
+                })
+                : [];
+            const nomSiteById = new Map(sites.map(site => [Number(site.id), site.nom]));
+
+            const candidates = utilisateurs.flatMap(utilisateur => {
+                const utilisateurId = Number(utilisateur.id);
+                const isTeacher = utilisateur.role === RolesUtilisateur.ENSEIGNANT;
+                const employeeNo = isTeacher
+                    ? utilisateur.enseignant?.matricule || null
+                    : utilisateur.role === RolesUtilisateur.ADMIN
+                        ? utilisateur.identifiant || null
+                        : utilisateur.personnelAdministratif?.matricule || null;
+                const siteIds = siteIdsByUser.get(utilisateurId) || [];
+                const userTerminals = activeTerminals.filter(terminal =>
+                    siteIds.includes(Number(terminal.etablissementId))
+                );
+                const terminalStatus = userTerminals.map(terminal => {
+                    const enrollment = enrollmentByKey.get(`${utilisateurId}:${Number(terminal.id)}`);
+                    const compteCree = Boolean(
+                        employeeNo &&
+                        enrollment?.statut === "termine" &&
+                        enrollment.employeeNo === employeeNo
+                    );
+                    return {
+                        id: Number(terminal.id),
+                        nom: terminal.nom,
+                        etablissementId: Number(terminal.etablissementId),
+                        statut: compteCree ? "termine" : enrollment?.statut || "absent",
+                        compteCree,
+                        derniereErreur: enrollment?.derniereErreur || null
+                    };
+                });
+                const missingTerminalCount = terminalStatus.filter(terminal => !terminal.compteCree).length;
+                if (userTerminals.length > 0 && missingTerminalCount === 0) return [];
+
+                return [{
+                    utilisateurId,
+                    nom: utilisateur.nom,
+                    prenoms: utilisateur.prenoms,
+                    role: utilisateur.role,
+                    identifiant: utilisateur.identifiant,
+                    employeeNo,
+                    photoDisponible: Boolean(
+                        isTeacher ? utilisateur.enseignant?.photo : utilisateur.photoDeProfil
+                    ),
+                    siteIds,
+                    sites: siteIds.map(id => ({ id, nom: nomSiteById.get(id) || `Site ${id}` })),
+                    terminaux: terminalStatus,
+                    missingTerminalCount
+                }];
+            });
+
+            const dossiersEtudiants = studentUserIds.length > 0 && studentSiteIds.length > 0
+                ? await DossierEtudiant.findAll({
+                    where: {
+                        utilisateurId: { [Op.in]: studentUserIds },
+                        etablissementId: { [Op.in]: studentSiteIds }
+                    },
+                    attributes: ["utilisateurId", "etablissementId", "photo"]
+                })
+                : [];
+            const dossierPhotoByKey = new Map(
+                dossiersEtudiants.map(dossier => [
+                    `${Number(dossier.utilisateurId)}:${Number(dossier.etablissementId)}`,
+                    dossier.photo || null
+                ])
+            );
+            const etudiants = Array.from(demandeEtudiantByKey.values()).flatMap(demande => {
+                const utilisateurId = Number(demande.utilisateurId);
+                const etablissementId = Number(demande.etablissementId);
+                const utilisateur = compteEtudiantById.get(utilisateurId);
+                if (!utilisateur || !demande.matriculeEtudiant) return [];
+                const studentTerminals = activeStudentTerminals.filter(terminal =>
+                    Number(terminal.etablissementId) === etablissementId
+                );
+                const terminalStatus = studentTerminals.map(terminal => {
+                    const enrollment = enrollmentByKey.get(`${utilisateurId}:${Number(terminal.id)}`);
+                    const compteCree = Boolean(
+                        enrollment?.statut === "termine" &&
+                        enrollment.employeeNo === demande.matriculeEtudiant
+                    );
+                    return {
+                        id: Number(terminal.id),
+                        nom: terminal.nom,
+                        etablissementId,
+                        statut: compteCree ? "termine" : enrollment?.statut || "absent",
+                        compteCree,
+                        derniereErreur: enrollment?.derniereErreur || null
+                    };
+                });
+                if (studentTerminals.length > 0 && terminalStatus.every(terminal => terminal.compteCree)) return [];
+                return [{
+                    key: `${utilisateurId}:${etablissementId}`,
+                    utilisateurId,
+                    nom: utilisateur.nom,
+                    prenoms: utilisateur.prenoms,
+                    identifiant: utilisateur.identifiant,
+                    employeeNo: demande.matriculeEtudiant,
+                    siteId: etablissementId,
+                    siteNom: nomSiteById.get(etablissementId) || `Site ${etablissementId}`,
+                    photoDisponible: Boolean(
+                        dossierPhotoByKey.get(`${utilisateurId}:${etablissementId}`) ||
+                        utilisateur.apprenant?.photo ||
+                        utilisateur.photoDeProfil
+                    ),
+                    terminaux: terminalStatus,
+                    missingTerminalCount: terminalStatus.filter(terminal => !terminal.compteCree).length
+                }];
+            });
+
+            return res.status(200).json({
+                utilisateurs: candidates,
+                etudiants,
+                sites: sites.map(site => ({ id: Number(site.id), nom: site.nom }))
+            });
+        } catch (error) {
+            console.error("[Hikvision] staff enrollment candidates loading failed:", error);
+            return res.status(500).json({
+                success: false,
+                message: "La liste des comptes à créer sur les pointeuses n’a pas pu être chargée."
+            });
+        }
+    }
+
+    static async relancerStaffAccount(req: Request, res: Response): Promise<Response> {
+        if (!HikvisionTerminalController.adminOnly(req, res)) return res;
+        const utilisateurId = Number(req.params.utilisateurId);
+        if (!Number.isSafeInteger(utilisateurId) || utilisateurId <= 0) {
+            return res.status(400).json({ success: false, message: "Identifiant de compte invalide." });
+        }
+        const etablissementId = req.body?.etablissementId === undefined
+            ? undefined
+            : Number(req.body.etablissementId);
+        if (etablissementId !== undefined && (!Number.isSafeInteger(etablissementId) || etablissementId <= 0)) {
+            return res.status(400).json({ success: false, message: "Identifiant de site invalide." });
+        }
+        try {
+            const result = await HikvisionEnrollmentService.relancerComptePersonnel(utilisateurId, etablissementId);
+            return res.status(200).json(result);
+        } catch (error) {
+            console.error(`[Hikvision] staff account relaunch failed for user ${utilisateurId}:`, error);
+            const message = error instanceof Error ? error.message : "La relance du compte n’a pas abouti.";
+            const status = message.includes("introuvable") ? 404 : 500;
+            return res.status(status).json({ success: false, message });
+        }
+    }
+
+    static async relancerStudentAccount(req: Request, res: Response): Promise<Response> {
+        if (!HikvisionTerminalController.adminOnly(req, res)) return res;
+        const utilisateurId = Number(req.params.utilisateurId);
+        const etablissementId = Number(req.params.etablissementId);
+        if (
+            !Number.isSafeInteger(utilisateurId) || utilisateurId <= 0 ||
+            !Number.isSafeInteger(etablissementId) || etablissementId <= 0
+        ) {
+            return res.status(400).json({ success: false, message: "Identifiant d’étudiant ou de site invalide." });
+        }
+        try {
+            const result = await HikvisionEnrollmentService.relancerCompteEtudiant(utilisateurId, etablissementId);
+            return res.status(200).json(result);
+        } catch (error) {
+            console.error(`[Hikvision] student account relaunch failed for user ${utilisateurId}, site ${etablissementId}:`, error);
+            const message = error instanceof Error ? error.message : "La relance du compte étudiant n’a pas abouti.";
+            const status = message.includes("introuvable") ? 404 : 500;
+            return res.status(status).json({ success: false, message });
         }
     }
 

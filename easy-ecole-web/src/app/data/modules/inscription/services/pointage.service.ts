@@ -115,6 +115,67 @@ export interface HikvisionTerminalUpdatePayload {
   actif?: boolean;
 }
 
+export interface HikvisionStaffCandidateTerminal {
+  id: number;
+  nom: string;
+  etablissementId: number;
+  statut: string;
+  compteCree: boolean;
+  derniereErreur: string | null;
+}
+
+export interface HikvisionStaffCandidate {
+  utilisateurId: number;
+  nom: string;
+  prenoms: string;
+  role: string;
+  identifiant: string;
+  employeeNo: string | null;
+  photoDisponible: boolean;
+  siteIds: number[];
+  sites: { id: number; nom: string }[];
+  terminaux: HikvisionStaffCandidateTerminal[];
+  missingTerminalCount: number;
+}
+
+export interface HikvisionStudentCandidate {
+  key: string;
+  utilisateurId: number;
+  nom: string;
+  prenoms: string;
+  identifiant: string;
+  employeeNo: string;
+  siteId: number;
+  siteNom: string;
+  photoDisponible: boolean;
+  terminaux: HikvisionStaffCandidateTerminal[];
+  missingTerminalCount: number;
+}
+
+export interface HikvisionStaffCandidatesResponse {
+  utilisateurs: HikvisionStaffCandidate[];
+  etudiants: HikvisionStudentCandidate[];
+  sites: { id: number; nom: string }[];
+}
+
+export interface HikvisionStaffTerminalRetryResult {
+  terminalId: number;
+  terminalName: string;
+  etablissementId: number;
+  compteCree: boolean;
+  statut: 'cree' | 'deja_present' | 'echec' | 'en_cours';
+  message: string;
+}
+
+export interface HikvisionStaffRetryResult {
+  utilisateurId: number;
+  nomComplet: string;
+  employeeNo: string | null;
+  compteCree: boolean;
+  message: string;
+  terminaux: HikvisionStaffTerminalRetryResult[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -187,6 +248,26 @@ export class PointageService {
 
   getTerminauxHikvision(): Observable<HikvisionTerminalConfig[]> {
     return this.httpClient.get<HikvisionTerminalConfig[]>(`${this.SERVICE_URL}/hikvision-terminaux`);
+  }
+
+  getComptesPersonnelAEnroler(): Observable<HikvisionStaffCandidatesResponse> {
+    return this.httpClient.get<HikvisionStaffCandidatesResponse>(
+      `${this.SERVICE_URL}/hikvision-comptes/personnel-a-relancer`
+    );
+  }
+
+  relancerComptePersonnelHikvision(utilisateurId: number, etablissementId?: number): Observable<HikvisionStaffRetryResult> {
+    return this.httpClient.post<HikvisionStaffRetryResult>(
+      `${this.SERVICE_URL}/hikvision-comptes/personnel/${utilisateurId}/relancer`,
+      etablissementId === undefined ? {} : { etablissementId }
+    );
+  }
+
+  relancerCompteEtudiantHikvision(utilisateurId: number, etablissementId: number): Observable<HikvisionStaffRetryResult> {
+    return this.httpClient.post<HikvisionStaffRetryResult>(
+      `${this.SERVICE_URL}/hikvision-comptes/etudiants/${utilisateurId}/sites/${etablissementId}/relancer`,
+      {}
+    );
   }
 
   creerTerminalHikvision(data: {

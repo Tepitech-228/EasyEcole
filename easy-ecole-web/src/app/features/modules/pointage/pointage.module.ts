@@ -11,6 +11,7 @@ import { ShiftFormPageComponent } from './pages/shift-form-page/shift-form-page.
 import { AbsencesPageComponent } from './pages/absences-page/absences-page.component';
 import { PlanningPageComponent } from './pages/planning-page/planning-page.component';
 import { RapportsPointagePageComponent } from './pages/rapports-pointage-page/rapports-pointage-page.component';
+import { RelanceComptesPointeusePageComponent } from './pages/relance-comptes-pointeuse-page/relance-comptes-pointeuse-page.component';
 
 @NgModule({
   declarations: [
@@ -20,7 +21,8 @@ import { RapportsPointagePageComponent } from './pages/rapports-pointage-page/ra
     ShiftFormPageComponent,
     AbsencesPageComponent,
     PlanningPageComponent,
-    RapportsPointagePageComponent
+    RapportsPointagePageComponent,
+    RelanceComptesPointeusePageComponent
   ],
   imports: [
     CommonModule,

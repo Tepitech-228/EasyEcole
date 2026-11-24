@@ -1,11 +1,11 @@
 import * as fs from "fs";
 import * as path from "path";
-import { Op } from "sequelize";
 import QRCode from "qrcode";
 import { IDGenerator } from "../../../core/helpers/IDGenerator";
 import { QrTokenService } from "../../../core/services/QrTokenService";
 import { Etablissement } from "../../etablissement/models/Etablissement";
 import { Enseignant } from "../models/Enseignant";
+import { PersonnelMatriculeService } from "./PersonnelMatriculeService";
 
 export class EnseignantBadgeService {
   static async ensureIdentity(
@@ -23,29 +23,14 @@ export class EnseignantBadgeService {
       const etabCode = IDGenerator.deriveEtablissementCode(etablissement);
       const siteCode = IDGenerator.deriveSiteCode(etablissement);
       const matiereCode = IDGenerator.deriveMatiereCode(enseignant.specialite);
-      const prefix = `${etabCode}-${matiereCode}-${siteCode}-`;
-      let generated = false;
-
-      for (let attempt = 0; attempt < 5; attempt++) {
-        const count = Number(await Enseignant.count({
-          where: { matricule: { [Op.like]: `${prefix}%` } },
-        } as any));
-        const matricule = IDGenerator.generateMatricule(etabCode, matiereCode, siteCode, count + 1);
-        try {
-          await enseignant.update({ matricule });
-          generated = true;
-          break;
-        } catch (error: any) {
-          const code = error?.parent?.code || error?.original?.code || "";
-          if ((code !== "ER_DUP_ENTRY" && error?.name !== "SequelizeUniqueConstraintError") || attempt === 4) {
-            throw error;
-          }
-        }
-      }
-
-      if (!generated) {
-        throw new Error("Impossible de générer un matricule unique pour cet enseignant.");
-      }
+      const matricule = await PersonnelMatriculeService.generer(
+        etabCode,
+        matiereCode,
+        siteCode,
+        Number(enseignant.utilisateurId),
+        "enseignant",
+      );
+      await enseignant.update({ matricule });
     }
 
     const directory = path.resolve(process.cwd(), "storage", "qr-codes", "enseignants");

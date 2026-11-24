@@ -11,6 +11,7 @@ import { JWT_SECRET } from "../../../core/config/jwt";
 import { OtpService } from "../../../core/services/OtpService";
 import { Etablissement } from "../../etablissement/models/Etablissement";
 import { EnseignantBadgeService } from "../services/EnseignantBadgeService";
+import { PersonnelMatriculeService } from "../services/PersonnelMatriculeService";
 import { SiteUtilisateur } from "../models/SiteUtilisateur";
 
 function masquerEmail(email: string): string {
@@ -369,10 +370,11 @@ export default class AuthController {
 
 await utilisateur.save()
         .then(async (utilisateur) => {
-          let matricule = req.body.matricule || null
+    const matriculeSaisi = String(req.body.matricule || '').trim()
+    let matricule = matriculeSaisi || null
 
           if (!matricule) {
-            const etabId = (req as any).etablissementId || null
+      const etabId = etablissementId
             let etablissement: Etablissement | null = null
             if (etabId) {
               etablissement = await Etablissement.findByPk(etabId)
@@ -380,9 +382,19 @@ await utilisateur.save()
             const etabCode = IDGenerator.deriveEtablissementCode(etablissement)
             const siteCode = IDGenerator.deriveSiteCode(etablissement)
             const matiereCode = IDGenerator.deriveMatiereCode(req.body.specialite)
-            const prefix = `${etabCode}-${matiereCode}-${siteCode}-`
-            const count = await Enseignant.count({ where: { matricule: { [Op.like]: prefix + '%' } } as any })
-            matricule = IDGenerator.generateMatricule(etabCode, matiereCode, siteCode, count + 1)
+      matricule = await PersonnelMatriculeService.generer(
+        etabCode,
+        matiereCode,
+        siteCode,
+        Number(utilisateur.id),
+        "enseignant",
+      )
+    } else {
+      await PersonnelMatriculeService.reserver(
+        matricule,
+        Number(utilisateur.id),
+        "enseignant",
+      )
           }
 
           const MAX_RETRIES = 5
@@ -414,8 +426,12 @@ await utilisateur.save()
             } catch (createErr: any) {
               const code = createErr?.parent?.code || createErr?.original?.code || ''
               const name = createErr?.name || ''
-              if ((code === 'ER_DUP_ENTRY' || name === 'SequelizeUniqueConstraintError') && attempt < MAX_RETRIES - 1) {
-                const etabId = (req as any).etablissementId || null
+              if (
+                !matriculeSaisi
+                && (code === 'ER_DUP_ENTRY' || name === 'SequelizeUniqueConstraintError')
+                && attempt < MAX_RETRIES - 1
+              ) {
+                const etabId = etablissementId
                 let etablissement: Etablissement | null = null
                 if (etabId) {
                   etablissement = await Etablissement.findByPk(etabId)
@@ -423,9 +439,13 @@ await utilisateur.save()
                 const etabCode = IDGenerator.deriveEtablissementCode(etablissement)
                 const siteCode = IDGenerator.deriveSiteCode(etablissement)
                 const matiereCode = IDGenerator.deriveMatiereCode(req.body.specialite)
-                const prefix = `${etabCode}-${matiereCode}-${siteCode}-`
-                const count = await Enseignant.count({ where: { matricule: { [Op.like]: prefix + '%' } } as any })
-                matricule = IDGenerator.generateMatricule(etabCode, matiereCode, siteCode, count + 1)
+                matricule = await PersonnelMatriculeService.generer(
+                  etabCode,
+                  matiereCode,
+                  siteCode,
+                  Number(utilisateur.id),
+                  "enseignant",
+                )
                 continue
               }
               throw createErr

@@ -167,6 +167,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                      { label: 'Echeances', route: '/inscription/echeances', icon: 'event', permissionKey: 'menu.finances.echeances', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.APPRENANT, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN] },
                       { label: 'Situation irrégulière', route: '/inscription/finance/irreguliers', icon: 'warning', permissionKey: 'menu.finances.impayes', allowedRoles: [RolesUtilisateur.INSTITUTION, RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN, RolesUtilisateur.ESA_COMPTA] },
                      { label: 'Valid. bordereaux', route: '/inscription/validation-bordereaux', icon: 'task_alt', permissionKey: 'menu.finances.validation-bordereaux', allowedRoles: [RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN] },
+                    { label: 'Bordereaux audités', route: '/inscription/finance/bordereaux-audites', icon: 'edit_document', permissionKey: 'menu.finances.validation-bordereaux', allowedRoles: [RolesUtilisateur.CABINET_COMPTABLE, RolesUtilisateur.ADMIN] },
                     { label: 'Validation comité', route: '/inscription/comite-validation', icon: 'how_to_reg', permissionKey: 'menu.finances.comite-validation', allowedRoles: [RolesUtilisateur.COMITE_ORIENTATION, RolesUtilisateur.ADMIN] },
                      { label: 'Bordereaux à imputer', route: '/inscription/finance/bordereaux', icon: 'receipt_long', permissionKey: 'menu.finances.bordereaux-a-traiter', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.ADMIN] },
                      { label: 'Bordereaux en attente', route: '/inscription/finance/bordereaux/en-attente', icon: 'receipt_long', permissionKey: 'menu.finances.bordereaux-a-traiter', allowedRoles: [RolesUtilisateur.ESA_COMPTA, RolesUtilisateur.ADMIN] },
@@ -301,6 +302,7 @@ export const MENU_CONFIG: MenuPoleConfig[] = [
                     { label: 'Absences', route: '/pointage/absences', icon: 'block', permissionKey: 'menu.pointage.absences' },
                     { label: 'Planning', route: '/pointage/planning', icon: 'calendar_view_week', permissionKey: 'menu.pointage.planning' },
                     { label: 'Rapports', route: '/pointage/rapports', icon: 'assessment', permissionKey: 'menu.pointage.rapports' },
+                    { label: 'Relance comptes pointeuse', route: '/pointage/relance-comptes-pointeuse', icon: 'restart_alt', allowedRoles: [RolesUtilisateur.ADMIN] },
                 ]
             },
         ]

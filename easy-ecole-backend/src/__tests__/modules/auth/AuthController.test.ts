@@ -34,6 +34,13 @@ jest.mock('../../../modules/auth/models/Enseignant', () => ({
   Enseignant: { create: jest.fn(), count: jest.fn() },
 }))
 
+jest.mock('../../../modules/auth/services/PersonnelMatriculeService', () => ({
+  PersonnelMatriculeService: {
+    generer: jest.fn().mockResolvedValue('ESA-GEN-SIE-0001'),
+    reserver: jest.fn().mockResolvedValue(undefined),
+  },
+}))
+
 jest.mock('../../../modules/etablissement/models/Etablissement', () => ({
   Etablissement: { findByPk: jest.fn(), findOne: jest.fn() },
 }))

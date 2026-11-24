@@ -520,12 +520,15 @@
         <p>Déjà payés : {{ formatCurrency(session.scolariteDejaPayee) }} · restant avant paiement : {{ formatCurrency(session.scolariteRestante) }}</p>
       </div>
     </div>
-    <p class="text-xs text-gray-500 mb-3">La répartition suit les montants de la session : inscription d'abord, puis le reste sur les échéances de scolarité dans l'ordre croissant.</p>
+    <p class="text-xs text-gray-500 mb-3">
+      Répartition du paiement : inscription {{ formatCurrency(montantInscriptionApercu) }}, puis solde scolarité
+      {{ formatCurrency(montantScolariteApercu) }} affecté aux échéances de la session dans l’ordre.
+    </p>
     <div *ngIf="previewResult.lignes && previewResult.lignes.length > 0" class="space-y-2">
       <div *ngFor="let ligne of previewResult.lignes" class="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-2">
         <span class="text-sm text-gray-700">
-          <ng-container *ngIf="ligne.type === 'inscription'; else echeanceScolarite">INSCRIPTION</ng-container>
-          <ng-template #echeanceScolarite>Scolarité - Échéance {{ ligne.numeroEcheance }} · {{ formatMoisEcheance(ligne.moisConcerne) }}</ng-template>
+          <ng-container *ngIf="ligne.type === 'inscription'; else echeanceScolarite">INSCRIPTION :</ng-container>
+          <ng-template #echeanceScolarite>Échéance {{ ligne.numeroEcheance }} :</ng-template>
         </span>
         <span class="text-sm font-medium" [class.text-green-600]="ligne.statutApres === 'paye'" [class.text-orange-600]="ligne.statutApres === 'partiel'">
           {{ formatCurrency(ligne.montantImpute) }} → {{ ligne.statutApres === 'paye' ? 'SOLDÉ' : 'PARTIEL' }}

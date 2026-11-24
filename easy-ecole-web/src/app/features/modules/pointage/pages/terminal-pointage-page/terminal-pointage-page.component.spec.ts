@@ -978,7 +978,18 @@ describe('TerminalPointagePageComponent', () => {
       utilisateurId: 'u1',
       nom: 'Test',
       prenoms: 'Ada',
-      role: 'apprenant'
+      role: 'apprenant',
+      situationFinanciere: {
+        sommeGlobale: 3000,
+        montantPaye: 1000,
+        resteAPayer: 2000,
+        estAJour: false,
+        echeancesEnRetard: 1,
+        echeancesPayees: 1,
+        echeancesTotales: 2,
+        moisEnCours: null,
+        echeances: []
+      }
     }));
     const speak = spyOn(window.speechSynthesis, 'speak');
     fixture.detectChanges();
@@ -989,7 +1000,8 @@ describe('TerminalPointagePageComponent', () => {
     expect(pointageService.pointerParQR).not.toHaveBeenCalled();
     expect(speak).toHaveBeenCalledTimes(1);
     const utterance = speak.calls.mostRecent().args[0] as SpeechSynthesisUtterance;
-    expect(utterance.text).toContain('Accès refusé');
+    expect(utterance.text)
+      .toBe('Ada Test. Vous n’êtes pas à jour. Veuillez passer à la banque pour régulariser votre situation. Merci.');
   });
 
   it('shows the recognized learner photo and identity with a Hikvision refusal', () => {
@@ -1020,6 +1032,70 @@ describe('TerminalPointagePageComponent', () => {
     expect(fixture.componentInstance.lastAttendanceName).toBe('Jane Doe');
     expect(fixture.componentInstance.lastAttendanceMatricule).toBe('ESA001');
     expect(fixture.componentInstance.lastAttendancePhotoUrl).toContain('/media/photos/apprenants/jane-doe.jpg');
+  });
+
+  it('announces bank regularization for a Hikvision refusal caused by overdue tuition', () => {
+    const speak = spyOn(window.speechSynthesis, 'speak');
+    fixture.detectChanges();
+
+    terminalAttendanceEvents.next({
+    utilisateurId: 12,
+    nom: 'Doe',
+    prenoms: 'Jane',
+    role: 'apprenant',
+    employeeNoString: 'ESA001',
+    date: '2026-10-18',
+    time: '09:18:22',
+    mode: 'refuse',
+    etablissementId: 1,
+    motifRefus: 'Échéance mois 2 en retard',
+    situationFinanciere: {
+      sommeGlobale: 3000,
+      montantPaye: 1000,
+      resteAPayer: 2000,
+      estAJour: false,
+      echeancesEnRetard: 1,
+      echeancesPayees: 1,
+      echeancesTotales: 2,
+      moisEnCours: null,
+      echeances: []
+    }
+    });
+
+    expect(speak.calls.mostRecent().args[0].text)
+    .toBe('Jane Doe. Vous n’êtes pas à jour. Veuillez passer à la banque pour régulariser votre situation. Merci.');
+    expect(fixture.componentInstance.scanError).toBe('Échéance mois 2 en retard');
+  });
+
+  it('congratulates a learner whose financial situation is up to date', () => {
+    const speak = spyOn(window.speechSynthesis, 'speak');
+    fixture.detectChanges();
+
+    terminalAttendanceEvents.next({
+      utilisateurId: 12,
+      nom: 'Doe',
+      prenoms: 'Jane',
+      role: 'apprenant',
+      employeeNoString: 'ESA001',
+      date: '2026-10-18',
+      time: '09:18:22',
+      mode: 'passage',
+      etablissementId: 1,
+      situationFinanciere: {
+        sommeGlobale: 3000,
+        montantPaye: 3000,
+        resteAPayer: 0,
+        estAJour: true,
+        echeancesEnRetard: 0,
+        echeancesPayees: 2,
+        echeancesTotales: 2,
+        moisEnCours: null,
+        echeances: []
+      }
+    });
+
+    expect(speak.calls.mostRecent().args[0].text)
+      .toBe('Jane Doe. Passage enregistré à 09:18. Bravooo !');
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.pointage-state-card--error img')?.getAttribute('src'))
       .toContain('/media/photos/apprenants/jane-doe.jpg');

@@ -1,5 +1,6 @@
 import { Dialect, QueryTypes, Sequelize } from "sequelize";
 import { ensureUniqueIndexes, ensurePerformanceIndexes } from "./ensureUniqueIndexes";
+import { ensurePersonnelMatriculeRegistry } from "./ensurePersonnelMatriculeRegistry";
 import { ensureBordereauFinance } from "./ensureBordereauFinance";
 import { ensureCahierClasseOption } from "./ensureCahierClasseOption";
 import { ensureReferenceData } from "./ensureReferenceData";
@@ -313,6 +314,7 @@ export class DatabaseConnection {
             } catch (uniqueError: any) {
                 console.warn('Warning (ensureUniqueIndexes):', uniqueError?.message || uniqueError);
             }
+            await ensurePersonnelMatriculeRegistry(this._sequelize);
 
             // --- Index NON-UNIQUE recommandés (filtres fréquents / agrégations) ---
             // Idempotents, hors modèles (aucun ALTER déclenché par le sync).

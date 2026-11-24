@@ -1798,6 +1798,10 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
         this.speak('Vous n’êtes pas programmé à cette heure. Aucun pointage n’a été enregistré.')
         return
       }
+      if (estApprenant && user?.situationFinanciere?.echeancesEnRetard > 0) {
+        this.speak(`${nomComplet}. Vous n’êtes pas à jour. Veuillez passer à la banque pour régulariser votre situation. Merci.`)
+        return
+      }
       this.speak(avertissementPaiement || 'Accès refusé. Veuillez vous adresser à l’administration.')
       return
     }
@@ -1817,7 +1821,10 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
     if (estApprenant) {
       const annonce = `${nomComplet}. Passage enregistré${heure ? ' à ' + heure : ''}.`
       const avertissements = [avertissementPaiement, avertissementRetard].filter(Boolean).join(' ')
-      this.speak(avertissements ? `${annonce} Attention. ${avertissements}` : annonce)
+      const felicitations = user?.situationFinanciere?.estAJour === true ? ' Bravooo !' : ''
+      this.speak(avertissements
+        ? `${annonce} Attention. ${avertissements}${felicitations}`
+        : `${annonce}${felicitations}`)
       return
     }
 
