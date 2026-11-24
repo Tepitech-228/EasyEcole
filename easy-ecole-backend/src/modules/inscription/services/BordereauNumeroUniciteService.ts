@@ -1,14 +1,36 @@
-import { Op, Transaction } from 'sequelize';
+import { Op, Transaction, literal, where as sequelizeWhere } from 'sequelize';
 import { Bordereau } from '../models/Bordereau';
+
+/**
+ * Normalise un numéro de bordereau pour l'unicité : « 041 » et « 41 » désignent
+ * le même numéro. Seuls les numéros purement numériques sont normalisés, les
+ * références alphanumériques restent comparées telles quelles.
+ */
+export function normaliserNumeroBordereau(numeroBordereau: string | null | undefined): string {
+  const numero = String(numeroBordereau ?? '').trim();
+  return /^\d+$/.test(numero) ? numero.replace(/^0+/, '') : numero;
+}
 
 export async function trouverBordereauAvecNumero(
   numeroBordereau: string,
   options: { excludeId?: number; transaction?: Transaction } = {},
 ): Promise<Bordereau | null> {
+  const numero = String(numeroBordereau ?? '').trim();
+  const numeroEstNumerique = /^\d+$/.test(numero);
+
   return Bordereau.findOne({
     where: {
-      numeroBordereau,
       ...(options.excludeId ? { id: { [Op.ne]: options.excludeId } } : {}),
+      ...(numeroEstNumerique
+        ? {
+            [Op.and]: [
+              sequelizeWhere(
+                literal("TRIM(LEADING '0' FROM `Bordereau`.`numeroBordereau`)"),
+                normaliserNumeroBordereau(numero),
+              ),
+            ],
+          }
+        : { numeroBordereau: numero }),
     },
     paranoid: false,
     attributes: ['id', 'numeroBordereau', 'utilisateurId'],

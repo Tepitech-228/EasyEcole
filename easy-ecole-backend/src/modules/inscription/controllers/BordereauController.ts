@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { TypesPaiement } from "../../../core/enums/TypesPaiement";
-import { BORDEREAU_BANK_REFERENCES, Bordereau } from "../models/Bordereau";
+import { BORDEREAU_BANK_REFERENCES, Bordereau, banqueDepuisReferenceBancaire } from "../models/Bordereau";
 import { Echeance } from "../models/Echeance";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { Apprenant } from "../../auth/models/Apprenant";
@@ -663,6 +663,7 @@ export default class BordereauController {
             BordereauAffectationService.effacerAffectation(bordereau, 'audit')
 
             bordereau.referenceBancaire = refBancaire
+            bordereau.banque = banqueDepuisReferenceBancaire(refBancaire)
             bordereau.numeroBordereau = numBordereau
             bordereau.datePaiement = datePaiement
 
@@ -1190,14 +1191,12 @@ export default class BordereauController {
             }
 
             // Une référence bancaire peut être réutilisée ; seul le numéro est unique.
-            const whereClause: any = {
-                id: { [Op.ne]: bordereau.id },
-                deletedAt: null,
-                ...cabinetSiteWhere,
-            };
+            // « 041 » et « 41 » sont considérés comme le même numéro.
             if (numBordereau) {
-                whereClause.numeroBordereau = numBordereau;
-                const doublon = await Bordereau.findOne({ where: whereClause, transaction });
+                const doublon = await trouverBordereauAvecNumero(numBordereau, {
+                    excludeId: Number(bordereau.id),
+                    transaction,
+                });
                 if (doublon) {
                     await transaction.rollback();
                     return res.status(400).json({ success: false, message: "Ce numéro de bordereau est déjà utilisé", details: { numeroBordereau: numBordereau } });
@@ -1205,6 +1204,7 @@ export default class BordereauController {
             }
 
             bordereau.referenceBancaire = refBancaire;
+            bordereau.banque = banqueDepuisReferenceBancaire(refBancaire);
             bordereau.numeroBordereau = numBordereau;
             bordereau.datePaiement = datePaiement;
             bordereau.statut = 'valide'

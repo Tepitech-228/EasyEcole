@@ -11,7 +11,21 @@ export const BORDEREAU_BANK_REFERENCES = [
   "ORABANK-TG116",
   "IB BANK -TG024",
   "ECOBANK TG055",
-] as const;
+] as const
+
+export type BanqueBordereau = 'ib_bank' | 'ecobank' | 'orabank'
+
+/** Chaque référence bancaire est rattachée à l'une des 3 banques. */
+export const BORDEREAU_BANQUE_PAR_REFERENCE: Record<string, BanqueBordereau> = {
+  'ORABANK-TG116': 'orabank',
+  'IB BANK -TG024': 'ib_bank',
+  'ECOBANK TG055': 'ecobank',
+}
+
+export function banqueDepuisReferenceBancaire(reference?: string | null): BanqueBordereau | null {
+  if (!reference) return null
+  return BORDEREAU_BANQUE_PAR_REFERENCE[reference.trim()] || null
+}
 
 export class Bordereau extends Model<InferAttributes<Bordereau>, InferCreationAttributes<Bordereau>> {
   declare id: CreationOptional<number>

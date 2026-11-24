@@ -4,7 +4,7 @@ import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, Validators }
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { AuthService, SiteUtilisateur } from 'src/app/data/modules/auth/services/auth.service';
-import { BORDEREAU_BANK_REFERENCES, Bordereau } from 'src/app/data/modules/inscription/models/Bordereau.model';
+import { BORDEREAU_BANK_REFERENCES, Bordereau, banqueDepuisReferenceBancaire } from 'src/app/data/modules/inscription/models/Bordereau.model';
 import { TypeOperationBordereau } from 'src/app/data/modules/inscription/models/TypeOperationBordereau.model';
 import { BordereauService } from 'src/app/data/modules/inscription/services/bordereau.service';
 import { TypeOperationBordereauService } from 'src/app/data/modules/inscription/services/type-operation-bordereau.service';
@@ -225,6 +225,15 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
       typeOperationId: ['', Validators.required],
       datePaiement: ['', Validators.required],
       commentaire: ['']
+    })
+
+    // La référence bancaire détermine la banque : la sélection met à jour
+    // automatiquement la liste déroulante « Banque ».
+    this.saisieForm.get('referenceBancaire')?.valueChanges.subscribe(reference => {
+      const banque = banqueDepuisReferenceBancaire(reference)
+      if (banque) {
+        this.saisieForm.get('banque')?.setValue(banque, { emitEvent: false })
+      }
     })
   }
 
@@ -563,7 +572,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
       referenceBancaire: this.referencesBancaires.find(reference => reference === bordereau.referenceBancaire) || '',
       numeroBordereau: bordereau.numeroBordereau || '',
       moyenPaiement: bordereau.moyenPaiement || '',
-      banque: '',
+      banque: bordereau.banque || banqueDepuisReferenceBancaire(bordereau.referenceBancaire) || '',
       typeOperationId: bordereau.typeOperationId || '',
       datePaiement: bordereau.datePaiement ? new Date(bordereau.datePaiement).toISOString().split('T')[0] : '',
       commentaire: bordereau.commentaire || ''

@@ -1,10 +1,11 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { Subscription } from 'rxjs';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
+import { LocalStorageService } from 'src/app/core/services/local-storage.service';
 import { Bordereau } from 'src/app/data/modules/inscription/models/Bordereau.model';
 import { BordereauService } from 'src/app/data/modules/inscription/services/bordereau.service';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-bordereaux-audites-page',
@@ -24,18 +25,15 @@ export class BordereauxAuditesPageComponent extends BaseComponentClass implement
 
   selectedBordereau?: Bordereau;
   showEditModal = false;
-  previewLoading = false;
-  previewError = '';
-  previewObjectUrl: string | null = null;
+  previewImageUrl: string | null = null;
   previewUrl: SafeResourceUrl | null = null;
   correctionForm: FormGroup;
-
-  private previewSubscription?: Subscription;
 
   constructor(
     private bordereauService: BordereauService,
     private formBuilder: FormBuilder,
     private sanitizer: DomSanitizer,
+    private localStorage: LocalStorageService,
   ) {
     super();
     this.correctionForm = this.formBuilder.group({
@@ -92,30 +90,15 @@ export class BordereauxAuditesPageComponent extends BaseComponentClass implement
     this.fermerApercu();
     this.selectedBordereau = bordereau;
     this.errorMessage = '';
-    this.previewError = '';
     this.correctionForm.reset({
       numeroBordereau: bordereau.numeroBordereau || '',
       datePaiement: this.formaterDateInput(bordereau.datePaiement),
     });
     this.showEditModal = true;
 
-    this.previewLoading = true;
-    this.previewSubscription = this.bordereauService.downloadBordereau(String(bordereau.id)).subscribe({
-      next: (fichier) => {
-        if (!fichier.size) {
-          this.previewError = 'Le fichier du bordereau est vide.';
-          this.previewLoading = false;
-          return;
-        }
-        this.previewObjectUrl = URL.createObjectURL(fichier);
-        this.previewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.previewObjectUrl);
-        this.previewLoading = false;
-      },
-      error: (error) => {
-        this.previewError = error?.error?.message || 'Impossible de charger le fichier du bordereau.';
-        this.previewLoading = false;
-      },
-    });
+    const url = this.getDocUrl(bordereau);
+    this.previewImageUrl = url;
+    this.previewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
 
   enregistrerCorrection(): void {
@@ -132,7 +115,7 @@ export class BordereauxAuditesPageComponent extends BaseComponentClass implement
       datePaiement: valeur.datePaiement,
     }).subscribe({
       next: () => {
-        this.successMessage = 'Les corrections du bordereau ont été enregistrées.';
+        this.successMessage = 'La modification du bordereau a été validée et enregistrée.';
         this.saving = false;
         this.fermerCorrection();
         this.chargerBordereaux();
@@ -153,7 +136,16 @@ export class BordereauxAuditesPageComponent extends BaseComponentClass implement
   }
 
   estImage(fichier?: string): boolean {
-    return /\.(jpg|jpeg|png|gif|bmp|webp|heic|heif)$/i.test(fichier || '');
+    return /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(fichier || '');
+  }
+
+  getDocUrl(bordereau: Bordereau): string {
+    const token = this.localStorage.get(LocalStorageService.AUTH_TOKEN);
+    let url = `${environment.API_MODULES.INSCRIPTION}/bordereaux/${bordereau.id}/download`;
+    if (token) {
+      url += `?token=${encodeURIComponent(token)}`;
+    }
+    return url;
   }
 
   libelleStatut(statut?: string): string {
@@ -178,11 +170,7 @@ export class BordereauxAuditesPageComponent extends BaseComponentClass implement
   }
 
   private fermerApercu(): void {
-    this.previewSubscription?.unsubscribe();
-    this.previewSubscription = undefined;
-    if (this.previewObjectUrl) URL.revokeObjectURL(this.previewObjectUrl);
-    this.previewObjectUrl = null;
+    this.previewImageUrl = null;
     this.previewUrl = null;
-    this.previewLoading = false;
   }
 }
