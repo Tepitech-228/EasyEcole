@@ -26,7 +26,6 @@ export class BordereauxAuditesPageComponent extends BaseComponentClass implement
 
   selectedBordereau?: Bordereau;
   showEditModal = false;
-  modeEdition = false;
   previewImageUrl: string | null = null;
   previewUrl: SafeResourceUrl | null = null;
   correctionForm: FormGroup;
@@ -111,7 +110,6 @@ export class BordereauxAuditesPageComponent extends BaseComponentClass implement
     this.fermerApercu();
     this.selectedBordereau = bordereau;
     this.errorMessage = '';
-    this.modeEdition = false;
     this.correctionForm.reset({
       numeroBordereau: bordereau.numeroBordereau || '',
       datePaiement: this.formaterDateInput(bordereau.datePaiement),
@@ -123,13 +121,8 @@ export class BordereauxAuditesPageComponent extends BaseComponentClass implement
     this.previewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
 
-  activerModification(): void {
-    this.modeEdition = true;
-    this.errorMessage = '';
-  }
-
   enregistrerCorrection(): void {
-    if (!this.modeEdition || !this.selectedBordereau?.id || this.correctionForm.invalid || this.saving) {
+    if (!this.selectedBordereau?.id || this.correctionForm.invalid || this.saving) {
       this.correctionForm.markAllAsTouched();
       return;
     }
@@ -157,7 +150,6 @@ export class BordereauxAuditesPageComponent extends BaseComponentClass implement
 
   fermerCorrection(): void {
     this.showEditModal = false;
-    this.modeEdition = false;
     this.selectedBordereau = undefined;
     this.correctionForm.reset();
     this.fermerApercu();
