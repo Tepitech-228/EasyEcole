@@ -55,6 +55,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   imageJustificatifZoom = 1
   showSaisieModal = false
   showPreviewModal = false
+  showDocumentOnly = false
   showMatriculeConfirmationModal = false
 
   previewResult: any = null
@@ -286,6 +287,11 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     if (this.activeStatut === 'traite') {
       return [
         { label: 'Voir état traitement', color: 'blue', action: 'voir-imputation', icon: 'account_tree' },
+      ]
+    }
+    if (this.activeStatut === 'rejete') {
+      return [
+        { label: 'Voir bordereau', color: 'blue', action: 'voir-bordereau', icon: 'visibility' },
       ]
     }
     return []
@@ -648,7 +654,19 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     if (!b) return
     if (event.action === 'traitement') this.openSaisieModal(b)
     else if (event.action === 'voir-imputation') this.openImputationPreview(b)
+    else if (event.action === 'voir-bordereau') this.openRejectedBordereau(b)
     else if (event.action === 'liberer' && b.id) this.libererBordereau(String(b.id))
+  }
+
+  openRejectedBordereau(bordereau: Bordereau): void {
+    if (!bordereau.id) return
+    this.selectedBordereau = bordereau
+    this.imageJustificatifRotation = 0
+    this.imageJustificatifZoom = 1
+    this.selectedBordereauSafeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.getDocUrl(bordereau))
+    this.previewResult = null
+    this.showDocumentOnly = true
+    this.showPreviewModal = true
   }
 
   openSaisieModal(bordereau: Bordereau): void {
@@ -664,6 +682,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
 
   private initialiserSaisieModal(bordereau: Bordereau): void {
     this.selectedBordereau = bordereau
+    this.showDocumentOnly = false
     this.imageJustificatifRotation = 0
     this.imageJustificatifZoom = 1
     this.selectedBordereauSafeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.getDocUrl(bordereau))
@@ -764,6 +783,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     if (this.saisieForm.invalid || !this.selectedBordereau) return
     this.error = false
     this.apiErrorMessage = ''
+    this.showDocumentOnly = false
 
     const montant = this.saisieForm.get('montantPaiement')?.value
     const typeApercu = this.estTypeMixte ? '' : (this.typeSelectionne?.code || '').toLowerCase()
@@ -794,6 +814,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     }
 
     this.selectedBordereau = bordereau
+    this.showDocumentOnly = false
     this.selectedBordereauSafeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.getDocUrl(bordereau))
     this.error = false
     this.apiErrorMessage = ''
@@ -944,6 +965,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   closePreviewModal(): void {
     this.showPreviewModal = false
     this.previewResult = null
+    this.showDocumentOnly = false
     this.reinitialiserRotationImageJustificatif()
   }
 
