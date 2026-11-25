@@ -147,6 +147,9 @@ export default class DocumentController {
         if (![RolesUtilisateur.INSTITUTION, RolesUtilisateur.SECRETAIRE, RolesUtilisateur.ADMIN].includes(role)) {
             return res.status(403).json({ success: false })
         }
+        if (req.body.actif !== undefined && typeof req.body.actif !== 'boolean') {
+            return res.status(400).json({ success: false, message: "L'état d'activation doit être un booléen" });
+        }
 
         let type: TypeDocument | null = await TypeDocument.findOne({ where: { id: req.params.id } });
         if (type != null) {
@@ -162,7 +165,8 @@ export default class DocumentController {
             const modifications: Record<string, unknown> = {
                 libelle: req.body.libelle,
                 format: req.body.format,
-                ...(piecesRequises !== null ? { piecesRequises } : {})
+                ...(piecesRequises !== null ? { piecesRequises } : {}),
+                ...(req.body.actif !== undefined ? { actif: req.body.actif } : {})
             };
             if (role !== RolesUtilisateur.SECRETAIRE && req.body.frais !== undefined) {
                 modifications.frais = req.body.frais;

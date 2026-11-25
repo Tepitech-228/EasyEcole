@@ -5,6 +5,7 @@ jest.mock('../../../modules/scolarite/models/TypeDocument', () => ({
   TypeDocument: {
     findAll: jest.fn(),
     findByPk: jest.fn(),
+    findOne: jest.fn(),
   },
 }))
 
@@ -92,5 +93,45 @@ describe('DocumentController - tarifs des documents', () => {
     expect(negativeResponse.status).toHaveBeenCalledWith(400)
     expect(mutationResponse.status).toHaveBeenCalledWith(400)
     expect(TypeDocument.findByPk).not.toHaveBeenCalled()
+  })
+})
+
+describe('DocumentController - activation des types de documents', () => {
+  it('permet au secrétariat d’activer ou désactiver un type', async () => {
+    const type = {
+      id: 2,
+      libelle: 'Quitus',
+      update: jest.fn().mockResolvedValue(undefined)
+    }
+    TypeDocument.findOne.mockResolvedValue(type)
+    const res = mockResponse()
+
+    await DocumentController.updateTypeDocument(
+      mockRequest({
+        params: { id: '2' },
+        body: { libelle: 'Quitus', actif: false },
+        utilisateurRole: 'secretaire'
+      } as any),
+      res
+    )
+
+    expect(type.update).toHaveBeenCalledWith(expect.objectContaining({ actif: false }))
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('refuse un état d’activation qui n’est pas booléen', async () => {
+    const res = mockResponse()
+
+    await DocumentController.updateTypeDocument(
+      mockRequest({
+        params: { id: '2' },
+        body: { libelle: 'Quitus', actif: 'false' },
+        utilisateurRole: 'secretaire'
+      } as any),
+      res
+    )
+
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(TypeDocument.findOne).not.toHaveBeenCalled()
   })
 })

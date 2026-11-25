@@ -93,28 +93,31 @@ async function main() {
 
     // 4. Catalogue des templates ESA officiels (idempotent)
     const typesOfficiels = [
-        ['Autorisation provisoire d\'inscription', 0, 'Admissions', 0, 0, 1],
-        ['Attestation d\'admissibilité', 0, 'Admissions', 24, 0, 1],
-        ['Autorisation de soutenance', 0, 'Soutenance', 48, 0, 1],
-        ['Autorisation de délivrance de diplôme', 0, 'Diplômes', 72, 0, 1],
-        ['Autorisation de délivrance de diplôme de Master', 0, 'Diplômes', 72, 0, 1],
-        ['Fiche d\'engagement (2ème année BTS)', 0, 'Inscriptions', 24, 0, 0],
-        ['Fiche de dépôt de mémoire définitif', 0, 'Soutenance', 24, 0, 0],
-        ['Rapport de validation de mémoire', 0, 'Soutenance', 48, 0, 0],
-        ['Pièces à fournir pour autorisation d\'inscription', 0, 'Inscriptions', 24, 0, 0],
-        ['Pièces à fournir pour la demande d\'admissibilité (Licence)', 0, 'Admissions', 24, 0, 0],
-        ['Pièces à fournir pour la demande d\'admissibilité (Master)', 0, 'Admissions', 24, 0, 0],
-        ['Pièces à fournir pour la demande d\'autorisation de soutenance (Licence)', 0, 'Soutenance', 24, 0, 0],
-        ['Pièces à fournir pour la demande d\'autorisation de soutenance (Master)', 0, 'Soutenance', 24, 0, 0],
-        ['Pièces à fournir pour la demande de délivrance de diplôme (Licence)', 0, 'Diplômes', 24, 0, 0],
-        ['Pièces à fournir pour la demande de délivrance de diplôme (Master)', 0, 'Diplômes', 24, 0, 0],
+        ['Autorisation provisoire d\'inscription', 0, 'Admissions', 0, 0, 1, 1],
+        ['Attestation d\'admissibilité', 0, 'Admissions', 24, 0, 1, 1],
+        ['Autorisation de soutenance', 0, 'Soutenance', 48, 0, 1, 1],
+        ['Autorisation de délivrance de diplôme', 0, 'Diplômes', 72, 0, 1, 1],
+        ['Autorisation de délivrance de diplôme de Master', 0, 'Diplômes', 72, 0, 1, 1],
+        ['Fiche d\'engagement (2ème année BTS)', 0, 'Inscriptions', 24, 0, 0, 1],
+        ['Fiche de dépôt de mémoire définitif', 0, 'Soutenance', 24, 0, 0, 1],
+        ['Rapport de validation de mémoire', 0, 'Soutenance', 48, 0, 0, 1],
+        ['Pièces à fournir pour autorisation d\'inscription', 0, 'Inscriptions', 24, 0, 0, 1],
+        ['Pièces à fournir pour la demande d\'admissibilité (Licence)', 0, 'Admissions', 24, 0, 0, 1],
+        ['Pièces à fournir pour la demande d\'admissibilité (Master)', 0, 'Admissions', 24, 0, 0, 1],
+        ['Pièces à fournir pour la demande d\'autorisation de soutenance (Licence)', 0, 'Soutenance', 24, 0, 0, 1],
+        ['Pièces à fournir pour la demande d\'autorisation de soutenance (Master)', 0, 'Soutenance', 24, 0, 0, 1],
+        ['Pièces à fournir pour la demande de délivrance de diplôme (Licence)', 0, 'Diplômes', 24, 0, 0, 1],
+        ['Pièces à fournir pour la demande de délivrance de diplôme (Master)', 0, 'Diplômes', 24, 0, 0, 1],
+        ['Fiche des UE prescrites pour autorisation d\'inscription ESA', 0, 'Admissions', 24, 0, 0, 1],
+        ['Lettre de recommandation pour stage ESA', 0, 'Stages', 24, 0, 0, 1],
+        ['Quitus', 0, 'Comptabilité', 24, 0, 0, 1],
     ];
-    for (const [libelle, frais, categorie, delai, paiementObligatoire, generationAuto] of typesOfficiels) {
+    for (const [libelle, frais, categorie, delai, paiementObligatoire, generationAuto, actif] of typesOfficiels) {
         await seq.query(
             `INSERT INTO scol_types_document (libelle, frais, categorie, delaiTraitement, paiementObligatoire, generationAuto, actif, createdAt, updatedAt)
-             SELECT :libelle, :frais, :categorie, :delai, :paiementObligatoire, :generationAuto, 1, NOW(), NOW()
+             SELECT :libelle, :frais, :categorie, :delai, :paiementObligatoire, :generationAuto, :actif, NOW(), NOW()
              WHERE NOT EXISTS (SELECT 1 FROM scol_types_document WHERE libelle = :libelle)`,
-            { replacements: { libelle, frais, categorie, delai, paiementObligatoire, generationAuto } },
+            { replacements: { libelle, frais, categorie, delai, paiementObligatoire, generationAuto, actif } },
         );
     }
     console.log(`✓ catalogue templates ESA vérifié (${typesOfficiels.length} types officiels)`);

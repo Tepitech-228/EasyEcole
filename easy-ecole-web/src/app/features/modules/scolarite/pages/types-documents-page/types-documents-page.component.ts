@@ -13,6 +13,7 @@ export class TypesDocumentsPageComponent implements OnInit {
   saving = false;
   errorMessage = '';
   successMessage = '';
+  savingActivationId: string | null = null;
   formOpen = false;
   editingId: string | null = null;
   form: TypeDocument = { libelle: '', frais: 0, piecesRequises: [] };
@@ -108,6 +109,33 @@ export class TypesDocumentsPageComponent implements OnInit {
       error: (err) => {
         this.saving = false;
         this.errorMessage = err?.error?.message || 'Enregistrement impossible.';
+      }
+    });
+  }
+
+  toggleActivation(type: TypeDocument): void {
+    if (!type.id || this.savingActivationId) return;
+    const actif = type.actif === false;
+    this.savingActivationId = type.id;
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.typeDocumentService.update({
+      id: type.id,
+      libelle: type.libelle,
+      format: type.format,
+      piecesRequises: type.piecesRequises || [],
+      actif
+    }).subscribe({
+      next: () => {
+        this.savingActivationId = null;
+        this.successMessage = actif
+          ? `« ${type.libelle} » est maintenant proposé aux étudiants.`
+          : `« ${type.libelle} » n'est plus proposé aux étudiants.`;
+        this.loadTypes();
+      },
+      error: err => {
+        this.savingActivationId = null;
+        this.errorMessage = err?.error?.message || 'Impossible de modifier la disponibilité du document.';
       }
     });
   }

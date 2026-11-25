@@ -9,6 +9,7 @@
       <p class="eyebrow">Paramétrage du secrétariat</p>
       <h2>Documents disponibles</h2>
       <p class="muted">Les types actifs apparaissent dans le formulaire de demande étudiant.</p>
+      <p class="muted">Un document actif dont le tarif est à 0 FCFA est proposé gratuitement aux étudiants. Configurez son tarif avant tout encaissement s’il doit être payant.</p>
     </div>
     <button type="button" class="primary-action" (click)="openCreate()">
       <span class="material-symbols-outlined">add</span>
@@ -28,6 +29,7 @@
         <thead>
           <tr>
             <th>Document</th>
+            <th>Disponibilité étudiant</th>
             <th class="actions-heading">Actions</th>
           </tr>
         </thead>
@@ -40,7 +42,17 @@
               </div>
             </td>
             <td>
+              <span [class.text-green-700]="type.actif !== false" [class.text-gray-500]="type.actif === false">
+                {{ type.actif === false ? 'Inactif' : 'Actif' }}
+              </span>
+            </td>
+            <td>
               <div class="row-actions">
+                <button type="button" class="secondary-action"
+                  [disabled]="savingActivationId !== null"
+                  (click)="toggleActivation(type)">
+                  {{ savingActivationId === type.id ? 'Mise à jour…' : type.actif === false ? 'Activer' : 'Désactiver' }}
+                </button>
                 <button type="button" class="icon-action edit-action" (click)="openEdit(type)" title="Modifier" aria-label="Modifier">
                   <span class="material-symbols-outlined">edit</span>
                 </button>

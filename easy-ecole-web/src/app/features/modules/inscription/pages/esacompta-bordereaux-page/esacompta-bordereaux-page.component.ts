@@ -120,7 +120,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   /** Montant de la composition auto-calculée (somme inscription + scolarité) */
   get compositionSomme(): number {
     if (this.compositionPreviewResult?.composition) {
-      return Math.round((this.compositionPreviewResult.composition.inscription + this.compositionPreviewResult.composition.scolarite) * 100) / 100
+      return Math.round(this.compositionPreviewResult.composition.inscription + this.compositionPreviewResult.composition.scolarite)
     }
     return 0
   }
@@ -142,9 +142,23 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   }
 
   /** Montant total payé (montant du paiement simulé) */
+  get previewMontantVersement(): number {
+    return Math.round(Number(this.previewResult?.montantDisponible || 0))
+  }
+
   get previewMontantPaye(): number {
     const montant = this.previewResult?.montantDisponible
-    if (montant !== undefined && montant !== null) return Number(montant)
+    if (montant !== undefined && montant !== null) {
+      const repartition = this.previewResult?.repartitionSession
+      if (repartition) {
+        return Math.round(
+          Number(repartition.inscriptionDejaPayee || 0)
+          + Number(repartition.scolariteDejaPayee || 0)
+          + Number(montant)
+        )
+      }
+      return Math.round(Number(montant))
+    }
     return this.previewTotalImpute
   }
 
@@ -158,24 +172,54 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
 
   /** Montant global configuré = frais d'inscription + frais de scolarité */
   get previewMontantGlobal(): number {
-    return Math.round((this.previewFraisInscription + this.previewFraisScolarite) * 100) / 100
+    return Math.round(this.previewFraisInscription + this.previewFraisScolarite)
   }
 
   /** Somme des montants effectivement imputés sur les échéances */
   get previewTotalImpute(): number {
     return Math.round(
       (this.previewResult?.lignes || [])
-        .reduce((total: number, ligne: any) => total + Number(ligne.montantImpute || 0), 0) * 100
-    ) / 100
+        .reduce((total: number, ligne: any) => total + Number(ligne.montantImpute || 0), 0)
+    )
   }
 
   get previewResteGlobal(): number {
-    return Math.max(0, Math.round((this.previewMontantGlobal - this.previewMontantPaye) * 100) / 100)
+    return Math.max(0, Math.round(this.previewMontantGlobal - this.previewMontantPaye))
   }
 
-  /** Formule de vérification : 40 000 FCFA + 44 999,9 FCFA + ... */
+  get previewSurplus(): number {
+    return Math.max(0, Math.round(this.previewMontantPaye - this.previewMontantGlobal))
+  }
+
+  get previewLignes(): any[] {
+    const lignes = this.previewResult?.lignes || []
+    if (lignes.some((ligne: any) => ligne.type === 'inscription')) return lignes
+
+    const repartition = this.previewResult?.repartitionSession
+    if (!repartition) return lignes
+
+    const fraisInscription = Number(repartition.fraisInscription || 0)
+    const dejaPaye = Number(repartition.inscriptionDejaPayee || 0)
+    const impute = Number(repartition.montantInscriptionImpute || 0)
+    const montantPayeApres = Math.min(fraisInscription, dejaPaye + impute)
+    const resteApres = Math.max(0, Math.round(fraisInscription - montantPayeApres))
+    const inscription = {
+      type: 'inscription',
+      numeroEcheance: 1,
+      montantEcheance: fraisInscription,
+      montantDu: Math.max(0, fraisInscription - dejaPaye),
+      montantImpute: impute,
+      montantPayeApres,
+      resteApres,
+      statutApres: resteApres === 0 ? 'paye' : montantPayeApres > 0 ? 'partiel' : 'impaye',
+    }
+    return [inscription, ...lignes]
+  }
+
+  /** Formule de vérification : somme des montants imputés sur ce versement. */
   get previewFormuleRepartition(): string {
     return (this.previewResult?.lignes || [])
+      .filter((ligne: any) => Number(ligne.montantImpute || 0) > 0)
       .map((ligne: any) => this.formatCurrency(Number(ligne.montantImpute || 0)))
       .join(' + ')
   }

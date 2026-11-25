@@ -556,7 +556,7 @@
   <div *ngIf="previewResult" class="mb-6">
     <div class="mx-auto w-full rounded-xl bg-white shadow-sm p-5" style="max-width:800px;">
       <h3 class="text-center font-bold mb-4" style="color:#1E3A8A;font-size:18px;">
-        Répartition du paiement - {{ formatCurrency(previewMontantPaye) }}
+        Répartition du paiement - {{ formatCurrency(previewMontantVersement) }}
       </h3>
 
       <div class="overflow-x-auto rounded-lg" style="border:1px solid #E2E8F0;">
@@ -565,13 +565,13 @@
             <tr style="background-color:#1E3A8A;color:#ffffff;">
               <th class="text-left px-3 py-3 font-bold" style="font-size:13px;">Frais / Échéance</th>
               <th class="text-right px-3 py-3 font-bold" style="font-size:13px;">Montant de l'échéance</th>
-              <th class="text-right px-3 py-3 font-bold" style="font-size:13px;">Montant payé</th>
+              <th class="text-right px-3 py-3 font-bold" style="font-size:13px;">Montant payé (cumulé)</th>
               <th class="text-right px-3 py-3 font-bold" style="font-size:13px;">Reste à payer</th>
               <th class="text-center px-3 py-3 font-bold" style="font-size:13px;">Statut</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let ligne of previewResult.lignes; let i = index"
+            <tr *ngFor="let ligne of previewLignes; let i = index"
                 style="border-top:1px solid #E2E8F0;"
                 [ngStyle]="{ backgroundColor: i % 2 === 0 ? '#FFFFFF' : '#F8FAFC' }">
               <td class="px-3 py-3" style="color:#0F172A;">
@@ -579,12 +579,11 @@
                 <ng-template #echeanceScolarite>Échéance {{ ligne.numeroEcheance }} · Scolarité</ng-template>
               </td>
               <td class="px-3 py-3 text-right" style="color:#334155;">
-                {{ formatCurrency(ligne.montantEcheance
-                  || (ligne.type === 'inscription'
-                    ? (ligne.montantDu || ligne.montantImpute || 0)
-                    : ((ligne.montantImpute || 0) + (ligne.resteApres || 0)))) }}
+                {{ formatCurrency(ligne.montantEcheance) }}
               </td>
-              <td class="px-3 py-3 text-right font-bold" style="color:#0F172A;">{{ formatCurrency(ligne.montantImpute) }}</td>
+              <td class="px-3 py-3 text-right font-bold" style="color:#0F172A;">
+                {{ formatCurrency(ligne.montantPayeApres !== undefined ? ligne.montantPayeApres : ligne.montantImpute) }}
+              </td>
               <td class="px-3 py-3 text-right font-bold"
                   [ngStyle]="{ color: ligne.resteApres > 0 ? '#DC2626' : '#0F172A' }">
                 {{ formatCurrency(ligne.resteApres) }}
@@ -603,8 +602,8 @@
         </table>
       </div>
 
-      <div *ngIf="previewResult.surplus > 0" class="mt-3 text-sm" style="color:#6D28D9;">
-        Surplus crédité : <strong>{{ formatCurrency(previewResult.surplus) }}</strong>
+      <div *ngIf="previewSurplus > 0 && previewResteGlobal === 0" class="mt-3 text-sm" style="color:#6D28D9;">
+        Surplus crédité : <strong>{{ formatCurrency(previewSurplus) }}</strong>
       </div>
 
       <div class="mt-4 rounded-xl p-4" style="background-color:#EFF6FF;border:1px solid #BFDBFE;">
@@ -617,7 +616,10 @@
           <p class="font-bold text-right" style="color:#0F172A;font-size:14px;">{{ formatCurrency(previewMontantGlobal) }}</p>
         </div>
         <div class="flex items-start justify-between gap-4 mt-2">
-          <p class="font-semibold" style="color:#0F172A;font-size:13px;">MONTANT PAYÉ</p>
+          <div>
+            <p class="font-semibold" style="color:#0F172A;font-size:13px;">MONTANT PAYÉ (CUMULÉ)</p>
+            <p style="color:#64748B;font-size:11px;">Versements antérieurs + ce paiement</p>
+          </div>
           <p class="font-bold text-right" style="color:#166534;font-size:14px;">{{ formatCurrency(previewMontantPaye) }}</p>
         </div>
         <div style="border-top:1px solid #BFDBFE;margin:12px 0;"></div>
@@ -632,7 +634,7 @@
 
       <p *ngIf="previewResult.lignes && previewResult.lignes.length > 0"
          class="text-center italic mt-3" style="color:#475569;font-size:12px;">
-        Vérification : {{ previewFormuleRepartition }} = {{ formatCurrency(previewMontantPaye) }}
+        Imputation de ce versement : {{ previewFormuleRepartition }}
       </p>
     </div>
   </div>

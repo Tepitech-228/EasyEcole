@@ -118,11 +118,11 @@ const chargerContexteFraisSession = async (
   const echeancesInscription = echeances.filter(echeance => echeance.type === 'inscription');
   const echeancesScolarite = echeances.filter(echeance => echeance.type === 'scolarite');
   const totalInscriptionEcheances = Math.round(
-    echeancesInscription.reduce((sum, echeance) => sum + Number(echeance.montant || 0), 0) * 100
-  ) / 100;
+    echeancesInscription.reduce((sum, echeance) => sum + Number(echeance.montant || 0), 0)
+  );
   const totalScolariteEcheances = Math.round(
-    echeancesScolarite.reduce((sum, echeance) => sum + Number(echeance.montant || 0), 0) * 100
-  ) / 100;
+    echeancesScolarite.reduce((sum, echeance) => sum + Number(echeance.montant || 0), 0)
+  );
   // Les échéances réellement générées (barème facturé) priment sur le snapshot
   // et la session : elles seules reflètent ce que l'étudiant doit payer.
   // Sans cela, un snapshot à 0 en inscription faisait démarrer la cascade
@@ -130,25 +130,25 @@ const chargerContexteFraisSession = async (
   const frais = {
     fraisInscription: totalInscriptionEcheances > 0
       ? totalInscriptionEcheances
-      : Math.round(Number(snapshot ? snapshot.montantInscription : fraisSession.fraisInscription || 0) * 100) / 100,
+      : Math.round(Number(snapshot ? snapshot.montantInscription : fraisSession.fraisInscription || 0)),
     fraisScolarite: totalScolariteEcheances > 0
       ? totalScolariteEcheances
-      : Math.round(Number(snapshot ? snapshot.montantScolarite : fraisSession.fraisScolarite || 0) * 100) / 100,
+      : Math.round(Number(snapshot ? snapshot.montantScolarite : fraisSession.fraisScolarite || 0)),
     modaliteScolarite: snapshot?.modaliteScolarite ?? fraisSession.modaliteScolarite,
   };
-  const dejaPayeInscription = echeancesInscription
-    .reduce((sum, echeance) => sum + Number(echeance.montantPaye || 0), 0);
-  const dejaPayeScolarite = echeancesScolarite
-    .reduce((sum, echeance) => sum + Number(echeance.montantPaye || 0), 0);
+  const dejaPayeInscription = Math.round(echeancesInscription
+    .reduce((sum, echeance) => sum + Number(echeance.montantPaye || 0), 0));
+  const dejaPayeScolarite = Math.round(echeancesScolarite
+    .reduce((sum, echeance) => sum + Number(echeance.montantPaye || 0), 0));
 
   return {
     frais,
     dossiers,
     dossierCible,
     dejaPayeInscription,
-    resteInscription: Math.max(0, Math.round((frais.fraisInscription - dejaPayeInscription) * 100) / 100),
+    resteInscription: Math.max(0, Math.round(frais.fraisInscription - dejaPayeInscription)),
     dejaPayeScolarite,
-    resteScolarite: Math.max(0, Math.round((frais.fraisScolarite - dejaPayeScolarite) * 100) / 100),
+    resteScolarite: Math.max(0, Math.round(frais.fraisScolarite - dejaPayeScolarite)),
   };
 };
 
@@ -681,7 +681,7 @@ router.post('/bordereaux/:id/imputation-preview', [AuthEsacompta, CheckPermissio
     }
     const bordereauSiteScopeId = getFinanceSiteScopeId(req, bordereau);
 
-    const montant = Number(req.body.montantPaiement || bordereau.montant || 0)
+    const montant = Math.round(Number(req.body.montantPaiement || bordereau.montant || 0))
     if (!Number.isFinite(montant) || montant <= 0) {
       return res.status(400).json({ success: false, message: "Montant de paiement invalide" })
     }
@@ -743,6 +743,17 @@ router.post('/bordereaux/:id/imputation-preview', [AuthEsacompta, CheckPermissio
         lignes: [...inscriptionPreview.lignes, ...scolaritePreview.lignes],
         surplus: inscriptionPreview.surplus + scolaritePreview.surplus,
       }
+    }
+    const montantPayeCumul = Math.round(
+      contexteFrais.dejaPayeInscription + contexteFrais.dejaPayeScolarite + montant
+    )
+    const montantGlobal = Math.round(
+      contexteFrais.frais.fraisInscription + contexteFrais.frais.fraisScolarite
+    )
+    resultat = {
+      ...resultat,
+      montantDisponible: montant,
+      surplus: Math.max(0, montantPayeCumul - montantGlobal),
     }
 
     return res.status(200).json({

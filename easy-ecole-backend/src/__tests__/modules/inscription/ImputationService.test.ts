@@ -291,7 +291,8 @@ describe("ImputationService — priorisation inscription avant scolarite", () =>
     const resultat = await ImputationService.simulerPourUtilisateur(1, 200000)
 
     expect(resultat.lignes.map(ligne => ligne.echeanceId)).toEqual([10, 20, 30, 40])
-    expect(resultat.lignes.map(ligne => ligne.montantImpute)).toEqual([50000, 54999.9, 54999.9, 40000.2])
+    expect(resultat.lignes.map(ligne => ligne.montantImpute)).toEqual([50000, 55000, 55000, 40000])
+    expect(resultat.lignes.map(ligne => ligne.montantEcheance)).toEqual([50000, 55000, 55000, 40000])
     expect(resultat.lignes.reduce((total, ligne) => total + ligne.montantImpute, 0)).toBe(200000)
     expect(resultat.surplus).toBe(0)
   })
@@ -331,7 +332,121 @@ describe("ImputationService — priorisation inscription avant scolarite", () =>
     expect(resultat.surplus).toBe(0)
   })
 
-  it('conserve les centimes des échéances dans le montant payé et le surplus', async () => {
+  it("affiche l'historique depuis l'échéance 1 et impute selon le numéro, pas la date", async () => {
+    const echeance1 = creerEcheance({
+      id: 31,
+      type: 'scolarite',
+      numeroEcheance: 1,
+      montant: 63000,
+      montantPaye: 63000,
+      statut: 'paye',
+      dateLimite: new Date('2025-03-01'),
+    })
+    const echeance2 = creerEcheance({
+      id: 32,
+      type: 'scolarite',
+      numeroEcheance: 2,
+      montant: 63000,
+      dateLimite: new Date('2025-01-01'),
+    })
+    const echeance3 = creerEcheance({
+      id: 33,
+      type: 'scolarite',
+      numeroEcheance: 3,
+      montant: 63000,
+      dateLimite: new Date('2025-02-01'),
+    })
+    mockEcheances = [echeance2, echeance3, echeance1]
+
+    const resultat = await ImputationService.simulerPourUtilisateur(1, 11000, undefined, 'scolarite')
+
+    expect(resultat.lignes.map(ligne => ligne.numeroEcheance)).toEqual([1, 2])
+    expect(resultat.lignes[0]).toMatchObject({
+      montantImpute: 0,
+      montantPayeApres: 63000,
+      resteApres: 0,
+      statutApres: 'paye',
+    })
+    expect(resultat.lignes[1]).toMatchObject({
+      montantImpute: 11000,
+      montantPayeApres: 11000,
+      resteApres: 52000,
+      statutApres: 'partiel',
+    })
+    expect(resultat.surplus).toBe(0)
+  })
+
+  it("répartit un premier paiement avec inscription sans dépasser l'échéance partielle", async () => {
+    const inscription = creerEcheance({
+      id: 40,
+      type: 'inscription',
+      numeroEcheance: 1,
+      montant: 40000,
+    })
+    const scolarite = Array.from({ length: 10 }, (_value, index) => creerEcheance({
+      id: 50 + index,
+      type: 'scolarite',
+      numeroEcheance: index + 1,
+      montant: 63000,
+      dateLimite: new Date(`2025-${String(10 - index).padStart(2, '0')}-01`),
+    }))
+    mockEcheances = [inscription, ...[...scolarite].reverse()]
+
+    const resultat = await ImputationService.simulerPourUtilisateur(1, 452000)
+
+    expect(resultat.lignes.map(ligne => `${ligne.type}-${ligne.numeroEcheance}`)).toEqual([
+      'inscription-1',
+      'scolarite-1',
+      'scolarite-2',
+      'scolarite-3',
+      'scolarite-4',
+      'scolarite-5',
+      'scolarite-6',
+      'scolarite-7',
+    ])
+    expect(resultat.lignes.map(ligne => ligne.montantImpute)).toEqual([
+      40000, 63000, 63000, 63000, 63000, 63000, 63000, 34000,
+    ])
+    expect(resultat.lignes[7]).toMatchObject({
+      montantEcheance: 63000,
+      montantPayeApres: 34000,
+      resteApres: 29000,
+      statutApres: 'partiel',
+    })
+    expect(resultat.surplus).toBe(0)
+  })
+
+  it("reprend au solde partiel précédent tout en affichant les échéances soldées depuis la première", async () => {
+    const echeances = Array.from({ length: 10 }, (_value, index) => creerEcheance({
+      id: 70 + index,
+      type: 'scolarite',
+      numeroEcheance: index + 1,
+      montant: 63000,
+      montantPaye: index < 6 ? 63000 : index === 6 ? 34000 : 0,
+      statut: index < 6 ? 'paye' : index === 6 ? 'partiel' : 'impaye',
+      dateLimite: new Date(`2025-${String(10 - index).padStart(2, '0')}-01`),
+    }))
+    mockEcheances = [...echeances].reverse()
+
+    const resultat = await ImputationService.simulerPourUtilisateur(1, 50000, undefined, 'scolarite')
+
+    expect(resultat.lignes.map(ligne => ligne.numeroEcheance)).toEqual([1, 2, 3, 4, 5, 6, 7, 8])
+    expect(resultat.lignes.slice(0, 6).every(ligne => ligne.statutApres === 'paye')).toBe(true)
+    expect(resultat.lignes[6]).toMatchObject({
+      montantPayeApres: 63000,
+      resteApres: 0,
+      statutApres: 'paye',
+    })
+    expect(resultat.lignes[7]).toMatchObject({
+      montantImpute: 21000,
+      montantPayeApres: 21000,
+      resteApres: 42000,
+      statutApres: 'partiel',
+    })
+    expect(resultat.surplus).toBe(0)
+  })
+
+  it('arrondit les montants d’échéance au FCFA entier', async () => {
     const echeance = creerEcheance({
       id: 50,
       type: 'scolarite',
@@ -347,9 +462,11 @@ describe("ImputationService — priorisation inscription avant scolarite", () =>
       mockTransaction as Transaction
     )
 
-    expect(echeance.montantPaye).toBe(54999.9)
-    expect(resultat.lignes[0].montantImpute).toBe(54999.9)
-    expect(resultat.surplus).toBeCloseTo(0.1, 2)
+    expect(echeance.montantPaye).toBe(55000)
+    expect(resultat.lignes[0].montantEcheance).toBe(55000)
+    expect(resultat.lignes[0].montantImpute).toBe(55000)
+    expect(resultat.lignes[0].resteApres).toBe(0)
+    expect(resultat.surplus).toBe(0)
   })
 
   it("type 'inscription' : n'impute QUE sur les échéances d'inscription (la scolarité reste intacte)", async () => {

@@ -61,7 +61,7 @@ export interface CompositionImputation {
  * Service d'imputation en cascade FIFO des bordereaux sur les échéances.
  *
  * Règles métier :
- *  - date limite croissante, puis numéro d'échéance et identifiant
+ *  - numéro d'échéance croissant, puis date limite et identifiant
  *  - `montantPaye` cumulé → `statut` recalculé (paye / partiel / en_retard / impaye)
  *  - surplus → PortefeuilleCredit (type 'credit')
  *  - consommation du portefeuille → PortefeuilleCredit (type 'consommation')
@@ -69,11 +69,17 @@ export interface CompositionImputation {
  */
 export class ImputationService {
 
+    private static arrondirFcfa(montant: number): number {
+        return Math.round(Number(montant) || 0)
+    }
+
     /**
      * Calcule le reste à payer d'une échéance (jamais persisté).
      */
     private static resteApayer(echeance: Echeance): number {
-        return Math.max(0, Math.round((echeance.montant - (echeance.montantPaye || 0)) * 100) / 100)
+        return Math.max(0, ImputationService.arrondirFcfa(
+            Number(echeance.montant) - Number(echeance.montantPaye || 0)
+        ))
     }
 
     /**
@@ -93,7 +99,7 @@ export class ImputationService {
 
     /**
      * Récupère toutes les échéances imputables d'un dossier (impayées ou partielles),
-     * triées par priorité : inscription d'abord, puis scolarité, chaque nature par date limite.
+     * triées par priorité : inscription d'abord, puis scolarité, chaque nature par numéro.
      */
     private static async getEcheancesImputables(
         dossierId: number,
@@ -105,7 +111,7 @@ export class ImputationService {
                 type: 'inscription',
                 statut: ['impaye', 'partiel', 'en_retard', 'paye'],
             },
-            order: [['dateLimite', 'ASC'], ['numeroEcheance', 'ASC'], ['id', 'ASC']],
+            order: [['numeroEcheance', 'ASC'], ['dateLimite', 'ASC'], ['id', 'ASC']],
             transaction,
             lock: transaction.LOCK.UPDATE,
         })
@@ -116,7 +122,7 @@ export class ImputationService {
                 type: 'scolarite',
                 statut: ['impaye', 'partiel', 'en_retard', 'paye'],
             },
-            order: [['dateLimite', 'ASC'], ['numeroEcheance', 'ASC'], ['id', 'ASC']],
+            order: [['numeroEcheance', 'ASC'], ['dateLimite', 'ASC'], ['id', 'ASC']],
             transaction,
             lock: transaction.LOCK.UPDATE,
         })
@@ -183,7 +189,7 @@ export class ImputationService {
             throw new MontantConstateInvalideError(montantConstate)
         }
 
-        let reste = Math.round(montantConstate * 100) / 100
+        let reste = ImputationService.arrondirFcfa(montantConstate)
         const lignes: LigneLettrage[] = []
         const echeances = await ImputationService.getEcheancesImputables(dossierId, transaction)
 
@@ -194,7 +200,7 @@ export class ImputationService {
             if (du <= 0) continue
 
             const impute = Math.min(reste, du)
-            echeance.montantPaye = Math.round(((echeance.montantPaye || 0) + impute) * 100) / 100
+            echeance.montantPaye = ImputationService.arrondirFcfa(Number(echeance.montantPaye || 0) + impute)
             echeance.statut = ImputationService.recalculerStatut(echeance)
             await echeance.save({ transaction })
 
@@ -206,7 +212,7 @@ export class ImputationService {
                 numeroEcheance: echeance.numeroEcheance,
                 type: echeance.type,
                 moisConcerne: echeance.moisConcerne,
-                montantEcheance: Number(echeance.montant),
+                montantEcheance: ImputationService.arrondirFcfa(Number(echeance.montant)),
                 montantDu: du,
                 montantImpute: impute,
                 montantPayeApres: Number(echeance.montantPaye),
@@ -214,7 +220,7 @@ export class ImputationService {
                 statutApres: echeance.statut,
             })
 
-            reste = Math.round((reste - impute) * 100) / 100
+            reste = ImputationService.arrondirFcfa(reste - impute)
         }
 
         // Surplus → portefeuille de crédit
@@ -253,7 +259,7 @@ export class ImputationService {
         dossierId: number,
         transaction: Transaction,
     ): Promise<{ consomme: number; soldeRestant: number; lignes: LigneLettrage[] }> {
-        const solde = await ImputationService.getSoldePortefeuille(dossierId, transaction)
+        const solde = ImputationService.arrondirFcfa(await ImputationService.getSoldePortefeuille(dossierId, transaction))
         if (solde <= 0) {
             return { consomme: 0, soldeRestant: Math.max(solde, 0), lignes: [] }
         }
@@ -271,7 +277,7 @@ export class ImputationService {
             // Soldage intégral si possible, sinon paiement partiel final (reliquat)
             const impute = Math.min(reste, du)
 
-            echeance.montantPaye = Math.round(((echeance.montantPaye || 0) + impute) * 100) / 100
+            echeance.montantPaye = ImputationService.arrondirFcfa(Number(echeance.montantPaye || 0) + impute)
             echeance.statut = ImputationService.recalculerStatut(echeance)
             await echeance.save({ transaction })
 
@@ -281,7 +287,7 @@ export class ImputationService {
                 numeroEcheance: echeance.numeroEcheance,
                 type: echeance.type,
                 moisConcerne: echeance.moisConcerne,
-                montantEcheance: Number(echeance.montant),
+                montantEcheance: ImputationService.arrondirFcfa(Number(echeance.montant)),
                 montantDu: du,
                 montantImpute: impute,
                 montantPayeApres: Number(echeance.montantPaye),
@@ -289,7 +295,7 @@ export class ImputationService {
                 statutApres: echeance.statut,
             })
 
-            reste = Math.round((reste - impute) * 100) / 100
+            reste = ImputationService.arrondirFcfa(reste - impute)
         }
 
         // Mouvement de consommation
@@ -308,7 +314,7 @@ export class ImputationService {
         }
 
         return {
-            consomme: Math.round((solde - reste) * 100) / 100,
+            consomme: ImputationService.arrondirFcfa(solde - reste),
             soldeRestant: reste,
             lignes,
         }
@@ -342,7 +348,7 @@ export class ImputationService {
             order: [['createdAt', 'DESC']],
             transaction,
         })
-        return dernier ? Math.round(dernier.soldeCourant * 100) / 100 : 0
+        return dernier ? ImputationService.arrondirFcfa(dernier.soldeCourant) : 0
     }
 
     /**
@@ -437,7 +443,7 @@ export class ImputationService {
                     type: t,
                     statut: statutFilter as any,
                 },
-                order: [['dateLimite', 'ASC'], ['numeroEcheance', 'ASC'], ['id', 'ASC']],
+                order: [['numeroEcheance', 'ASC'], ['dateLimite', 'ASC'], ['id', 'ASC']],
                 transaction,
                 lock: transaction.LOCK.UPDATE,
             })
@@ -450,7 +456,9 @@ export class ImputationService {
         for (const ligne of lignes) {
             const echeance = echeances.find(e => e.id === ligne.echeanceId)
             if (echeance) {
-                echeance.montantPaye = Math.round(((echeance.montantPaye || 0) + ligne.montantImpute) * 100) / 100
+                echeance.montantPaye = ImputationService.arrondirFcfa(
+                    Number(echeance.montantPaye || 0) + ligne.montantImpute
+                )
                 echeance.statut = ligne.statutApres
                 await echeance.save({ transaction })
                 await ImputationService.creerLettrage(bordereauId, echeance.id, ligne.montantImpute, transaction)
@@ -506,7 +514,9 @@ export class ImputationService {
         etablissementId?: number,
         dossierId?: number,
     ): Promise<ResultatImputation> {
-        const montantTotal = Math.round(composition.reduce((s, c) => s + Number(c.montant || 0), 0) * 100) / 100
+        const montantTotal = ImputationService.arrondirFcfa(
+            composition.reduce((s, c) => s + Number(c.montant || 0), 0)
+        )
         if (!composition.length || !Number.isFinite(montantTotal) || montantTotal <= 0) {
             throw new MontantConstateInvalideError(montantTotal)
         }
@@ -528,7 +538,7 @@ export class ImputationService {
             if (!Number.isFinite(Number(composante.montant)) || Number(composante.montant) <= 0) continue
 
             if (dossiers.length === 0) {
-                reste = Math.round((reste + Number(composante.montant)) * 100) / 100
+                reste = ImputationService.arrondirFcfa(reste + Number(composante.montant))
                 continue
             }
 
@@ -539,24 +549,29 @@ export class ImputationService {
                     type: composante.type,
                     statut: ['impaye', 'partiel', 'en_retard', 'paye'],
                 },
-                order: [['dateLimite', 'ASC'], ['numeroEcheance', 'ASC'], ['id', 'ASC']],
+                order: [['numeroEcheance', 'ASC'], ['dateLimite', 'ASC'], ['id', 'ASC']],
                 transaction,
                 lock: transaction.LOCK.UPDATE,
             })
             for (const e of echeancesDuType) registre.set(e.id, e)
 
             const { lignes: lignesComposante, reste: resteComposante } =
-                await ImputationService.calculerImputation(echeancesDuType, Number(composante.montant))
+                await ImputationService.calculerImputation(
+                    echeancesDuType,
+                    ImputationService.arrondirFcfa(Number(composante.montant))
+                )
 
             lignes.push(...lignesComposante)
-            reste = Math.round((reste + resteComposante) * 100) / 100
+            reste = ImputationService.arrondirFcfa(reste + resteComposante)
         }
 
         // Sauvegardes effectives + lettrages
         for (const ligne of lignes) {
             const echeance = registre.get(ligne.echeanceId)
             if (echeance) {
-                echeance.montantPaye = Math.round(((echeance.montantPaye || 0) + ligne.montantImpute) * 100) / 100
+                echeance.montantPaye = ImputationService.arrondirFcfa(
+                    Number(echeance.montantPaye || 0) + ligne.montantImpute
+                )
                 echeance.statut = ligne.statutApres
                 await echeance.save({ transaction })
                 await ImputationService.creerLettrage(bordereauId, echeance.id, ligne.montantImpute, transaction)
@@ -647,7 +662,7 @@ export class ImputationService {
                     type: t,
                     statut: statutFilter as any,
                 },
-                order: [['dateLimite', 'ASC'], ['numeroEcheance', 'ASC'], ['id', 'ASC']],
+                order: [['numeroEcheance', 'ASC'], ['dateLimite', 'ASC'], ['id', 'ASC']],
                 transaction,
                 lock: transaction.LOCK.UPDATE,
             })
@@ -660,7 +675,9 @@ export class ImputationService {
         for (const ligne of lignes) {
             const echeance = echeances.find(e => e.id === ligne.echeanceId)
             if (echeance) {
-                echeance.montantPaye = Math.round(((echeance.montantPaye || 0) + ligne.montantImpute) * 100) / 100
+                echeance.montantPaye = ImputationService.arrondirFcfa(
+                    Number(echeance.montantPaye || 0) + ligne.montantImpute
+                )
                 echeance.statut = ligne.statutApres
                 await echeance.save({ transaction })
             }
@@ -738,13 +755,13 @@ export class ImputationService {
                     type: t,
                     statut: statutFilter as any,
                 },
-                order: [['dateLimite', 'ASC'], ['numeroEcheance', 'ASC'], ['id', 'ASC']],
+                order: [['numeroEcheance', 'ASC'], ['dateLimite', 'ASC'], ['id', 'ASC']],
                 transaction,
             })
             echeances.push(...echeancesDuType)
         }
 
-        const { lignes, reste } = await ImputationService.calculerImputation(echeances, montantConstate)
+        const { lignes, reste } = await ImputationService.calculerImputation(echeances, montantConstate, true)
 
         return {
             bordereauId: 0,
@@ -760,27 +777,46 @@ export class ImputationService {
     private static async calculerImputation(
         echeances: Echeance[],
         montantDisponible: number,
+        inclureEcheancesSoldees = false,
     ): Promise<{ lignes: LigneLettrage[]; reste: number }> {
-        let reste = Math.round(montantDisponible * 100) / 100
+        let reste = ImputationService.arrondirFcfa(montantDisponible)
         const lignes: LigneLettrage[] = []
 
         for (const echeance of echeances) {
             if (reste <= 0) break
 
             const du = ImputationService.resteApayer(echeance)
-            if (du <= 0) continue
+            if (du <= 0) {
+                if (inclureEcheancesSoldees) {
+                    lignes.push({
+                        echeanceId: echeance.id,
+                        numeroEcheance: echeance.numeroEcheance,
+                        type: echeance.type,
+                        moisConcerne: echeance.moisConcerne,
+                        montantEcheance: ImputationService.arrondirFcfa(Number(echeance.montant)),
+                        montantDu: 0,
+                        montantImpute: 0,
+                        montantPayeApres: ImputationService.arrondirFcfa(Number(echeance.montantPaye || 0)),
+                        resteApres: 0,
+                        statutApres: 'paye',
+                    })
+                }
+                continue
+            }
 
             const impute = Math.min(reste, du)
-            const nouveauMontantPaye = Math.round(((echeance.montantPaye || 0) + impute) * 100) / 100
+            const nouveauMontantPaye = ImputationService.arrondirFcfa(
+                Number(echeance.montantPaye || 0) + impute
+            )
             const statutApres = ImputationService.recalculerStatutApres(nouveauMontantPaye, echeance)
-            const apres = Math.max(0, Math.round((echeance.montant - nouveauMontantPaye) * 100) / 100)
+            const apres = Math.max(0, ImputationService.arrondirFcfa(Number(echeance.montant) - nouveauMontantPaye))
 
             lignes.push({
                 echeanceId: echeance.id,
                 numeroEcheance: echeance.numeroEcheance,
                 type: echeance.type,
                 moisConcerne: echeance.moisConcerne,
-                montantEcheance: Number(echeance.montant),
+                montantEcheance: ImputationService.arrondirFcfa(Number(echeance.montant)),
                 montantDu: du,
                 montantImpute: impute,
                 montantPayeApres: nouveauMontantPaye,
@@ -788,14 +824,14 @@ export class ImputationService {
                 statutApres,
             })
 
-            reste = Math.round((reste - impute) * 100) / 100
+            reste = ImputationService.arrondirFcfa(reste - impute)
         }
 
         return { lignes, reste }
     }
 
     private static recalculerStatutApres(montantPaye: number, echeance: Echeance): 'paye' | 'partiel' | 'en_retard' | 'impaye' {
-        const reste = Math.round((echeance.montant - montantPaye) * 100) / 100
+        const reste = ImputationService.arrondirFcfa(Number(echeance.montant) - montantPaye)
         if (reste <= 0) return 'paye'
         if (montantPaye > 0) return 'partiel'
         const today = new Date()
