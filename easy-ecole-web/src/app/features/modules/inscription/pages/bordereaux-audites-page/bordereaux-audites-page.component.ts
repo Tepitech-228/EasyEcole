@@ -3,7 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { BaseComponentClass } from 'src/app/core/base-component-class';
 import { LocalStorageService } from 'src/app/core/services/local-storage.service';
-import { Bordereau } from 'src/app/data/modules/inscription/models/Bordereau.model';
+import { BORDEREAU_BANK_REFERENCES, Bordereau } from 'src/app/data/modules/inscription/models/Bordereau.model';
 import { BordereauService } from 'src/app/data/modules/inscription/services/bordereau.service';
 import { environment } from 'src/environments/environment';
 
@@ -29,6 +29,7 @@ export class BordereauxAuditesPageComponent extends BaseComponentClass implement
   previewImageUrl: string | null = null;
   previewUrl: SafeResourceUrl | null = null;
   correctionForm: FormGroup;
+  readonly referencesBancaires: string[] = [...BORDEREAU_BANK_REFERENCES];
 
   constructor(
     private bordereauService: BordereauService,
@@ -40,6 +41,7 @@ export class BordereauxAuditesPageComponent extends BaseComponentClass implement
     this.correctionForm = this.formBuilder.group({
       numeroBordereau: ['', [Validators.required, Validators.maxLength(100)]],
       datePaiement: ['', Validators.required],
+      referenceBancaire: ['', [Validators.required, Validators.maxLength(100)]],
     });
   }
 
@@ -79,6 +81,13 @@ export class BordereauxAuditesPageComponent extends BaseComponentClass implement
     });
   }
 
+  get referencesBancairesDisponibles(): string[] {
+    const referenceActuelle = String(this.selectedBordereau?.referenceBancaire || '').trim();
+    return referenceActuelle && !this.referencesBancaires.some(reference => reference === referenceActuelle)
+      ? [referenceActuelle, ...this.referencesBancaires]
+      : this.referencesBancaires;
+  }
+
   chargerBordereaux(page = this.currentPage): void {
     this.loading = true;
     this.errorMessage = '';
@@ -113,6 +122,7 @@ export class BordereauxAuditesPageComponent extends BaseComponentClass implement
     this.correctionForm.reset({
       numeroBordereau: bordereau.numeroBordereau || '',
       datePaiement: this.formaterDateInput(bordereau.datePaiement),
+      referenceBancaire: bordereau.referenceBancaire || '',
     });
     this.showEditModal = true;
 
@@ -133,6 +143,7 @@ export class BordereauxAuditesPageComponent extends BaseComponentClass implement
     this.bordereauService.corrigerBordereauAudite(String(this.selectedBordereau.id), {
       numeroBordereau: String(valeur.numeroBordereau || '').trim(),
       datePaiement: valeur.datePaiement,
+      referenceBancaire: String(valeur.referenceBancaire || '').trim(),
     }).subscribe({
       next: () => {
         this.successMessage = 'La modification du bordereau a été validée et enregistrée.';

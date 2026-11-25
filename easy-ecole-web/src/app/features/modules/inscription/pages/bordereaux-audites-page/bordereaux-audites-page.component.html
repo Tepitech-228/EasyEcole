@@ -7,7 +7,7 @@
       </p>
       <app-header-title
         title="Bordereaux audités"
-        subtitle="Consulter les bordereaux validés et corriger leur numéro ou leur date de paiement">
+        subtitle="Consulter les bordereaux validés et corriger leur référence bancaire, leur numéro ou leur date de paiement">
       </app-header-title>
     </div>
     <div class="rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700">
@@ -23,7 +23,7 @@
   </div>
 
   <div class="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-    Seuls le numéro du bordereau et la date de paiement sont modifiables. Le montant, le fichier et la validation d’audit restent inchangés.
+    La référence bancaire, le numéro du bordereau et la date de paiement sont modifiables. Le montant, le fichier et la validation d’audit restent inchangés.
   </div>
 
   <div class="dashboard-surface-card mb-5 rounded-xl border border-gray-200 bg-white p-4">
@@ -125,72 +125,81 @@
       </button>
     </div>
 
-    <div class="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto lg:grid-cols-2 lg:overflow-hidden">
-      <section class="flex min-h-0 min-w-0 flex-col border-b border-gray-200 lg:border-b-0 lg:border-r">
-        <div class="border-b border-gray-200 bg-gray-50 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-gray-600">
-          Bordereau déposé
-        </div>
-        <div class="flex flex-1 items-center justify-center overflow-auto bg-gray-100 p-4" style="min-height:0;">
-          <img *ngIf="previewImageUrl && estImage(selectedBordereau?.fichier)"
-            [src]="previewImageUrl" alt="Bordereau déposé" class="max-w-full rounded object-contain shadow"
-            style="max-height:calc(95vh - 220px);">
-          <iframe *ngIf="previewUrl && !estImage(selectedBordereau?.fichier)"
-            [src]="previewUrl" title="Bordereau déposé"
-            style="width:100%;height:calc(95vh - 220px);min-height:360px;border:0;background:#ffffff;"></iframe>
-        </div>
-      </section>
+    <form id="correction-bordereau-audite-form" [formGroup]="correctionForm"
+      (ngSubmit)="enregistrerCorrection()" class="flex min-h-0 flex-1 flex-col">
+      <div class="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto lg:grid-cols-2 lg:overflow-hidden">
+        <section class="flex min-h-0 min-w-0 flex-col border-b border-gray-200 lg:border-b-0 lg:border-r">
+          <div class="border-b border-gray-200 bg-gray-50 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-gray-600">
+            Bordereau déposé
+          </div>
+          <div class="flex flex-1 items-center justify-center overflow-auto bg-gray-100 p-4" style="min-height:0;">
+            <img *ngIf="previewImageUrl && estImage(selectedBordereau?.fichier)"
+              [src]="previewImageUrl" alt="Bordereau déposé" class="max-w-full rounded object-contain shadow"
+              style="max-height:calc(95vh - 220px);">
+            <iframe *ngIf="previewUrl && !estImage(selectedBordereau?.fichier)"
+              [src]="previewUrl" title="Bordereau déposé"
+              style="width:100%;height:calc(95vh - 220px);min-height:360px;border:0;background:#ffffff;"></iframe>
+          </div>
+        </section>
 
-      <section class="overflow-y-auto p-5 sm:p-7">
-        <div class="mb-5 rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
-          Modifiez directement le numéro ou la date de paiement, puis validez. La référence bancaire, le fichier, le montant et la décision d’audit restent inchangés.
-        </div>
-
-        <div *ngIf="errorMessage" class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
-          {{ errorMessage }}
-        </div>
-
-        <form id="correction-bordereau-audite-form" [formGroup]="correctionForm"
-          (ngSubmit)="enregistrerCorrection()" class="space-y-5">
-          <div>
-            <label for="numero-bordereau-audite" class="mb-1 block text-sm font-semibold text-gray-700">
-              Numéro de bordereau <span class="text-red-500">*</span>
-            </label>
-            <input id="numero-bordereau-audite" type="text" formControlName="numeroBordereau" maxlength="100"
-              class="block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500">
-            <p *ngIf="correctionForm.get('numeroBordereau')?.hasError('required') && correctionForm.get('numeroBordereau')?.touched"
-              class="mt-1 text-xs text-red-600">Le numéro de bordereau est obligatoire.</p>
-            <p *ngIf="correctionForm.get('numeroBordereau')?.hasError('maxlength') && correctionForm.get('numeroBordereau')?.touched"
-              class="mt-1 text-xs text-red-600">Le numéro ne peut pas dépasser 100 caractères.</p>
+        <section class="overflow-y-auto p-5 sm:p-7">
+          <div class="mb-5 rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
+            Modifiez la référence bancaire, le numéro ou la date de paiement, puis enregistrez. Le fichier, le montant et la décision d’audit restent inchangés.
           </div>
 
-          <div>
-            <label for="date-paiement-audite" class="mb-1 block text-sm font-semibold text-gray-700">
-              Date de paiement <span class="text-red-500">*</span>
-            </label>
-            <input id="date-paiement-audite" type="date" formControlName="datePaiement"
-              class="block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500">
+          <div *ngIf="errorMessage" class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+            {{ errorMessage }}
           </div>
 
-          <div>
-            <label class="mb-1 block text-sm font-semibold text-gray-700">Référence bancaire (lecture seule)</label>
-            <input type="text" readonly [value]="selectedBordereau?.referenceBancaire || '—'"
-              class="block w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-600">
-          </div>
-        </form>
-      </section>
-    </div>
+          <div class="space-y-5">
+            <div>
+              <label for="numero-bordereau-audite" class="mb-1 block text-sm font-semibold text-gray-700">
+                Numéro de bordereau <span class="text-red-500">*</span>
+              </label>
+              <input id="numero-bordereau-audite" type="text" formControlName="numeroBordereau" maxlength="100"
+                class="block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500">
+              <p *ngIf="correctionForm.get('numeroBordereau')?.hasError('required') && correctionForm.get('numeroBordereau')?.touched"
+                class="mt-1 text-xs text-red-600">Le numéro de bordereau est obligatoire.</p>
+              <p *ngIf="correctionForm.get('numeroBordereau')?.hasError('maxlength') && correctionForm.get('numeroBordereau')?.touched"
+                class="mt-1 text-xs text-red-600">Le numéro ne peut pas dépasser 100 caractères.</p>
+            </div>
 
-    <div class="flex justify-end gap-3 border-t border-gray-200 bg-white px-5 py-4 sm:px-7">
-      <button type="button" (click)="fermerCorrection()" [disabled]="saving"
-        class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
-        Annuler
-      </button>
-      <button type="button" (click)="enregistrerCorrection()"
-        [disabled]="correctionForm.invalid || saving"
-        class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50">
-        <span class="material-symbols-outlined text-base">{{ saving ? 'progress_activity' : 'check_circle' }}</span>
-        {{ saving ? 'Enregistrement…' : 'Enregistrer la modification' }}
-      </button>
-    </div>
+            <div>
+              <label for="date-paiement-audite" class="mb-1 block text-sm font-semibold text-gray-700">
+                Date de paiement <span class="text-red-500">*</span>
+              </label>
+              <input id="date-paiement-audite" type="date" formControlName="datePaiement"
+                class="block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500">
+            </div>
+
+            <div>
+              <label for="reference-bancaire-audite" class="mb-1 block text-sm font-semibold text-gray-700">
+                Référence bancaire <span class="text-red-500">*</span>
+              </label>
+              <select id="reference-bancaire-audite" formControlName="referenceBancaire"
+                class="block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500">
+                <option value="" disabled>Sélectionnez une référence bancaire</option>
+                <option *ngFor="let reference of referencesBancairesDisponibles" [value]="reference">
+                  {{ reference }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="flex shrink-0 justify-end gap-3 border-t border-gray-200 bg-white px-5 py-4 sm:px-7">
+        <button type="button" (click)="fermerCorrection()" [disabled]="saving"
+          class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+          Annuler
+        </button>
+        <button type="submit"
+          [disabled]="correctionForm.invalid || saving"
+          class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50">
+          <span class="material-symbols-outlined text-base">{{ saving ? 'progress_activity' : 'check_circle' }}</span>
+          {{ saving ? 'Enregistrement…' : 'Enregistrer les modifications' }}
+        </button>
+      </div>
+    </form>
   </div>
 </div>

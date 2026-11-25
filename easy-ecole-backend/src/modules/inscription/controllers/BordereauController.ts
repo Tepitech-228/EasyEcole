@@ -760,6 +760,11 @@ export default class BordereauController {
             const datePaiementSaisie = typeof req.body.datePaiement === 'string'
                 ? req.body.datePaiement.trim()
                 : '';
+            const referenceBancaireSaisie = req.body.referenceBancaire === undefined
+                ? undefined
+                : typeof req.body.referenceBancaire === 'string'
+                    ? req.body.referenceBancaire.trim()
+                    : null;
             numeroBordereauEnCours = numeroBordereau;
             utilisateurIdEnCours = Number(bordereau.utilisateurId);
 
@@ -768,6 +773,24 @@ export default class BordereauController {
                 return res.status(400).json({
                     success: false,
                     message: "Le numéro de bordereau est obligatoire et limité à 100 caractères.",
+                });
+            }
+            if (referenceBancaireSaisie === null || (referenceBancaireSaisie && referenceBancaireSaisie.length > 100)) {
+                await transaction.rollback();
+                return res.status(400).json({
+                    success: false,
+                    message: "La référence bancaire doit être une chaîne de 100 caractères maximum.",
+                });
+            }
+            if (
+                referenceBancaireSaisie
+                && !bordereauBankReferenceSet.has(referenceBancaireSaisie)
+                && referenceBancaireSaisie !== String(bordereau.referenceBancaire || '').trim()
+            ) {
+                await transaction.rollback();
+                return res.status(400).json({
+                    success: false,
+                    message: "La référence bancaire sélectionnée n’est pas autorisée.",
                 });
             }
             if (!/^\d{4}-\d{2}-\d{2}$/.test(datePaiementSaisie)) {
@@ -797,6 +820,9 @@ export default class BordereauController {
 
             bordereau.numeroBordereau = numeroBordereau;
             bordereau.datePaiement = datePaiement;
+            if (referenceBancaireSaisie !== undefined) {
+                bordereau.referenceBancaire = referenceBancaireSaisie;
+            }
             await bordereau.save({ transaction });
             await transaction.commit();
 

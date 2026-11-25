@@ -239,7 +239,7 @@ router
       * /inscription/bordereaux/{id}/corriger-apres-audit:
       *   put:
       *     tags: [Bordereaux]
-      *     summary: Corrige le numéro et la date de paiement d'un bordereau audité
+      *     summary: Corrige la référence bancaire, le numéro et la date de paiement d'un bordereau audité
       *     security: [{ bearerAuth: [] }]
       *     parameters:
       *       - in: path
@@ -256,6 +256,10 @@ router
       *             properties:
       *               numeroBordereau: { type: string, maxLength: 100 }
       *               datePaiement: { type: string, format: date }
+      *               referenceBancaire:
+      *                 type: string
+      *                 maxLength: 100
+      *                 enum: [ORABANK-TG116, "IB BANK -TG024", "ECOBANK TG055"]
       *     responses:
       *       200:
       *         description: Correction enregistrée

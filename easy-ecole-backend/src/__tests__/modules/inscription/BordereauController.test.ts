@@ -371,6 +371,7 @@ describe('BordereauController.corrigerBordereauAudite', () => {
       statut: 'valide',
       numeroBordereau: 'B-OLD',
       datePaiement: new Date('2026-11-20T00:00:00.000Z'),
+      referenceBancaire: 'REF-OLD',
       save: jest.fn().mockResolvedValue(undefined),
     }
     ;(Bordereau.findOne as jest.Mock)
@@ -385,6 +386,7 @@ describe('BordereauController.corrigerBordereauAudite', () => {
       body: {
         numeroBordereau: 'B-CORRIGE',
         datePaiement: '2026-11-24',
+        referenceBancaire: 'ECOBANK TG055',
       },
     } as any)
     const res = mockResponse()
@@ -394,7 +396,40 @@ describe('BordereauController.corrigerBordereauAudite', () => {
     expect(res.status).toHaveBeenCalledWith(200)
     expect(bordereau.numeroBordereau).toBe('B-CORRIGE')
     expect(bordereau.datePaiement.toISOString()).toBe('2026-11-24T00:00:00.000Z')
+    expect(bordereau.referenceBancaire).toBe('ECOBANK TG055')
     expect(bordereau.save).toHaveBeenCalledWith({ transaction: expect.any(Object) })
+  })
+
+  it('rejects a bank reference outside the configured dropdown choices', async () => {
+    jest.clearAllMocks()
+    const bordereau: any = {
+      id: 33,
+      utilisateurId: 7,
+      statut: 'valide',
+      numeroBordereau: 'B-OLD',
+      datePaiement: new Date('2026-11-20T00:00:00.000Z'),
+      referenceBancaire: 'REF-OLD',
+      save: jest.fn().mockResolvedValue(undefined),
+    }
+    ;(Bordereau.findOne as jest.Mock).mockResolvedValueOnce(bordereau)
+
+    const req = mockRequest({
+      utilisateurRole: 'cabinet_comptable',
+      utilisateurId: 12,
+      etablissementId: 42,
+      params: { id: '33' },
+      body: {
+        numeroBordereau: 'B-OLD',
+        datePaiement: '2026-11-24',
+        referenceBancaire: 'REFERENCE-INCONNUE',
+      },
+    } as any)
+    const res = mockResponse()
+
+    await Ctrl.corrigerBordereauAudite(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(bordereau.save).not.toHaveBeenCalled()
   })
 
   it('refuses to modify a bordereau that has not been audited', async () => {

@@ -115,7 +115,7 @@ export class BordereauService {
     return this.httpClient.put<Bordereau>(`${this.SERVICE_URL}/${id}/valider`, payload)
   }
 
-  corrigerBordereauAudite(id: string, payload: { numeroBordereau: string; datePaiement: string }): Observable<{ success: boolean; data: Bordereau }> {
+  corrigerBordereauAudite(id: string, payload: { numeroBordereau: string; datePaiement: string; referenceBancaire: string }): Observable<{ success: boolean; data: Bordereau }> {
     return this.httpClient.put<{ success: boolean; data: Bordereau }>(
       `${this.SERVICE_URL}/${id}/corriger-apres-audit`,
       payload
