@@ -296,6 +296,41 @@ describe("ImputationService — priorisation inscription avant scolarite", () =>
     expect(resultat.surplus).toBe(0)
   })
 
+  it("reprend la première échéance non soldée même si son statut est obsolète et s'arrête sur la première partielle", async () => {
+    const echeance1 = creerEcheance({
+      id: 21,
+      type: 'scolarite',
+      numeroEcheance: 1,
+      montant: 100,
+      montantPaye: 20,
+      statut: 'paye',
+      dateLimite: new Date('2025-01-01'),
+    })
+    const echeance2 = creerEcheance({
+      id: 22,
+      type: 'scolarite',
+      numeroEcheance: 2,
+      montant: 60,
+      dateLimite: new Date('2025-02-01'),
+    })
+    const echeance3 = creerEcheance({
+      id: 23,
+      type: 'scolarite',
+      numeroEcheance: 3,
+      montant: 60,
+      dateLimite: new Date('2025-03-01'),
+    })
+    mockEcheances = [echeance3, echeance2, echeance1]
+
+    const resultat = await ImputationService.simulerPourUtilisateur(1, 100, undefined, 'scolarite')
+
+    expect(resultat.lignes.map(ligne => ligne.echeanceId)).toEqual([21, 22])
+    expect(resultat.lignes.map(ligne => ligne.montantImpute)).toEqual([80, 20])
+    expect(resultat.lignes[0].statutApres).toBe('paye')
+    expect(resultat.lignes[1].statutApres).toBe('partiel')
+    expect(resultat.surplus).toBe(0)
+  })
+
   it('conserve les centimes des échéances dans le montant payé et le surplus', async () => {
     const echeance = creerEcheance({
       id: 50,

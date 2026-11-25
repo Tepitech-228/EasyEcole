@@ -103,7 +103,7 @@ export class ImputationService {
             where: {
                 dossierEtudiantId: dossierId,
                 type: 'inscription',
-                statut: ['impaye', 'partiel', 'en_retard'],
+                statut: ['impaye', 'partiel', 'en_retard', 'paye'],
             },
             order: [['dateLimite', 'ASC'], ['numeroEcheance', 'ASC'], ['id', 'ASC']],
             transaction,
@@ -114,7 +114,7 @@ export class ImputationService {
             where: {
                 dossierEtudiantId: dossierId,
                 type: 'scolarite',
-                statut: ['impaye', 'partiel', 'en_retard'],
+                statut: ['impaye', 'partiel', 'en_retard', 'paye'],
             },
             order: [['dateLimite', 'ASC'], ['numeroEcheance', 'ASC'], ['id', 'ASC']],
             transaction,
@@ -426,7 +426,7 @@ export class ImputationService {
         // Bordereau de type SIMPLE → restriction à une seule nature de frais.
         // On ne charge que les échéances de ce type. Sans restriction, on charge
         // inscription PUIS scolarité (FIFO trans-natures historique).
-        const statutFilter = ['impaye', 'partiel', 'en_retard'] as const
+        const statutFilter = ['impaye', 'partiel', 'en_retard', 'paye'] as const
         const typeBases: ('inscription' | 'scolarite')[] = type ? [type] : ['inscription', 'scolarite']
 
         const echeances: Echeance[] = []
@@ -537,7 +537,7 @@ export class ImputationService {
                 where: {
                     dossierEtudiantId: { [Op.in]: dossierIds },
                     type: composante.type,
-                    statut: ['impaye', 'partiel', 'en_retard'],
+                    statut: ['impaye', 'partiel', 'en_retard', 'paye'],
                 },
                 order: [['dateLimite', 'ASC'], ['numeroEcheance', 'ASC'], ['id', 'ASC']],
                 transaction,
@@ -636,7 +636,7 @@ export class ImputationService {
         }
 
         const dossierIds = dossiers.map(d => d.id)
-        const statutFilter = ['impaye', 'partiel', 'en_retard'] as const
+        const statutFilter = ['impaye', 'partiel', 'en_retard', 'paye'] as const
         const typeBases: ('inscription' | 'scolarite')[] = type ? [type] : ['inscription', 'scolarite']
 
         const echeances: Echeance[] = []
@@ -727,7 +727,7 @@ export class ImputationService {
         }
 
         const dossierIds = dossiers.map(d => d.id)
-        const statutFilter = ['impaye', 'partiel', 'en_retard'] as const
+        const statutFilter = ['impaye', 'partiel', 'en_retard', 'paye'] as const
         const typeBases: ('inscription' | 'scolarite')[] = type ? [type] : ['inscription', 'scolarite']
 
         const echeances: Echeance[] = []
