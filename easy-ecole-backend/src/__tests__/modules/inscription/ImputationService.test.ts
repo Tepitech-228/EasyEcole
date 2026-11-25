@@ -52,6 +52,7 @@ describe("ImputationService — priorisation inscription avant scolarite", () =>
     jest.spyOn(Echeance, 'findByPk').mockResolvedValue(null as any)
     jest.spyOn(DossierEtudiant, 'findAll').mockResolvedValue([mockDossier] as any)
     jest.spyOn(BordereauEcheance, 'findOrCreate').mockResolvedValue([{ get: () => ({}) }] as any)
+    jest.spyOn(BordereauEcheance, 'findAll').mockResolvedValue([] as any)
     jest.spyOn(PortefeuilleCredit, 'create').mockResolvedValue({ id: 1 } as any)
   })
 
@@ -444,6 +445,40 @@ describe("ImputationService — priorisation inscription avant scolarite", () =>
       statutApres: 'partiel',
     })
     expect(resultat.surplus).toBe(0)
+  })
+
+  it("affiche les imputations enregistrées sans réimputer le bordereau traité", async () => {
+    mockEcheances = [
+      creerEcheance({ id: 81, type: 'inscription', numeroEcheance: 1, montant: 19000, montantPaye: 19000, statut: 'paye' }),
+      creerEcheance({ id: 82, type: 'scolarite', numeroEcheance: 1, montant: 63000, montantPaye: 63000, statut: 'paye' }),
+      creerEcheance({ id: 83, type: 'scolarite', numeroEcheance: 2, montant: 63000, montantPaye: 63000, statut: 'paye' }),
+      creerEcheance({ id: 84, type: 'scolarite', numeroEcheance: 3, montant: 63000, montantPaye: 25000, statut: 'partiel' }),
+      creerEcheance({ id: 85, type: 'scolarite', numeroEcheance: 4, montant: 63000 }),
+    ]
+    ;(BordereauEcheance.findAll as jest.Mock).mockResolvedValue([
+      { echeanceId: 81, montantImpute: 19000 },
+      { echeanceId: 82, montantImpute: 63000 },
+      { echeanceId: 83, montantImpute: 63000 },
+      { echeanceId: 84, montantImpute: 25000 },
+    ] as any)
+
+    const resultat = await ImputationService.lireImputationBordereauTraite(91, 1, 170000)
+
+    expect(resultat.montantPayeCumul).toBe(170000)
+    expect(resultat.lignes.map(ligne => `${ligne.type}-${ligne.numeroEcheance}`)).toEqual([
+      'inscription-1',
+      'scolarite-1',
+      'scolarite-2',
+      'scolarite-3',
+    ])
+    expect(resultat.lignes.map(ligne => ligne.montantImpute)).toEqual([19000, 63000, 63000, 25000])
+    expect(resultat.lignes[3]).toMatchObject({
+      montantEcheance: 63000,
+      montantPayeApres: 25000,
+      resteApres: 38000,
+      statutApres: 'partiel',
+    })
+    expect(resultat.lignes.reduce((total, ligne) => total + ligne.montantImpute, 0)).toBe(170000)
   })
 
   it('arrondit les montants d’échéance au FCFA entier', async () => {

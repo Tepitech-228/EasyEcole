@@ -1,5 +1,5 @@
 import express from "express"
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import path from "path";
 import { FindOptions, InferAttributes, Op, Transaction } from "sequelize";
 import { BORDEREAU_BANK_REFERENCES, Bordereau, banqueDepuisReferenceBancaire } from "../models/Bordereau";
@@ -8,7 +8,6 @@ import { Echeance } from "../models/Echeance";
 import { DossierEtudiant } from "../models/DossierEtudiant";
 import { DemandeInscription } from "../models/DemandeInscription";
 import { Utilisateur } from "../../auth/models/Utilisateur";
-import { SiteUtilisateur } from "../../auth/models/SiteUtilisateur";
 import { Apprenant } from "../../auth/models/Apprenant";
 import { Etablissement } from "../../etablissement/models/Etablissement";
 import { TypeOperationBordereau } from "../models/TypeOperationBordereau";
@@ -51,6 +50,11 @@ import { nanoid } from "nanoid";
 import FinanceEcheanceController from "../controllers/FinanceEcheanceController";
 import SituationFinanciereController from "../controllers/SituationFinanciereController";
 import { AnalyseBancaireController } from "../controllers/AnalyseBancaireController";
+import {
+  canAccessFinanceWithoutSite,
+  canSelectFinanceSite,
+  getFinanceSiteScopeId,
+} from "../services/FinanceSiteScope";
 
 /**
  * Router dédié aux opérations financières ESA-COMPTA.
@@ -58,18 +62,6 @@ import { AnalyseBancaireController } from "../controllers/AnalyseBancaireControl
  */
 const router = express.Router();
 const bordereauBankReferenceSet = new Set<string>(BORDEREAU_BANK_REFERENCES);
-
-const getFinanceSiteScopeId = (
-  req: Request,
-  bordereau?: Pick<Bordereau, 'etablissementId'>
-): number | undefined => {
-  const role = (req as any).utilisateurRole;
-  const siteId = role === RolesUtilisateur.ESA_COMPTA
-    ? bordereau?.etablissementId
-    : (req as any).etablissementId;
-  const numericSiteId = Number(siteId);
-  return Number.isSafeInteger(numericSiteId) && numericSiteId > 0 ? numericSiteId : undefined;
-};
 
 const chargerDemandeAvecFraisSession = (utilisateurId: number, etablissementId?: number, transaction?: Transaction) =>
   DemandeInscription.findOne({
@@ -152,9 +144,11 @@ const chargerContexteFraisSession = async (
   };
 };
 
-const canAccessFinanceWithoutSite = (req: Request): boolean => {
-  const role = (req as any).utilisateurRole;
-  return role === RolesUtilisateur.ADMIN || role === RolesUtilisateur.ESA_COMPTA;
+const exigerSiteFinance = (req: Request, res: Response, next: NextFunction) => {
+  if (!getFinanceSiteScopeId(req) && !canAccessFinanceWithoutSite(req)) {
+    return res.status(403).json({ success: false, message: "Sélectionnez un site actif pour accéder aux bordereaux." });
+  }
+  return next();
 };
 
 const affectationRecouvrementHandlers = creerHandlersAffectationBordereau(
@@ -273,7 +267,7 @@ router.get('/suivi-recouvrements', [AuthSuperviseurGeneralOuAdmin], async (req: 
  *           enum: [en_attente, valide, en_saisie_comptable, traite, rejete]
  *       - in: query
  *         name: etablissementId
- *         description: Filtrer par site autorisé
+ *         description: Site actif du compte ESA-COMPTA; un administrateur peut choisir un site
  *         schema:
  *           type: integer
  *       - in: query
@@ -331,13 +325,8 @@ router.get('/bordereaux-a-traiter', [AuthEsacompta, CheckPermission('action.fina
       }
 
       if ((req as any).utilisateurRole === RolesUtilisateur.ESA_COMPTA) {
-        const utilisateurId = Number((req as any).utilisateurId);
-        const affectation = await SiteUtilisateur.findOne({
-          where: { utilisateurId, etablissementId: requestedSiteId },
-          attributes: ['id'],
-        });
-        if (Number((req as any).etablissementId) !== requestedSiteId && !affectation) {
-          return res.status(403).json({ success: false, message: "Vous n’êtes pas affecté à ce site" });
+        if (!canSelectFinanceSite(req, requestedSiteId)) {
+          return res.status(403).json({ success: false, message: "Vous ne pouvez consulter que le site actif de votre compte." });
         }
       }
       siteScopeId = requestedSiteId;
@@ -679,7 +668,7 @@ router.post('/bordereaux/:id/imputation-preview', [AuthEsacompta, CheckPermissio
     if (!bordereau) {
       return res.status(404).json({ success: false, message: "Bordereau non trouvé" })
     }
-    const bordereauSiteScopeId = getFinanceSiteScopeId(req, bordereau);
+    const bordereauSiteScopeId = getFinanceSiteScopeId(req, bordereau.etablissementId);
 
     const montant = Math.round(Number(req.body.montantPaiement || bordereau.montant || 0))
     if (!Number.isFinite(montant) || montant <= 0) {
@@ -698,14 +687,26 @@ router.post('/bordereaux/:id/imputation-preview', [AuthEsacompta, CheckPermissio
       bordereau.utilisateurId,
       bordereauSiteScopeId,
     )
-    const montantInscriptionSession = imputationType === 'scolarite'
+    let montantInscriptionSession = imputationType === 'scolarite'
       ? 0
       : Math.min(montant, contexteFrais.resteInscription)
-    const montantScolariteSession = imputationType === 'inscription'
+    let montantScolariteSession = imputationType === 'inscription'
       ? 0
       : Math.max(0, montant - montantInscriptionSession)
     let resultat
-    if (imputationType) {
+    if (bordereau.statut === 'traite') {
+      resultat = await ImputationService.lireImputationBordereauTraite(
+        Number(bordereau.id),
+        contexteFrais.dossierCible?.id,
+        montant,
+      )
+      montantInscriptionSession = resultat.lignes
+        .filter(ligne => ligne.type === 'inscription')
+        .reduce((total, ligne) => total + ligne.montantImpute, 0)
+      montantScolariteSession = resultat.lignes
+        .filter(ligne => ligne.type === 'scolarite')
+        .reduce((total, ligne) => total + ligne.montantImpute, 0)
+    } else if (imputationType) {
       resultat = await ImputationService.simulerPourUtilisateur(
         bordereau.utilisateurId,
         montant,
@@ -744,12 +745,18 @@ router.post('/bordereaux/:id/imputation-preview', [AuthEsacompta, CheckPermissio
         surplus: inscriptionPreview.surplus + scolaritePreview.surplus,
       }
     }
-    const montantPayeCumul = Math.round(
+    const montantPayeCumul = resultat.montantPayeCumul ?? Math.round(
       contexteFrais.dejaPayeInscription + contexteFrais.dejaPayeScolarite + montant
     )
     const montantGlobal = Math.round(
       contexteFrais.frais.fraisInscription + contexteFrais.frais.fraisScolarite
     )
+    const inscriptionDejaPayee = bordereau.statut === 'traite'
+      ? Math.max(0, contexteFrais.dejaPayeInscription - montantInscriptionSession)
+      : contexteFrais.dejaPayeInscription
+    const scolariteDejaPayee = bordereau.statut === 'traite'
+      ? Math.max(0, contexteFrais.dejaPayeScolarite - montantScolariteSession)
+      : contexteFrais.dejaPayeScolarite
     resultat = {
       ...resultat,
       montantDisponible: montant,
@@ -762,15 +769,16 @@ router.post('/bordereaux/:id/imputation-preview', [AuthEsacompta, CheckPermissio
         ...resultat,
         repartitionSession: {
           fraisInscription: contexteFrais.frais.fraisInscription,
-          inscriptionDejaPayee: contexteFrais.dejaPayeInscription,
+          inscriptionDejaPayee,
           inscriptionRestante: contexteFrais.resteInscription,
           montantInscriptionImpute: montantInscriptionSession,
           fraisScolarite: contexteFrais.frais.fraisScolarite,
           modaliteScolarite: contexteFrais.frais.modaliteScolarite,
-          scolariteDejaPayee: contexteFrais.dejaPayeScolarite,
+          scolariteDejaPayee,
           scolariteRestante: contexteFrais.resteScolarite,
           montantScolariteImpute: montantScolariteSession,
         },
+        montantPayeCumul,
       },
     })
   } catch (error: any) {
@@ -802,7 +810,7 @@ router.post('/bordereaux/:id/composition-preview', [AuthEsacompta, CheckPermissi
     if (!bordereau) {
       return res.status(404).json({ success: false, message: "Bordereau non trouvé" })
     }
-    const bordereauSiteScopeId = getFinanceSiteScopeId(req, bordereau);
+    const bordereauSiteScopeId = getFinanceSiteScopeId(req, bordereau.etablissementId);
 
     const montant = Number(req.body.montantPaiement || bordereau.montant || 0)
     if (!Number.isFinite(montant) || montant <= 0) {
@@ -869,13 +877,13 @@ router.post('/bordereaux/:id/composition-preview', [AuthEsacompta, CheckPermissi
 
 router.post(
   '/bordereaux/:id/prise-en-charge',
-  [AuthEsacompta, CheckPermission('action.finance.bordereau.saisir')],
+  [AuthEsacompta, CheckPermission('action.finance.bordereau.saisir'), exigerSiteFinance],
   affectationRecouvrementHandlers.prendreEnCharge,
 );
 
 router.post(
   '/bordereaux/:id/liberer',
-  [AuthEsacompta, CheckPermission('action.finance.bordereau.saisir')],
+  [AuthEsacompta, CheckPermission('action.finance.bordereau.saisir'), exigerSiteFinance],
   affectationRecouvrementHandlers.liberer,
 );
 
@@ -969,7 +977,7 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       console.log(_rid, 'ERREUR 404: Bordereau non trouvé')
       return res.status(404).json({ success: false, message: "Bordereau non trouvé" })
     }
-    const bordereauSiteScopeId = getFinanceSiteScopeId(req, bordereau);
+    const bordereauSiteScopeId = getFinanceSiteScopeId(req, bordereau.etablissementId);
     const hasBordereauSiteScope = bordereauSiteScopeId !== undefined;
 
     console.log(_rid, 'Bordereau trouvé — statut:', bordereau.statut, 'type:', bordereau.type, 'utilisateurId:', bordereau.utilisateurId, 'typeOperationId:', bordereau.typeOperationId)

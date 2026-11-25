@@ -85,8 +85,8 @@
           <td class="whitespace-nowrap px-5 py-4 text-right">
             <button type="button" (click)="ouvrirCorrection(bordereau)"
               class="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
-              <span class="material-symbols-outlined text-base">visibility</span>
-              Voir
+              <span class="material-symbols-outlined text-base">edit</span>
+              Modifier
             </button>
           </td>
         </tr>
@@ -185,11 +185,11 @@
         class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
         Annuler
       </button>
-      <button type="submit" form="correction-bordereau-audite-form"
+      <button type="button" (click)="enregistrerCorrection()"
         [disabled]="correctionForm.invalid || saving"
         class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50">
         <span class="material-symbols-outlined text-base">{{ saving ? 'progress_activity' : 'check_circle' }}</span>
-        {{ saving ? 'Validation…' : 'Valider la modification' }}
+        {{ saving ? 'Enregistrement…' : 'Enregistrer la modification' }}
       </button>
     </div>
   </div>

@@ -35,6 +35,7 @@ export interface ResultatImputation {
     lignes: LigneLettrage[]
     surplus: number
     portefeuilleCreditId?: number
+    montantPayeCumul?: number
 }
 
 /**
@@ -768,6 +769,89 @@ export class ImputationService {
             montantDisponible: montantConstate,
             lignes,
             surplus: reste,
+        }
+    }
+
+    /**
+     * Lit le résultat déjà enregistré d'un bordereau traité sans le réimputer.
+     */
+    static async lireImputationBordereauTraite(
+        bordereauId: number,
+        dossierId: number | undefined,
+        montantConstate: number,
+    ): Promise<ResultatImputation> {
+        if (!dossierId) {
+            return {
+                bordereauId,
+                montantDisponible: montantConstate,
+                lignes: [],
+                surplus: montantConstate,
+                montantPayeCumul: 0,
+            }
+        }
+
+        const echeances: Echeance[] = []
+        for (const type of ['inscription', 'scolarite'] as const) {
+            const echeancesDuType = await Echeance.findAll({
+                where: {
+                    dossierEtudiantId: dossierId,
+                    type,
+                    statut: ['impaye', 'partiel', 'en_retard', 'paye'],
+                },
+                order: [['numeroEcheance', 'ASC'], ['dateLimite', 'ASC'], ['id', 'ASC']],
+            })
+            echeances.push(...echeancesDuType)
+        }
+
+        const lettrages = await BordereauEcheance.findAll({
+            where: { bordereauId },
+            attributes: ['echeanceId', 'montantImpute'],
+        })
+        const imputationsParEcheance = new Map<number, number>()
+        for (const lettrage of lettrages) {
+            const echeanceId = Number(lettrage.echeanceId)
+            imputationsParEcheance.set(
+                echeanceId,
+                ImputationService.arrondirFcfa(
+                    (imputationsParEcheance.get(echeanceId) || 0) + Number(lettrage.montantImpute || 0)
+                )
+            )
+        }
+
+        const dernierIndexImpute = echeances.reduce(
+            (dernier, echeance, index) => imputationsParEcheance.has(Number(echeance.id)) ? index : dernier,
+            -1,
+        )
+        const lignes = echeances.slice(0, dernierIndexImpute + 1).map(echeance => {
+            const montantEcheance = ImputationService.arrondirFcfa(Number(echeance.montant))
+            const montantImpute = imputationsParEcheance.get(Number(echeance.id)) || 0
+            const montantPayeApres = ImputationService.arrondirFcfa(Number(echeance.montantPaye || 0))
+            const resteApres = Math.max(0, montantEcheance - montantPayeApres)
+
+            return {
+                echeanceId: Number(echeance.id),
+                numeroEcheance: echeance.numeroEcheance,
+                type: echeance.type,
+                moisConcerne: echeance.moisConcerne,
+                montantEcheance,
+                montantDu: Math.max(0, montantEcheance - Math.max(0, montantPayeApres - montantImpute)),
+                montantImpute,
+                montantPayeApres,
+                resteApres,
+                statutApres: ImputationService.recalculerStatutApres(montantPayeApres, echeance),
+            }
+        })
+        const montantImputeTotal = [...imputationsParEcheance.values()]
+            .reduce((total, montant) => ImputationService.arrondirFcfa(total + montant), 0)
+        const montantPayeCumul = echeances
+            .reduce((total, echeance) => ImputationService.arrondirFcfa(total + Number(echeance.montantPaye || 0)), 0)
+
+        return {
+            bordereauId,
+            montantDisponible: montantConstate,
+            lignes,
+            surplus: Math.max(0, ImputationService.arrondirFcfa(montantConstate - montantImputeTotal)),
+            montantPayeCumul,
         }
     }
 

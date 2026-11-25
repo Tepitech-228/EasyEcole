@@ -147,6 +147,11 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   }
 
   get previewMontantPaye(): number {
+    const cumulEnregistre = this.previewResult?.montantPayeCumul
+    if (cumulEnregistre !== undefined && cumulEnregistre !== null) {
+      return Math.round(Number(cumulEnregistre))
+    }
+
     const montant = this.previewResult?.montantDisponible
     if (montant !== undefined && montant !== null) {
       const repartition = this.previewResult?.repartitionSession
