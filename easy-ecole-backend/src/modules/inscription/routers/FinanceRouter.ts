@@ -2,7 +2,7 @@ import express from "express"
 import { Request, Response } from "express";
 import path from "path";
 import { FindOptions, InferAttributes, Op, Transaction } from "sequelize";
-import { BORDEREAU_BANK_REFERENCES, Bordereau } from "../models/Bordereau";
+import { BORDEREAU_BANK_REFERENCES, Bordereau, banqueDepuisReferenceBancaire } from "../models/Bordereau";
 import { MODULE_MODEL_PREFIX } from "../InscriptionModule";
 import { Echeance } from "../models/Echeance";
 import { DossierEtudiant } from "../models/DossierEtudiant";
@@ -1229,6 +1229,18 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       })
     }
 
+    // La banque doit correspondre à la référence bancaire choisie.
+    const banqueSaisie = typeof req.body.banque === 'string' ? req.body.banque.trim() : ''
+    const banqueAttendue = banqueDepuisReferenceBancaire(refBancaire)
+    if (banqueSaisie && banqueSaisie !== banqueAttendue) {
+      await transaction.rollback()
+      console.log(_rid, 'ERREUR 400: Référence bancaire et banque incohérentes —', { refBancaire, banqueSaisie, banqueAttendue })
+      return res.status(400).json({
+        success: false,
+        message: 'La référence bancaire choisie ne correspond pas à cette banque.',
+      })
+    }
+
     // Les références bancaires sont réutilisables ; seul le numéro de bordereau reste unique.
     if (numBordereau !== null) {
       const doublon = await trouverBordereauAvecNumero(numBordereau, {
@@ -1248,6 +1260,7 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
 
     bordereau.montant = montantPaiement
     bordereau.referenceBancaire = refBancaire
+    bordereau.banque = (banqueSaisie || banqueAttendue) as any
     bordereau.numeroBordereau = numBordereau
     bordereau.moyenPaiement = moyPaiement as any
     bordereau.typeOperationId = typeOperationIdEffectif

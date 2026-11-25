@@ -677,12 +677,11 @@ describe('TerminalPointagePageComponent', () => {
     fixture.detectChanges();
 
     const summary = fixture.nativeElement.querySelector('.pointage-finance--result');
-    expect(summary.textContent).toContain('Total inscription + scolarité');
-    expect(summary.textContent).toContain('Total payé');
-    expect(summary.textContent).toContain('Reste à payer');
-    expect(summary.textContent).toContain('INSCRIPTION');
-    expect(summary.textContent).toContain('Scolarité');
-    const installments = summary.querySelectorAll('.pointage-finance-echeances li');
+    expect(summary.textContent).toContain('MONTANT GLOBAL');
+    expect(summary.textContent).toContain('MONTANT PAYÉ');
+    expect(summary.textContent).toContain('RESTE');
+    expect(summary.textContent).toContain('Échéance 2');
+    const installments = summary.querySelectorAll('tbody tr');
     expect(installments.length).toBe(1);
     expect(installments[0].classList.contains('is-partial')).toBeTrue();
   });
@@ -712,7 +711,7 @@ describe('TerminalPointagePageComponent', () => {
     };
     fixture.detectChanges();
 
-    const cards = fixture.nativeElement.querySelectorAll('.pointage-finance-echeances li');
+    const cards = fixture.nativeElement.querySelectorAll('.pointage-finance tbody tr');
     expect(cards[0].classList.contains('is-paid')).toBeTrue();
     expect(cards[1].classList.contains('is-partial')).toBeTrue();
     expect(cards[2].classList.contains('is-unpaid')).toBeTrue();

@@ -138,6 +138,45 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
       .reduce((total: number, ligne: any) => total + Number(ligne.montantImpute || 0), 0)
   }
 
+  /** Montant total payé (montant du paiement simulé) */
+  get previewMontantPaye(): number {
+    const montant = this.previewResult?.montantDisponible
+    if (montant !== undefined && montant !== null) return Number(montant)
+    return this.previewTotalImpute
+  }
+
+  get previewFraisInscription(): number {
+    return Number(this.previewResult?.repartitionSession?.fraisInscription || 0)
+  }
+
+  get previewFraisScolarite(): number {
+    return Number(this.previewResult?.repartitionSession?.fraisScolarite || 0)
+  }
+
+  /** Montant global configuré = frais d'inscription + frais de scolarité */
+  get previewMontantGlobal(): number {
+    return Math.round((this.previewFraisInscription + this.previewFraisScolarite) * 100) / 100
+  }
+
+  /** Somme des montants effectivement imputés sur les échéances */
+  get previewTotalImpute(): number {
+    return Math.round(
+      (this.previewResult?.lignes || [])
+        .reduce((total: number, ligne: any) => total + Number(ligne.montantImpute || 0), 0) * 100
+    ) / 100
+  }
+
+  get previewResteGlobal(): number {
+    return Math.max(0, Math.round((this.previewMontantGlobal - this.previewMontantPaye) * 100) / 100)
+  }
+
+  /** Formule de vérification : 40 000 FCFA + 44 999,9 FCFA + ... */
+  get previewFormuleRepartition(): string {
+    return (this.previewResult?.lignes || [])
+      .map((ligne: any) => this.formatCurrency(Number(ligne.montantImpute || 0)))
+      .join(' + ')
+  }
+
   readonly BORDEREAUX_PATH: string = (window as any).__env?.MEDIAS_PATH?.INSCRIPTION?.BORDEREAUX || '/media/inscription/bordereaux/'
   readonly PHOTOS_PATH: string = environment.MEDIAS_PATH.AUTH.PHOTOS
 
@@ -730,6 +769,17 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     // Pour les types MIXTE, on n'envoie plus de composition manuelle :
     // le backend calcule automatiquement (inscription d'abord, reste scolarité).
     const raw = this.saisieForm.value
+    const referenceBancaire = String(raw.referenceBancaire || '').trim()
+    const banque = String(raw.banque || '').trim()
+    const banqueAttendue = banqueDepuisReferenceBancaire(referenceBancaire)
+    if (banque && banqueAttendue && banque !== banqueAttendue) {
+      const message = 'La référence bancaire choisie ne correspond pas à cette banque.'
+      this.apiErrorMessage = message
+      this.error = true
+      this.toastService.error(message)
+      return
+    }
+
     const payload: any = {
       montantPaiement,
       ...(this.matriculeEtudiantRequis
@@ -869,6 +919,24 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     if (!match) return value
     return new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' })
       .format(new Date(Number(match[1]), Number(match[2]) - 1, 1))
+  }
+
+  statutEcheanceLabel(statut?: string | null): string {
+    const map: Record<string, string> = {
+      paye: 'SOLDÉ',
+      partiel: 'PARTIEL',
+      en_retard: 'NON PAYÉ',
+      impaye: 'NON PAYÉ',
+    }
+    return map[String(statut || '')] || String(statut || '—')
+  }
+
+  statutEcheanceStyle(statut?: string | null): Record<string, string> {
+    switch (statut) {
+      case 'paye': return { backgroundColor: '#DCFCE7', color: '#166534' }
+      case 'partiel': return { backgroundColor: '#FFEDD5', color: '#9A3412' }
+      default: return { backgroundColor: '#F1F5F9', color: '#475569' }
+    }
   }
 
   /** Libellé de l'année académique depuis demandeInscription */

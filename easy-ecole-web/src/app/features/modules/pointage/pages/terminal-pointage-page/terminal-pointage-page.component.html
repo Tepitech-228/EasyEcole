@@ -584,34 +584,6 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
                 </span>
               </div>
 
-              <div class="pointage-finance-grid">
-                <div class="pointage-finance-tile">
-                  <p>Total inscription + scolarité</p>
-                  <strong>{{ formatCurrency(scannedUser.situationFinanciere.sommeGlobale) }}</strong>
-                </div>
-                <div class="pointage-finance-tile pointage-finance-tile--paid">
-                  <p>Payé</p>
-                  <strong>{{ formatCurrency(scannedUser.situationFinanciere.montantPaye) }}</strong>
-                </div>
-                <div class="pointage-finance-tile pointage-finance-tile--due">
-                  <p>Reste à payer</p>
-                  <strong>{{ formatCurrency(scannedUser.situationFinanciere.resteAPayer) }}</strong>
-                </div>
-              </div>
-              <div *ngIf="scannedUser.situationFinanciere.fraisInscriptionSession !== undefined || scannedUser.situationFinanciere.fraisScolariteSession !== undefined"
-                class="pointage-finance-grid pointage-finance-grid--session">
-                <div class="pointage-finance-tile">
-                  <p>INSCRIPTION : frais de la session</p>
-                  <strong>{{ formatCurrency(scannedUser.situationFinanciere.fraisInscriptionSession || 0) }}</strong>
-                  <small>Payé : {{ formatCurrency(scannedUser.situationFinanciere.montantInscriptionPaye || 0) }} · reste : {{ formatCurrency(scannedUser.situationFinanciere.resteInscriptionSession || 0) }}</small>
-                </div>
-                <div class="pointage-finance-tile">
-                  <p>Scolarité · frais de la session</p>
-                  <strong>{{ formatCurrency(scannedUser.situationFinanciere.fraisScolariteSession || 0) }}</strong>
-                  <small>Payé : {{ formatCurrency(scannedUser.situationFinanciere.montantScolaritePaye || 0) }} · reste : {{ formatCurrency(scannedUser.situationFinanciere.resteScolariteSession || 0) }}</small>
-                </div>
-              </div>
-
               <div *ngIf="scannedUser.situationFinanciere.moisEnCours" class="pointage-finance-current"
                 [ngClass]="scannedUser.situationFinanciere.moisEnCours.estPaye ? 'is-paid' : (scannedUser.situationFinanciere.moisEnCours.statut === 'partiel' || scannedUser.situationFinanciere.moisEnCours.montantPaye > 0 ? 'is-partial' : 'is-unpaid')">
                 <p class="pointage-finance-current-title">Échéance du mois en cours (délai : le 5)</p>
@@ -627,51 +599,68 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
                 </div>
               </div>
 
-              <div *ngIf="scannedUser.situationFinanciere.echeancesInscription?.length" class="pointage-finance-echeances">
-                <div class="pointage-finance-echeances-head">
-                  <h6>INSCRIPTION</h6>
-                </div>
-                <ul>
-                  <li *ngFor="let ech of scannedUser.situationFinanciere.echeancesInscription"
-                    [ngClass]="ech.estPaye ? 'is-paid' : (ech.statut === 'partiel' || ech.montantPaye > 0 ? 'is-partial' : 'is-unpaid')">
-                    <div class="pointage-echeance-copy">
-                      <span class="material-symbols-outlined">{{ ech.estPaye ? 'check_circle' : (ech.statut === 'partiel' || ech.montantPaye > 0 ? 'warning' : 'error') }}</span>
-                      <div>
-                        <p>INSCRIPTION</p>
-                        <small>{{ ech.estPaye ? 'Payée' : (ech.statut === 'partiel' || ech.montantPaye > 0 ? 'Partiellement payée' : (ech.enRetard ? 'En retard' : 'À payer')) }}</small>
-                      </div>
-                    </div>
-                    <div class="pointage-echeance-amount">
-                      <p>{{ formatCurrency(ech.montant) }}</p>
-                      <small *ngIf="ech.montantPaye > 0">payé {{ formatCurrency(ech.montantPaye) }}</small>
-                      <small *ngIf="!ech.estPaye">reste {{ formatCurrency(ech.resteAPayer) }}</small>
-                    </div>
-                  </li>
-                </ul>
+              <div *ngIf="scannedUser.situationFinanciere.echeancesInscription?.length || scannedUser.situationFinanciere.echeances?.length"
+                class="mt-3 overflow-x-auto rounded-lg" style="border:1px solid #E2E8F0;">
+                <table class="min-w-full text-sm">
+                  <thead>
+                    <tr style="background-color:#1E3A8A;color:#ffffff;">
+                      <th class="text-left px-3 py-3 font-bold" style="font-size:13px;">Frais / Échéance</th>
+                      <th class="text-right px-3 py-3 font-bold" style="font-size:13px;">Montant payé</th>
+                      <th class="text-right px-3 py-3 font-bold" style="font-size:13px;">Reste à payer</th>
+                      <th class="text-center px-3 py-3 font-bold" style="font-size:13px;">Statut</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let ligne of lignesSituationFinanciere(scannedUser.situationFinanciere); let i = index"
+                        [ngClass]="classeLigneSituation(ligne)"
+                        style="border-top:1px solid #E2E8F0;"
+                        [ngStyle]="{ backgroundColor: i % 2 === 0 ? '#FFFFFF' : '#F8FAFC' }">
+                      <td class="px-3 py-3" style="color:#0F172A;">{{ libelleLigneSituation(ligne) }}</td>
+                      <td class="px-3 py-3 text-right font-bold" style="color:#0F172A;">{{ formatCurrency(ligne.montantPaye) }}</td>
+                      <td class="px-3 py-3 text-right font-bold"
+                          [ngStyle]="{ color: (ligne.resteAPayer || 0) > 0 ? '#DC2626' : '#0F172A' }">
+                        {{ formatCurrency(ligne.resteAPayer) }}
+                      </td>
+                      <td class="px-3 py-3 text-center">
+                        <span class="inline-flex items-center rounded-full font-bold"
+                              style="font-size:12px;padding:4px 10px;"
+                              [ngStyle]="styleStatutLigneSituation(ligne)">
+                          <span *ngIf="statutLigneSituation(ligne) === 'paye'" class="mr-1">✓</span>
+                          <span *ngIf="statutLigneSituation(ligne) === 'partiel'" class="mr-1">⏱</span>
+                          {{ libelleStatutLigneSituation(ligne) }}
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
 
-              <div *ngIf="scannedUser.situationFinanciere.echeances?.length" class="pointage-finance-echeances">
-                <div class="pointage-finance-echeances-head">
-                  <h6>Échéancier de scolarité</h6>
-                  <span>{{ scannedUser.situationFinanciere.echeancesPayees }}/{{ scannedUser.situationFinanciere.echeancesTotales }} payée(s)</span>
+              <div class="mt-4 rounded-xl p-4" style="background-color:#EFF6FF;border:1px solid #BFDBFE;">
+                <p class="font-bold mb-3" style="color:#1E3A8A;font-size:14px;letter-spacing:0.05em;">RÉCAPITULATIF</p>
+                <div class="flex items-start justify-between gap-4">
+                  <div>
+                    <p class="font-semibold" style="color:#0F172A;font-size:13px;">MONTANT GLOBAL</p>
+                    <p style="color:#64748B;font-size:11px;">{{ formatCurrency(scannedUser.situationFinanciere.fraisInscriptionSession || 0) }} + {{ formatCurrency(scannedUser.situationFinanciere.fraisScolariteSession || 0) }}</p>
+                  </div>
+                  <p class="font-bold text-right" style="color:#0F172A;font-size:14px;">{{ formatCurrency(scannedUser.situationFinanciere.sommeGlobale) }}</p>
                 </div>
-                <ul>
-                  <li *ngFor="let ech of scannedUser.situationFinanciere.echeances"
-                    [ngClass]="ech.estPaye ? 'is-paid' : (ech.statut === 'partiel' || ech.montantPaye > 0 ? 'is-partial' : 'is-unpaid')">
-                    <div class="pointage-echeance-copy">
-                      <span class="material-symbols-outlined">{{ ech.estPaye ? 'check_circle' : (ech.statut === 'partiel' || ech.montantPaye > 0 ? 'warning' : (ech.enRetard ? 'error' : 'schedule')) }}</span>
-                      <div>
-                        <p>{{ libelleMois(ech.mois) }} <span>· n°{{ ech.numeroEcheance }}</span></p>
-                        <small>{{ ech.estPaye ? 'Payée' : (ech.statut === 'partiel' || ech.montantPaye > 0 ? 'Partiellement payée' : (ech.enRetard ? 'En retard' : 'À venir')) }}</small>
-                      </div>
-                    </div>
-                    <div class="pointage-echeance-amount">
-                      <p>{{ formatCurrency(ech.montant) }}</p>
-                      <small *ngIf="!ech.estPaye">reste {{ formatCurrency(ech.resteAPayer) }}</small>
-                    </div>
-                  </li>
-                </ul>
+                <div class="flex items-start justify-between gap-4 mt-2">
+                  <p class="font-semibold" style="color:#0F172A;font-size:13px;">MONTANT PAYÉ</p>
+                  <p class="font-bold text-right" style="color:#166534;font-size:14px;">{{ formatCurrency(scannedUser.situationFinanciere.montantPaye) }}</p>
+                </div>
+                <div style="border-top:1px solid #BFDBFE;margin:12px 0;"></div>
+                <div class="flex items-start justify-between gap-4">
+                  <div>
+                    <p class="font-extrabold" style="color:#0F172A;font-size:13px;">RESTE</p>
+                    <p style="color:#64748B;font-size:11px;">{{ formatCurrency(scannedUser.situationFinanciere.sommeGlobale) }} - {{ formatCurrency(scannedUser.situationFinanciere.montantPaye) }}</p>
+                  </div>
+                  <p class="text-right font-extrabold" style="color:#DC2626;font-size:16px;">{{ formatCurrency(scannedUser.situationFinanciere.resteAPayer) }}</p>
+                </div>
               </div>
+              <p *ngIf="lignesSituationFinanciere(scannedUser.situationFinanciere).length > 0"
+                 class="text-center italic mt-3" style="color:#475569;font-size:12px;">
+                Vérification : {{ formatCurrency(totalPayeLignesSituation(scannedUser.situationFinanciere)) }} = {{ formatCurrency(scannedUser.situationFinanciere.montantPaye) }}
+              </p>
             </div>
 
             <div *ngIf="scannedUser.statut === 'vert'" class="pointage-scanned-actions">
@@ -979,78 +968,68 @@ fait <div class="pointage-page-shell max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8
                 {{ libelleStatutFinancierDernierPointage }}
               </span>
             </div>
-            <div class="pointage-finance-grid">
-              <div class="pointage-finance-tile">
-                <p>Total inscription + scolarité</p>
-                <strong>{{ formatCurrency(situation.sommeGlobale) }}</strong>
+            <div *ngIf="situation.echeancesInscription?.length || situation.echeances?.length"
+              class="mt-3 overflow-x-auto rounded-lg" style="border:1px solid #E2E8F0;">
+              <table class="min-w-full text-sm">
+                <thead>
+                  <tr style="background-color:#1E3A8A;color:#ffffff;">
+                    <th class="text-left px-3 py-3 font-bold" style="font-size:13px;">Frais / Échéance</th>
+                    <th class="text-right px-3 py-3 font-bold" style="font-size:13px;">Montant payé</th>
+                    <th class="text-right px-3 py-3 font-bold" style="font-size:13px;">Reste à payer</th>
+                    <th class="text-center px-3 py-3 font-bold" style="font-size:13px;">Statut</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let ligne of lignesSituationFinanciere(situation); let i = index"
+                      [ngClass]="classeLigneSituation(ligne)"
+                      style="border-top:1px solid #E2E8F0;"
+                      [ngStyle]="{ backgroundColor: i % 2 === 0 ? '#FFFFFF' : '#F8FAFC' }">
+                    <td class="px-3 py-3" style="color:#0F172A;">{{ libelleLigneSituation(ligne) }}</td>
+                    <td class="px-3 py-3 text-right font-bold" style="color:#0F172A;">{{ formatCurrency(ligne.montantPaye) }}</td>
+                    <td class="px-3 py-3 text-right font-bold"
+                        [ngStyle]="{ color: (ligne.resteAPayer || 0) > 0 ? '#DC2626' : '#0F172A' }">
+                      {{ formatCurrency(ligne.resteAPayer) }}
+                    </td>
+                    <td class="px-3 py-3 text-center">
+                      <span class="inline-flex items-center rounded-full font-bold"
+                            style="font-size:12px;padding:4px 10px;"
+                            [ngStyle]="styleStatutLigneSituation(ligne)">
+                        <span *ngIf="statutLigneSituation(ligne) === 'paye'" class="mr-1">✓</span>
+                        <span *ngIf="statutLigneSituation(ligne) === 'partiel'" class="mr-1">⏱</span>
+                        {{ libelleStatutLigneSituation(ligne) }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="mt-4 rounded-xl p-4" style="background-color:#EFF6FF;border:1px solid #BFDBFE;">
+              <p class="font-bold mb-3" style="color:#1E3A8A;font-size:14px;letter-spacing:0.05em;">RÉCAPITULATIF</p>
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <p class="font-semibold" style="color:#0F172A;font-size:13px;">MONTANT GLOBAL</p>
+                  <p style="color:#64748B;font-size:11px;">{{ formatCurrency(situation.fraisInscriptionSession || 0) }} + {{ formatCurrency(situation.fraisScolariteSession || 0) }}</p>
+                </div>
+                <p class="font-bold text-right" style="color:#0F172A;font-size:14px;">{{ formatCurrency(situation.sommeGlobale) }}</p>
               </div>
-              <div class="pointage-finance-tile pointage-finance-tile--paid">
-                <p>Total payé</p>
-                <strong>{{ formatCurrency(situation.montantPaye) }}</strong>
+              <div class="flex items-start justify-between gap-4 mt-2">
+                <p class="font-semibold" style="color:#0F172A;font-size:13px;">MONTANT PAYÉ</p>
+                <p class="font-bold text-right" style="color:#166534;font-size:14px;">{{ formatCurrency(situation.montantPaye) }}</p>
               </div>
-              <div class="pointage-finance-tile pointage-finance-tile--due">
-                <p>Reste à payer</p>
-                <strong>{{ formatCurrency(situation.resteAPayer) }}</strong>
+              <div style="border-top:1px solid #BFDBFE;margin:12px 0;"></div>
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <p class="font-extrabold" style="color:#0F172A;font-size:13px;">RESTE</p>
+                  <p style="color:#64748B;font-size:11px;">{{ formatCurrency(situation.sommeGlobale) }} - {{ formatCurrency(situation.montantPaye) }}</p>
+                </div>
+                <p class="text-right font-extrabold" style="color:#DC2626;font-size:16px;">{{ formatCurrency(situation.resteAPayer) }}</p>
               </div>
             </div>
-            <div *ngIf="situation.fraisInscriptionSession !== undefined || situation.fraisScolariteSession !== undefined"
-              class="pointage-finance-grid pointage-finance-grid--session">
-              <div class="pointage-finance-tile">
-                <p>INSCRIPTION : frais de la session</p>
-                <strong>{{ formatCurrency(situation.fraisInscriptionSession || 0) }}</strong>
-                <small>Payé : {{ formatCurrency(situation.montantInscriptionPaye || 0) }} · reste : {{ formatCurrency(situation.resteInscriptionSession || 0) }}</small>
-              </div>
-              <div class="pointage-finance-tile">
-                <p>Scolarité · frais de la session</p>
-                <strong>{{ formatCurrency(situation.fraisScolariteSession || 0) }}</strong>
-                <small>Payé : {{ formatCurrency(situation.montantScolaritePaye || 0) }} · reste : {{ formatCurrency(situation.resteScolariteSession || 0) }}</small>
-              </div>
-            </div>
-            <div *ngIf="situation.echeancesInscription?.length" class="pointage-finance-echeances">
-              <div class="pointage-finance-echeances-head">
-                <h6>INSCRIPTION</h6>
-              </div>
-              <ul>
-                <li *ngFor="let ech of situation.echeancesInscription"
-                  [ngClass]="ech.estPaye ? 'is-paid' : (ech.statut === 'partiel' || ech.montantPaye > 0 ? 'is-partial' : 'is-unpaid')">
-                  <div class="pointage-echeance-copy">
-                    <span class="material-symbols-outlined">{{ ech.estPaye ? 'check_circle' : (ech.statut === 'partiel' || ech.montantPaye > 0 ? 'warning' : 'error') }}</span>
-                    <div>
-                      <p>INSCRIPTION</p>
-                      <small>{{ ech.estPaye ? 'Payée' : (ech.statut === 'partiel' || ech.montantPaye > 0 ? 'Partiellement payée' : (ech.enRetard ? 'En retard' : 'À payer')) }}</small>
-                    </div>
-                  </div>
-                  <div class="pointage-echeance-amount">
-                    <p>{{ formatCurrency(ech.montant) }}</p>
-                    <small *ngIf="ech.montantPaye > 0">payé {{ formatCurrency(ech.montantPaye) }}</small>
-                    <small *ngIf="!ech.estPaye">reste {{ formatCurrency(ech.resteAPayer) }}</small>
-                  </div>
-                </li>
-              </ul>
-            </div>
-            <div *ngIf="situation.echeances?.length" class="pointage-finance-echeances">
-              <div class="pointage-finance-echeances-head">
-              <h6>Échéancier de scolarité</h6>
-                <span>{{ situation.echeancesPayees }}/{{ situation.echeancesTotales }} payée(s)</span>
-              </div>
-              <ul>
-                <li *ngFor="let ech of situation.echeances"
-                  [ngClass]="ech.estPaye ? 'is-paid' : (ech.statut === 'partiel' || ech.montantPaye > 0 ? 'is-partial' : 'is-unpaid')">
-                  <div class="pointage-echeance-copy">
-                    <span class="material-symbols-outlined">{{ ech.estPaye ? 'check_circle' : (ech.statut === 'partiel' || ech.montantPaye > 0 ? 'warning' : 'error') }}</span>
-                    <div>
-                      <p>{{ ech.type === 'inscription' ? 'Inscription' : 'Scolarité' }} · {{ libelleMois(ech.mois) }} <span>· n°{{ ech.numeroEcheance }}</span></p>
-                      <small>{{ ech.estPaye ? 'Payée' : (ech.statut === 'partiel' || ech.montantPaye > 0 ? 'Partiellement payée' : (ech.enRetard ? 'En retard' : 'À payer')) }}</small>
-                    </div>
-                  </div>
-                  <div class="pointage-echeance-amount">
-                    <p>{{ formatCurrency(ech.montant) }}</p>
-                    <small *ngIf="ech.montantPaye > 0">payé {{ formatCurrency(ech.montantPaye) }}</small>
-                    <small *ngIf="!ech.estPaye">reste {{ formatCurrency(ech.resteAPayer) }}</small>
-                  </div>
-                </li>
-              </ul>
-            </div>
+            <p *ngIf="lignesSituationFinanciere(situation).length > 0"
+               class="text-center italic mt-3" style="color:#475569;font-size:12px;">
+              Vérification : {{ formatCurrency(totalPayeLignesSituation(situation)) }} = {{ formatCurrency(situation.montantPaye) }}
+            </p>
           </div>
           </div>
 

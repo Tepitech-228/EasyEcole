@@ -14,7 +14,7 @@ import {
 import { Pointage } from 'src/app/data/modules/inscription/models/Pointage.model';
 import { AuthService, SiteUtilisateur } from 'src/app/data/modules/auth/services/auth.service';
 import { SocketService, TerminalAttendanceEvent } from 'src/app/core/services/socket.service';
-import { PointageSituationFinanciere } from 'src/app/shared/models/PointageSituationFinanciere.model';
+import { PointageEcheanceFinanciere, PointageSituationFinanciere } from 'src/app/shared/models/PointageSituationFinanciere.model';
 import { RolesUtilisateur } from 'src/app/data/enums/RolesUtilisateur';
 import { environment } from 'src/environments/environment';
 
@@ -2023,5 +2023,46 @@ export class TerminalPointagePageComponent extends BaseComponentClass implements
       'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
     const nom = noms[Number(m[2]) - 1]
     return nom ? `${nom} ${m[1]}` : String(mois)
+  }
+
+  lignesSituationFinanciere(situation: PointageSituationFinanciere | null | undefined): PointageEcheanceFinanciere[] {
+    if (!situation) return []
+    return [...(situation.echeancesInscription || []), ...(situation.echeances || [])]
+  }
+
+  libelleLigneSituation(ligne: PointageEcheanceFinanciere): string {
+    return ligne.type === 'inscription' ? 'Inscription' : `Échéance ${ligne.numeroEcheance}`
+  }
+
+  statutLigneSituation(ligne: PointageEcheanceFinanciere): 'paye' | 'partiel' | 'impaye' {
+    if (ligne.estPaye) return 'paye'
+    if ((ligne.montantPaye || 0) > 0) return 'partiel'
+    return 'impaye'
+  }
+
+  libelleStatutLigneSituation(ligne: PointageEcheanceFinanciere): string {
+    const statut = this.statutLigneSituation(ligne)
+    if (statut === 'paye') return 'SOLDÉ'
+    if (statut === 'partiel') return 'PARTIEL'
+    return 'NON PAYÉ'
+  }
+
+  classeLigneSituation(ligne: PointageEcheanceFinanciere): string {
+    const statut = this.statutLigneSituation(ligne)
+    if (statut === 'paye') return 'is-paid'
+    if (statut === 'partiel') return 'is-partial'
+    return 'is-unpaid'
+  }
+
+  styleStatutLigneSituation(ligne: PointageEcheanceFinanciere): { [key: string]: string } {
+    const statut = this.statutLigneSituation(ligne)
+    if (statut === 'paye') return { backgroundColor: '#DCFCE7', color: '#166534' }
+    if (statut === 'partiel') return { backgroundColor: '#FFEDD5', color: '#9A3412' }
+    return { backgroundColor: '#F1F5F9', color: '#475569' }
+  }
+
+  totalPayeLignesSituation(situation: PointageSituationFinanciere | null | undefined): number {
+    return this.lignesSituationFinanciere(situation)
+      .reduce((total, ligne) => total + (ligne.montantPaye || 0), 0)
   }
 }
