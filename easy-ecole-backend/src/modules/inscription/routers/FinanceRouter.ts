@@ -1273,8 +1273,8 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
         console.log(_rid, 'ERREUR 400: Numéro de bordereau déjà utilisé');
         return res.status(409).json(await enrichirConflitNumeroBordereau(
           doublon,
-          Number(bordereau.utilisateurId),
           numBordereau,
+          Number(bordereau.utilisateurId),
         ));
       }
     }

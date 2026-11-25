@@ -652,8 +652,8 @@ export default class BordereauController {
                 await transaction.rollback();
                 return res.status(409).json(await enrichirConflitNumeroBordereau(
                     doublon,
-                    utilisateurIdEnCours,
                     numBordereau,
+                    Number(utilisateurIdEnCours),
                 ));
             }
 
@@ -708,8 +708,8 @@ export default class BordereauController {
                     if (doublon) {
                         return res.status(409).json(await enrichirConflitNumeroBordereau(
                             doublon,
-                            utilisateurIdEnCours,
                             numeroBordereauEnCours,
+                            Number(utilisateurIdEnCours),
                         ));
                     }
                 } catch (lookupError) {
@@ -789,8 +789,8 @@ export default class BordereauController {
                     await transaction.rollback();
                     return res.status(409).json(await enrichirConflitNumeroBordereau(
                         doublon,
-                        utilisateurIdEnCours,
                         numeroBordereau,
+                        Number(utilisateurIdEnCours),
                     ));
                 }
             }
@@ -814,8 +814,8 @@ export default class BordereauController {
                     if (doublon) {
                         return res.status(409).json(await enrichirConflitNumeroBordereau(
                             doublon,
-                            utilisateurIdEnCours,
                             numeroBordereauEnCours,
+                            Number(utilisateurIdEnCours),
                         ));
                     }
                 } catch (lookupError) {

@@ -27,7 +27,7 @@ export async function trouverBordereauAvecNumero(
         ? {
             [Op.and]: [
               sequelizeWhere(
-                literal("TRIM(LEADING '0' FROM `Bordereau`.`numeroBordereau`)"),
+                literal("TRIM(LEADING '0' FROM `InsBordereau`.`numeroBordereau`)"),
                 normaliserNumeroBordereau(numero),
               ),
             ],
