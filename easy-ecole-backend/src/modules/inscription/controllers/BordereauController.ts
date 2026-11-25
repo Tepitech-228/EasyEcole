@@ -36,6 +36,7 @@ import { GenerateurEcheancierService, estModalitePaiement } from "../services/Ge
 import { attribuerNumeroSequenceBordereaux } from "../services/BordereauSequenceService";
 import {
     creerConflitNumeroBordereau,
+    enrichirConflitNumeroBordereau,
     estConflitUniqueNumeroBordereau,
     trouverBordereauAvecNumero,
 } from "../services/BordereauNumeroUniciteService";
@@ -649,7 +650,7 @@ export default class BordereauController {
             });
             if (doublon) {
                 await transaction.rollback();
-                return res.status(409).json(creerConflitNumeroBordereau(
+                return res.status(409).json(await enrichirConflitNumeroBordereau(
                     doublon,
                     utilisateurIdEnCours,
                     numBordereau,
@@ -705,7 +706,7 @@ export default class BordereauController {
                 try {
                     const doublon = await trouverBordereauAvecNumero(numeroBordereauEnCours);
                     if (doublon) {
-                        return res.status(409).json(creerConflitNumeroBordereau(
+                        return res.status(409).json(await enrichirConflitNumeroBordereau(
                             doublon,
                             utilisateurIdEnCours,
                             numeroBordereauEnCours,
@@ -786,7 +787,7 @@ export default class BordereauController {
                 });
                 if (doublon) {
                     await transaction.rollback();
-                    return res.status(409).json(creerConflitNumeroBordereau(
+                    return res.status(409).json(await enrichirConflitNumeroBordereau(
                         doublon,
                         utilisateurIdEnCours,
                         numeroBordereau,
@@ -811,7 +812,7 @@ export default class BordereauController {
                 try {
                     const doublon = await trouverBordereauAvecNumero(numeroBordereauEnCours);
                     if (doublon) {
-                        return res.status(409).json(creerConflitNumeroBordereau(
+                        return res.status(409).json(await enrichirConflitNumeroBordereau(
                             doublon,
                             utilisateurIdEnCours,
                             numeroBordereauEnCours,

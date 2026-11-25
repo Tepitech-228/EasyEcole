@@ -44,7 +44,12 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
   duplicateModalMessage = ''
   duplicateStudentName = ''
   duplicateNumeroBordereau = ''
-  duplicateInfo: { etudiant?: { nom?: string; prenoms?: string } } | null = null
+  duplicateInfo: {
+    etudiant?: { nom?: string; prenoms?: string }
+    matricule?: string
+    filiere?: string
+    niveau?: string
+  } | null = null
 
   validationForm: FormGroup
   private uniciteCheck: any = null
@@ -149,6 +154,9 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
       return new Observable<ValidationErrors | null>((subscriber) => {
         this.uniciteCheck = setTimeout(() => {
           const params: any = { [champ]: valeur, excludeId: this.selectedBordereau?.id }
+          if (this.selectedBordereau?.utilisateurId) {
+            params.etudiantId = this.selectedBordereau.utilisateurId
+          }
           this.bordereauService.verifierUniciteCabinet(params).subscribe({
             next: (res: any) => {
               const valeurActuelle = String(control.value || '').trim()
@@ -355,6 +363,7 @@ export class ValidationBordereauxPageComponent extends BaseComponentClass implem
               : 'Alerte fraude — numéro associé à un autre étudiant'
             this.duplicateModalMessage = err?.error?.message || 'Ce numéro de dépôt est déjà utilisé.'
             this.duplicateStudentName = [etudiant?.prenoms, etudiant?.nom].filter(Boolean).join(' ') || 'Nom indisponible'
+            this.duplicateInfo = details || null
             this.duplicateNumeroBordereau = details?.numeroBordereau || payload.numeroBordereau
             this.showDuplicateModal = true
             return

@@ -1,5 +1,7 @@
 import { Op, Transaction, literal, where as sequelizeWhere } from 'sequelize';
 import { Bordereau } from '../models/Bordereau';
+import { CursusApprenant } from '../models/CursusApprenant';
+import { DossierEtudiant } from '../models/DossierEtudiant';
 
 /**
  * Normalise un numéro de bordereau pour l'unicité : « 041 » et « 41 » désignent
@@ -67,6 +69,43 @@ export function creerConflitNumeroBordereau(
       numeroBordereau,
       memeEtudiant,
       etudiant,
+    },
+  };
+}
+
+export async function enrichirConflitNumeroBordereau(
+  doublon: Bordereau,
+  numeroBordereau: string,
+  utilisateurIdCible?: number,
+) {
+  const utilisateurId = Number(utilisateurIdCible || doublon.utilisateurId);
+  const conflit = creerConflitNumeroBordereau(doublon, utilisateurId, numeroBordereau);
+  const [cursus, dossier] = await Promise.all([
+    CursusApprenant.findOne({
+      where: { utilisateurId: Number(doublon.utilisateurId) },
+      include: [
+        CursusApprenant.associations.parcours,
+        CursusApprenant.associations.niveauEtude,
+      ],
+      order: [['createdAt', 'DESC'], ['id', 'DESC']],
+    }),
+    DossierEtudiant.findOne({
+      where: { utilisateurId: Number(doublon.utilisateurId) },
+      order: [['createdAt', 'DESC'], ['id', 'DESC']],
+    }),
+  ]);
+
+  const parcours = (cursus as any)?.parcours;
+  const niveau = (cursus as any)?.niveauEtude;
+  return {
+    success: false,
+    code: conflit.code,
+    message: conflit.message,
+    details: {
+      ...conflit.details,
+      matricule: (dossier as any)?.matricule || '',
+      filiere: parcours?.titre || cursus?.intituleParcours || '',
+      niveau: niveau?.libelle || '',
     },
   };
 }

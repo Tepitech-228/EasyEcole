@@ -14,8 +14,14 @@ export interface LigneLettrage {
     numeroEcheance: number
     type: 'inscription' | 'scolarite'
     moisConcerne?: string | null
+    /** Montant total de l'échéance (montant dû au barème, jamais le montant imputé). */
+    montantEcheance: number
+    /** Reste à payer de l'échéance AVANT cette imputation. */
     montantDu: number
+    /** Montant imputé par ce paiement sur cette échéance. */
     montantImpute: number
+    /** Cumul payé sur l'échéance APRÈS cette imputation (payé antérieur + imputé). */
+    montantPayeApres: number
     resteApres: number
     statutApres: 'paye' | 'partiel' | 'en_retard' | 'impaye'
 }
@@ -200,8 +206,10 @@ export class ImputationService {
                 numeroEcheance: echeance.numeroEcheance,
                 type: echeance.type,
                 moisConcerne: echeance.moisConcerne,
+                montantEcheance: Number(echeance.montant),
                 montantDu: du,
                 montantImpute: impute,
+                montantPayeApres: Number(echeance.montantPaye),
                 resteApres: apres,
                 statutApres: echeance.statut,
             })
@@ -273,8 +281,10 @@ export class ImputationService {
                 numeroEcheance: echeance.numeroEcheance,
                 type: echeance.type,
                 moisConcerne: echeance.moisConcerne,
+                montantEcheance: Number(echeance.montant),
                 montantDu: du,
                 montantImpute: impute,
+                montantPayeApres: Number(echeance.montantPaye),
                 resteApres: apres,
                 statutApres: echeance.statut,
             })
@@ -770,8 +780,10 @@ export class ImputationService {
                 numeroEcheance: echeance.numeroEcheance,
                 type: echeance.type,
                 moisConcerne: echeance.moisConcerne,
+                montantEcheance: Number(echeance.montant),
                 montantDu: du,
                 montantImpute: impute,
+                montantPayeApres: nouveauMontantPaye,
                 resteApres: apres,
                 statutApres,
             })

@@ -58,6 +58,8 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   showMatriculeConfirmationModal = false
 
   previewResult: any = null
+  showNumeroFraudeModal = false
+  numeroFraude: any = null
   error = false
   apiErrorMessage = ''
   avertissements: string[] = []
@@ -92,6 +94,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
   private presenceHeartbeat?: ReturnType<typeof setInterval>
   private dataRequestId = 0
   private dataRequestInFlight = false
+  private searchDebounce?: ReturnType<typeof setTimeout>
 
   get typeSelectionne(): TypeOperationBordereau | undefined {
     const id = this.saisieForm.get('typeOperationId')?.value
@@ -287,8 +290,15 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
         this.uniciteCheck = setTimeout(() => {
           const params: any = { [champ]: valeur }
           if (this.selectedBordereau?.id) params.excludeId = this.selectedBordereau.id
+          if (this.selectedBordereau?.utilisateurId) params.etudiantId = this.selectedBordereau.utilisateurId
           this.bordereauService.verifierUnicite(params).subscribe({
             next: (res: any) => {
+              if (res?.unique) {
+                this.numeroFraude = null
+              } else {
+                this.numeroFraude = res?.conflit || null
+                if (this.numeroFraude) this.showNumeroFraudeModal = true
+              }
               subscriber.next(res?.unique ? null : { unicite: true })
               subscriber.complete()
             },
@@ -329,6 +339,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
 
   ngOnDestroy(): void {
     if (this.presenceHeartbeat) clearInterval(this.presenceHeartbeat)
+    if (this.searchDebounce) clearTimeout(this.searchDebounce)
     if (this.showSaisieModal && this.selectedBordereau?.id) {
       this.bordereauService.libererRecouvrement(String(this.selectedBordereau.id)).subscribe({
         error: err => console.error('Erreur libération du bordereau à la fermeture de la file:', err)
@@ -338,6 +349,15 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
 
   private calculateKPIs(): void {
     this.enAttenteCount = this.bordereaux.length
+  }
+
+  onSearchChange(value: string): void {
+    this.searchTerm = value
+    if (this.searchDebounce) clearTimeout(this.searchDebounce)
+    this.searchDebounce = setTimeout(() => {
+      this.loadData()
+      this.searchDebounce = undefined
+    }, 300)
   }
 
   private loadData(showSpinner = true): void {
@@ -351,6 +371,7 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     if (this.selectedAnneeId) params.anneeAcademiqueId = this.selectedAnneeId
     if (this.selectedNiveauId) params.niveauEtudeId = this.selectedNiveauId
     if (this.selectedParcoursId) params.parcoursId = this.selectedParcoursId
+    if (this.searchTerm.trim()) params.recherche = this.searchTerm.trim()
     if (this.selectedEtablissementId) params.etablissementId = this.selectedEtablissementId
     if (this.selectedTypeOperationId) params.typeOperationId = this.selectedTypeOperationId
     if (this.activeStatut === 'traite' && this.selectedRecouvreurId) {
@@ -471,7 +492,12 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     if (!q) return this.bordereaux
     return this.bordereaux.filter(b => {
       const etudiant = `${(b as any).demandeInscription?.utilisateur?.nom ?? b.utilisateur?.nom ?? ''} ${(b as any).demandeInscription?.utilisateur?.prenoms ?? b.utilisateur?.prenoms ?? ''}`.toLowerCase()
-      const matricule = (b.echeance?.dossierEtudiant?.matricule || '').toLowerCase()
+      const matricule = (
+        (b as any).demandeInscription?.matriculeEtudiant
+        || (b as any).demandeInscription?.matricule
+        || b.echeance?.dossierEtudiant?.matricule
+        || ''
+      ).toLowerCase()
       return etudiant.includes(q) || matricule.includes(q)
     })
   }
@@ -640,6 +666,8 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
     this.imageJustificatifRotation = 0
     this.imageJustificatifZoom = 1
     this.selectedBordereauSafeUrl = null
+    this.showNumeroFraudeModal = false
+    this.numeroFraude = null
     this.error = false
     this.apiErrorMessage = ''
     this.compositionPreviewResult = null
@@ -806,6 +834,18 @@ export class EsacomptaBordereauxPageComponent extends BaseComponentClass impleme
         this.loadData()
       },
       error: (err) => {
+        const code = err?.error?.code
+        if (code === 'BORDEREAU_NUMERO_DEJA_UTILISE_PAR_MEME_ETUDIANT'
+          || code === 'BORDEREAU_NUMERO_DEJA_UTILISE_PAR_AUTRE_ETUDIANT') {
+          const details = err?.error?.details
+          this.numeroFraude = {
+            ...details,
+            code,
+            message: err?.error?.message,
+          }
+          this.showNumeroFraudeModal = true
+          return
+        }
         if (err?.error?.code === 'FRAIS_INSCRIPTION_INSUFFISANTS') {
           this.toastService.error("Les frais saisis ne sont pas conformes. Veuillez saisir une somme au moins égale aux frais d'inscription.")
           return

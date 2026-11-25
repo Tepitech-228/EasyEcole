@@ -9,7 +9,7 @@ import { Bordereau } from "../models/Bordereau";
 import { normaliserImages } from "../../../core/helpers/NormaliserImage";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
 import { creerHandlersAffectationBordereau } from "../controllers/BordereauAffectationController";
-import { trouverBordereauAvecNumero } from "../services/BordereauNumeroUniciteService";
+import { enrichirConflitNumeroBordereau, trouverBordereauAvecNumero } from "../services/BordereauNumeroUniciteService";
 
 const affectationAuditHandlers = creerHandlersAffectationBordereau(
   "audit",
@@ -108,6 +108,7 @@ router
        try {
          const numeroBordereau = typeof req.query.numeroBordereau === 'string' ? req.query.numeroBordereau.trim() : '';
          const excludeId = req.query.excludeId ? Number(req.query.excludeId) : null;
+         const etudiantId = req.query.etudiantId ? Number(req.query.etudiantId) : undefined;
 
          if (!numeroBordereau) {
            return res.status(400).json({ success: false, message: 'Renseignez un numéro de bordereau.' });
@@ -120,17 +121,19 @@ router
            return res.json({ success: true, unique: true });
          }
 
+         const conflit = await enrichirConflitNumeroBordereau(existant, numeroBordereau, etudiantId);
          return res.json({
            success: true,
            unique: false,
            conflit: {
              champ: 'numeroBordereau',
              valeur: existant.numeroBordereau,
-             etudiant: {
-               id: Number(existant.utilisateurId),
-               nom: existant.utilisateur?.nom || '',
-               prenoms: existant.utilisateur?.prenoms || '',
-             },
+             code: conflit.code,
+             message: conflit.message,
+             etudiant: conflit.details.etudiant,
+             matricule: conflit.details.matricule,
+             filiere: conflit.details.filiere,
+             niveau: conflit.details.niveau,
            },
          });
        } catch (error: any) {

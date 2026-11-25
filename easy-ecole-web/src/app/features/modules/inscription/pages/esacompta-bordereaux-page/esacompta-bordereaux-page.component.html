@@ -183,7 +183,7 @@
   <div class="dashboard-surface-card esa-search-panel p-4 mb-6">
     <div class="flex items-center gap-x-4">
       <div class="flex-1">
-        <input type="text" [(ngModel)]="searchTerm" placeholder="Rechercher par étudiant ou matricule..."
+        <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange($event)" placeholder="Rechercher par nom, prénom ou matricule..."
           class="block w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
       </div>
       <div class="flex-shrink-0">
@@ -365,7 +365,21 @@
             <input type="text" formControlName="numeroBordereau" placeholder="N° bordereau banque..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
             <div *ngIf="saisieForm.get('numeroBordereau')?.touched && saisieForm.get('numeroBordereau')?.errors" class="text-red-600 text-xs mt-1">
               <span *ngIf="saisieForm.get('numeroBordereau')?.errors?.['required']">Ce champ est obligatoire.</span>
-              <span *ngIf="saisieForm.get('numeroBordereau')?.errors?.['unicite']">Ce numéro de bordereau est déjà utilisé par un autre bordereau.</span>
+              <span *ngIf="saisieForm.get('numeroBordereau')?.errors?.['unicite']">
+                Ce numéro de bordereau est déjà attribué. Vérifiez les informations avant validation.
+              </span>
+            </div>
+            <div *ngIf="numeroFraude" class="mt-2 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+              <div class="flex items-start gap-2">
+                <span class="material-symbols-outlined text-red-600" aria-hidden="true">gpp_bad</span>
+                <div>
+                  <p class="font-bold">Alerte fraude — numéro de bordereau déjà attribué</p>
+                  <p class="mt-1">{{ numeroFraude.etudiant?.prenoms }} {{ numeroFraude.etudiant?.nom }}</p>
+                  <p *ngIf="numeroFraude.filiere">Filière : {{ numeroFraude.filiere }}</p>
+                  <p *ngIf="numeroFraude.niveau">Niveau : {{ numeroFraude.niveau }}</p>
+                  <p *ngIf="numeroFraude.matricule">Matricule : {{ numeroFraude.matricule }}</p>
+                </div>
+              </div>
             </div>
           </div>
           <div>
@@ -458,6 +472,49 @@
   </div>
 </app-custom-modal>
 
+<app-custom-modal
+  title="Alerte fraude"
+  subtitle="Numéro de bordereau déjà attribué"
+  [center]="true"
+  [showModal]="showNumeroFraudeModal"
+  (onCloseModal)="showNumeroFraudeModal = false">
+  <div *ngIf="numeroFraude" class="rounded-xl border border-red-200 bg-red-50 p-5">
+    <div class="flex items-start gap-3">
+      <span class="material-symbols-outlined text-4xl text-red-600" aria-hidden="true">gpp_bad</span>
+      <div class="space-y-2 text-sm text-gray-800">
+        <p class="font-bold text-red-800">
+          Ce numéro de bordereau est déjà attribué à un autre paiement enregistré.
+        </p>
+        <dl class="grid grid-cols-1 gap-2 rounded-lg bg-white p-4">
+          <div class="flex justify-between gap-4">
+            <dt class="font-semibold text-gray-600">Numéro</dt>
+            <dd class="font-bold text-gray-900">{{ numeroFraude.valeur || numeroFraude.numeroBordereau }}</dd>
+          </div>
+          <div class="flex justify-between gap-4">
+            <dt class="font-semibold text-gray-600">Étudiant</dt>
+            <dd class="text-right font-bold text-gray-900">{{ numeroFraude.etudiant?.prenoms }} {{ numeroFraude.etudiant?.nom }}</dd>
+          </div>
+          <div *ngIf="numeroFraude.filiere" class="flex justify-between gap-4">
+            <dt class="font-semibold text-gray-600">Filière</dt>
+            <dd class="text-right font-medium">{{ numeroFraude.filiere }}</dd>
+          </div>
+          <div *ngIf="numeroFraude.niveau" class="flex justify-between gap-4">
+            <dt class="font-semibold text-gray-600">Niveau</dt>
+            <dd class="text-right font-medium">{{ numeroFraude.niveau }}</dd>
+          </div>
+          <div *ngIf="numeroFraude.matricule" class="flex justify-between gap-4">
+            <dt class="font-semibold text-gray-600">Matricule</dt>
+            <dd class="text-right font-medium">{{ numeroFraude.matricule }}</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </div>
+  <div class="mt-5 flex justify-end">
+    <app-custom-button (click)="showNumeroFraudeModal = false" text="Fermer" color="red"></app-custom-button>
+  </div>
+</app-custom-modal>
+
 <!-- Modal Preview -->
 <app-custom-modal title="Aperçu du traitement" subtitle="Vérifiez la répartition avant validation" (onCloseModal)="closePreviewModal()" [center]="true" [showModal]="showPreviewModal">
   <section *ngIf="selectedBordereau?.fichier" class="mb-5">
@@ -507,6 +564,7 @@
           <thead>
             <tr style="background-color:#1E3A8A;color:#ffffff;">
               <th class="text-left px-3 py-3 font-bold" style="font-size:13px;">Frais / Échéance</th>
+              <th class="text-right px-3 py-3 font-bold" style="font-size:13px;">Montant de l'échéance</th>
               <th class="text-right px-3 py-3 font-bold" style="font-size:13px;">Montant payé</th>
               <th class="text-right px-3 py-3 font-bold" style="font-size:13px;">Reste à payer</th>
               <th class="text-center px-3 py-3 font-bold" style="font-size:13px;">Statut</th>
@@ -518,7 +576,13 @@
                 [ngStyle]="{ backgroundColor: i % 2 === 0 ? '#FFFFFF' : '#F8FAFC' }">
               <td class="px-3 py-3" style="color:#0F172A;">
                 <ng-container *ngIf="ligne.type === 'inscription'; else echeanceScolarite">Inscription</ng-container>
-                <ng-template #echeanceScolarite>Échéance {{ ligne.numeroEcheance }}</ng-template>
+                <ng-template #echeanceScolarite>Échéance {{ ligne.numeroEcheance }} · Scolarité</ng-template>
+              </td>
+              <td class="px-3 py-3 text-right" style="color:#334155;">
+                {{ formatCurrency(ligne.montantEcheance
+                  || (ligne.type === 'inscription'
+                    ? (ligne.montantDu || ligne.montantImpute || 0)
+                    : ((ligne.montantImpute || 0) + (ligne.resteApres || 0)))) }}
               </td>
               <td class="px-3 py-3 text-right font-bold" style="color:#0F172A;">{{ formatCurrency(ligne.montantImpute) }}</td>
               <td class="px-3 py-3 text-right font-bold"

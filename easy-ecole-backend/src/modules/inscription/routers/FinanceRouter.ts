@@ -38,6 +38,7 @@ import { BordereauAffectationService } from "../services/BordereauAffectationSer
 import { attribuerNumeroSequenceBordereaux } from "../services/BordereauSequenceService";
 import {
   creerConflitNumeroBordereau,
+  enrichirConflitNumeroBordereau,
   trouverBordereauAvecNumero,
 } from "../services/BordereauNumeroUniciteService";
 import { creerHandlersAffectationBordereau } from "../controllers/BordereauAffectationController";
@@ -107,24 +108,37 @@ const chargerContexteFraisSession = async (
   const snapshot = dossierCible
     ? SnapshotService.deserialiser(dossierCible.fraisScolariteSnapshot)
     : null;
-  const frais = snapshot
-    ? {
-      fraisInscription: snapshot.montantInscription,
-      fraisScolarite: snapshot.montantScolarite,
-      modaliteScolarite: snapshot.modaliteScolarite,
-    }
-    : obtenirFraisSession(demande);
+  const fraisSession = obtenirFraisSession(demande);
   const echeances = dossierCible
     ? await Echeance.findAll({
       where: { dossierEtudiantId: dossierCible.id, type: ['inscription', 'scolarite'] },
       transaction,
     })
     : [];
-  const dejaPayeInscription = echeances
-    .filter(echeance => echeance.type === 'inscription')
+  const echeancesInscription = echeances.filter(echeance => echeance.type === 'inscription');
+  const echeancesScolarite = echeances.filter(echeance => echeance.type === 'scolarite');
+  const totalInscriptionEcheances = Math.round(
+    echeancesInscription.reduce((sum, echeance) => sum + Number(echeance.montant || 0), 0) * 100
+  ) / 100;
+  const totalScolariteEcheances = Math.round(
+    echeancesScolarite.reduce((sum, echeance) => sum + Number(echeance.montant || 0), 0) * 100
+  ) / 100;
+  // Les échéances réellement générées (barème facturé) priment sur le snapshot
+  // et la session : elles seules reflètent ce que l'étudiant doit payer.
+  // Sans cela, un snapshot à 0 en inscription faisait démarrer la cascade
+  // directement sur la scolarité (inscription jamais imputée).
+  const frais = {
+    fraisInscription: totalInscriptionEcheances > 0
+      ? totalInscriptionEcheances
+      : Math.round(Number(snapshot ? snapshot.montantInscription : fraisSession.fraisInscription || 0) * 100) / 100,
+    fraisScolarite: totalScolariteEcheances > 0
+      ? totalScolariteEcheances
+      : Math.round(Number(snapshot ? snapshot.montantScolarite : fraisSession.fraisScolarite || 0) * 100) / 100,
+    modaliteScolarite: snapshot?.modaliteScolarite ?? fraisSession.modaliteScolarite,
+  };
+  const dejaPayeInscription = echeancesInscription
     .reduce((sum, echeance) => sum + Number(echeance.montantPaye || 0), 0);
-  const dejaPayeScolarite = echeances
-    .filter(echeance => echeance.type === 'scolarite')
+  const dejaPayeScolarite = echeancesScolarite
     .reduce((sum, echeance) => sum + Number(echeance.montantPaye || 0), 0);
 
   return {
@@ -593,6 +607,7 @@ router.get('/bordereaux/verifier-unicite', [AuthEsacompta, CheckPermission('acti
   try {
     const numeroBordereau = typeof req.query.numeroBordereau === 'string' ? req.query.numeroBordereau.trim() : ''
     const excludeId = req.query.excludeId ? Number(req.query.excludeId) : null
+    const etudiantId = req.query.etudiantId ? Number(req.query.etudiantId) : undefined
 
     if (!numeroBordereau) {
       return res.status(400).json({ success: false, message: 'Renseignez un numéro de bordereau.' })
@@ -605,17 +620,23 @@ router.get('/bordereaux/verifier-unicite', [AuthEsacompta, CheckPermission('acti
       return res.json({ success: true, unique: true })
     }
 
+    const conflit = await enrichirConflitNumeroBordereau(
+      existant,
+      numeroBordereau,
+      etudiantId,
+    )
     return res.json({
       success: true,
       unique: false,
       conflit: {
         champ: 'numeroBordereau',
         valeur: existant.numeroBordereau,
-        etudiant: {
-          id: Number(existant.utilisateurId),
-          nom: existant.utilisateur?.nom || '',
-          prenoms: existant.utilisateur?.prenoms || '',
-        },
+        code: conflit.code,
+        message: conflit.message,
+        etudiant: conflit.details.etudiant,
+        matricule: conflit.details.matricule,
+        filiere: conflit.details.filiere,
+        niveau: conflit.details.niveau,
       },
     })
   } catch (error: any) {
@@ -1250,7 +1271,7 @@ router.put('/bordereaux/:id/saisir', [AuthEsacompta, CheckPermission('action.fin
       if (doublon) {
         await transaction.rollback();
         console.log(_rid, 'ERREUR 400: Numéro de bordereau déjà utilisé');
-        return res.status(409).json(creerConflitNumeroBordereau(
+        return res.status(409).json(await enrichirConflitNumeroBordereau(
           doublon,
           Number(bordereau.utilisateurId),
           numBordereau,

@@ -136,7 +136,7 @@
             type="search"
             [ngModel]="searchTerm"
             (ngModelChange)="onSearchChange($event)"
-            placeholder="Nom, prénom, matricule ou numéro de bordereau..."
+            placeholder="Rechercher par nom, prénom ou matricule..."
             class="block w-full rounded-md border border-gray-300 py-2.5 pl-10 pr-3 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500">
     </div>
 </div>
@@ -384,6 +384,18 @@
             <div class="mt-2 flex justify-between gap-4">
                 <dt class="font-semibold text-gray-600">Étudiant enregistré</dt>
                 <dd class="text-right font-medium text-gray-900">{{ duplicateStudentName }}</dd>
+            </div>
+            <div *ngIf="duplicateInfo?.matricule" class="mt-2 flex justify-between gap-4">
+                <dt class="font-semibold text-gray-600">Matricule</dt>
+                <dd class="text-right font-medium text-gray-900">{{ duplicateInfo?.matricule }}</dd>
+            </div>
+            <div *ngIf="duplicateInfo?.filiere" class="mt-2 flex justify-between gap-4">
+                <dt class="font-semibold text-gray-600">Filière</dt>
+                <dd class="text-right font-medium text-gray-900">{{ duplicateInfo?.filiere }}</dd>
+            </div>
+            <div *ngIf="duplicateInfo?.niveau" class="mt-2 flex justify-between gap-4">
+                <dt class="font-semibold text-gray-600">Niveau</dt>
+                <dd class="text-right font-medium text-gray-900">{{ duplicateInfo?.niveau }}</dd>
             </div>
         </dl>
         <div class="flex justify-end">

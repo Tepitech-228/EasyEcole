@@ -16,6 +16,7 @@ export class BordereauxAuditesPageComponent extends BaseComponentClass implement
   loading = false;
   saving = false;
   searchTerm = '';
+  private searchDebounce?: ReturnType<typeof setTimeout>;
   successMessage = '';
   errorMessage = '';
   currentPage = 1;
@@ -25,6 +26,7 @@ export class BordereauxAuditesPageComponent extends BaseComponentClass implement
 
   selectedBordereau?: Bordereau;
   showEditModal = false;
+  modeEdition = false;
   previewImageUrl: string | null = null;
   previewUrl: SafeResourceUrl | null = null;
   correctionForm: FormGroup;
@@ -46,14 +48,31 @@ export class BordereauxAuditesPageComponent extends BaseComponentClass implement
     this.chargerBordereaux();
   }
 
+  onSearchChange(value: string): void {
+    this.searchTerm = value;
+    this.currentPage = 1;
+    if (this.searchDebounce) clearTimeout(this.searchDebounce);
+    this.searchDebounce = setTimeout(() => {
+      this.chargerBordereaux(1);
+      this.searchDebounce = undefined;
+    }, 300);
+  }
+
   get bordereauxFiltres(): Bordereau[] {
     const recherche = this.searchTerm.trim().toLocaleLowerCase();
     if (!recherche) return this.bordereaux;
 
     return this.bordereaux.filter(bordereau => {
       const nom = `${bordereau.utilisateur?.nom || ''} ${bordereau.utilisateur?.prenoms || ''}`.toLocaleLowerCase();
+      const matricule = (
+        bordereau.demandeInscription?.matriculeEtudiant
+        || bordereau.demandeInscription?.matricule
+        || bordereau.echeance?.dossierEtudiant?.matricule
+        || ''
+      ).toLocaleLowerCase();
       return [
         nom,
+        matricule,
         bordereau.numeroBordereau || '',
         bordereau.referenceBancaire || '',
         String(bordereau.id || ''),
@@ -65,11 +84,13 @@ export class BordereauxAuditesPageComponent extends BaseComponentClass implement
     this.loading = true;
     this.errorMessage = '';
     this.currentPage = page;
-    this.bordereauService.getAll({
+    const params: any = {
       statut: 'valide,en_saisie_comptable,traite',
       page,
       limit: this.pageSize,
-    }).subscribe({
+    }
+    if (this.searchTerm.trim()) params.recherche = this.searchTerm.trim()
+    this.bordereauService.getAll(params).subscribe({
       next: (response) => {
         this.bordereaux = response.data || [];
         this.totalItems = Number(response.pagination?.total || 0);
@@ -90,6 +111,7 @@ export class BordereauxAuditesPageComponent extends BaseComponentClass implement
     this.fermerApercu();
     this.selectedBordereau = bordereau;
     this.errorMessage = '';
+    this.modeEdition = false;
     this.correctionForm.reset({
       numeroBordereau: bordereau.numeroBordereau || '',
       datePaiement: this.formaterDateInput(bordereau.datePaiement),
@@ -101,8 +123,13 @@ export class BordereauxAuditesPageComponent extends BaseComponentClass implement
     this.previewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
 
+  activerModification(): void {
+    this.modeEdition = true;
+    this.errorMessage = '';
+  }
+
   enregistrerCorrection(): void {
-    if (!this.selectedBordereau?.id || this.correctionForm.invalid || this.saving) {
+    if (!this.modeEdition || !this.selectedBordereau?.id || this.correctionForm.invalid || this.saving) {
       this.correctionForm.markAllAsTouched();
       return;
     }
@@ -130,6 +157,7 @@ export class BordereauxAuditesPageComponent extends BaseComponentClass implement
 
   fermerCorrection(): void {
     this.showEditModal = false;
+    this.modeEdition = false;
     this.selectedBordereau = undefined;
     this.correctionForm.reset();
     this.fermerApercu();
@@ -166,6 +194,7 @@ export class BordereauxAuditesPageComponent extends BaseComponentClass implement
   }
 
   ngOnDestroy(): void {
+    if (this.searchDebounce) clearTimeout(this.searchDebounce);
     this.fermerApercu();
   }
 
