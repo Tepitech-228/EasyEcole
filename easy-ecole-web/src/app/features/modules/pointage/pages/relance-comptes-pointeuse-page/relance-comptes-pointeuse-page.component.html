@@ -3,7 +3,7 @@
     <div>
       <span class="eyebrow">Pointage · Administration</span>
       <h1>Relance des comptes pointeuses</h1>
-      <p>Repérez les comptes du personnel et des étudiants absents des pointeuses, puis relancez leur création individuellement ou en lot.</p>
+      <p>Recherchez un compte du personnel ou un étudiant, puis relancez sa synchronisation individuellement ou en lot.</p>
     </div>
     <button type="button" class="button button--secondary" (click)="loadCandidates()" [disabled]="loading || processing">
       <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
@@ -20,8 +20,8 @@
   <section class="summary" *ngIf="!loading && !loadError">
     <div class="summary__icon material-symbols-outlined" aria-hidden="true">fingerprint</div>
     <div>
-      <strong>{{ candidats.length }} compte(s) du personnel · {{ etudiants.length }} étudiant(s) à vérifier</strong>
-      <span>Les comptes déjà créés sur toutes les pointeuses actives ne sont pas affichés.</span>
+      <strong>{{ candidats.length }} compte(s) du personnel · {{ etudiants.length }} étudiant(s) disponibles</strong>
+      <span>Les comptes présents comme ceux à créer sur les pointeuses actives sont affichés.</span>
     </div>
   </section>
 
@@ -34,8 +34,24 @@
       </select>
     </label>
     <label class="filter-field filter-field--search">
-      <span>Recherche</span>
-      <input type="search" [(ngModel)]="searchTerm" placeholder="Nom, matricule ou identifiant">
+      <span>Rechercher une personne</span>
+      <span class="search-control">
+        <span class="material-symbols-outlined search-control__icon" aria-hidden="true">search</span>
+        <input
+          type="search"
+          [(ngModel)]="searchTerm"
+          placeholder="Nom, prénom, matricule, identifiant ou site"
+          autocomplete="off"
+          aria-label="Rechercher une personne à relancer">
+        <button
+          *ngIf="searchTerm"
+          type="button"
+          class="search-control__clear"
+          (click)="searchTerm = ''"
+          aria-label="Effacer la recherche">
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+      </span>
     </label>
     <div class="selection-count">
       Personnel : {{ selectedIds.length }} · Étudiants : {{ selectedStudentKeys.length }}
@@ -56,6 +72,9 @@
       <span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>
       Relancer les étudiants
     </button>
+    <div class="filter-results" aria-live="polite">
+      {{ filteredCandidates.length }} personnel(s) · {{ filteredStudents.length }} étudiant(s) trouvé(s)
+    </div>
   </section>
 
   <div class="loading" *ngIf="loading" role="status">Chargement des comptes…</div>
@@ -106,7 +125,7 @@
             <span
               class="status"
               [class.status--warning]="terminalsForCandidate(candidate).length === 0 || missingCount(candidate) > 0"
-              [class.status--partial]="missingCount(candidate) < terminalsForCandidate(candidate).length">
+              [class.status--partial]="missingCount(candidate) > 0 && missingCount(candidate) < terminalsForCandidate(candidate).length">
               {{ candidateStatus(candidate) }}
             </span>
             <span class="secondary-text" *ngIf="terminalsForCandidate(candidate).length > 0">
@@ -122,6 +141,15 @@
             <button type="button" class="button button--small" (click)="relancerUnCompte(candidate.utilisateurId)" [disabled]="processing">
               Relancer
             </button>
+            <button
+              *ngIf="canRegenerateMatricule(candidate)"
+              type="button"
+              class="button button--small"
+              (click)="regenererMatriculeEtRelancer(candidate)"
+              [disabled]="processing"
+              [attr.aria-label]="'Générer un nouveau matricule et relancer ' + candidate.prenoms + ' ' + candidate.nom">
+              Nouveau matricule
+            </button>
           </td>
         </tr>
       </tbody>
@@ -129,7 +157,7 @@
     <ng-template #noCandidates>
       <div class="empty-state">
         <span class="material-symbols-outlined" aria-hidden="true">task_alt</span>
-        <strong>Aucun compte manquant pour ces critères</strong>
+        <strong>Aucun compte trouvé pour ces critères</strong>
         <span>Essayez un autre site ou actualisez la liste.</span>
       </div>
     </ng-template>
@@ -139,7 +167,7 @@
     <header class="list-section__header">
       <div>
         <h2>Étudiants avec demande d’inscription</h2>
-        <p>Demandes déjà soumises dont le compte photo n’est pas confirmé sur une pointeuse étudiant active.</p>
+        <p>Tous les étudiants ayant une demande d’inscription avec matricule, qu’ils soient déjà présents ou non sur la pointeuse.</p>
       </div>
       <span class="section-count">{{ filteredStudents.length }} étudiant(s)</span>
     </header>
@@ -182,7 +210,7 @@
               <span
                 class="status"
                 [class.status--warning]="student.terminaux.length === 0 || student.missingTerminalCount > 0">
-                {{ student.terminaux.length === 0 ? 'Aucune pointeuse active' : student.missingTerminalCount === student.terminaux.length ? 'Compte absent' : 'Présence partielle' }}
+                {{ student.terminaux.length === 0 ? 'Aucune pointeuse active' : student.missingTerminalCount === 0 ? 'Présent sur toutes les pointeuses' : student.missingTerminalCount === student.terminaux.length ? 'Compte absent' : 'Présence partielle' }}
               </span>
               <span class="secondary-text" *ngIf="student.terminaux.length > 0">
                 {{ student.terminaux.length - student.missingTerminalCount }}/{{ student.terminaux.length }} créé(s)
@@ -204,7 +232,7 @@
       <ng-template #noStudents>
         <div class="empty-state">
           <span class="material-symbols-outlined" aria-hidden="true">task_alt</span>
-          <strong>Aucun étudiant manquant pour ces critères</strong>
+          <strong>Aucun étudiant trouvé pour ces critères</strong>
           <span>Seules les demandes d’inscription déjà soumises sont affichées.</span>
         </div>
       </ng-template>

@@ -55,20 +55,18 @@ export class RelanceComptesPointeusePageComponent extends BaseComponentClass imp
   }
 
   get filteredCandidates(): HikvisionStaffCandidate[] {
-    const term = this.normalize(this.searchTerm);
+    const terms = this.searchTerms;
     const siteId = Number(this.selectedSiteId);
     return this.candidats.filter(candidate => {
       if (this.selectedSiteId && !candidate.siteIds.includes(siteId)) return false;
-      if (this.selectedSiteId && !this.hasMissingAccountOnSite(candidate, siteId)) return false;
-      if (!term) return true;
-      const searchable = [
+      return this.matchesSearch(terms, [
         candidate.nom,
         candidate.prenoms,
         candidate.identifiant,
         candidate.employeeNo,
-        candidate.role
-      ].join(' ');
-      return this.normalize(searchable).includes(term);
+        candidate.role,
+        ...candidate.sites.map(site => site.nom)
+      ]);
     });
   }
 
@@ -78,18 +76,17 @@ export class RelanceComptesPointeusePageComponent extends BaseComponentClass imp
   }
 
   get filteredStudents(): HikvisionStudentCandidate[] {
-    const term = this.normalize(this.searchTerm);
+    const terms = this.searchTerms;
     const siteId = Number(this.selectedSiteId);
     return this.etudiants.filter(student => {
       if (this.selectedSiteId && student.siteId !== siteId) return false;
-      if (!term) return true;
-      const searchable = [
+      return this.matchesSearch(terms, [
         student.nom,
         student.prenoms,
         student.identifiant,
-        student.employeeNo
-      ].join(' ');
-      return this.normalize(searchable).includes(term);
+        student.employeeNo,
+        student.siteNom
+      ]);
     });
   }
 
@@ -118,7 +115,7 @@ export class RelanceComptesPointeusePageComponent extends BaseComponentClass imp
       },
       error: error => {
         this.loading = false;
-        this.loadError = error?.error?.message || 'Impossible de charger les comptes à créer sur les pointeuses.';
+        this.loadError = error?.error?.message || 'Impossible de charger les comptes des pointeuses.';
       }
     });
   }
@@ -198,6 +195,28 @@ export class RelanceComptesPointeusePageComponent extends BaseComponentClass imp
     this.relancerSelection();
   }
 
+  regenererMatriculeEtRelancer(candidate: HikvisionStaffCandidate): void {
+    if (this.processing || !this.canRegenerateMatricule(candidate)) return;
+    if (
+      typeof window === 'undefined' ||
+      !window.confirm(
+        `Générer un nouveau matricule pour ${candidate.prenoms} ${candidate.nom} ?\n\n`
+        + 'Le matricule actuel sera remplacé dans le profil EasyÉcole, puis le compte sera relancé sur toutes ses pointeuses actives.'
+      )
+    ) return;
+
+    this.runRelance([{
+      key: `matricule:${candidate.utilisateurId}`,
+      utilisateurId: candidate.utilisateurId,
+      nomComplet: `${candidate.prenoms} ${candidate.nom}`.trim(),
+      execute: () => this.pointageService.regenererMatriculeEtRelancerComptePersonnelHikvision(candidate.utilisateurId)
+    }]);
+  }
+
+  canRegenerateMatricule(candidate: HikvisionStaffCandidate): boolean {
+    return candidate.role !== 'admin';
+  }
+
   relancerUnEtudiant(student: HikvisionStudentCandidate): void {
     this.selectedStudentKeys = [student.key];
     this.relancerSelectionEtudiants();
@@ -227,7 +246,8 @@ export class RelanceComptesPointeusePageComponent extends BaseComponentClass imp
   candidateStatus(candidate: HikvisionStaffCandidate): string {
     const terminals = this.terminalsForCandidate(candidate);
     if (terminals.length === 0) return 'Aucune pointeuse active';
-    if (terminals.some(terminal => terminal.compteCree)) return 'Présence partielle';
+    if (this.missingCount(candidate) === 0) return 'Présent sur toutes les pointeuses';
+    if (this.missingCount(candidate) < terminals.length) return 'Présence partielle';
     return 'Compte absent';
   }
 
@@ -257,11 +277,6 @@ export class RelanceComptesPointeusePageComponent extends BaseComponentClass imp
 
   missingCount(candidate: HikvisionStaffCandidate): number {
     return this.terminalsForCandidate(candidate).filter(terminal => !terminal.compteCree).length;
-  }
-
-  private hasMissingAccountOnSite(candidate: HikvisionStaffCandidate, siteId: number): boolean {
-    const terminals = candidate.terminaux.filter(terminal => terminal.etablissementId === siteId);
-    return terminals.length === 0 || terminals.some(terminal => !terminal.compteCree);
   }
 
   private updateResult(utilisateurId: number, result: RelanceResultRow): void {
@@ -315,5 +330,15 @@ export class RelanceComptesPointeusePageComponent extends BaseComponentClass imp
       .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase()
       .trim();
+  }
+
+  private get searchTerms(): string[] {
+    return this.normalize(this.searchTerm).split(/\s+/).filter(Boolean);
+  }
+
+  private matchesSearch(terms: string[], values: Array<string | null | undefined>): boolean {
+    if (terms.length === 0) return true;
+    const searchable = this.normalize(values.filter(Boolean).join(' '));
+    return terms.every(term => searchable.includes(term));
   }
 }

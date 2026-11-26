@@ -24,6 +24,7 @@ router
     .post('/terminaux/:id/token', [Authenticate], PointageTerminalController.regenererToken)
     .get('/hikvision-terminaux', [Authenticate], HikvisionTerminalController.getAll)
     .get('/hikvision-comptes/personnel-a-relancer', [Authenticate], HikvisionTerminalController.getStaffAccountsToEnroll)
+    .post('/hikvision-comptes/personnel/:utilisateurId/regenerer-matricule', [Authenticate], HikvisionTerminalController.regenererStaffMatricule)
     .post('/hikvision-comptes/personnel/:utilisateurId/relancer', [Authenticate], HikvisionTerminalController.relancerStaffAccount)
     .post('/hikvision-comptes/etudiants/:utilisateurId/sites/:etablissementId/relancer', [Authenticate], HikvisionTerminalController.relancerStudentAccount)
     .post('/hikvision-terminaux', [Authenticate], HikvisionTerminalController.create)

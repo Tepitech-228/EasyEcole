@@ -272,7 +272,6 @@ export default class HikvisionTerminalController {
                     };
                 });
                 const missingTerminalCount = terminalStatus.filter(terminal => !terminal.compteCree).length;
-                if (userTerminals.length > 0 && missingTerminalCount === 0) return [];
 
                 return [{
                     utilisateurId,
@@ -329,7 +328,6 @@ export default class HikvisionTerminalController {
                         derniereErreur: enrollment?.derniereErreur || null
                     };
                 });
-                if (studentTerminals.length > 0 && terminalStatus.every(terminal => terminal.compteCree)) return [];
                 return [{
                     key: `${utilisateurId}:${etablissementId}`,
                     utilisateurId,
@@ -382,6 +380,25 @@ export default class HikvisionTerminalController {
             console.error(`[Hikvision] staff account relaunch failed for user ${utilisateurId}:`, error);
             const message = error instanceof Error ? error.message : "La relance du compte n’a pas abouti.";
             const status = message.includes("introuvable") ? 404 : 500;
+            return res.status(status).json({ success: false, message });
+        }
+    }
+
+    static async regenererStaffMatricule(req: Request, res: Response): Promise<Response> {
+        if (!HikvisionTerminalController.adminOnly(req, res)) return res;
+        const utilisateurId = Number(req.params.utilisateurId);
+        if (!Number.isSafeInteger(utilisateurId) || utilisateurId <= 0) {
+            return res.status(400).json({ success: false, message: "Identifiant de compte invalide." });
+        }
+        try {
+            const result = await HikvisionEnrollmentService.regenererMatriculeEtRelancerComptePersonnel(utilisateurId);
+            return res.status(200).json(result);
+        } catch (error) {
+            console.error(`[Hikvision] staff matricule regeneration failed for user ${utilisateurId}:`, error);
+            const message = error instanceof Error ? error.message : "Le matricule du personnel n’a pas pu être régénéré.";
+            const status = message.includes("introuvable")
+                ? 404
+                : message.startsWith("La génération d’un matricule") ? 400 : 500;
             return res.status(status).json({ success: false, message });
         }
     }

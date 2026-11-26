@@ -263,6 +263,13 @@ export class PointageService {
     );
   }
 
+  regenererMatriculeEtRelancerComptePersonnelHikvision(utilisateurId: number): Observable<HikvisionStaffRetryResult> {
+    return this.httpClient.post<HikvisionStaffRetryResult>(
+      `${this.SERVICE_URL}/hikvision-comptes/personnel/${utilisateurId}/regenerer-matricule`,
+      {}
+    );
+  }
+
   relancerCompteEtudiantHikvision(utilisateurId: number, etablissementId: number): Observable<HikvisionStaffRetryResult> {
     return this.httpClient.post<HikvisionStaffRetryResult>(
       `${this.SERVICE_URL}/hikvision-comptes/etudiants/${utilisateurId}/sites/${etablissementId}/relancer`,

@@ -1,9 +1,13 @@
 import { Op } from "sequelize";
+import { DatabaseConnection } from "../../../core/helpers/DatabaseConnection";
+import { IDGenerator } from "../../../core/helpers/IDGenerator";
 import { RolesUtilisateur } from "../../../core/enums/RolesUtilisateur";
+import { Etablissement } from "../../etablissement/models/Etablissement";
 import { Utilisateur } from "../../auth/models/Utilisateur";
 import { Apprenant } from "../../auth/models/Apprenant";
 import { Enseignant } from "../../auth/models/Enseignant";
 import { PersonnelAdministratif } from "../../auth/models/PersonnelAdministratif";
+import { PersonnelMatriculeService } from "../../auth/services/PersonnelMatriculeService";
 import { SiteUtilisateur } from "../../auth/models/SiteUtilisateur";
 import { DossierEtudiant } from "../models/DossierEtudiant";
 import { DemandeInscription } from "../models/DemandeInscription";
@@ -438,24 +442,8 @@ export default class HikvisionEnrollmentService {
     for (const terminal of terminals) {
       const terminalId = Number(terminal.id);
       const etablissementId = Number(terminal.etablissementId);
-      let enrollment = await HikvisionEnrollment.findOne({
-        where: { terminalId, utilisateurId }
-      });
-
-      if (enrollment?.statut === "termine" && enrollment.employeeNo === employeeNo) {
-        terminalResults.push({
-          terminalId,
-          terminalName: terminal.nom,
-          etablissementId,
-          compteCree: true,
-          statut: "deja_present",
-          message: "Le compte est déjà créé sur cette pointeuse."
-        });
-        continue;
-      }
-
-      await HikvisionEnrollmentService.enqueueForTerminal(terminal, utilisateurId, employeeNo, true);
-      enrollment = await HikvisionEnrollment.findOne({
+      await HikvisionEnrollmentService.enqueueForTerminal(terminal, utilisateurId, employeeNo);
+      const enrollment = await HikvisionEnrollment.findOne({
         where: { terminalId, utilisateurId }
       });
       if (!enrollment) {
@@ -597,6 +585,117 @@ export default class HikvisionEnrollmentService {
     );
     const summary = HikvisionEnrollmentService.resultSummary(terminalResults);
     return result(summary.compteCree, summary.message, terminalResults);
+  }
+
+  static async regenererMatriculeEtRelancerComptePersonnel(
+    utilisateurId: number
+  ): Promise<StaffEnrollmentRetryResult> {
+    const target = await HikvisionEnrollmentService.resolveStaffTarget(utilisateurId);
+    const utilisateur = target.utilisateur;
+    const nomComplet = `${utilisateur.prenoms} ${utilisateur.nom}`.trim();
+    const result = (
+      employeeNo: string | null,
+      message: string,
+      terminaux: StaffEnrollmentTerminalResult[] = []
+    ): StaffEnrollmentRetryResult => ({
+      utilisateurId,
+      nomComplet,
+      employeeNo,
+      compteCree: false,
+      message,
+      terminaux
+    });
+
+    if (
+      !target.eligibleRole ||
+      (utilisateur.role !== RolesUtilisateur.ENSEIGNANT &&
+        !HikvisionEnrollmentService.isPersonnelRole(utilisateur.role))
+    ) {
+      throw new Error("La génération d’un matricule est réservée aux enseignants et au personnel.");
+    }
+    if (!target.photoFilename) {
+      return result(target.employeeNo, "Aucune photo de profil n’est disponible pour créer le compte sur la pointeuse.");
+    }
+
+    const siteIds = [...new Set(
+      target.sites.filter(siteId => Number.isSafeInteger(siteId) && siteId > 0)
+    )];
+    if (siteIds.length === 0) {
+      return result(target.employeeNo, "Aucun site n’est associé à ce compte pour générer un matricule.");
+    }
+    const activeTerminals = await PointageTerminal.findAll({
+      where: {
+        etablissementId: { [Op.in]: siteIds },
+        protocol: "hikvision_isapi",
+        population: "personnel",
+        actif: true
+      },
+      attributes: ["id"]
+    });
+    if (activeTerminals.length === 0) {
+      return result(target.employeeNo, "Aucune pointeuse Hikvision active n’est disponible sur les sites de ce compte.");
+    }
+
+    const nouveauMatricule = await DatabaseConnection.getInstance().sequelize.transaction(async transaction => {
+      let siteId = siteIds[0];
+      let etablissementCode: string;
+      let siteCode: string;
+
+      if (utilisateur.role === RolesUtilisateur.ENSEIGNANT) {
+        const enseignant = await Enseignant.findOne({
+          where: { utilisateurId },
+          transaction,
+          lock: transaction.LOCK.UPDATE
+        });
+        if (!enseignant) throw new Error(`Le profil enseignant ${utilisateurId} est introuvable.`);
+
+        const etablissement = await Etablissement.findByPk(siteId, { transaction });
+        if (!etablissement) throw new Error(`Le site ${siteId} est introuvable pour ce compte.`);
+        etablissementCode = IDGenerator.deriveEtablissementCode(etablissement);
+        siteCode = IDGenerator.deriveSiteCode(etablissement);
+        const matricule = await PersonnelMatriculeService.generer(
+          etablissementCode,
+          IDGenerator.deriveMatiereCode(enseignant.specialite),
+          siteCode,
+          utilisateurId,
+          "enseignant",
+          transaction
+        );
+        await enseignant.update({ matricule }, { transaction });
+        return matricule;
+      }
+
+      const personnel = await PersonnelAdministratif.findOne({
+        where: { utilisateurId },
+        transaction,
+        lock: transaction.LOCK.UPDATE
+      });
+      if (!personnel) throw new Error(`Le profil du personnel ${utilisateurId} est introuvable.`);
+      const siteDuProfil = Number(personnel.etablissementId);
+      if (siteIds.includes(siteDuProfil)) siteId = siteDuProfil;
+
+      const etablissement = await Etablissement.findByPk(siteId, { transaction });
+      if (!etablissement) throw new Error(`Le site ${siteId} est introuvable pour ce compte.`);
+      etablissementCode = IDGenerator.deriveEtablissementCode(etablissement);
+      siteCode = IDGenerator.deriveSiteCode(etablissement);
+      const matricule = await PersonnelMatriculeService.generer(
+        etablissementCode,
+        IDGenerator.deriveServiceCode(personnel.directionService, utilisateur.role),
+        siteCode,
+        utilisateurId,
+        "personnel_administratif",
+        transaction
+      );
+      await personnel.update({ matricule }, { transaction });
+      return matricule;
+    });
+
+    const relance = await HikvisionEnrollmentService.relancerComptePersonnel(utilisateurId);
+    return {
+      ...relance,
+      employeeNo: nouveauMatricule,
+      message: `Nouveau matricule enregistré : ${nouveauMatricule}. ${relance.message}`
+    };
   }
 
   static async relancerCompteEtudiant(
